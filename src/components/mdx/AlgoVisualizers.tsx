@@ -317,6 +317,9 @@ function InsertionBars({ s }: { s: ArrayState }) {
   type Item = { id: number; slot: number; value: number; lifted: boolean };
   const items: Item[] = s.array.flatMap((v, i) => (i === s.gap ? [] : [{ id: s.ids?.[i] ?? i, slot: i, value: v, lifted: false }]));
   if (s.held && s.gap !== undefined) items.push({ id: s.held.id ?? -1, slot: s.gap, value: s.held.value, lifted: true });
+  // Fixed DOM order: if React re-inserted the lifted key at the end, the browser would treat it
+  // as a new element and skip the lift transition.
+  items.sort((x, y) => x.id - y.id);
 
   const tone = (it: Item) => {
     if (it.lifted) return "bg-violet";
