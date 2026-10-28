@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   sortFrames,
   searchFrames,
@@ -78,6 +78,9 @@ function CodePanel({ code, line, label }: { code: string[]; line: number; label:
   );
 }
 
+/** Focus mode scales the picture to fill the screen, but never past this. */
+const FOCUS_MAX_ZOOM = 2.4;
+
 export function Stepper<S>({
   title,
   frames,
@@ -101,6 +104,21 @@ export function Stepper<S>({
   const [speed, setSpeed] = useState(700);
   const last = frames.length - 1;
 
+  // Focus mode: just the picture, caption and controls, filling the screen. Uses the
+  // Fullscreen API where it exists and falls back to a fixed overlay (e.g. iPhone Safari).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const [focus, setFocus] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [measure, setMeasure] = useState(0); // bump to re-fit the picture from scratch
+  const fittedFor = useRef(-1);
+  const refit = useCallback(() => {
+    setZoom(1);
+    setMeasure((m) => m + 1);
+  }, []);
+
   useEffect(() => {
     setIdx(0);
     setPlaying(false);
@@ -116,14 +134,189 @@ export function Stepper<S>({
     return () => clearTimeout(t);
   }, [playing, idx, last, speed]);
 
+  const toggleCode = useCallback(() => {
+    setShowCode((v) => !v);
+    refit();
+  }, [refit]);
+  const enterFocus = () => {
+    setFocus(true);
+    refit();
+    rootRef.current?.requestFullscreen?.().catch(() => {});
+  };
+  const exitFocus = () => {
+    setFocus(false);
+    setZoom(1);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!focus) return;
+    // Esc in real fullscreen is handled by the browser; follow it out
+    const onChange = () => {
+      if (!document.fullscreenElement) setFocus(false);
+    };
+    const onResize = refit;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLElement && e.target.closest("input, select, textarea")) return;
+      // a focused button would also react to Space on keyup; take focus off it first
+      if (e.target instanceof HTMLButtonElement) e.target.blur();
+      if (e.key === "Escape") exitFocus();
+      else if (e.key === " ") setPlaying((p) => !p);
+      else if (e.key === "ArrowRight") {
+        setPlaying(false);
+        setIdx((i) => Math.min(last, i + 1));
+      } else if (e.key === "ArrowLeft") {
+        setPlaying(false);
+        setIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === "r" || e.key === "R") {
+        setPlaying(false);
+        setIdx(0);
+      } else if (e.key === "c" || e.key === "C") toggleCode();
+      else return;
+      e.preventDefault();
+    };
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("fullscreenchange", onChange);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("fullscreenchange", onChange);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [focus, last, refit, toggleCode]);
+
+  // Fit the picture to the stage's height. Percentage widths inside keep filling the width
+  // because CSS zoom re-runs layout. On entry, resize or code toggle it is measured at zoom 1
+  // and scaled up; after that a step that grows taller (a call stack wrapping) only ever
+  // shrinks it, so it can't oscillate on content whose height follows its width.
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const pic = pictureRef.current;
+    if (!focus || !stage || !pic || pic.offsetHeight === 0) return;
+    const pad = 32; // stage py-4
+    const room = (stage.clientHeight - pad) * 0.96;
+    if (fittedFor.current !== measure) {
+      fittedFor.current = measure;
+      const fit = Math.min(FOCUS_MAX_ZOOM, room / pic.offsetHeight);
+      if (fit > 1.05) setZoom(fit);
+    } else if (zoom > 1 && stage.scrollHeight > stage.clientHeight + 1) {
+      setZoom(Math.max(1, (room * zoom) / (stage.scrollHeight - pad)));
+    }
+  }, [focus, zoom, measure, idx]);
+
   const frame = frames[Math.min(idx, last)];
   if (!frame) return null;
 
+  const controls = (
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx(0); }} disabled={idx === 0}>
+        ⟲ Reset
+      </button>
+      <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx((i) => Math.max(0, i - 1)); }} disabled={idx === 0}>
+        ← Back
+      </button>
+      <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx((i) => Math.min(last, i + 1)); }} disabled={idx >= last}>
+        Step →
+      </button>
+      <button
+        type="button"
+        className={`${btn} ${playing ? "border-foreground" : ""}`}
+        onClick={() => {
+          if (idx >= last) setIdx(0);
+          setPlaying((p) => !p);
+        }}
+      >
+        {playing ? "❚❚ Pause" : "▶ Play"}
+      </button>
+      <label className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        speed
+        <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+          <option value={1200}>slow</option>
+          <option value={700}>normal</option>
+          <option value={250}>fast</option>
+        </select>
+      </label>
+    </div>
+  );
+
+  const stats = (
+    <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+      <span>
+        step <span className="text-foreground">{idx + 1}</span>/{frames.length}
+      </span>
+      {Object.entries(frame.stats).map(([k, v]) => (
+        <span key={k}>
+          {k} <span className="text-foreground">{v}</span>
+        </span>
+      ))}
+    </div>
+  );
+
+  if (focus) {
+    return (
+      <div
+        ref={rootRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${title}, focus mode`}
+        className="not-prose fixed inset-0 z-50 flex flex-col bg-background text-foreground"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-8 pt-4">
+          <div className="eyebrow text-sky">{title}</div>
+          <div className="flex flex-wrap items-center gap-4">
+            {legend && <Legend items={legend} />}
+            <button type="button" className={btn} onClick={toggleCode} aria-pressed={showCode}>
+              {showCode ? "Hide code" : "Show code"}
+            </button>
+            <button type="button" className={btn} onClick={exitFocus}>
+              ✕ Exit
+            </button>
+          </div>
+        </div>
+
+        <div className={`flex-1 min-h-0 flex ${showCode ? "flex-col lg:flex-row" : "flex-col"}`}>
+          <div ref={stageRef} className="flex-1 min-h-0 min-w-0 overflow-auto px-5 sm:px-8 py-4 flex flex-col">
+            {/* my-auto rather than justify-center: centres without clipping the top when it overflows */}
+            <div ref={pictureRef} className="my-auto" style={{ zoom }}>
+              {render(frame.state)}
+            </div>
+          </div>
+          {showCode && (
+            <div className="lg:w-[min(46%,560px)] max-h-[40%] lg:max-h-none overflow-auto border-t lg:border-t-0 lg:border-l border-border">
+              <CodePanel code={code} line={frame.line} label={codeLabel} />
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 sm:px-8 pb-5 pt-3 flex flex-col gap-3 border-t border-border">
+          <p aria-live="polite" className="min-h-[2.5em] text-base sm:text-lg leading-relaxed">
+            {frame.message}
+          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {controls}
+            {stats}
+          </div>
+          <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            space play · ← → step · R reset · C code · esc exit
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
+    <div ref={rootRef} className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
         <div className="eyebrow text-sky">{title}</div>
-        {legend && <Legend items={legend} />}
+        <div className="flex flex-wrap items-center gap-4">
+          {legend && <Legend items={legend} />}
+          <button type="button" className={`${btn} !px-2 !py-1`} onClick={enterFocus} aria-label={`Open ${title} in focus mode`} title="Focus mode: full screen, no distractions">
+            ⛶ Focus
+          </button>
+        </div>
       </div>
 
       <div className="p-5 overflow-x-auto">{render(frame.state)}</div>
@@ -132,45 +325,8 @@ export function Stepper<S>({
         <p aria-live="polite" className="min-h-[3em] text-sm leading-relaxed">
           {frame.message}
         </p>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          <span>
-            step <span className="text-foreground">{idx + 1}</span>/{frames.length}
-          </span>
-          {Object.entries(frame.stats).map(([k, v]) => (
-            <span key={k}>
-              {k} <span className="text-foreground">{v}</span>
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx(0); }} disabled={idx === 0}>
-            ⟲ Reset
-          </button>
-          <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx((i) => Math.max(0, i - 1)); }} disabled={idx === 0}>
-            ← Back
-          </button>
-          <button type="button" className={btn} onClick={() => { setPlaying(false); setIdx((i) => Math.min(last, i + 1)); }} disabled={idx >= last}>
-            Step →
-          </button>
-          <button
-            type="button"
-            className={`${btn} ${playing ? "border-foreground" : ""}`}
-            onClick={() => {
-              if (idx >= last) setIdx(0);
-              setPlaying((p) => !p);
-            }}
-          >
-            {playing ? "❚❚ Pause" : "▶ Play"}
-          </button>
-          <label className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            speed
-            <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
-              <option value={1200}>slow</option>
-              <option value={700}>normal</option>
-              <option value={250}>fast</option>
-            </select>
-          </label>
-        </div>
+        {stats}
+        {controls}
         {inputs}
       </div>
 

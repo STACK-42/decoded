@@ -57,6 +57,21 @@ describe("visualizers step all the way through", () => {
     expect(screen.getByText(/^Sorted\./)).toBeDefined();
   });
 
+  it("focus mode shows just the visualizer, takes keyboard controls and keeps the step", () => {
+    const { container } = render(<SortVisualizer algorithm="insertion" initial={[5, 2, 9, 1, 7]} />);
+    fireEvent.click(within(container).getByRole("button", { name: /focus mode/i }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText("Java")).toBeNull(); // code hidden by default
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(dialog.textContent).toMatch(/step\s*3\//i);
+    fireEvent.keyDown(window, { key: "c" });
+    expect(within(dialog).getByText("Java")).toBeDefined();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(container.textContent).toMatch(/step\s*3\//i);
+  });
+
   it("binary search finds the target", () => {
     const { container } = render(<SearchVisualizer algorithm="binary" target={58} />);
     stepToEnd(container);
