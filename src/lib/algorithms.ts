@@ -26,7 +26,10 @@ export type ArrayState = {
   pivot?: number;
   range?: [number, number]; // active window; everything else is dimmed
   pointers?: Record<string, number>; // labels drawn under indices
-  held?: { label: string; value: number }; // a value held outside the array (insertion key)
+  held?: { label: string; value: number; id?: number }; // a value held outside the array (insertion key)
+  ids?: number[]; // stable identity per slot, so a view can animate elements moving between slots
+  gap?: number; // a slot whose value has been lifted out (insertion sort's hole)
+  split?: number; // indices < split form the sorted prefix (insertion sort's "hand")
   aux?: (number | null)[]; // merge sort's temporary buffer
   found?: number;
 };
@@ -155,9 +158,12 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   const writeLabel = algorithm === "insertion" || algorithm === "merge" ? "writes" : "swaps";
   const sorted = new Set<number>();
 
+  // insertion sort tracks which element sits in each slot so the view can slide them around
+  const ids = algorithm === "insertion" ? range(0, n - 1) : undefined;
+
   const push = (line: number, message: string, s: Omit<ArrayState, "array" | "sorted"> = {}) => {
     frames.push({
-      state: { ...s, array: [...a], sorted: [...sorted] },
+      state: { ...s, array: [...a], sorted: [...sorted], ...(ids && { ids: [...ids] }) },
       line,
       message,
       stats: { comparisons: stats.comparisons, [writeLabel]: stats.writes },
@@ -170,7 +176,7 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
     stats.writes++;
   };
 
-  push(0, `Start with ${n} unsorted numbers.`);
+  push(0, `Start with ${n} unsorted numbers.`, algorithm === "insertion" ? { split: Math.min(1, n) } : {});
 
   if (algorithm === "selection") {
     for (let i = 0; i < n - 1; i++) {
@@ -224,21 +230,25 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   if (algorithm === "insertion") {
     for (let i = 1; i < n; i++) {
       const key = a[i];
+      const held = { label: "key", value: key, id: ids![i] };
+      const split = i + 1;
       let j = i - 1;
-      push(2, `Pick up ${key}. Everything to its left is already in order.`, { held: { label: "key", value: key }, pointers: { i }, range: [0, i] });
+      push(2, `Pick up ${key}. Everything to its left is already in order.`, { held, gap: i, split, pointers: { i } });
       while (j >= 0) {
         stats.comparisons++;
         const bigger = a[j] > key;
-        push(4, `Is ${a[j]} bigger than ${key}? ${bigger ? "Yes — it has to move." : "No — the gap is here."}`, { compare: [j], held: { label: "key", value: key }, pointers: { i, j }, range: [0, i] });
+        push(4, `Is ${a[j]} bigger than ${key}? ${bigger ? "Yes — it has to move." : "No — the gap is here."}`, { compare: [j], held, gap: j + 1, split, pointers: { i, j } });
         if (!bigger) break;
         a[j + 1] = a[j];
+        ids![j + 1] = ids![j];
         stats.writes++;
-        push(5, `Shift ${a[j]} one step right.`, { write: [j + 1], held: { label: "key", value: key }, pointers: { i, j }, range: [0, i] });
+        push(5, `Shift ${a[j]} one step right.`, { write: [j + 1], held, gap: j, split, pointers: { i, j } });
         j--;
       }
       a[j + 1] = key;
+      ids![j + 1] = held.id;
       stats.writes++;
-      push(8, `Drop ${key} into index ${j + 1}.`, { write: [j + 1], pointers: { i }, range: [0, i] });
+      push(8, `Drop ${key} into index ${j + 1}.`, { write: [j + 1], split, pointers: { i } });
     }
     range(0, n - 1).forEach((k) => sorted.add(k));
   }

@@ -297,6 +297,98 @@ function ArrayCells({ s }: { s: ArrayState }) {
   );
 }
 
+/* Insertion sort gets its own picture: the key lifts out of the row,
+   bigger bars slide right underneath it, and it drops into the hole.
+   Elements are keyed by s.ids so React moves them instead of repainting. */
+const INS_BAR = 96; // tallest bar, px
+const INS_LABEL = 18; // value label above each bar, px
+const INS_ROW = INS_BAR + INS_LABEL;
+const INS_LANE = INS_ROW + 22; // room above the row for the lifted key and its tag
+
+function InsertionBars({ s }: { s: ArrayState }) {
+  const n = Math.max(1, s.array.length);
+  const max = Math.max(1, ...s.array, s.held?.value ?? 0);
+  const split = s.split ?? 0;
+  const h = (v: number) => Math.max(4, (v / max) * INS_BAR);
+  const slotX = (i: number) => `${(i / n) * 100}%`;
+  const width = `${100 / n}%`;
+  const move = "transition-[left,bottom] duration-300 ease-out motion-reduce:transition-none";
+
+  type Item = { id: number; slot: number; value: number; lifted: boolean };
+  const items: Item[] = s.array.flatMap((v, i) => (i === s.gap ? [] : [{ id: s.ids?.[i] ?? i, slot: i, value: v, lifted: false }]));
+  if (s.held && s.gap !== undefined) items.push({ id: s.held.id ?? -1, slot: s.gap, value: s.held.value, lifted: true });
+
+  const tone = (it: Item) => {
+    if (it.lifted) return "bg-violet";
+    if (s.write?.includes(it.slot)) return "bg-orange";
+    if (s.compare?.includes(it.slot)) return "bg-neon";
+    if (s.sorted?.includes(it.slot)) return "bg-mint";
+    return it.slot < split ? "bg-foreground/45" : "bg-foreground/15";
+  };
+
+  const cols = { gridTemplateColumns: `repeat(${n}, minmax(36px, 1fr))` };
+  const sortedAll = (s.sorted?.length ?? 0) >= s.array.length;
+
+  return (
+    <div className="min-w-fit">
+      <div className="relative" style={{ height: INS_LANE + INS_ROW, minWidth: n * 36 }}>
+        {/* the sorted "hand" */}
+        {split > 0 && (
+          <div
+            className={`absolute bottom-0 left-0 rounded-sm bg-sky/10 border-r-2 border-dashed border-sky transition-[width] duration-300 ease-out motion-reduce:transition-none`}
+            style={{ width: slotX(split), height: INS_ROW + 6 }}
+          />
+        )}
+
+        {/* the hole the key will drop into */}
+        {s.gap !== undefined && s.held && (
+          <div className={`absolute bottom-0 px-[3px] ${move}`} style={{ left: slotX(s.gap), width }}>
+            <div className="w-full rounded-t-[2px] border-2 border-b-0 border-dashed border-violet/70" style={{ height: h(s.held.value) }} />
+          </div>
+        )}
+
+        {items.map((it) => (
+          <div
+            key={it.id}
+            className={`absolute flex flex-col items-center justify-end px-[3px] ${move}`}
+            style={{ left: slotX(it.slot), width, bottom: it.lifted ? INS_ROW + 14 : 0 }}
+          >
+            {it.lifted && (
+              <span className="mb-0.5 font-mono text-[9px] uppercase tracking-widest text-violet">{s.held?.label}</span>
+            )}
+            <span className={`font-mono text-[11px] leading-[18px] ${it.lifted || it.slot < split || sortedAll ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+              {it.value}
+            </span>
+            <div className={`w-full rounded-t-[2px] transition-colors duration-200 ${tone(it)}`} style={{ height: h(it.value) }} />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid mt-1" style={cols}>
+        {s.array.map((_, i) => (
+          <div key={i} className="text-center font-mono text-[10px] text-muted-foreground">
+            {i}
+          </div>
+        ))}
+        <PointerRow s={s} count={s.array.length} />
+      </div>
+
+      {!sortedAll && split > 0 && (
+        <div className="grid mt-2 font-mono text-[10px] uppercase tracking-widest" style={cols}>
+          <div className="text-sky border-t border-sky pt-1 text-center" style={{ gridColumn: `span ${Math.min(split, n)}` }}>
+            sorted
+          </div>
+          {split < s.array.length && (
+            <div className="text-muted-foreground border-t border-border pt-1 text-center" style={{ gridColumn: `span ${s.array.length - split}` }}>
+              not yet looked at
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function parseNumbers(text: string, maxLen = 14) {
   const nums = text
     .split(/[\s,]+/)
@@ -328,9 +420,14 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
     if (nums.length >= 2) setData(nums);
   };
 
-  const legend: [string, string][] = [
+  const legend: [string, string][] = algorithm === "insertion" ? [
+    ["bg-violet", "key (in hand)"],
+    ["bg-neon", "comparing with key"],
+    ["bg-orange", "shifted right"],
+    ["bg-mint", "final position"],
+  ] : [
     ["bg-neon", "comparing"],
-    ["bg-orange", algorithm === "insertion" || algorithm === "merge" ? "writing" : "swapping"],
+    ["bg-orange", algorithm === "merge" ? "writing" : "swapping"],
     ...(algorithm === "quick" ? ([["bg-violet", "pivot"]] as [string, string][]) : []),
     ["bg-mint", "final position"],
   ];
@@ -341,7 +438,7 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
       frames={frames}
       code={JAVA_SORT[algorithm]}
       legend={legend}
-      render={(s) => <ArrayBars s={s} />}
+      render={(s) => (algorithm === "insertion" ? <InsertionBars s={s} /> : <ArrayBars s={s} />)}
       inputs={
         <div className="flex flex-wrap items-stretch gap-2">
           <input
