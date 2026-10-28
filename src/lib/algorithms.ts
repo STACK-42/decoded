@@ -31,6 +31,11 @@ export type ArrayState = {
   gap?: number; // a slot whose value has been lifted out (insertion sort's hole)
   split?: number; // indices < split form the sorted prefix (insertion sort's "hand")
   aux?: (number | null)[]; // merge sort's temporary buffer
+  auxIds?: (number | null)[]; // identity of each element sitting in aux
+  auxWrite?: number[]; // aux slots written this step
+  holes?: number[]; // array slots whose element has moved down into aux
+  cuts?: number[]; // split points b (between b - 1 and b) that have not been merged back yet
+  stack?: [number, number][]; // active recursive calls as [lo, hi], outermost first
   found?: number;
 };
 
@@ -158,8 +163,8 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   const writeLabel = algorithm === "insertion" || algorithm === "merge" ? "writes" : "swaps";
   const sorted = new Set<number>();
 
-  // insertion sort tracks which element sits in each slot so the view can slide them around
-  const ids = algorithm === "insertion" ? range(0, n - 1) : undefined;
+  // insertion and merge sort track which element sits in each slot so the view can slide them around
+  const ids = algorithm === "insertion" || algorithm === "merge" ? range(0, n - 1) : undefined;
 
   const push = (line: number, message: string, s: Omit<ArrayState, "array" | "sorted"> = {}) => {
     frames.push({
@@ -254,41 +259,57 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   }
 
   if (algorithm === "merge") {
+    const cuts = new Set<number>();
+    const stack: [number, number][] = [];
     const rec = (lo: number, hi: number) => {
+      stack.push([lo, hi]);
+      const at = () => ({ range: [lo, hi] as [number, number], cuts: [...cuts].sort((x, y) => x - y), stack: stack.map(([l, h]) => [l, h] as [number, number]) });
       if (hi - lo < 1) {
-        push(1, `[${a.slice(lo, hi + 1).join(", ")}] has one element — already sorted.`, { range: [lo, hi] });
+        push(1, `[${a.slice(lo, hi + 1).join(", ")}] has one element — already sorted.`, at());
+        stack.pop();
         return;
       }
       const mid = Math.floor((lo + hi) / 2);
-      push(2, `Split [${a.slice(lo, hi + 1).join(", ")}] into [${a.slice(lo, mid + 1).join(", ")}] and [${a.slice(mid + 1, hi + 1).join(", ")}].`, { range: [lo, hi], pointers: { lo, mid, hi } });
+      cuts.add(mid + 1);
+      push(2, `Split [${a.slice(lo, hi + 1).join(", ")}] into [${a.slice(lo, mid + 1).join(", ")}] and [${a.slice(mid + 1, hi + 1).join(", ")}].`, { ...at(), pointers: { lo, mid, hi } });
       rec(lo, mid);
       rec(mid + 1, hi);
       const tmp: (number | null)[] = new Array(hi - lo + 1).fill(null);
+      const tmpIds: (number | null)[] = new Array(hi - lo + 1).fill(null);
+      const holes: number[] = [];
       let i = lo;
       let j = mid + 1;
       let k = 0;
-      push(9, `Merge the two sorted halves [${a.slice(lo, mid + 1).join(", ")}] and [${a.slice(mid + 1, hi + 1).join(", ")}].`, { range: [lo, hi], aux: [...tmp], pointers: { i, j } });
+      // i or j that has run off the end of its half points at nothing worth drawing
+      const fronts = () => ({ ...(i <= mid && { i }), ...(j <= hi && { j }) });
+      const merging = () => ({ ...at(), aux: [...tmp], auxIds: [...tmpIds], holes: [...holes] });
+      const take = (from: number) => {
+        tmp[k] = a[from];
+        tmpIds[k] = ids![from];
+        holes.push(from);
+        k++;
+        stats.writes++;
+      };
+      push(9, `Merge the two sorted halves [${a.slice(lo, mid + 1).join(", ")}] and [${a.slice(mid + 1, hi + 1).join(", ")}].`, { ...merging(), pointers: fronts() });
       while (i <= mid && j <= hi) {
         stats.comparisons++;
         const takeLeft = a[i] <= a[j];
         const v = takeLeft ? a[i] : a[j];
-        push(takeLeft ? 12 : 13, `Compare the fronts: ${a[i]} vs ${a[j]}. Take ${v}.`, { range: [lo, hi], compare: [i, j], aux: [...tmp], pointers: { i, j } });
-        tmp[k++] = v;
-        stats.writes++;
-        if (takeLeft) i++;
-        else j++;
+        push(takeLeft ? 12 : 13, `Compare the fronts: ${a[i]} vs ${a[j]}. Take ${v}.`, { ...merging(), compare: [i, j], pointers: fronts() });
+        take(takeLeft ? i++ : j++);
+        push(takeLeft ? 12 : 13, `${v} moves down into tmp[${k - 1}].`, { ...merging(), auxWrite: [k - 1], pointers: fronts() });
       }
-      while (i <= mid) {
-        tmp[k++] = a[i++];
-        stats.writes++;
+      const left = k;
+      while (i <= mid) take(i++);
+      while (j <= hi) take(j++);
+      push(15, `One side ran out — copy the leftovers straight across.`, { ...merging(), auxWrite: range(left, hi - lo) });
+      for (let t = 0; t < tmp.length; t++) {
+        a[lo + t] = tmp[t] as number;
+        ids![lo + t] = tmpIds[t] as number;
       }
-      while (j <= hi) {
-        tmp[k++] = a[j++];
-        stats.writes++;
-      }
-      push(15, `One side ran out — copy the leftovers straight across.`, { range: [lo, hi], aux: [...tmp] });
-      for (let t = 0; t < tmp.length; t++) a[lo + t] = tmp[t] as number;
-      push(17, `Copy the merged run back: [${a.slice(lo, hi + 1).join(", ")}].`, { range: [lo, hi], write: range(lo, hi) });
+      cuts.delete(mid + 1);
+      push(17, `Copy the merged run back: [${a.slice(lo, hi + 1).join(", ")}].`, { ...at(), write: range(lo, hi) });
+      stack.pop();
     };
     rec(0, n - 1);
     range(0, n - 1).forEach((k) => sorted.add(k));

@@ -392,6 +392,133 @@ function InsertionBars({ s }: { s: ArrayState }) {
   );
 }
 
+/* Merge sort's picture: cut points open real gaps in the row (divide),
+   the call stack shows how deep the recursion is, and merging moves bars
+   down into a tmp lane aligned under their piece, then back up (combine).
+   Bars are keyed by s.ids / s.auxIds so they slide instead of repainting. */
+const MS_SLOT = 10; // width units per array slot (positions are % of the row)
+const MS_GAP = 4; // width units a cut opens between two pieces
+const MS_BAR = 96;
+const MS_LABEL = 18;
+const MS_ROW = MS_BAR + MS_LABEL;
+const MS_PTR = 20; // pointer labels under the row
+const MS_TMP_TOP = MS_ROW + MS_PTR + 30;
+
+function MergeBars({ s }: { s: ArrayState }) {
+  const n = s.array.length;
+  const aux = s.aux ?? [];
+  const max = Math.max(1, ...s.array, ...aux.map((v) => v ?? 0));
+  const h = (v: number) => Math.max(4, (v / max) * MS_BAR);
+  const cuts = s.cuts ?? [];
+  // unused gap space is split evenly on both sides so the row stays centred
+  const lead = ((Math.max(0, n - 1) - cuts.length) * MS_GAP) / 2;
+  const total = n * MS_SLOT + Math.max(0, n - 1) * MS_GAP;
+  const pct = (u: number) => `${(u / total) * 100}%`;
+  const x = (slot: number) => pct(lead + slot * MS_SLOT + cuts.filter((c) => c <= slot).length * MS_GAP);
+  const xu = (slot: number) => lead + slot * MS_SLOT + cuts.filter((c) => c <= slot).length * MS_GAP;
+  const slotW = pct(MS_SLOT);
+  const [lo, hi] = s.range ?? [0, n - 1];
+  const holes = new Set(s.holes ?? []);
+  const sortedAll = (s.sorted?.length ?? 0) >= n;
+  const baseCase = lo === hi && !s.aux;
+  const move = "transition-[left,top,width] duration-300 ease-out motion-reduce:transition-none";
+
+  type Item = { id: number; slot: number; value: number; inTmp: boolean; tone: string };
+  const items: Item[] = [];
+  s.array.forEach((v, i) => {
+    if (holes.has(i)) return;
+    const inRange = i >= lo && i <= hi;
+    const tone = s.write?.includes(i)
+      ? "bg-orange"
+      : s.compare?.includes(i)
+        ? "bg-neon"
+        : sortedAll
+          ? "bg-mint"
+          : baseCase && inRange
+            ? "bg-sky"
+            : inRange
+              ? "bg-foreground/45"
+              : "bg-foreground/15";
+    items.push({ id: s.ids?.[i] ?? i, slot: i, value: v, inTmp: false, tone });
+  });
+  aux.forEach((v, t) => {
+    if (v === null) return;
+    items.push({ id: s.auxIds?.[t] ?? n + t, slot: lo + t, value: v, inTmp: true, tone: s.auxWrite?.includes(t) ? "bg-orange" : "bg-foreground/45" });
+  });
+  // fixed DOM order, so React never re-inserts a node (that would skip its transition)
+  items.sort((p, q) => p.id - q.id);
+
+  const pointers: Record<number, string[]> = {};
+  Object.entries(s.pointers ?? {}).forEach(([k, v]) => (pointers[v] ??= []).push(k));
+
+  return (
+    <div className="min-w-fit">
+      <div className="mb-4 flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-h-[24px]">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">call stack</span>
+        {(s.stack ?? []).length === 0 && <span className="text-muted-foreground">(empty)</span>}
+        {(s.stack ?? []).map(([l, r], d, all) => (
+          <span key={d} className="inline-flex items-center gap-1.5">
+            {d > 0 && <span className="text-muted-foreground">›</span>}
+            <span
+              className={`px-1.5 py-0.5 rounded-sm border ${d === all.length - 1 ? "border-sky bg-sky/15 text-foreground" : "border-border text-muted-foreground"}`}
+            >
+              mergeSort({l}, {r})
+            </span>
+          </span>
+        ))}
+      </div>
+
+      <div className="relative" style={{ minWidth: n * 40, height: MS_TMP_TOP + MS_ROW }}>
+        {/* the tmp lane, always drawn so the layout never jumps */}
+        <div className="absolute inset-x-0 rounded-sm bg-orange/[0.04] border border-dashed border-orange/25" style={{ top: MS_TMP_TOP - 22, bottom: -4 }} />
+        <div className={`absolute left-2 font-mono text-[10px] uppercase tracking-widest ${s.aux ? "text-orange" : "text-muted-foreground"}`} style={{ top: MS_TMP_TOP - 18 }}>
+          tmp {s.aux ? `[${s.aux.length}]` : "(empty until a merge)"}
+        </div>
+
+        {/* the piece the current call owns */}
+        {!sortedAll && (
+          <div className={`absolute h-[2px] bg-sky ${move}`} style={{ left: x(lo), width: pct(xu(hi) + MS_SLOT - xu(lo)), top: MS_ROW + 1 }} />
+        )}
+
+        {/* slots whose bar has gone down into tmp */}
+        {[...holes].map((i) => (
+          <div key={`hole-${i}`} className="absolute px-[3px]" style={{ left: x(i), width: slotW, top: MS_ROW - h(s.array[i]) }}>
+            <div className="w-full rounded-t-[2px] border border-b-0 border-dashed border-foreground/30" style={{ height: h(s.array[i]) }} />
+          </div>
+        ))}
+
+        {/* the tmp buffer, one slot under each slot of the piece */}
+        {aux.map((v, t) => (
+          <div key={`tmp-${t}`} className="absolute px-[3px]" style={{ left: x(lo + t), width: slotW, top: MS_TMP_TOP + MS_ROW - 2 }}>
+            <div className={`w-full h-[2px] ${v === null ? "bg-orange/40" : "bg-orange"}`} />
+          </div>
+        ))}
+
+        {items.map((it) => (
+          <div
+            key={it.id}
+            className={`absolute flex flex-col items-center justify-end px-[3px] ${move}`}
+            style={{ left: x(it.slot), width: slotW, top: (it.inTmp ? MS_TMP_TOP : 0) + MS_ROW - h(it.value) - MS_LABEL }}
+          >
+            <span className="font-mono text-[11px] leading-[18px] text-foreground">{it.value}</span>
+            <div className={`w-full rounded-t-[2px] transition-colors duration-200 ${it.tone}`} style={{ height: h(it.value) }} />
+          </div>
+        ))}
+
+        {Object.entries(pointers).map(([slot, names]) => (
+          <div
+            key={names.join(",")}
+            className={`absolute text-center font-mono text-[10px] text-sky ${move}`}
+            style={{ left: x(Number(slot)), width: slotW, top: MS_ROW + 5 }}
+          >
+            {names.join(",")}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function parseNumbers(text: string, maxLen = 14) {
   const nums = text
     .split(/[\s,]+/)
@@ -423,14 +550,19 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
     if (nums.length >= 2) setData(nums);
   };
 
-  const legend: [string, string][] = algorithm === "insertion" ? [
+  const legend: [string, string][] = algorithm === "merge" ? [
+    ["bg-sky", "base case"],
+    ["bg-neon", "comparing fronts"],
+    ["bg-orange", "just moved"],
+    ["bg-mint", "final position"],
+  ] : algorithm === "insertion" ? [
     ["bg-violet", "key (in hand)"],
     ["bg-neon", "comparing with key"],
     ["bg-orange", "shifted right"],
     ["bg-mint", "final position"],
   ] : [
     ["bg-neon", "comparing"],
-    ["bg-orange", algorithm === "merge" ? "writing" : "swapping"],
+    ["bg-orange", "swapping"],
     ...(algorithm === "quick" ? ([["bg-violet", "pivot"]] as [string, string][]) : []),
     ["bg-mint", "final position"],
   ];
@@ -441,7 +573,9 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
       frames={frames}
       code={JAVA_SORT[algorithm]}
       legend={legend}
-      render={(s) => (algorithm === "insertion" ? <InsertionBars s={s} /> : <ArrayBars s={s} />)}
+      render={(s) =>
+        algorithm === "insertion" ? <InsertionBars s={s} /> : algorithm === "merge" ? <MergeBars s={s} /> : <ArrayBars s={s} />
+      }
       inputs={
         <div className="flex flex-wrap items-stretch gap-2">
           <input
