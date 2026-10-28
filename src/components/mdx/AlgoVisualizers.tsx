@@ -392,10 +392,12 @@ function InsertionBars({ s }: { s: ArrayState }) {
   );
 }
 
-/* Merge sort's picture: cut points open real gaps in the row (divide),
-   the call stack shows how deep the recursion is, and merging moves bars
-   down into a tmp lane aligned under their piece, then back up (combine).
-   Bars are keyed by s.ids / s.auxIds so they slide instead of repainting. */
+/* Divide-and-conquer picture for merge and quick sort: cut points open
+   real gaps in the row (divide) and the call stack shows how deep the
+   recursion is. Merge sort also gets a tmp lane under its piece that bars
+   move down into and back up from (combine); quick sort gets a pivot line
+   and spans for what each pointer has confirmed. Bars are keyed by
+   s.ids / s.auxIds so they slide instead of repainting. */
 const MS_SLOT = 10; // width units per array slot (positions are % of the row)
 const MS_GAP = 4; // width units a cut opens between two pieces
 const MS_BAR = 96;
@@ -404,7 +406,7 @@ const MS_ROW = MS_BAR + MS_LABEL;
 const MS_PTR = 20; // pointer labels under the row
 const MS_TMP_TOP = MS_ROW + MS_PTR + 30;
 
-function MergeBars({ s }: { s: ArrayState }) {
+function PieceBars({ s, call, buffer }: { s: ArrayState; call: string; buffer: boolean }) {
   const n = s.array.length;
   const aux = s.aux ?? [];
   const max = Math.max(1, ...s.array, ...aux.map((v) => v ?? 0));
@@ -432,13 +434,15 @@ function MergeBars({ s }: { s: ArrayState }) {
       ? "bg-orange"
       : s.compare?.includes(i)
         ? "bg-neon"
-        : sortedAll
-          ? "bg-mint"
+        : s.pivot === i
+          ? "bg-violet"
           : baseCase && inRange
             ? "bg-sky"
-            : inRange
-              ? "bg-foreground/45"
-              : "bg-foreground/15";
+            : sortedAll || s.sorted?.includes(i)
+              ? "bg-mint"
+              : inRange
+                ? "bg-foreground/45"
+                : "bg-foreground/15";
     items.push({ id: s.ids?.[i] ?? i, slot: i, value: v, inTmp: false, tone });
   });
   aux.forEach((v, t) => {
@@ -462,18 +466,40 @@ function MergeBars({ s }: { s: ArrayState }) {
             <span
               className={`px-1.5 py-0.5 rounded-sm border ${d === all.length - 1 ? "border-sky bg-sky/15 text-foreground" : "border-border text-muted-foreground"}`}
             >
-              mergeSort({l}, {r})
+              {call}({l}, {r})
             </span>
           </span>
         ))}
       </div>
 
-      <div className="relative" style={{ minWidth: n * 40, height: MS_TMP_TOP + MS_ROW }}>
+      <div className="relative" style={{ minWidth: n * 40, height: buffer ? MS_TMP_TOP + MS_ROW : MS_ROW + 48 }}>
         {/* the tmp lane, always drawn so the layout never jumps */}
-        <div className="absolute inset-x-0 rounded-sm bg-orange/[0.04] border border-dashed border-orange/25" style={{ top: MS_TMP_TOP - 22, bottom: -4 }} />
-        <div className={`absolute left-2 font-mono text-[10px] uppercase tracking-widest ${s.aux ? "text-orange" : "text-muted-foreground"}`} style={{ top: MS_TMP_TOP - 18 }}>
-          tmp {s.aux ? `[${s.aux.length}]` : "(empty until a merge)"}
-        </div>
+        {buffer && (
+          <>
+            <div className="absolute inset-x-0 rounded-sm bg-orange/[0.04] border border-dashed border-orange/25" style={{ top: MS_TMP_TOP - 22, bottom: -4 }} />
+            <div className={`absolute left-2 font-mono text-[10px] uppercase tracking-widest ${s.aux ? "text-orange" : "text-muted-foreground"}`} style={{ top: MS_TMP_TOP - 18 }}>
+              tmp {s.aux ? `[${s.aux.length}]` : "(empty until a merge)"}
+            </div>
+          </>
+        )}
+
+        {/* quick sort: everything under the line belongs left of the pivot, everything over it right */}
+        {s.pivot !== undefined && (
+          <div
+            className={`absolute z-10 border-t border-dashed border-violet pointer-events-none ${move}`}
+            style={{ left: x(lo), width: pct(xu(hi) + MS_SLOT - xu(lo)), top: MS_ROW - h(s.array[s.pivot]) }}
+          />
+        )}
+
+        {(s.marks ?? []).map((m) => (
+          <div
+            key={m.label}
+            className={`absolute border-t-2 border-violet/60 text-center font-mono text-[10px] text-violet ${move}`}
+            style={{ left: x(m.from), width: pct(xu(m.to) + MS_SLOT - xu(m.from)), top: MS_ROW + 24 }}
+          >
+            {m.label}
+          </div>
+        ))}
 
         {/* the piece the current call owns */}
         {!sortedAll && (
@@ -555,6 +581,12 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
     ["bg-neon", "comparing fronts"],
     ["bg-orange", "just moved"],
     ["bg-mint", "final position"],
+  ] : algorithm === "quick" ? [
+    ["bg-violet", "pivot"],
+    ["bg-neon", "checking"],
+    ["bg-orange", "swapped"],
+    ["bg-sky", "base case"],
+    ["bg-mint", "final position"],
   ] : algorithm === "insertion" ? [
     ["bg-violet", "key (in hand)"],
     ["bg-neon", "comparing with key"],
@@ -563,7 +595,6 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
   ] : [
     ["bg-neon", "comparing"],
     ["bg-orange", "swapping"],
-    ...(algorithm === "quick" ? ([["bg-violet", "pivot"]] as [string, string][]) : []),
     ["bg-mint", "final position"],
   ];
 
@@ -574,7 +605,11 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
       code={JAVA_SORT[algorithm]}
       legend={legend}
       render={(s) =>
-        algorithm === "insertion" ? <InsertionBars s={s} /> : algorithm === "merge" ? <MergeBars s={s} /> : <ArrayBars s={s} />
+        algorithm === "insertion" ? <InsertionBars s={s} /> : algorithm === "merge" ? (
+          <PieceBars s={s} call="mergeSort" buffer />
+        ) : algorithm === "quick" ? (
+          <PieceBars s={s} call="quickSort" buffer={false} />
+        ) : <ArrayBars s={s} />
       }
       inputs={
         <div className="flex flex-wrap items-stretch gap-2">
