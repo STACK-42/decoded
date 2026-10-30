@@ -31,6 +31,47 @@ The generator in this visualizer is a toy, a small linear-feedback shift registe
 
 If the key stream is truly random, as long as the message, and never reused, you have the **one-time pad**, which is provably unbreakable. It's rarely practical, because sharing that much key is as hard as sharing the message.
 
+## In Python
+
+XOR is `^` in Python, and it works on whole NumPy arrays. The `bytes` type lets you run the cipher on real text:
+
+```python
+import numpy as np
+
+m = np.array([0, 1, 1, 0])
+k = np.array([1, 1, 0, 0])
+c = m ^ k
+
+print(c.tolist())  # [1, 0, 1, 0]
+print((c ^ k).tolist())  # [0, 1, 1, 0]
+
+text = b"HI"
+key = bytes([0x5A, 0xC3])
+cipher = bytes(t ^ s for t, s in zip(text, key))
+
+print(bytes(t ^ s for t, s in zip(cipher, key)))  # b'HI'
+```
+
+## In machine learning
+
+XOR has a special place in ML history. A single-layer perceptron draws one straight line through its inputs, and no straight line can separate XOR's outputs. Minsky and Papert's 1969 book on perceptrons discussed this limit. Adding a hidden layer solves it, and this is why networks need depth and non-linearity:
+
+```python
+import numpy as np
+
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+step = lambda v: (v > 0).astype(int)
+
+h = step(X @ np.array([1, 1]) - 0.5)
+g = step(X @ np.array([1, 1]) - 1.5)
+
+print(step(h - g - 0.5).tolist())  # [0, 1, 1, 0]
+```
+
+Here `h` is OR and `g` is AND, two hidden units, and the output means "OR but not AND", which is XOR.
+
+Random bits matter here as well. Good training needs pseudorandom numbers, but not cryptographic ones: ML libraries choose fast generators with good statistics, while a stream cipher also needs a generator that nobody can predict.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

@@ -63,6 +63,32 @@ There are 12 valid values for $k_1$, because $\phi(26) = 12$, and 26 for $k_2$. 
 Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inverse of 11 modulo 26 is 19, so you can check your answer by decrypting with $19(c - 23)$.
 </Callout>
 
+## In Python
+
+NumPy applies the formula to a whole message at once, and `pow` supplies the inverse:
+
+```python
+import numpy as np
+
+def to_nums(text):
+    return np.frombuffer(text.encode(), dtype=np.uint8).astype(int) - 65
+
+def to_text(nums):
+    return "".join(chr(n + 65) for n in nums)
+
+print(to_text((7 * to_nums("SECURITY") + 21) % 26))  # RXJFKZYH
+print(to_text(pow(7, -1, 26) * (to_nums("VLXIJH") - 21) % 26))  # AGENCY
+print(len(set((13 * np.arange(26) + 5) % 26)))  # 2
+```
+
+The last line shows the bad key: 26 letters collapse onto 2 outputs.
+
+## In machine learning
+
+The formula $k_1 m + k_2$ has the same shape as a neural network layer, $wx + b$. That's where the word "affine" comes from in both fields: a linear map followed by a shift. In ML, it's why `b` is called the bias, and why a layer without it is linear but not affine.
+
+The collapse you saw with a bad $k_1$ is also the same idea as a singular matrix from the determinants lesson. Both lose information, so neither can be undone. Most network layers are happy to discard information like this. Normalizing flows can't, because they must be able to run backwards, so they're built from layers that are guaranteed to be invertible.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>
