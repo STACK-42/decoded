@@ -1,0 +1,83 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Jumps and Loops
+
+Assembly has no `if`, `else`, `while` or `for`. It has only one thing: a jump, which [overwrites the instruction pointer](/courses/computer-organization/machine-cycle). Every control structure you've ever written comes down to that.
+
+## An if statement
+
+The pattern takes two instructions: `CMP` sets the [flags](/courses/microprocessors/flags), and a conditional jump reads them. Here's `if (AL == 5) BL = 1; else BL = 2;`.
+
+<AsmRunner source={`MOV AL, 5
+CMP AL, 5       ; works out AL - 5 and keeps only the flags
+JE equal        ; jump if ZF = 1
+MOV BL, 2       ; the else part
+JMP done
+equal:
+MOV BL, 1       ; the if part
+done:
+NOP`} />
+
+Edit the first line to `MOV AL, 7` and step through it again. Notice how a different path gets taken.
+
+## Which jump to use
+
+There are separate jumps for signed and unsigned numbers. **A**bove and **B**elow are for unsigned, while **G**reater and **L**ess are for signed.
+
+| Meaning | Unsigned | Signed |
+|---|---|---|
+| Greater | `JA` | `JG` |
+| Greater or equal | `JAE` | `JGE` |
+| Less | `JB` | `JL` |
+| Less or equal | `JBE` | `JLE` |
+| Equal | `JE` | `JE` |
+| Not equal | `JNE` | `JNE` |
+
+The bits `11001000` compared with `01100100` are above it as unsigned (200 is more than 100), but less than it as signed (-56 is less than 100). Try that in the editor by swapping `JA` for `JG`:
+
+<AsmRunner source={`MOV AL, 200     ; or -56, depending on how you read it
+CMP AL, 100
+JA  bigger      ; unsigned test. Try JG here
+MOV BL, 0
+JMP done
+bigger:
+MOV BL, 1
+done:
+NOP`} />
+
+Others test one flag directly: `JC`/`JNC` (carry), `JZ`/`JNZ` (zero), `JS`/`JNS` (sign), `JO`/`JNO` (overflow), `JP`/`JNP` (parity).
+
+## Loops
+
+The `LOOP` instruction does three things at once: it subtracts 1 from CX, checks whether CX is 0, and jumps back if it isn't. So you set the count in CX first. This adds 5 + 4 + 3 + 2 + 1:
+
+<AsmRunner source={`MOV AX, 0
+MOV CX, 5       ; loop 5 times
+again:
+ADD AX, CX
+LOOP again      ; CX = CX - 1, repeat until it's 0`} />
+
+## Walking an array
+
+Put it together with [addressing modes](/courses/microprocessors/addressing-modes). This finds the largest number in an array, using SI to step through it.
+
+<AsmRunner watch source={`nums db 12, 45, 7, 88, 23
+LEA SI, nums
+MOV CX, 5       ; 5 elements
+MOV AL, 0       ; biggest so far
+next:
+CMP AL, [SI]
+JAE keep        ; AL is already bigger
+MOV AL, [SI]    ; new biggest
+keep:
+INC SI          ; move to the next element
+LOOP next`} />
+
+<Callout tone="orange" label="An exercise">
+Use the editor to change this program so that it finds the smallest number. You'll need to change the starting value and one jump.
+</Callout>
+
+## String instructions
+
+Moving through memory is so common that the 8086 has special instructions for it. They use SI and DI automatically, adjust them afterward (forward or backward according to [DF](/courses/microprocessors/flags)), and repeat with a `REP` prefix, using CX as the count. For example, `REP MOVSB` copies CX bytes from DS:SI to ES:DI. `CMPSB` compares strings and `SCASB` searches for the value in AL.

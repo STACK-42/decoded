@@ -1,0 +1,61 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { FlynnTaxonomy, SimdDemo, AmdahlLab } from "@/components/mdx/ArchitectureVisualizers";
+
+# Parallel Processing
+
+Around the mid-2000s, clock speeds stopped rising, because faster chips were getting too hot to cool. But transistors kept getting smaller. So chipmakers used them differently: rather than one faster processor, they built several. That's why your phone has many cores.
+
+**Parallel processing** breaks a problem into parts that can run at the same time on different processors. The opposite is **serial processing**: one task at a time.
+
+## Flynn's taxonomy
+
+Flynn sorted computers by a simple question: how many instruction streams and data streams are there? Four kinds result.
+
+<FlynnTaxonomy />
+
+## SIMD: one instruction, many values
+
+Imagine brightening an image. It's the same calculation on millions of pixels, so why fetch and decode the same instruction millions of times? **SIMD** runs it once on a whole group of values.
+
+<SimdDemo />
+
+There are two common designs. An **array processor** has many processing elements working in step. A **vector processor** uses a long pipeline fed by whole arrays. Your laptop's CPU has SIMD instructions too (SSE and AVX on x86, NEON on ARM), and a **GPU** is largely built around this idea, which is why GPUs took over machine learning: it's mostly matrix arithmetic.
+
+## MIMD: independent workers
+
+**MIMD** is several complete processors, each running its own instructions. Everything from a phone to a data centre works this way.
+
+- **Multicore**: multiple CPUs on one chip, usually sharing some [cache](/courses/computer-architecture/cache-policies) and main memory.
+- **Multiprocessor**: several chips in one computer. In **symmetric** systems they're all equal, while in **asymmetric** systems one is in charge.
+- **Cluster**: many separate computers connected by a network. There's no shared memory, so they send messages to each other.
+
+**Hyper-threading** (simultaneous multithreading) is a cheaper trick. One physical core keeps two sets of registers, so it can look like two cores. When one thread is waiting on memory, the other can use the idle hardware. An Intel Core i7 with 8 cores can run 16 threads this way.
+
+## Levels of parallelism
+
+Parallelism happens at several levels, often at once:
+
+| Level | What runs in parallel | Who arranges it |
+|---|---|---|
+| Bit | Bits in a word: 64-bit is faster than 8-bit | The hardware |
+| Instruction | Stages of a [pipeline](/courses/computer-architecture/pipelining), superscalar execution | The hardware or compiler |
+| Data | One operation over many values (SIMD) | The programmer or compiler |
+| Task | Different functions on different cores | The programmer |
+
+## The limit: Amdahl's law
+
+If 8 cores make it 8 times faster, why not use a million? Because some of nearly every program can't be split: reading the input, say, or combining the results. With $p$ the fraction that can run in parallel, on $n$ processors:
+
+$$
+\text{speedup} = \frac{1}{(1 - p) + \dfrac{p}{n}}
+$$
+
+Set the parallel part to 90% and move the cores up to 128. Watch the orange bar, which never shrinks.
+
+<AmdahlLab />
+
+Even with 90% parallel code, you can never go past 10× speedup, however many cores you add. That 10% serial part sets the ceiling.
+
+<Callout tone="violet" label="The whole course in one idea">
+Pipelining, caches and parallelism all do the same thing: they make the common case fast by arranging work so that less time is wasted waiting. You can now open up any modern chip's spec sheet and know what its parts are for.
+</Callout>

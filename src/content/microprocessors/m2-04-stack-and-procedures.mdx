@@ -1,0 +1,69 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# The Stack and Procedures
+
+A **stack** is a pile of plates: you can only put a plate on top, and only take the top one off. The last item in is the first out, which is called **LIFO** (last in, first out) or FILO.
+
+On the 8086, the stack lives in memory, in the [stack segment](/courses/microprocessors/segments-and-addresses). SS says where the segment is, and **SP** says where the top is.
+
+## PUSH and POP
+
+- `PUSH AX`: SP goes **down** by 2, and AX is written there.
+- `POP BX`: the top value is read into BX, and SP goes **up** by 2.
+
+The stack grows downward in memory, toward lower addresses. It's odd at first, but it means code and data can grow up from the bottom while the stack grows down from the top. Each entry is 16 bits, and that's why the step is 2.
+
+Watch SP as it goes.
+
+<AsmRunner stack source={`MOV AX, 11h
+MOV BX, 22h
+PUSH AX
+PUSH BX
+MOV AX, 0
+MOV BX, 0
+POP AX          ; gets 22h, the last one pushed
+POP BX          ; gets 11h`} />
+
+Notice that the values came back swapped. That's a handy way to exchange two registers, and it shows the LIFO order.
+
+## CALL and RET
+
+A **procedure** (or function) is code you can run from many places. But when it finishes, how does it know where to return to? It can't be a fixed `JMP`, since the caller changes each time.
+
+The solution is the stack:
+
+- `CALL f` pushes the address of the next instruction, then jumps to `f`.
+- `RET` pops that address back into IP.
+
+<AsmRunner stack source={`MOV AX, 3
+CALL double
+CALL double     ; AX is 12 after this
+HLT
+
+double:
+ADD AX, AX
+RET`} />
+
+Since the return addresses go on a stack, one procedure can call another, and the returns happen in the right order. This is also how recursion works. And a recursive function that never stops overflows this very stack, which is where the name **stack overflow** comes from.
+
+## Saving registers
+
+A procedure shares registers with its caller, so it could accidentally overwrite values the caller is still using. The convention is to save anything you'll use on the way in, and restore it on the way out, in reverse order.
+
+<AsmRunner stack source={`MOV CX, 5
+CALL work
+HLT             ; CX is still 5
+
+work:
+PUSH CX         ; save the caller's value
+MOV CX, 100     ; use CX for ourselves
+ADD AX, CX
+POP CX          ; restore it
+RET`} />
+
+<Callout tone="orange" label="Security">
+Local variables in C sit on the stack too, close to the return address. If a program writes past the end of a local array, it can overwrite that address, so `RET` jumps wherever an attacker chooses. This is a **buffer overflow**, one of the most famous bugs in computing.
+</Callout>
+
+Compilers use **BP** to find a procedure's arguments and local variables. SP moves around as things are pushed, but BP stays put, so `[BP+4]` always means the same thing during the call.

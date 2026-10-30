@@ -143,11 +143,18 @@
     color: hsl(var(--reading-fg));
     font-size: 18px;
     line-height: 1.75;
+    overflow-wrap: break-word;
+  }
+  /* a wide equation scrolls inside its own box instead of widening the page */
+  .prose-reading .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25em;
   }
   .prose-reading h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(32px, 5vw, 52px);
+    font-size: clamp(30px, 3.6vw, 44px);
     line-height: 1.05;
     margin: 2.5rem 0 1.25rem;
     letter-spacing: -0.01em;
@@ -205,6 +212,8 @@
   /* Lift code blocks off the page background in dark mode */
   .dark .prose-reading pre { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
   .prose-reading ul, .prose-reading ol { margin: 0 0 1.25rem 1.5rem; }
+  .prose-reading ul:not(:where(.not-prose, .not-prose *)) { list-style: disc; }
+  .prose-reading ol:not(:where(.not-prose, .not-prose *)) { list-style: decimal; }
   .prose-reading li { margin-bottom: .5rem; }
   .prose-reading blockquote {
     border-left: 3px solid hsl(var(--orange));

@@ -1,0 +1,47 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
+
+# Logic Gates
+
+A gate is a tiny circuit that takes one or more bits in and gives one bit out. That's the only thing it does. Everything a computer does comes from wiring huge numbers of these together.
+
+Inside, a gate is built from transistors, which are switches controlled by electricity. The easiest way to understand gates is to picture real switches on a wire powering a lamp. Two switches in a row (series) give you AND. Two side by side (parallel) give you OR.
+
+Click the input boxes in the circuit, and try every gate. The highlighted row of the table follows you.
+
+<GatePlayground />
+
+## The gates at a glance
+
+| Gate | Output is 1 when | Expression |
+|---|---|---|
+| NOT | The input is 0 | $X = A'$ |
+| BUF | The input is 1 | $X = A$ |
+| AND | All inputs are 1 | $X = AB$ |
+| OR | At least one input is 1 | $X = A + B$ |
+| NAND | Not all inputs are 1 | $X = (AB)'$ |
+| NOR | No input is 1 | $X = (A + B)'$ |
+| XOR | The inputs differ | $X = A \oplus B = A'B + AB'$ |
+| XNOR | The inputs match | $X = (A \oplus B)' = A'B' + AB$ |
+
+The small circle (a **bubble**) on a gate's symbol means "invert here". NAND is an AND with a bubble on its output, and an inverter is a buffer with a bubble.
+
+<Callout tone="neon" label="Reading the notation">
+In Boolean notation, $AB$ means AND, $A + B$ means OR and $A'$ means NOT. Don't read + as adding: here, $1 + 1 = 1$, because "this or that" is simply true.
+</Callout>
+
+## What each one is good for
+
+**AND** works as a door. Treat one input as data and the other as a control. With the control at 1, the data passes. With it at 0, the output is stuck at 0. This single idea is behind [the latch's control input](/courses/logic-design/d-latch-and-clock) and [the multiplexer](/courses/logic-design/multiplexers).
+
+**XOR** is a controllable inverter: $A \oplus 0 = A$ and $A \oplus 1 = A'$. It also adds two bits while ignoring the carry, which is half of [an adder](/courses/logic-design/adders).
+
+**XNOR** tests whether two bits are equal, so [comparators](/courses/logic-design/comparators-decoders-encoders) use it.
+
+**Buffers** do no logic. They strengthen a signal that has to travel a long way or drive many other gates.
+
+A row of inverters is also all it takes to form a [1's complement](/courses/logic-design/binary-arithmetic): one inverter per bit.
+
+## Gates on a chip
+
+Gates are sold and built as **integrated circuits**: a small piece of silicon holding the gates, in a package with metal pins. A basic chip might hold four NAND gates. A modern CPU holds billions of transistors on the same principle. This course stays at the level of the gates, and the [Computer Organization course](/courses/computer-organization/inside-the-cpu) shows you the same thing from the top down.

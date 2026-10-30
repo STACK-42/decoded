@@ -1,0 +1,299 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { RaceCondition, PetersonDemo, SpinlockDemo } from "@/components/mdx/OsVisualizers";
+
+# Race Conditions and the Critical-Section Problem
+
+Two threads add 1 to the same number at the same time. You'd expect it to go up by 2. Sometimes it only goes up by 1. Bugs like this appear once in a million runs, vanish when you look for them, and have crashed real systems. This lesson shows exactly how they happen, and the first tools for preventing them.
+
+## Background
+
+- Processes can run **concurrently**. A process may be **interrupted at any time**, partway through what it's doing.
+- **Concurrent access to shared data** may leave that data **inconsistent**.
+- Keeping data consistent needs mechanisms that make **cooperating processes** run in an **orderly** way.
+
+### The problem, illustrated
+
+Remember the bounded-buffer solution from the IPC lesson? It could only use `BUFFER_SIZE − 1` slots. Suppose we fix that with an integer **`counter`** that keeps track of the number of full slots:
+
+- `counter` starts at **0**,
+- the **producer increments** it after adding an item,
+- the **consumer decrements** it after removing one.
+
+**Producer:**
+
+```c
+while (true) {
+    /* produce an item in next_produced */
+    while (counter == BUFFER_SIZE)
+        ;   /* do nothing */
+    buffer[in] = next_produced;
+    in = (in + 1) % BUFFER_SIZE;
+    counter++;
+}
+```
+
+**Consumer:**
+
+```c
+while (true) {
+    while (counter == 0)
+        ;   /* do nothing */
+    next_consumed = buffer[out];
+    out = (out + 1) % BUFFER_SIZE;
+    counter--;
+    /* consume the item in next_consumed */
+}
+```
+
+Each piece looks correct on its own. Together, they're broken.
+
+## Race condition
+
+`counter++` looks like one step, but the CPU actually does it in **three machine instructions**:
+
+```text
+register1 = counter
+register1 = register1 + 1
+counter = register1
+```
+
+And `counter--` is:
+
+```text
+register2 = counter
+register2 = register2 - 1
+counter = register2
+```
+
+If the CPU switches between the producer and consumer **in the middle** of these, the instructions **interleave**. With `counter = 5`:
+
+| Step | Who | Instruction | Result |
+| --- | --- | --- | --- |
+| S0 | producer | `register1 = counter` | register1 = 5 |
+| S1 | producer | `register1 = register1 + 1` | register1 = 6 |
+| S2 | consumer | `register2 = counter` | register2 = 5 |
+| S3 | consumer | `register2 = register2 - 1` | register2 = 4 |
+| S4 | producer | `counter = register1` | counter = 6 |
+| S5 | consumer | `counter = register2` | **counter = 4** |
+
+One item was produced and one consumed, so `counter` should still be **5**. It ends at **4**. Swap S4 and S5 and it ends at **6**. This is a **race condition**: the result depends on the exact order the instructions happen to run in.
+
+You be the CPU scheduler:
+
+<RaceCondition />
+
+## The critical-section problem
+
+Consider a system of **n processes** $\{P_0, P_1, \dots, P_{n-1}\}$.
+
+- Each process has a **critical section**: a segment of code where it changes **common variables**, updates a table, writes a file, and so on.
+- When one process is in its critical section, **no other** process may be in its critical section.
+- The **critical-section problem** is to design a **protocol** that guarantees this.
+
+Each process must **ask permission** to enter its critical section in an **entry section**. The critical section may be followed by an **exit section**, then the **remainder section**. The general structure of process $P_i$:
+
+```text
+do {
+    entry section
+        critical section
+    exit section
+        remainder section
+} while (true);
+```
+
+### What a solution must guarantee
+
+1. **Mutual exclusion.** If process $P_i$ is in its critical section, **no other** process can be in its critical section.
+2. **Progress.** If no process is in its critical section, and some processes want to enter, then the choice of who enters next **can't be postponed forever**.
+3. **Bounded waiting.** After a process asks to enter its critical section, there's a **limit** on how many times other processes can enter theirs before it gets its turn.
+
+We **assume** each process runs at a **nonzero speed**, but make **no assumption about the relative speed** of the n processes.
+
+<Callout tone="mint" label="In plain words">
+**Mutual exclusion**: one at a time. **Progress**: if the room is empty and someone wants in, someone gets in. **Bounded waiting**: nobody waits forever while others keep cutting in line.
+</Callout>
+
+## Peterson's solution
+
+Peterson's solution is a good **algorithmic** description of how to solve the problem, for **two processes**, $P_i$ and $P_j$.
+
+- It assumes the **load** and **store** instructions are **atomic**: they can't be interrupted.
+- The two processes share two variables:
+
+```c
+int turn;
+boolean flag[2];
+```
+
+- **`turn`** says **whose turn** it is to enter the critical section.
+- **`flag`** says whether a process is **ready** to enter: `flag[i] = true` means $P_i$ is ready.
+
+The algorithm for process $P_i$:
+
+```c
+do {
+    flag[i] = true;                  /* entry section: I want in...     */
+    turn = j;                        /* ...but you go first             */
+    while (flag[j] && turn == j);    /* wait while you want in AND it's your turn */
+
+        /* critical section */
+
+    flag[i] = false;                 /* exit section: I'm done          */
+
+        /* remainder section */
+} while (true);
+```
+
+The trick is the **politeness**: each process says "I want in" and then immediately gives the turn **away**. If both try at once, both write `turn`, and whoever wrote it **last** loses. So exactly one gets in.
+
+It's provable that:
+
+1. **mutual exclusion** is preserved,
+2. the **progress** requirement is satisfied,
+3. the **bounded-waiting** requirement is met.
+
+Try to break it. You control the scheduler:
+
+<PetersonDemo />
+
+## Synchronization hardware
+
+Many systems give **hardware support** for critical-section code. All the solutions below are based on the idea of **locking**: protect critical regions with **locks**.
+
+- **Uniprocessors** could simply **disable interrupts**: the running code then can't be preempted.
+  - This is generally **too inefficient on multiprocessors**: the message to disable interrupts has to go to every CPU.
+  - OSs that use it are **not broadly scalable**.
+- Modern machines provide special **atomic** (non-interruptible) hardware instructions that either:
+  - **test** a memory word and **set** its value, or
+  - **swap** the contents of two memory words.
+
+### test_and_set
+
+```c
+boolean test_and_set(boolean *target) {
+    boolean rv = *target;
+    *target = TRUE;
+    return rv;
+}
+```
+
+It returns the **old value** and sets the target to `TRUE`, all as **one uninterruptible step**.
+
+**Solution using test_and_set():** a shared boolean `lock`, initialized to `FALSE`.
+
+```c
+do {
+    while (test_and_set(&lock))
+        ;   /* do nothing */
+        /* critical section */
+    lock = false;
+        /* remainder section */
+} while (true);
+```
+
+### compare_and_swap
+
+```c
+int compare_and_swap(int *value, int expected, int new_value) {
+    int temp = *value;
+    if (*value == expected)
+        *value = new_value;
+    return temp;
+}
+```
+
+**Solution using compare_and_swap():** a shared integer `lock`, initialized to `0`.
+
+```c
+do {
+    while (compare_and_swap(&lock, 0, 1) != 0)
+        ;   /* do nothing */
+        /* critical section */
+    lock = 0;
+        /* remainder section */
+} while (true);
+```
+
+<SpinlockDemo />
+
+Both simple solutions give **mutual exclusion**, but they **don't satisfy bounded waiting**: an unlucky process could lose the race for the lock every single time.
+
+### Bounded waiting with test_and_set
+
+This version fixes it. When a process leaves, it **scans** the other processes in order, $i+1, i+2, \dots$, and **hands the critical section directly** to the first one that's waiting. So any waiting process gets in within $n - 1$ turns.
+
+```c
+do {
+    waiting[i] = true;
+    key = true;
+    while (waiting[i] && key)
+        key = test_and_set(&lock);
+    waiting[i] = false;
+
+        /* critical section */
+
+    j = (i + 1) % n;
+    while ((j != i) && !waiting[j])
+        j = (j + 1) % n;
+    if (j == i)
+        lock = false;         /* nobody waiting: release the lock */
+    else
+        waiting[j] = false;   /* hand the critical section to P_j */
+
+        /* remainder section */
+} while (true);
+```
+
+## Mutex locks
+
+The previous solutions are **complicated**, and generally **out of reach** for application programmers. So OS designers build **software tools** to solve the critical-section problem.
+
+The simplest is the **mutex lock** (from **mut**ual **ex**clusion):
+
+- Protect a critical region by first calling **`acquire()`** on a lock, then **`release()`** it.
+- A **boolean variable** says whether the lock is **available**.
+- Calls to `acquire()` and `release()` must be **atomic**, so they're usually built from the hardware atomic instructions above.
+
+```c
+acquire() {
+    while (!available)
+        ;   /* busy wait */
+    available = false;
+}
+
+release() {
+    available = true;
+}
+```
+
+```text
+do {
+    acquire lock
+        critical section
+    release lock
+        remainder section
+} while (true);
+```
+
+But this solution needs **busy waiting**: a process that can't get the lock loops, burning CPU. A lock like this is called a **spinlock**.
+
+<Callout tone="orange" label="Is spinning always bad?">
+Spinning wastes CPU while waiting. But it needs **no context switch**, so on a multiprocessor, when the lock will only be held for a very short time, a spinlock can actually be the fastest option.
+</Callout>
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Two people, one bank account" tool="RACE CONDITION">
+    Two ATMs withdraw from the same account at the same moment. Without a critical section around "read balance, subtract, write balance", money appears or vanishes.
+  </PracticalApplication>
+  <PracticalApplication title="Overselling the last ticket" tool="MUTUAL EXCLUSION">
+    Two buyers click on the last concert seat. Booking systems lock the seat's record so only one purchase can succeed.
+  </PracticalApplication>
+  <PracticalApplication title="synchronized in Java, Mutex in Rust" tool="MUTEX LOCKS">
+    Every modern language has a mutex type. Java's synchronized keyword acquires one on entry to a method and releases it on exit.
+  </PracticalApplication>
+  <PracticalApplication title="Atomic counters" tool="COMPARE-AND-SWAP">
+    Java's AtomicInteger and C++'s std::atomic use compare-and-swap so counter++ is safe without a full lock.
+  </PracticalApplication>
+</ApplicationsGrid>

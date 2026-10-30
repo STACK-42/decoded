@@ -1,0 +1,38 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { InterleaveLab } from "@/components/mdx/ArchitectureVisualizers";
+
+# Main Memory Performance
+
+You've seen [what a memory is built from](/courses/logic-design/memory-unit) and [where it sits in the hierarchy](/courses/computer-organization/memory-hierarchy). Now we'll put numbers on its speed. Three measurements matter:
+
+- **Access time**: from asking for a word until it arrives.
+- **Cycle time**: from the start of one access until the memory can start another. It's longer than access time, because the chip needs to recover.
+- **Bandwidth**: how many bytes per second can move in total.
+
+$$
+\text{bandwidth} = \frac{\text{bytes per transfer}}{\text{cycle time}}
+$$
+
+For example, a 64-bit bus (8 bytes) and a 10 ns cycle give $8 / (10 \times 10^{-9}) = 800$ MB per second.
+
+## Interleaving
+
+Think of a supermarket. One checkout can serve one customer at a time, and however fast the customer pays, the next one has to wait. Open four checkouts and four people can pay at once, even though each cashier is no faster.
+
+**Memory interleaving** does this with memory. It splits memory into several independent **banks** and spreads consecutive addresses across them:
+
+| Address | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| Bank | 0 | 1 | 2 | 3 | 0 | 1 | 2 | 3 |
+
+To read a run of addresses, the CPU starts bank 0, then bank 1 before bank 0 has finished, and so on. Choose the number of banks and look at how the bars overlap.
+
+<InterleaveLab />
+
+The low bits of the address choose the bank: with 4 banks, that's address mod 4.
+
+Interleaving does best with sequential access. If a program keeps hitting the same bank, it waits a full cycle each time and gets no benefit. Fortunately, programs [tend to access nearby addresses](/courses/computer-organization/memory-hierarchy), and caches read a whole block at a time, which is exactly the sequential pattern interleaving suits.
+
+<Callout tone="violet" label="You've seen the idea before">
+DDR memory has banks inside each chip, and your motherboard's "dual channel" mode spreads data across two memory sticks. Both use this same idea.
+</Callout>

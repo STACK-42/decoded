@@ -1,0 +1,69 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { LawChecker } from "@/components/mdx/LogicVisualizers";
+
+# Boolean Algebra
+
+Boolean algebra is ordinary algebra with one big restriction: every variable is 0 or 1. Why bother with algebra? Every term in an expression costs real gates, wires, power and time. A shorter expression that gives the same answers is a cheaper, faster circuit.
+
+## The laws you already know
+
+Three laws work just like they do with ordinary numbers:
+
+- **Commutative**: order doesn't matter. $A + B = B + A$ and $AB = BA$.
+- **Associative**: grouping doesn't matter. $A + (B + C) = (A + B) + C$.
+- **Distributive**: you can factor. $AB + AC = A(B + C)$.
+
+## The rules that are new
+
+Read each of these as a sentence about switches. $A + 1 = 1$ says "if one parallel path is permanently closed, the lamp is on, whatever $A$ does".
+
+| Rule | Plain reading |
+|---|---|
+| $A + 0 = A$ | OR with 0 changes nothing |
+| $A + 1 = 1$ | OR with 1 is always 1 |
+| $A \cdot 0 = 0$ | AND with 0 is always 0 |
+| $A \cdot 1 = A$ | AND with 1 changes nothing |
+| $A + A = A$ | Saying it twice adds nothing |
+| $A + A' = 1$ | Something is either true or false, so one of these holds |
+| $A \cdot A = A$ | Saying it twice adds nothing |
+| $A \cdot A' = 0$ | It can't be both |
+| $A'' = A$ | Flipping twice gets you back |
+| $A + AB = A$ | If $A$ is true, $AB$ adds nothing new |
+| $A + A'B = A + B$ | $A'$ adds nothing: if $A$ is false, you were only checking $B$ anyway |
+| $(A + B)(A + C) = A + BC$ | The distributive law in its strange-looking second form |
+
+You don't have to take these on trust. With so few possible inputs, you can check every case, and that is a full proof.
+
+<LawChecker />
+
+## De Morgan's theorems
+
+These two let you push a NOT through a bracket. To break a long overbar, change the sign underneath and invert each piece:
+
+$$
+(XY)' = X' + Y' \qquad\qquad (X + Y)' = X'Y'
+$$
+
+Think of a rule at a club: "you can't bring food and drink" means you can't bring food, or you can't bring drink, or both. "Not (food and drink)" is "not food, or not drink".
+
+<Callout tone="neon" label="Why this matters">
+De Morgan says a NAND gate and an OR gate with inverted inputs are the same thing. That's why [you can build anything out of NAND](/courses/logic-design/universal-gates).
+</Callout>
+
+For example, simplify $(C' + D)'$. Break the bar and change the + to AND: $C'' \cdot D'$. Remove the double complement: $CD'$.
+
+## A worked simplification
+
+Simplify $AB + A(B + C) + B(B + C)$:
+
+$$
+\begin{aligned}
+&AB + AB + AC + BB + BC && \text{distribute} \\
+&AB + AB + AC + B + BC && BB = B \\
+&AB + AC + B + BC && AB + AB = AB \\
+&AB + AC + B && B + BC = B \\
+&B + AC && AB + B = B
+\end{aligned}
+$$
+
+The original needs several gates in three levels. The result needs one AND and one OR. Algebra works, but you need to spot the right moves. [Karnaugh maps](/courses/logic-design/karnaugh-maps) let you see them instead.

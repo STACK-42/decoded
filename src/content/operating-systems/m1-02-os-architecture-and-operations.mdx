@@ -1,0 +1,256 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { MultiprogrammingDemo, DualModeSwitch, TimerInterrupt } from "@/components/mdx/OsVisualizers";
+
+# Inside the OS: Architecture, Operations and Environments
+
+The last lesson looked at the hardware. This one looks at the OS itself: how many processors it may have to drive, how it juggles many programs at once, how it protects itself, what it's responsible for managing, and the very different places an OS can live, from your phone to the cloud.
+
+## Computer-system architecture
+
+### Single-processor systems
+
+**Most systems use a single general-purpose processor**, from small handhelds all the way up to mainframes. Almost all of them also have **special-purpose processors**, like a disk controller or a keyboard chip, that do one job only.
+
+### Multiprocessor systems
+
+**Multiprocessor** systems are growing in use and importance. They're also called **parallel** or **multicore** systems. Their advantages:
+
+1. **Increased throughput.** More processors get more work done in less time.
+2. **Economy of scale.** They can share peripherals, memory and power supplies, so they cost less than many single-processor machines.
+3. **Increased reliability.** If one processor fails, the rest keep going, just a bit slower. This is called **graceful degradation**, or **fault tolerance**.
+
+There are two types:
+
+| Type | How the work is split |
+| --- | --- |
+| **Asymmetric multiprocessing** | each processor is given a **specific task**; a boss processor controls the others |
+| **Symmetric multiprocessing (SMP)** | **every processor** does all tasks, as equals, sharing the same memory |
+
+### Multicore and memory access
+
+A **dual-core design** puts two cores on one chip. A few design choices to know:
+
+- **UMA vs. NUMA.** In **uniform memory access**, every CPU reaches every part of memory equally fast. In **non-uniform memory access**, some memory is closer (faster) to some CPUs.
+- **Multiple chips with one core each**, vs. **multiple cores on a single chip**. Cores on one chip talk to each other faster and use less power.
+- **Blade servers**: a chassis holding multiple independent multiprocessor systems (blades) in one box.
+
+### Clustered systems
+
+A **clustered system** is like a multiprocessor system, but made of **multiple whole computers working together**.
+
+- They usually **share storage** through a **storage-area network (SAN)**.
+- They provide a **high-availability** service that **survives failures**.
+  - **Asymmetric clustering:** one machine sits in **hot-standby mode**, watching the active one, ready to take over if it fails.
+  - **Symmetric clustering:** **multiple nodes** run applications and **monitor each other**.
+- Some clusters are for **high-performance computing (HPC)**. Applications must be written to use **parallelization** to benefit.
+- Some have a **distributed lock manager (DLM)** to avoid conflicting operations on the shared data.
+
+## Operating-system structure
+
+### Multiprogramming
+
+A single user can't keep the CPU and I/O devices busy all the time. While your program waits for the disk, the CPU has nothing to do. **Multiprogramming** fixes that, for **efficiency**:
+
+- It organizes **jobs** (code and data) so the **CPU always has one to execute**.
+- A **subset of all the jobs** in the system is kept in memory.
+- **Job scheduling** picks which jobs from the pool to load into memory.
+- When a job has to **wait** (for I/O, for example), the OS **switches to another job**.
+
+<MultiprogrammingDemo />
+
+### Timesharing (multitasking)
+
+**Timesharing** is a logical extension of multiprogramming. The CPU switches between jobs **so often** that users can **interact** with each job while it runs. This is **interactive computing**.
+
+- **Response time** should be short, typically **under 1 second**.
+- Each user has at least one program executing in memory. A program in execution is called a **process**.
+- If several jobs are ready to run at the same time, the OS must choose: that's **CPU scheduling**.
+- If processes don't fit in memory, **swapping** moves them in and out of memory to run.
+- **Virtual memory** allows running a process that is **not completely in memory**.
+
+<Callout tone="mint" label="Multiprogramming vs. timesharing">
+**Multiprogramming** switches when a job *has to wait*, to keep the CPU busy. **Timesharing** switches *very often*, on purpose, so every user feels the computer is answering them right away.
+</Callout>
+
+## Operating-system operations
+
+The OS is **interrupt driven**:
+
+- **Hardware** sends interrupts (a key press, a finished disk read).
+- A **software error or request** creates an **exception** or **trap**: division by zero, or a request for an OS service.
+- Other process problems include **infinite loops** and processes **modifying each other or the operating system**. The OS must defend against all of these.
+
+### Dual-mode operation
+
+**Dual-mode operation** lets the OS protect itself and the other system components.
+
+- There are two modes: **user mode** and **kernel mode**.
+- A **mode bit**, provided by the **hardware**, tells whether the CPU is running user code (1) or kernel code (0).
+- Some instructions are **privileged**: they can **only run in kernel mode**. Trying one in user mode causes a trap.
+- A **system call** switches the mode to kernel. **Returning** from the call switches it back to user.
+
+<DualModeSwitch />
+
+Many CPUs now support **more than two modes**. For example, a **virtual machine manager (VMM)** mode for running guest operating systems.
+
+### The timer
+
+What stops a program with an infinite loop from hogging the CPU forever? A **timer**:
+
+- The timer is set to **interrupt the computer after a specific period**, fixed or variable.
+- The OS **initializes a counter** and the counter is **decremented** every clock tick.
+- When the counter reaches **zero**, the timer **generates an interrupt**.
+- The OS sets the timer **before** scheduling a process, to make sure it **regains control**, or to **terminate** a program that goes over its allowed time.
+
+<TimerInterrupt />
+
+## What the OS manages
+
+### Process management
+
+A **process** is a **program in execution**. It's a **unit of work** within the system.
+
+- A **program is a passive entity**: a file sitting on the disk. A **process is an active entity**: that program, running.
+- A process needs **resources** to do its task: CPU, memory, I/O, files, and initialization data.
+- When a process **terminates**, the OS must **reclaim** any reusable resources.
+- A **single-threaded** process has **one program counter**, pointing at the next instruction to execute. It runs instructions one at a time, in order, until it finishes.
+- A **multi-threaded** process has **one program counter per thread**.
+- A system usually has **many processes**, some user and some system, running **concurrently** on one or more CPUs. Concurrency comes from **multiplexing** the CPUs among the processes and threads.
+
+The OS is responsible for:
+
+- **creating and deleting** user and system processes,
+- **scheduling** processes and threads on the CPUs,
+- **suspending and resuming** processes,
+- providing mechanisms for process **synchronization**,
+- providing mechanisms for process **communication**,
+- providing mechanisms for **deadlock** handling.
+
+### Memory management
+
+- **All data** must be in memory **before and after** it's processed.
+- **All instructions** must be in memory **in order to run**.
+- Memory management decides **what is in memory, and when**, to improve CPU utilization and how fast the computer responds to users.
+
+Its activities:
+
+- keeping track of **which parts of memory are in use, and by whom**,
+- deciding **which processes (or parts of them) and data** to move into and out of memory,
+- **allocating and deallocating** memory space as needed.
+
+### Storage management
+
+The OS gives a **uniform, logical view** of stored information. It hides the physical details behind one logical storage unit: the **file**.
+
+- Each medium is controlled by a **device** (a disk drive, a tape drive...). Media differ in **access speed**, **capacity**, **data-transfer rate** and **access method** (sequential or random).
+
+**File-system management:**
+
+- Files are usually organized into **directories**.
+- **Access control** decides who can access what.
+- OS activities: **creating and deleting** files and directories, **primitives** to manipulate them, **mapping files** onto secondary storage, and **backing up** files onto stable (nonvolatile) media.
+
+**Mass-storage management:**
+
+- Disks store data that **doesn't fit in main memory**, or that must be kept for a **long time**.
+- The **speed of the whole computer** hinges on the disk subsystem and its algorithms.
+- OS activities: **free-space management**, **storage allocation** and **disk scheduling**.
+- Some storage doesn't need to be fast. **Tertiary storage** (optical disks, magnetic tape) must still be managed. It can be **WORM** (write once, read many) or **RW** (read-write).
+
+### Cache management
+
+- Information moves between the levels of the storage hierarchy, either **explicitly** (the OS moves it) or **implicitly** (the hardware moves it).
+- Choosing the **cache size** and **replacement policy** carefully can make a huge difference to performance.
+- In a **multitasking** environment, every process must use the **most recent value** of a piece of data, wherever it is stored.
+- In a **multiprocessor** environment, the hardware must provide **cache coherency**, so that all CPUs see the most recent value in their caches.
+- In a **distributed** environment it's even harder, because several copies of the same data can exist on different machines.
+
+### The I/O subsystem
+
+One job of the OS is to **hide the quirks of each hardware device** from the user. The I/O subsystem is responsible for:
+
+- **memory management of I/O**, including
+  - **buffering**: storing data temporarily while it's being transferred,
+  - **caching**: storing parts of data in faster storage for performance,
+  - **spooling**: overlapping the output of one job with the input of other jobs (like a print queue),
+- a **general device-driver interface**,
+- **drivers** for specific hardware devices.
+
+### Protection and security
+
+- **Protection**: any mechanism for **controlling access** of processes or users to the resources the OS defines.
+- **Security**: **defending** the system against **internal and external attacks**: denial-of-service, worms, viruses, identity theft, theft of service...
+
+Systems first tell users apart, to decide **who can do what**:
+
+- A **user ID** (or security ID) is a name plus a number, one per user. It's attached to **all of that user's files and processes** to control access.
+- A **group ID** lets a set of users be defined and managed together. It's also attached to processes and files.
+- **Privilege escalation** lets a user switch to an **effective ID** with **more rights**, like `sudo` on Linux.
+
+## Computing environments
+
+| Environment | What it looks like |
+| --- | --- |
+| **Traditional** | stand-alone general-purpose machines, though almost all are now connected (the Internet). **Portals** give web access to internal systems. **Network computers (thin clients)** are like web terminals, for more security or easier maintenance. Even home systems use **firewalls**. |
+| **Mobile** | smartphones and tablets. Extra OS features like **GPS**, **gyroscope**, camera and video, which allow new apps like **augmented reality**. Connect through **IEEE 802.11 wireless** or **cellular data**. Leaders: **Apple iOS** and **Google Android**. |
+| **Distributed** | separate, possibly different, systems **networked together** (TCP/IP is most common) over a **LAN**, **WAN**, **MAN** or **PAN**. A **network operating system** adds features like file sharing across the network and gives the impression of a single system. |
+| **Client-server** | smart PCs replaced dumb terminals. **Servers** respond to requests from **clients**. A **compute server** offers services (like a database); a **file server** stores and returns files. |
+| **Peer-to-peer (P2P)** | no clients and servers: **all nodes are peers**, and each can act as client, server or both. A node joins by **registering with a central lookup service**, or by **broadcasting** requests and answering others through a **discovery protocol**. Examples: Voice over IP apps. |
+| **Virtualization** | lets operating systems **run as applications inside other OSs**. A **VMM** (virtual machine manager) provides the virtualization services. |
+| **Cloud computing** | delivers **computing, storage and even apps as a service** across a network. It's a logical extension of virtualization. |
+| **Real-time embedded** | the **most common** computers of all, inside devices and cars. Special-purpose, limited OSs, often **real-time OSs**, usually with little or no user interface. |
+
+### Virtualization vs. emulation
+
+- **Emulation** is used when the **source CPU type differs from the target CPU type** (for example, running PowerPC software on an Intel x86 CPU). It is generally the **slowest** method. When a language isn't compiled to native code at all, that's **interpretation**.
+- **Virtualization**: the OS is natively compiled for the CPU, and it runs **guest OSs** that are also natively compiled. For example, a Windows host running several Windows guests, each running its own apps.
+
+Uses: running **several OSs on one laptop** (macOS host with a Windows guest) to explore or for compatibility, **developing apps for several OSs** without owning several machines, **testing** (QA) on many systems, and running and managing compute environments **inside data centers**. A VMM can also run **natively**, in which case it's the host itself.
+
+### Cloud computing
+
+Cloud environments are made of ordinary OSs plus **VMMs** and **cloud management tools**. Being on the Internet, they need security like **firewalls**, and **load balancers** to spread traffic across many applications.
+
+**Deployment types:**
+
+- **Public cloud**: available over the Internet to anyone who pays.
+- **Private cloud**: run by a company for its own use.
+- **Hybrid cloud**: has both public and private parts.
+
+**Service types:**
+
+| Service | You get | Example |
+| --- | --- | --- |
+| **SaaS** (Software as a Service) | one or more **applications** over the Internet | an online word processor |
+| **PaaS** (Platform as a Service) | a **software stack** ready for your app | a database server |
+| **IaaS** (Infrastructure as a Service) | **servers or storage** | storage for backups |
+
+### Real-time systems
+
+A **real-time OS** has **well-defined, fixed time constraints**. Processing **must** be done within the constraint, and the system is only **correct if the constraints are met**. An answer that comes too late is a wrong answer: think of a car's airbag.
+
+## Open-source operating systems
+
+**Open-source** operating systems are available as **source code**, not just as closed-source binaries.
+
+- This runs **counter to** copy protection and **Digital Rights Management (DRM)**.
+- The movement was started by the **Free Software Foundation (FSF)**, which has the "copyleft" **GNU General Public License (GPL)**.
+- Examples: **GNU/Linux** and **BSD UNIX** (including the core of macOS), and many more.
+- You can explore them safely with a VMM like **VirtualBox** (open source and free on many platforms) to run them as **guest operating systems**.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Dozens of apps at once" tool="TIMESHARING">
+    Music, a browser and a chat app all feel live because the OS switches between them many times a second.
+  </PracticalApplication>
+  <PracticalApplication title='"Run as administrator" and sudo' tool="PRIVILEGE ESCALATION">
+    Your user ID normally can't change system files. Escalating gives your process an effective ID with more rights, after you prove who you are.
+  </PracticalApplication>
+  <PracticalApplication title="Linux inside Windows" tool="VIRTUALIZATION">
+    Tools like VirtualBox or WSL run a whole guest OS natively on your CPU, managed by a VMM.
+  </PracticalApplication>
+  <PracticalApplication title="Google Docs, Netflix, AWS" tool="SAAS · PAAS · IAAS">
+    The cloud is the same OS ideas, scaled up: virtual machines, load balancers and storage rented as a service.
+  </PracticalApplication>
+</ApplicationsGrid>

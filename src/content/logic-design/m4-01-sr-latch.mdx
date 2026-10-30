@@ -1,0 +1,74 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
+
+# The SR Latch: How a Circuit Remembers
+
+Every circuit so far has had a short memory. Change the inputs and the old output is gone. But a computer has to hold numbers, so at some point a circuit has to keep a bit after the input that set it has gone away. How can a pile of gates do that?
+
+## Start with something familiar
+
+Imagine a lamp with two push buttons, labelled **ON** and **OFF**. They spring back when you let go. Press ON and the lamp lights. Let go, and it stays lit. Press OFF, and it goes dark. Let go, and it stays dark.
+
+Look at the lamp while nobody's touching the buttons. Is it on or off? You can't tell from the buttons, because they look the same either way. The lamp is remembering which button you pressed last.
+
+That's all an **SR latch** is. S stands for **Set** (the ON button) and R stands for **Reset** (the OFF button). The output, called **Q**, is the lamp. It stores 1 bit.
+
+## The trick: a gate that feeds itself
+
+Memory comes from one new idea, **feedback**: an output wired back into an input. Take two NOR gates and cross them, so each gate's output goes into the other. Recall that a NOR gives 1 only when all of its inputs are 0. Put another way, **any 1 going into a NOR forces its output to 0**.
+
+The two gates now hold each other in place, like two people leaning against each other. Suppose Q is 1. That 1 goes to the bottom gate and forces its output to 0. That 0 goes back to the top gate, which, with R also at 0, outputs 1. So Q stays 1. The output is holding itself up.
+
+The circuit is live. Press **Press Set**, using the slow-motion pace if you like, and watch the signal go around the loop:
+
+<SrLatchNor />
+
+## What happened when you pressed Set
+
+Starting with Q = 0 and Q' = 1, here's what you saw:
+
+1. **S goes to 1.** The gates haven't reacted yet.
+2. **The bottom NOR reacts.** It has a 1 on an input now, so Q' drops to 0.
+3. **The top NOR reacts.** Both its inputs are now 0 (R and the new Q'), so Q rises to 1.
+4. **Q reaches the bottom NOR**, which keeps Q' at 0. Now S isn't needed.
+5. **S goes back to 0.** Nothing changes, because Q is holding Q' down all by itself.
+
+The final state looks exactly like the starting inputs (S = 0, R = 0), yet Q has changed from 0 to 1. Same inputs, different output: the circuit's past is now part of its state. That's why this family of circuits is called **sequential**, in contrast to the **combinational** circuits you've seen so far.
+
+## The function table
+
+| S | R | Q | Q' | What it means |
+|---|---|---|---|---|
+| 1 | 0 | 1 | 0 | Set: store a 1 |
+| 0 | 0 | 1 | 0 | Hold (after a set) |
+| 0 | 1 | 0 | 1 | Reset: store a 0 |
+| 0 | 0 | 0 | 1 | Hold (after a reset) |
+| 1 | 1 | 0 | 0 | Forbidden |
+
+Q' (often drawn as Q with a bar) is meant to be the opposite of Q, so you get both versions of the bit for free.
+
+## The forbidden input
+
+What about pressing both buttons? Press **Both, then release** and watch.
+
+While both are held, each gate has a 1 on its input, so both outputs go to 0. Q and Q' are now equal, which already breaks the promise that they're opposites. The real trouble comes on release. Both gates see all 0s at the same moment, so both switch to 1. Now each sees a 1, so both switch back to 0, and so on. In this simulation that goes on forever. In real hardware, one gate is always very slightly faster, so the latch ends up in one state or the other, and you can't predict which. A memory that might hold either value isn't memory, so we simply never use this input.
+
+## The NAND version
+
+You can also build a latch from NANDs. It works the same way but on inverted signals, because **any 0 going into a NAND forces its output to 1**. So its inputs rest at 1, and you pull one down to 0 to act on it. A signal that does its job at 0 is called **active low**.
+
+<SrLatchNand />
+
+| S | R | Q | Q' | What it means |
+|---|---|---|---|---|
+| 0 | 1 | 1 | 0 | Set |
+| 1 | 1 | 1 | 0 | Hold |
+| 1 | 0 | 0 | 1 | Reset |
+| 1 | 1 | 0 | 1 | Hold |
+| 0 | 0 | 1 | 1 | Forbidden |
+
+<Callout tone="neon" label="Why you should care">
+Registers, caches and every "state" in a processor come down to this loop. Fast [SRAM](/courses/computer-organization/ram-and-rom) stores each bit in a pair of cross-coupled inverters, which is the same idea.
+</Callout>
+
+There's one problem left: this latch reacts the instant S or R changes. In a computer with millions of these, we need them all to change together, on command. The [next lesson](/courses/logic-design/d-latch-and-clock) adds that control.
