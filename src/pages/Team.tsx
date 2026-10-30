@@ -55,6 +55,9 @@ function CreatorCard({ name, role, bio, image, href }: { name: string; role: str
     <Wrapper {...linkProps} className="group block border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
       <div className="flex items-center gap-4 mb-4">
         <img
+          width={56}
+          height={56}
+          loading="lazy"
           src={image}
           alt={name}
           className="h-14 w-14 rounded-full border border-border object-cover grayscale group-hover:grayscale-0 transition-all"

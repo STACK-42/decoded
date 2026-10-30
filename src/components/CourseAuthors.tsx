@@ -16,6 +16,9 @@ export function CourseAuthors({ authors }: { authors: Author[] }) {
               className="group flex items-center gap-3"
             >
               <img
+                width={40}
+                height={40}
+                loading="lazy"
                 src={author.image}
                 alt=""
                 className="h-10 w-10 rounded-full border border-border object-cover grayscale group-hover:grayscale-0 transition-all"
