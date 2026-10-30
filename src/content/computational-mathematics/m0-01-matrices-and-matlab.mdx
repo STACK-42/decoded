@@ -5,7 +5,7 @@ import { ElementwiseVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 A **matrix** is a rectangular grid of numbers. That plain definition covers a surprising amount of software: a photo is a matrix of pixel values, a spreadsheet is a matrix with labels, and a neural network layer is mostly a matrix of weights.
 
-This course uses MATLAB because its syntax is close to the maths on paper. Everything you learn here carries over to NumPy, Julia and R with small changes in spelling.
+This course uses MATLAB because its syntax is close to the maths on paper. Every lesson works in MATLAB first, then shows the same ideas in Python and where they turn up in machine learning.
 
 ## Writing a matrix down
 
@@ -69,6 +69,47 @@ Pick an operation and step through it. Each entry only ever talks to the entry i
 <Callout tone="orange" label="Common error">
 Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up.
 </Callout>
+
+## In Python
+
+MATLAB is this course's main language, and each lesson also shows the Python version. NumPy arrays cover matrices, and pandas adds labelled rows and columns on top. Python counts from 0, so MATLAB's `A(1, 1)` is `A[0, 0]`.
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+
+print((A + B).tolist())  # [[9, 2, 7], [4, 7, 10], [5, 12, 8]]
+print((-2 * A)[0].tolist())  # [-2, -2, -2]
+```
+
+Plain Python has no matrix type, so you'd write the loop yourself, usually with nested lists:
+
+```python
+A = [[1, 2], [3, 4]]
+B = [[5, 6], [7, 8]]
+
+C = [[a + b for a, b in zip(ra, rb)] for ra, rb in zip(A, B)]
+print(C)  # [[6, 8], [10, 12]]
+```
+
+A pandas DataFrame turns into a matrix with one call:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({"height": [170, 182, 165], "weight": [65, 80, 54]})
+X = df.to_numpy()
+
+print(X.shape)  # (3, 2)
+```
+
+## In machine learning
+
+A training set is normally one matrix, called $X$, with one row per example and one column per feature. The DataFrame above is 3 examples with 2 features each.
+
+Rescaling features uses this lesson's operations: subtracting a column's mean and dividing by its spread are both entry-by-entry steps. So is one step of gradient descent, $w \leftarrow w - \eta \nabla L$, a scalar multiple followed by a subtraction.
 
 ## Where you'll meet this
 
