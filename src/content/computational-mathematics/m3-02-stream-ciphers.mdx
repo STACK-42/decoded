@@ -1,0 +1,43 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { XorStreamVisualizer } from "@/components/mdx/CipherVisualizers";
+
+# Stream Ciphers
+
+Computers store everything as bits, so the simplest cipher for them works on one bit at a time. All it takes is XOR and a good source of random-looking bits.
+
+## How it works
+
+In a **stream cipher**, the message units are bits. A secret key seeds a random bit generator, which produces a long **key stream** $k$. Each plaintext bit is combined with one key bit using XOR:
+
+$$
+c_i = m_i \oplus k_i
+$$
+
+XOR gives 1 when two bits differ and 0 when they match. It also undoes itself, which is what makes the scheme work:
+
+$$
+(m \oplus k) \oplus k = m
+$$
+
+So decryption is the same operation as encryption, with the same key stream. The receiver just needs the same generator and the same seed. Run it in both directions:
+
+<XorStreamVisualizer />
+
+<Callout tone="orange" label="Never reuse a key stream">
+If two messages use the same key stream, an attacker can XOR the ciphertexts. The key cancels, leaving $m_1 \oplus m_2$, which is often enough to recover both messages. WEP, an early Wi-Fi security standard, was broken partly because its key streams repeated.
+</Callout>
+
+The generator in this visualizer is a toy, a small linear-feedback shift register. Its output looks random, but an attacker who sees a little of it can work out the rest, so real systems use far stronger generators.
+
+If the key stream is truly random, as long as the message, and never reused, you have the **one-time pad**, which is provably unbreakable. It's rarely practical, because sharing that much key is as hard as sharing the message.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Encrypting web traffic" tool="ChaCha20 in TLS">
+ChaCha20 is a modern stream cipher that TLS commonly uses, especially on phones without hardware AES support.
+</PracticalApplication>
+<PracticalApplication title="Securing a VPN" tool="WireGuard">
+WireGuard encrypts its packets with ChaCha20, and each one uses a fresh counter so a key stream is never repeated.
+</PracticalApplication>
+</ApplicationsGrid>

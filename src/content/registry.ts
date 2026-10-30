@@ -81,6 +81,11 @@ import CmInverses from "@/content/computational-mathematics/m2-06-modular-invers
 import CmFastPow from "@/content/computational-mathematics/m2-07-fast-exponentiation.mdx";
 import CmDiscreteLog from "@/content/computational-mathematics/m2-08-discrete-logarithms.mdx";
 import CmNtQuiz from "@/content/computational-mathematics/m2-09-number-theory-quiz.mdx";
+import CmCryptoIntro from "@/content/computational-mathematics/m3-01-what-is-cryptography.mdx";
+import CmStream from "@/content/computational-mathematics/m3-02-stream-ciphers.mdx";
+import CmShift from "@/content/computational-mathematics/m3-03-caesar-and-shift-ciphers.mdx";
+import CmAffine from "@/content/computational-mathematics/m3-04-affine-ciphers.mdx";
+import CmFinalQuiz from "@/content/computational-mathematics/m3-05-final-quiz.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -357,6 +362,17 @@ export const courses: Course[] = [
           { slug: "fast-exponentiation", title: "Fast Exponentiation", duration: "11 min", Component: CmFastPow },
           { slug: "discrete-logarithms", title: "Discrete Logarithms", duration: "12 min", Component: CmDiscreteLog },
           { slug: "number-theory-quiz", title: "Quiz: Number Theory", duration: "10 min", kind: "quiz", Component: CmNtQuiz },
+        ],
+      },
+      {
+        title: "Cryptography",
+        blurb: "Secret-key systems, from stream ciphers to the classical ciphers that modular arithmetic explains.",
+        lessons: [
+          { slug: "what-is-cryptography", title: "What Is Cryptography?", duration: "10 min", Component: CmCryptoIntro },
+          { slug: "stream-ciphers", title: "Stream Ciphers", duration: "9 min", Component: CmStream },
+          { slug: "caesar-and-shift-ciphers", title: "Caesar and Shift Ciphers", duration: "10 min", Component: CmShift },
+          { slug: "affine-ciphers", title: "Affine Ciphers", duration: "12 min", Component: CmAffine },
+          { slug: "final-quiz", title: "Quiz: Cryptography", duration: "8 min", kind: "quiz", Component: CmFinalQuiz },
         ],
       },
     ],

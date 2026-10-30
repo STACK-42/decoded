@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Cryptography
+
+Six questions on the module. Get 5 right to pass, and you've finished the course.
+
+<Quiz
+  courseSlug="computational-mathematics"
+  lessonSlug="final-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "What makes a system secret-key?",
+      options: [
+        { id: "a", text: "The algorithm is kept secret" },
+        { id: "b", text: "The same key encrypts and decrypts" },
+        { id: "c", text: "The ciphertext is kept secret" },
+        { id: "d", text: "It uses two different keys" },
+      ],
+      correctOptionId: "b",
+      explanation: "Secret-key, or symmetric, means e = d = k. The ciphertext is assumed to be public, and the algorithm usually is too.",
+    },
+    {
+      id: "q2",
+      prompt: "Why can a stream cipher use the same operation for encrypting and decrypting?",
+      options: [
+        { id: "a", text: "Because m ⊕ k ⊕ k = m" },
+        { id: "b", text: "Because it doesn't really encrypt" },
+        { id: "c", text: "Because the key is public" },
+        { id: "d", text: "Because bits have no order" },
+      ],
+      correctOptionId: "a",
+      explanation: "XOR-ing with the same bit twice cancels out, so applying the key stream again recovers the plaintext.",
+    },
+    {
+      id: "q3",
+      prompt: "An attacker has c1 = m1 ⊕ k and c2 = m2 ⊕ k. What does c1 ⊕ c2 give them?",
+      options: [
+        { id: "a", text: "The key" },
+        { id: "b", text: "m1 ⊕ m2, with the key gone" },
+        { id: "c", text: "Random noise" },
+        { id: "d", text: "Nothing useful" },
+      ],
+      correctOptionId: "b",
+      explanation: "The key cancels out. This is why a key stream must never be reused.",
+    },
+    {
+      id: "q4",
+      prompt: "Under a shift cipher with k = 3, what does XYZ become?",
+      options: [
+        { id: "a", text: "ABC" },
+        { id: "b", text: "UVW" },
+        { id: "c", text: "XYZ" },
+        { id: "d", text: "BCD" },
+      ],
+      correctOptionId: "a",
+      explanation: "X = 23, and (23 + 3) mod 26 = 0, which is A. The letters wrap around.",
+    },
+    {
+      id: "q5",
+      prompt: "Which value of k₁ is allowed in an affine cipher modulo 26?",
+      options: [
+        { id: "a", text: "13" },
+        { id: "b", text: "2" },
+        { id: "c", text: "26" },
+        { id: "d", text: "5" },
+      ],
+      correctOptionId: "d",
+      explanation: "k₁ must be coprime to 26 = 2 × 13. Among these, only 5 shares no factor with 26.",
+    },
+    {
+      id: "q6",
+      prompt: "How many affine keys are there modulo 26?",
+      options: [
+        { id: "a", text: "26" },
+        { id: "b", text: "25" },
+        { id: "c", text: "312" },
+        { id: "d", text: "676" },
+      ],
+      correctOptionId: "c",
+      explanation: "φ(26) = 12 choices for k₁ and 26 for k₂ make 312, which is easy to search on any computer.",
+    },
+  ]}
+/>

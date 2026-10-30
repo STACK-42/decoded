@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
+import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
@@ -327,5 +328,47 @@ describe("fast powers and discrete logs", () => {
   it("satisfies the log rules with a primitive root", () => {
     const t = logTable(2, 19);
     expect(t[(4 * 6) % 19]).toBe((t[4] + t[6]) % 18);
+  });
+});
+
+describe("ciphers", () => {
+  it("runs the worked shift ciphers", () => {
+    expect(shiftEncrypt("IBM", 3)).toBe("LEP");
+    expect(shiftEncrypt("NIST", 4)).toBe("RMWX");
+    expect(shiftEncrypt("ENCRYPTION", 7)).toBe("LUJYFWAPVU");
+    expect(shiftEncrypt("XYZ", 3)).toBe("ABC");
+    expect(shiftDecrypt(shiftEncrypt("ATTACK AT DAWN", 11), 11)).toBe("ATTACK AT DAWN");
+  });
+
+  it("runs the worked affine cipher both ways", () => {
+    expect(affineEncrypt("SECURITY", 7, 21)).toBe("RXJFKZYH");
+    expect(affineDecrypt("VLXIJH", 7, 21)).toBe("AGENCY");
+    expect(affineDecrypt(affineEncrypt("THE NATIONAL SECURITY AGENCY", 11, 23), 11, 23)).toBe("THE NATIONAL SECURITY AGENCY");
+    expect((11 * 19) % 26).toBe(1);
+    expect((7 * 15) % 26).toBe(1);
+  });
+
+  it("rejects bad multipliers and counts the keys", () => {
+    expect(affineDecrypt("ABC", 13, 5)).toBeNull();
+    expect(new Set(affineTable(13, 5)).size).toBe(2);
+    expect(new Set(affineTable(2, 0)).size).toBe(13);
+    expect(new Set(affineTable(7, 21)).size).toBe(26);
+    expect(VALID_K1).toHaveLength(12);
+  });
+
+  it("encrypts and decrypts a bit stream with the same operation", () => {
+    const m = textToBits("HI");
+    const k = keystream(44257, m.length);
+    const c = xorBits(m, k);
+    expect(c).not.toEqual(m);
+    expect(bitsToText(xorBits(c, k))).toBe("HI");
+    expect(xorFrames(c, k, true).at(-1)!.state.output).toEqual(m);
+    expect(new Set(k).size).toBe(2);
+  });
+
+  it("carries the message through the secret-key flow", () => {
+    const f = flowFrames("HELLO", 3);
+    expect(f).toHaveLength(5);
+    expect(f[2].state.cipher).toBe("KHOOR");
   });
 });
