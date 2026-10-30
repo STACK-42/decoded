@@ -62,6 +62,42 @@ gcd(65, 70)                                % 5
 gcd([250 1050 6022], [180 1150 5622])      % 10  50  2
 ```
 
+## In Python
+
+```python
+import math
+import numpy as np
+
+print(math.gcd(1281, 243))  # 3
+print(np.gcd([250, 1050, 6022], [180, 1150, 5622]).tolist())  # [10, 50, 2]
+print(divmod(-11, 7))  # (-2, 3)
+```
+
+The whole algorithm fits in three lines of pure Python:
+
+```python
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+print(gcd(1281, 243))  # 3
+```
+
+## In machine learning
+
+Number theory touches ML less directly than matrices do, but division with remainder comes up in everyday training code.
+
+**Batches.** Dividing a dataset into batches gives a quotient and a remainder. The quotient is the number of full batches, and the remainder is the short final batch, which PyTorch's `drop_last` option throws away:
+
+```python
+n_examples, batch_size = 1000, 32
+
+print(divmod(n_examples, batch_size))  # (31, 8)
+```
+
+**Image patches.** A vision transformer cuts images into square patches, so the image size has to be divisible by the patch size. A 224-pixel image with 16-pixel patches gives $14 \times 14$ patches.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

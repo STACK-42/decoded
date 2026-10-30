@@ -44,6 +44,39 @@ inverse = mod(x, 61)       % 18
 If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 18$, the same inverse is $13$.
 </Callout>
 
+## In Python
+
+Since Python 3.8, `pow` can compute inverses directly with an exponent of -1. The extended algorithm is also a neat recursive function:
+
+```python
+print(pow(17, -1, 61))  # 18
+
+def extended_gcd(a, b):
+    if b == 0:
+        return a, 1, 0
+    g, x, y = extended_gcd(b, a % b)
+    return g, y, x - (a // b) * y
+
+print(extended_gcd(130, 61))  # (1, 23, -49)
+print(extended_gcd(17, 61))  # (1, 18, -5)
+```
+
+## In machine learning
+
+Federated learning trains a model across many phones without collecting their data. Secure aggregation goes further, so that the server only learns the sum of everyone's updates.
+
+Those protocols must survive phones dropping out midway, and they use Shamir secret sharing for it. A secret is split into shares, and any large enough group of them can rebuild it. Rebuilding needs division modulo a prime, which means modular inverses:
+
+```python
+p = 97
+(x1, y1), (x2, y2) = (1, 40), (2, 57)  # points on f(x) = 23 + 17x, modulo 97
+
+secret = (y1 * x2 - y2 * x1) * pow(x2 - x1, -1, p) % p
+print(secret)  # 23
+```
+
+Here two shares recover $f(0)$, the secret, by drawing a line through the two points. A single share reveals nothing about it.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

@@ -47,6 +47,52 @@ This table shows the powers of every base at once. Three things stand out:
 
 If $a$ is a primitive root of a prime $p$, then $a^1, a^2, \dots, a^{p-1}$ are all distinct modulo $p$, and they cover each of $1, \dots, p - 1$ exactly once. The next lessons rely on this.
 
+## In Python
+
+```python
+from math import gcd
+
+def order(a, n):
+    if gcd(a, n) != 1:
+        return None
+    k, v = 1, a % n
+    while v != 1:
+        v = v * a % n
+        k += 1
+    return k
+
+print(order(3, 16))  # 4
+print([a for a in range(1, 19) if order(a, 19) == 18])  # [2, 3, 10, 13, 14, 15]
+```
+
+## In machine learning
+
+Training uses random numbers everywhere: initial weights, data shuffling, dropout. These come from generators, which are deterministic cycles like the ones on the ring above. A simple Lehmer generator is a power sequence modulo a prime, and a primitive root gives it the longest possible period:
+
+```python
+def lehmer(seed, a=3, p=7):
+    x = seed
+    while True:
+        x = a * x % p
+        yield x
+
+g = lehmer(1)
+print([next(g) for _ in range(7)])  # [3, 2, 6, 4, 5, 1, 3]
+```
+
+Modern libraries use much larger generators, but the idea of a seed is the same. A fixed start gives the same sequence, and that's what makes an experiment reproducible:
+
+```python
+import numpy as np
+
+first = np.random.default_rng(42).permutation(5).tolist()
+second = np.random.default_rng(42).permutation(5).tolist()
+
+print(first == second)  # True
+```
+
+Reporting a result from only one seed is a known trap in ML research, because some models vary a lot from run to run.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

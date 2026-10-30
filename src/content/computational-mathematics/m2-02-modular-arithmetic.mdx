@@ -67,6 +67,47 @@ $$
 
 If $(a + b) \equiv (a + c) \pmod n$, you can always cancel to get $b \equiv c$. For multiplication, you can only cancel when $a$ is coprime to $n$. For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both are 6, yet $3 \not\equiv 7 \pmod 8$.
 
+## In Python
+
+Python's `%` matches MATLAB's `mod`, including for negative numbers, and NumPy and pandas work the same way:
+
+```python
+import numpy as np
+import pandas as pd
+
+print(-11 % 7)  # 3
+print(np.mod([-4, -1, 7, 9], 3).tolist())  # [2, 2, 1, 0]
+print((pd.Series([23, 24, 25]) % 24).tolist())  # [23, 0, 1]
+```
+
+## In machine learning
+
+**The hashing trick.** A model can't have a separate column for every possible user ID or word. Feature hashing maps each one to a fixed number of buckets, using a hash modulo the number of buckets:
+
+```python
+import zlib
+
+bucket = zlib.crc32(b"user_42") % 1000
+
+print(0 <= bucket < 1000)  # True
+```
+
+Use a stable hash like this one. Python's built-in `hash` gives strings different values each time the program runs, so a model trained with it would break on the next run.
+
+**Cyclic features.** Hour 23 and hour 0 are neighbours on a clock, yet they look far apart as plain numbers. The usual fix places them on a circle, which is the picture from the clock above:
+
+```python
+import numpy as np
+
+hours = np.array([23, 0])
+angle = 2 * np.pi * hours / 24
+points = np.column_stack([np.sin(angle), np.cos(angle)])
+
+print(round(np.linalg.norm(points[0] - points[1]), 2))  # 0.26
+```
+
+Transformer position encodings use a similar set of sine and cosine waves.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>
