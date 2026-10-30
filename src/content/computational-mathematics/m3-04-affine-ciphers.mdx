@@ -1,0 +1,75 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { AffineMapVisualizer } from "@/components/mdx/CipherVisualizers";
+
+# Affine Ciphers
+
+A shift cipher only adds. If we multiply as well, we get a larger key space, and the lesson on modular inverses suddenly matters: multiplying only works as a cipher when you can undo it.
+
+## The cipher
+
+An **affine transformation** uses a pair of keys, $k_1$ and $k_2$:
+
+$$
+E_{(k_1, k_2)}(m) = k_1 m + k_2 \pmod{26}
+$$
+
+To decrypt, subtract $k_2$ and then multiply by the inverse of $k_1$:
+
+$$
+D_{(k_1, k_2)}(c) = k_1^{-1}(c - k_2) \pmod{26}
+$$
+
+The inverse only exists when $\gcd(k_1, 26) = 1$, and this is a hard requirement. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
+
+<AffineMapVisualizer />
+
+## Worked example: encrypting
+
+Encrypt SECURITY with $k_1 = 7$ and $k_2 = 21$:
+
+| Letter | $m$ | $7m + 21$ | mod 26 | Result |
+| --- | --- | --- | --- | --- |
+| S | 18 | 147 | 17 | R |
+| E | 4 | 49 | 23 | X |
+| C | 2 | 35 | 9 | J |
+| U | 20 | 161 | 5 | F |
+| R | 17 | 140 | 10 | K |
+| I | 8 | 77 | 25 | Z |
+| T | 19 | 154 | 24 | Y |
+| Y | 24 | 189 | 7 | H |
+
+So SECURITY becomes RXJFKZYH.
+
+## Worked example: decrypting
+
+To decrypt VLXIJH, first find the inverse of 7 modulo 26. It's 15, since $7 \cdot 15 = 105 = 4 \cdot 26 + 1$:
+
+| Letter | $c$ | $15(c - 21)$ | mod 26 | Result |
+| --- | --- | --- | --- | --- |
+| V | 21 | 0 | 0 | A |
+| L | 11 | -150 | 6 | G |
+| X | 23 | 30 | 4 | E |
+| I | 8 | -195 | 13 | N |
+| J | 9 | -180 | 2 | C |
+| H | 7 | -210 | 24 | Y |
+
+The message is AGENCY.
+
+## How strong is it?
+
+There are 12 valid values for $k_1$, because $\phi(26) = 12$, and 26 for $k_2$. That makes $12 \times 26 = 312$ keys, which a computer tries instantly. It also maps each letter to one fixed letter, so letter frequencies still give it away.
+
+<Callout tone="sky" label="Try it yourself">
+Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inverse of 11 modulo 26 is 19, so you can check your answer by decrypting with $19(c - 23)$.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Inside AES" tool="AES S-box">
+Every AES round substitutes bytes, and that substitution combines a modular-style inverse with an affine transformation over bits.
+</PracticalApplication>
+<PracticalApplication title="Checking RSA keys" tool="OpenSSL">
+RSA key generation asks the same question you asked here: is the exponent coprime to the modulus it has to be inverted under? If it isn't, the value is rejected.
+</PracticalApplication>
+</ApplicationsGrid>

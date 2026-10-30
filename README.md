@@ -31,6 +31,7 @@ Decoded tries to draw that map. Every lesson answers one question:
 | [Theory of Computation](https://decoded.stack42.tech/courses/theory-of-computation) | Available | 17, across Foundations, Finite Automata and Context-Free Languages |
 | [Algorithm Design & Analysis](https://decoded.stack42.tech/courses/algorithm-design-and-analysis) | Available | 14, from Big-O through sorting, searching, graphs, greedy and DP |
 | [Advanced Algorithms & Analysis](https://decoded.stack42.tech/courses/advanced-algorithms) | Available | 25, from recurrences and hashing through red-black trees, shortest paths and P vs NP |
+| [Computational Mathematics](https://decoded.stack42.tech/courses/computational-mathematics) | Available | 27, across matrices, polynomials, number theory and cryptography |
 | [Computer Organization](https://decoded.stack42.tech/courses/computer-organization) | Available | 10, a top-down tour of the CPU, buses, memory and storage |
 | [Logic Design](https://decoded.stack42.tech/courses/logic-design) | Available | 23, from gates and K-maps to latches, flip-flops and a memory unit, with live circuits |
 | [Microprocessors](https://decoded.stack42.tech/courses/microprocessors) | Available | 12, real 8086 assembly with a step-through simulator |

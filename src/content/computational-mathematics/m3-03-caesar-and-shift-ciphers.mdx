@@ -1,0 +1,55 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CipherWheel, ShiftBruteForce } from "@/components/mdx/CipherVisualizers";
+
+# Caesar and Shift Ciphers
+
+Earlier ciphers transformed each letter of the plaintext into a different letter. These are called **character**, **substitution** or **monographic** ciphers. They're easy to break today, but they're a clear place to see modular arithmetic doing real work.
+
+## Letters as numbers
+
+First, give each letter a number, with $A = 0, B = 1, \dots, Z = 25$. All the operations happen on these numbers, modulo 26.
+
+## The Caesar cipher
+
+A Caesar cipher moves each letter three places forward:
+
+$$
+E_3(m) = m + 3 \pmod{26}, \qquad D_3(c) = c - 3 \pmod{26}
+$$
+
+The key for both directions is 3. Z wraps around to C, and that wrapping is the mod at work.
+
+## Shift ciphers
+
+There's no reason to stick with 3. A **shift cipher** allows any key $k$:
+
+$$
+E_k(m) = m + k \pmod{26}, \qquad D_k(c) = c - k \pmod{26}
+$$
+
+Turn the wheel to change the key. The inner ring gives the ciphertext letter under each plaintext letter:
+
+<CipherWheel />
+
+For example, with $k = 3$, IBM becomes LEP. With $k = 4$, NIST becomes RMWX. With $k = 7$, ENCRYPTION becomes LUJYFWAPVU.
+
+## How to break it
+
+A shift cipher has only 25 useful keys, so an attacker can try them all. This is a **brute-force attack**. Try it on this ciphertext:
+
+<ShiftBruteForce />
+
+<Callout tone="sky" label="Another weakness">
+Even without trying keys, letter frequencies give a shift cipher away. E is the most common letter in English, so the most common ciphertext letter is probably E shifted by $k$.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hiding spoilers" tool="ROT13">
+ROT13 is a shift cipher with $k = 13$, which forums use to hide spoilers. Since 13 + 13 = 26, applying it twice gives the original text.
+</PracticalApplication>
+<PracticalApplication title="Choosing key sizes" tool="AES, RSA">
+This attack is why key space matters. AES-128 has $2^{128}$ possible keys, so brute force is out of the question.
+</PracticalApplication>
+</ApplicationsGrid>
