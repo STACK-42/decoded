@@ -1,0 +1,316 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { JavaThreadLifecycle, ThreadRace, MatrixAddThreads } from "@/components/mdx/OsVisualizers";
+
+# Lab: Threads in Java
+
+One job of an operating system is **handling program execution**. You've seen how a program becomes a process. This lab goes one level smaller, to **threads**, and has you create, start, pause, interrupt and join them in Java.
+
+## Programs, processes and threads
+
+- A **program** is an executable file, stored on secondary storage, containing instructions to do a task.
+- When you double-click a program, the OS loads it into memory and starts a **process**: an **instance of a program being executed**. Several processes can come from the same program.
+- A **thread** is the **smallest executable unit** of a process. One process can have **many threads**. They all **share the process's memory**, but each has its own task and its own path of execution.
+
+<Callout tone="mint" label="Concurrent vs. parallel">
+In **concurrent** programming, several tasks run **during the same period of time**: their lifetimes **overlap**, but they don't have to execute at the exact same instant. A single CPU switching quickly between threads is concurrent. **Parallel** programming means they really do run at the same physical instant, on different cores.
+</Callout>
+
+## Threads in Java
+
+In Java, concurrent programming is mostly about **threads**. The **Java Virtual Machine (JVM)** lets an application run several threads concurrently.
+
+When the JVM starts, there is usually **one thread**, the one that calls your class's `main` method. The JVM keeps running threads until either:
+
+- the `exit` method of class `Runtime` is called (and the security manager allows it), or
+- all threads that are **not daemon threads** have **died**, either by returning from `run` or by throwing an exception that escapes `run`.
+
+### The thread lifecycle
+
+<JavaThreadLifecycle />
+
+## Defining a thread
+
+A program that creates a `Thread` must give it the code to run. There are **two ways**.
+
+### 1. Implement the `Runnable` interface
+
+`Runnable` defines a single method, **`run`**, holding the code the thread will execute. You pass the runnable object to the `Thread` constructor.
+
+```java
+public class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        for (int i = 0; i < 1000; i++)
+            System.out.println("MyRunnable is running!");
+    }
+}
+```
+
+### 2. Extend the `Thread` class
+
+`Thread` itself implements `Runnable`, but its `run` does nothing. You can subclass `Thread` and write your own `run`.
+
+```java
+public class MyThread extends Thread {
+    String name;
+
+    MyThread(String name) { this.name = name; }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 1000; i++)
+            System.out.println(name + " is running!");
+    }
+}
+```
+
+<Callout tone="orange" label="Which one?">
+Implementing `Runnable` is usually better: Java has no multiple inheritance, so if your class extends `Thread` it can't extend anything else.
+</Callout>
+
+## Starting a thread
+
+In the class with your `main` function, create your thread objects and call **`start`** on each.
+
+```java
+public static void main(String[] args) {
+    Thread t1 = new Thread(new MyRunnable());
+    Thread t2 = new MyThread("A");
+    Thread t3 = new MyThread("B");
+
+    t1.start(); t2.start(); t3.start();
+
+    System.out.println("In main thread!");
+}
+```
+
+Call **`start()`**, not `run()`. `start()` creates a new thread that then calls `run()`. Calling `run()` yourself just runs it as a normal method, in the main thread.
+
+## Setting a thread's priority
+
+Every thread has a **priority**. Threads with higher priority are run **in preference** to lower ones. A new thread starts with the **same priority as the thread that created it**. Change it with **`setPriority(int newPriority)`**, or use the predefined constants:
+
+```java
+public static final int MIN_PRIORITY;    // 1
+public static final int NORM_PRIORITY;   // 5
+public static final int MAX_PRIORITY;    // 10
+```
+
+```java
+t3.setPriority(10); // MAX_PRIORITY
+t1.setPriority(Thread.MIN_PRIORITY);
+
+t1.start(); t2.start(); t3.start();
+```
+
+## Pausing a thread with `sleep`
+
+**`sleep`** makes the **current thread suspend execution** for a given time, in **milliseconds**.
+
+```java
+public class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        for (int i = 0; i < 1000; i++) {
+            System.out.println("MyRunnable is running!");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+## Interrupting a thread
+
+**`interrupt`** tells a thread that it should **stop what it's doing and do something else**. How the thread reacts is up to the programmer, but it's very common for it to **terminate**. A thread checks whether it has been interrupted with **`Thread.interrupted()`**.
+
+```java
+public class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        for (int i = 0; i < 1000; i++) {
+            System.out.println("MyRunnable is running! " + i);
+
+            if (Thread.interrupted()) {
+                System.out.println("Interrupted!");
+                break;
+            }
+        }
+    }
+}
+```
+
+And in `main`, after starting the threads:
+
+```java
+t1.interrupt();
+```
+
+## Checking whether a thread is running
+
+**`isAlive`** checks whether a thread is still running. Add this to the end of `main` and watch the output:
+
+```java
+while (t1.isAlive());
+System.out.println("T1 is dead!");
+```
+
+The empty loop spins until `t1` finishes. (It works, but it wastes CPU time. `join`, next, is the proper way to wait.)
+
+## Joining a thread
+
+**`join`** lets one thread **wait for another to finish**. Here `main` calls `t1.join(); t2.join(); t3.join();`, so it waits for all three before continuing:
+
+```java
+public static void main(String[] args) throws InterruptedException {
+    Thread t1 = new Thread(new MyRunnable());
+    Thread t2 = new MyThread("A");
+    Thread t3 = new MyThread("B");
+
+    t3.setPriority(10); // MAX_PRIORITY
+    t1.setPriority(Thread.MIN_PRIORITY);
+
+    t1.start(); t2.start(); t3.start();
+    t1.join(); t2.join(); t3.join();
+
+    System.out.println("In main thread!");
+}
+```
+
+Like `sleep`, `join` responds to an interrupt by exiting with an **`InterruptedException`**.
+
+## Pausing a thread with `yield`
+
+**`yield`** makes the currently running thread **pause for a moment and let other threads run**. Below, each thread prints one line and then hands over, so it looks like the CPU switches threads after every print. Without `yield`, the switching between threads is **random**.
+
+```java
+public class MyThread extends Thread {
+    String name;
+    MyThread(String name) { this.name = name; }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 1000; i++) {
+            System.out.println(name + " is running!");
+            Thread.yield();
+        }
+    }
+}
+```
+
+```java
+public static void main(String[] args) {
+    Thread t2 = new MyThread("A");
+    Thread t3 = new MyThread("B");
+
+    t2.start(); t3.start();
+}
+```
+
+## Try it
+
+Here's `main` from this lab, simulated. Turn on `yield`, `join` and the priorities one at a time and see how each changes the output. Press **run again** to see that, without `yield`, no two runs are guaranteed to match:
+
+<ThreadRace />
+
+<Callout tone="orange" label="Never rely on the order">
+The real JVM gives no promises about which thread runs when. Priorities and `yield` are only **hints** to the scheduler. If your program is only correct for one particular order, it has a bug. The next topic, synchronization, is all about this.
+</Callout>
+
+## Exercises
+
+### 1. A stopwatch
+
+Write a class `StopWatch` whose `main` acts as a stopwatch: it prints the time **every second** until it's terminated.
+
+**Hint:** use `sleep`.
+
+<details>
+<summary>One possible solution</summary>
+
+```java
+public class StopWatch {
+    public static void main(String[] args) throws InterruptedException {
+        int seconds = 0;
+        while (true) {
+            System.out.printf("%02d:%02d%n", seconds / 60, seconds % 60);
+            Thread.sleep(1000);
+            seconds++;
+        }
+    }
+}
+```
+
+</details>
+
+### 2. Matrix addition with threads
+
+Write a program that takes **two matrices** as input and prints their **sum**, using threads to do the additions.
+
+**Hints:**
+
+- Make **one thread per column** (or per row).
+- Each thread adds two corresponding columns (or rows) and writes the result into the **shared output matrix**.
+- The parent thread must **wait** until the child threads finish.
+
+<MatrixAddThreads />
+
+<details>
+<summary>One possible solution</summary>
+
+```java
+public class MatrixAdd {
+    static int[][] A, B, C;
+
+    static class RowAdder extends Thread {
+        int row;
+        RowAdder(int row) { this.row = row; }
+
+        @Override
+        public void run() {
+            for (int c = 0; c < A[row].length; c++)
+                C[row][c] = A[row][c] + B[row][c];
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        A = new int[][] { {1, 2, 3}, {4, 5, 6} };
+        B = new int[][] { {6, 5, 4}, {3, 2, 1} };
+        C = new int[A.length][A[0].length];
+
+        RowAdder[] threads = new RowAdder[A.length];
+        for (int r = 0; r < A.length; r++) {
+            threads[r] = new RowAdder(r);
+            threads[r].start();
+        }
+        for (RowAdder t : threads) t.join();   // wait for every row
+
+        for (int[] row : C)
+            System.out.println(java.util.Arrays.toString(row));
+    }
+}
+```
+
+Each thread writes to **its own row**, so no two threads ever touch the same cell. That's why this program is safe without any extra synchronization.
+
+</details>
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="A UI that doesn't freeze" tool="BACKGROUND THREADS">
+    Android and desktop apps download and decode in worker threads, so the main (UI) thread is always free to react to your taps.
+  </PracticalApplication>
+  <PracticalApplication title="Web servers" tool="THREAD POOLS">
+    A Java web server handles each incoming request on a thread from a pool, so thousands of users are served concurrently.
+  </PracticalApplication>
+  <PracticalApplication title="Image filters and games" tool="PARALLEL WORK">
+    Splitting an image into rows and handing each to a thread is the same idea as the matrix exercise, and it's how photo editors use all your cores.
+  </PracticalApplication>
+  <PracticalApplication title="Waiting for downloads" tool="JOIN">
+    "Download these 10 files, then zip them" is a join: start ten threads, wait for all of them, then continue.
+  </PracticalApplication>
+</ApplicationsGrid>

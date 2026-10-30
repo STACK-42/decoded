@@ -29,3 +29,5 @@ _sources/
 # Cloudflare Worker local state
 .wrangler/
 .dev.vars*
+
+.claude/

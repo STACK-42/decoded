@@ -1,0 +1,290 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SemaphoreQueue, SemaphoreDeadlock, SemaphoreBuffer, ReadersWriters, DiningPhilosophers } from "@/components/mdx/OsVisualizers";
+
+# Semaphores and the Classic Synchronization Problems
+
+A mutex lets one process in at a time. Often you need more: "let up to 3 in", "don't start step 2 until step 1 is done", "wait until there's something to consume". The **semaphore** handles all of these. This lesson builds semaphores, shows how they can go wrong, and uses them on three classic problems that every new synchronization tool is tested against.
+
+## Semaphores
+
+A **semaphore** is a synchronization tool that can be built **without busy waiting**.
+
+- A semaphore **S** is an **integer variable**.
+- It's changed by two standard operations, **`wait()`** and **`signal()`**. They were originally called **P()** and **V()** (from the Dutch words *proberen*, "to test", and *verhogen*, "to increment").
+- It's **less complicated** to use than the hardware instructions.
+- It can **only** be accessed through these two **indivisible (atomic)** operations:
+
+```c
+wait(S) {
+    while (S <= 0)
+        ;   // busy wait
+    S--;
+}
+
+signal(S) {
+    S++;
+}
+```
+
+### Semaphore usage
+
+- A **counting semaphore**'s value can range over an **unrestricted** domain. Use it to control access to a resource with **several instances**: initialize S to the number available.
+- A **binary semaphore**'s value can only be **0 or 1**. That's the **same as a mutex lock**.
+- A counting semaphore can be **implemented** using binary semaphores.
+
+Semaphores solve many synchronization problems. For example: two concurrent processes, $P_1$ with a statement $S_1$, and $P_2$ with a statement $S_2$. We need $S_2$ to run **only after** $S_1$ has finished. Use a semaphore `synch` initialized to **0**:
+
+```c
+/* P1 */                  /* P2 */
+S1;                       wait(synch);
+signal(synch);            S2;
+```
+
+If $P_2$ gets there first, `wait(synch)` stops it until $P_1$ signals.
+
+### Implementing semaphores
+
+The implementation must guarantee that **no two processes** can run `wait()` and `signal()` on the **same semaphore at the same time**.
+
+- So the implementation **itself** becomes a critical-section problem, with the wait and signal code inside the critical section.
+- We could now have **busy waiting** in the implementation. But that code is **short**, so there's **little busy waiting** if the critical section is rarely occupied.
+- But **applications** may spend a long time in their critical sections, so busy waiting there is **not a good solution**.
+
+### Implementation with no busy waiting
+
+Give each semaphore its own **waiting queue**:
+
+```c
+typedef struct {
+    int value;
+    struct process *list;
+} semaphore;
+```
+
+Two operations help:
+
+- **`block()`**: put the process that called it on the right **waiting queue**, and stop running it.
+- **`wakeup(P)`**: take process P off the waiting queue and put it in the **ready queue**.
+
+```c
+wait(semaphore *S) {
+    S->value--;
+    if (S->value < 0) {
+        add this process to S->list;
+        block();
+    }
+}
+
+signal(semaphore *S) {
+    S->value++;
+    if (S->value <= 0) {
+        remove a process P from S->list;
+        wakeup(P);
+    }
+}
+```
+
+A blocked process sleeps instead of spinning, so it uses **no CPU** while waiting.
+
+<SemaphoreQueue />
+
+## Deadlock and starvation
+
+**Deadlock**: two or more processes are **waiting forever** for an event that only one of the **waiting** processes could cause.
+
+Let **S** and **Q** be two semaphores initialized to **1**:
+
+```c
+/* P0 */          /* P1 */
+wait(S);          wait(Q);
+wait(Q);          wait(S);
+  ...               ...
+signal(S);        signal(Q);
+signal(Q);        signal(S);
+```
+
+Each process asks for the two semaphores in a **different order**. That's fine most of the time, until the scheduler switches at exactly the wrong moment:
+
+<SemaphoreDeadlock />
+
+Two related problems:
+
+- **Starvation** (indefinite blocking): a process may **never be removed** from the semaphore queue it's waiting in. For example, if the queue is served in LIFO order.
+- **Priority inversion**: a **scheduling** problem where a **lower-priority** process holds a lock that a **higher-priority** process needs. The important process ends up waiting on the unimportant one.
+
+## Classic problems of synchronization
+
+These are the standard tests for any new synchronization scheme:
+
+1. the **bounded-buffer** problem,
+2. the **readers-writers** problem,
+3. the **dining-philosophers** problem.
+
+### 1. The bounded-buffer problem
+
+- **n** buffers, each holding one item.
+- Semaphore **`mutex`** initialized to **1**: protects the buffer itself.
+- Semaphore **`full`** initialized to **0**: counts the **full** slots.
+- Semaphore **`empty`** initialized to **n**: counts the **empty** slots.
+
+**Producer:**
+
+```c
+do {
+    ...
+    /* produce an item in next_produced */
+    ...
+    wait(empty);
+    wait(mutex);
+    ...
+    /* add next_produced to the buffer */
+    ...
+    signal(mutex);
+    signal(full);
+} while (true);
+```
+
+**Consumer:**
+
+```c
+do {
+    wait(full);
+    wait(mutex);
+    ...
+    /* remove an item from buffer to next_consumed */
+    ...
+    signal(mutex);
+    signal(empty);
+    ...
+    /* consume the item in next_consumed */
+    ...
+} while (true);
+```
+
+<SemaphoreBuffer />
+
+<Callout tone="orange" label="Order matters">
+What if the producer did `wait(mutex)` **before** `wait(empty)`? With a full buffer, it would grab the mutex and then block on `empty`, while holding the mutex. The consumer could never get in to free a slot: deadlock.
+</Callout>
+
+### 2. The readers-writers problem
+
+A **data set** is shared among several concurrent processes:
+
+- **Readers** only **read** the data set. They never update it.
+- **Writers** can both **read and write**.
+
+The problem:
+
+- allow **multiple readers** to read **at the same time**,
+- but only **one writer** may access the shared data at a time (with no readers).
+
+**Shared data:**
+
+- the data set,
+- semaphore **`rw_mutex`** initialized to **1** (writers' lock, also taken by the first reader),
+- semaphore **`mutex`** initialized to **1** (protects `read_count`),
+- integer **`read_count`** initialized to **0** (how many are reading now).
+
+**Writer:**
+
+```c
+do {
+    wait(rw_mutex);
+    ...
+    /* writing is performed */
+    ...
+    signal(rw_mutex);
+} while (true);
+```
+
+**Reader:**
+
+```c
+do {
+    wait(mutex);
+    read_count++;
+    if (read_count == 1)      /* first reader in locks out writers */
+        wait(rw_mutex);
+    signal(mutex);
+    ...
+    /* reading is performed */
+    ...
+    wait(mutex);
+    read_count--;
+    if (read_count == 0)      /* last reader out lets writers in */
+        signal(rw_mutex);
+    signal(mutex);
+} while (true);
+```
+
+<ReadersWriters />
+
+**Variations.** There are several ways to treat readers and writers, and they all involve **priorities**:
+
+- **First variation:** no reader is kept waiting unless a writer **already has permission** to use the shared object. (That's the code above.)
+- **Second variation:** once a writer is **ready**, it writes **as soon as possible**.
+- Both may lead to **starvation** (of writers in the first, of readers in the second), which leads to even more variations.
+
+On some systems the **kernel provides reader-writer locks** that solve this for you.
+
+### 3. The dining-philosophers problem
+
+- Philosophers spend their lives **thinking** and **eating**.
+- They don't talk to their neighbours. Now and then a philosopher tries to pick up **2 chopsticks** (one at a time) to eat from the bowl.
+- They need **both** to eat, and put both down when finished.
+
+**Shared data** (for 5 philosophers): the bowl of rice (the data set), and semaphores **`chopstick[5]`**, each initialized to **1**.
+
+**The structure of philosopher i:**
+
+```c
+do {
+    wait(chopstick[i]);
+    wait(chopstick[(i + 1) % 5]);
+
+        // eat
+
+    signal(chopstick[i]);
+    signal(chopstick[(i + 1) % 5]);
+
+        // think
+} while (true);
+```
+
+**What's the problem with this algorithm?** No two neighbours eat at once, so it's safe. But if **all five** get hungry at the same time and each picks up their **left** chopstick, every `chopstick` semaphore is now 0, and everyone waits forever for their right one. **Deadlock.**
+
+<DiningPhilosophers />
+
+Some ways to fix it:
+
+- allow **at most 4** philosophers at the table at once,
+- let a philosopher pick up chopsticks **only if both** are free (do it inside a critical section),
+- use an **asymmetric** solution: odd-numbered philosophers pick up their **right** chopstick first, even-numbered ones their **left** first (the fix in the demo above).
+
+## Problems with semaphores
+
+Semaphores are powerful but easy to misuse, and one mistake anywhere breaks everything:
+
+- **`signal(mutex) … wait(mutex)`**: the order is swapped. Several processes may be in their critical sections at once, so mutual exclusion is gone.
+- **`wait(mutex) … wait(mutex)`**: `signal` was replaced by `wait`. The process blocks itself forever: deadlock.
+- **Omitting** `wait(mutex)` or `signal(mutex)` (or both): either mutual exclusion is broken, or a deadlock happens.
+
+All of these lead to **deadlock** and **starvation**, and they're hard to find, because they only show up in particular interleavings.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Limiting database connections" tool="COUNTING SEMAPHORE">
+    A server with 10 database connections uses a semaphore initialized to 10. The 11th request waits until someone signals that a connection is free.
+  </PracticalApplication>
+  <PracticalApplication title="Many readers, one editor" tool="READER-WRITER LOCKS">
+    Caches and config stores are read constantly and changed rarely. Reader-writer locks (like Java's ReentrantReadWriteLock) let all the reads run in parallel.
+  </PracticalApplication>
+  <PracticalApplication title="Two bank transfers in opposite directions" tool="DEADLOCK">
+    Transfer A→B locks A then B; transfer B→A locks B then A. That's the S and Q example. Real systems fix it by always locking accounts in the same order, the same trick as the asymmetric philosophers.
+  </PracticalApplication>
+  <PracticalApplication title="The Mars Pathfinder reset bug" tool="PRIORITY INVERSION">
+    In 1997 the Pathfinder lander kept rebooting because a low-priority task held a lock a high-priority task needed. Engineers fixed it from Earth by enabling priority inheritance.
+  </PracticalApplication>
+</ApplicationsGrid>

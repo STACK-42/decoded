@@ -28,7 +28,7 @@ describe("course authors", () => {
   });
 
   it("leaves the section out when a course has no authors", () => {
-    renderCourse("operating-systems");
+    renderCourse("distributed-systems");
     expect(screen.queryByText("Authored by")).toBeNull();
   });
 });

@@ -1,0 +1,365 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SynchronizedRace, JavaMonitor, SemaphoreBuffer } from "@/components/mdx/OsVisualizers";
+
+# Lab: Synchronization in Java
+
+The last two lessons were theory: race conditions, critical sections, semaphores. This lab makes them real in Java. You'll fix a race with `synchronized`, coordinate threads with `wait()` and `notify()`, build your own counting semaphore, and use it to solve the producer-consumer problem.
+
+## Theory recap
+
+### The critical section
+
+A **critical section** is a segment of code in which a process may be changing common variables, updating a table, writing a file, and so on.
+
+The key rule: when one process is executing in its critical section, **no other** process is allowed to execute in its critical section. Critical sections are **mutually exclusive**, and each process must **request permission** to enter its critical section.
+
+### The race condition, again
+
+Two processes, **P1** and **P2**, share a variable `counter`. P1 increments it by one, and P2 decrements it by one. `counter` starts at **1**, and both run concurrently. The result may be **0, 1 or 2**! The only correct value is **1**.
+
+`counter++` is really:
+
+```text
+register = counter;
+register = register + 1;
+counter = register;
+```
+
+and `counter--` is the same, but decrementing. One possible interleaving:
+
+| Time | Who | Instruction | Result |
+| --- | --- | --- | --- |
+| T0 | P1 | `register = counter` | register = 1 |
+| T1 | P2 | `register = counter` | register = 1 |
+| T2 | P1 | `register = register + 1` | register = 2 |
+| T3 | P2 | `register = register - 1` | register = 0 |
+| T4 | P1 | `counter = register` | counter = 2 |
+| T5 | P2 | `counter = register` | **counter = 0** |
+
+That's not the only bad scenario. We get these wrong answers because both processes access the same variable **concurrently**, and the outcome depends on the **order** in which the accesses happen. To fix it, we need **synchronization** to keep data consistent between cooperating processes and threads.
+
+## Java synchronization
+
+Java supports two kinds of thread synchronization:
+
+- **Mutual exclusion**, supported by the JVM through **object locks**. Several threads can work on shared data **without interfering** with each other.
+- **Cooperation**, supported through the **`wait`** and **`notify`** methods of class `Object`. Threads can **work together** toward a common goal.
+
+## 1. Mutual exclusion
+
+### Object locks
+
+**Every object has a lock.** A thread must **acquire** the object's lock before entering a critical section (a synchronized region) and **release** it afterwards.
+
+### Synchronized methods
+
+Java gives two ways to make synchronized regions: **synchronized methods** and **synchronized blocks**.
+
+To make a method synchronized, just add the **`synchronized`** keyword to its declaration:
+
+- Before running a synchronized method, the JVM **acquires a lock**.
+- For an **instance method**, it's the lock of the **object** the method is called on.
+- For a **class (static) method**, it's the lock of the **class** (its `Class` object).
+- When the method finishes, by returning **or** by throwing an exception, the JVM **releases** the lock.
+
+So two calls to synchronized methods **on the same object can't interleave**. While one thread runs a synchronized method on an object, every other thread that calls a synchronized method on that object **blocks** until the first is done.
+
+```java
+public class SynchronizedCounter {
+    private int c = 0;
+
+    public synchronized void increment() {
+        int register = c;
+        register = register + 1;
+        c = register;
+    }
+
+    public synchronized void decrement() {
+        int register = c;
+        register = register - 1;
+        c = register;
+    }
+
+    public synchronized int value() {
+        return c;
+    }
+}
+```
+
+**Trace it:** run the code below with and without the `synchronized` keywords.
+
+```java
+public class MyThread extends Thread {
+    private SynchronizedCounter sc;
+    private String myName;
+
+    public MyThread(String name, SynchronizedCounter sc) {
+        this.sc = sc;
+        this.myName = name;
+    }
+
+    public void run() {
+        sc.increment();
+        System.out.println("C = " + sc.value() + " in Thread " + myName);
+    }
+}
+
+public class MutexThr {
+    public static void main(String[] args) {
+        SynchronizedCounter count = new SynchronizedCounter();
+        MyThread thrA = new MyThread("A", count);
+        MyThread thrB = new MyThread("B", count);
+        thrA.start();
+        thrB.start();
+        try {
+            thrA.join();
+            thrB.join();
+        } catch (InterruptedException e) {
+            System.out.println("Join interrupted");
+        }
+    }
+}
+```
+
+Here's the theory example (one thread increments, the other decrements, starting from 1), so you can see the lock at work. Run it plain first, then synchronized, with the same order of steps:
+
+<SynchronizedRace />
+
+### Synchronized blocks
+
+The other way is a **synchronized block**. Unlike a synchronized method, a block must say **which object** provides the lock:
+
+```java
+public void addName(String name) {
+    synchronized (this) {
+        lastName = name;
+        nameCount++;
+    }
+    nameList.add(name);
+}
+```
+
+Only the two updates are locked. `nameList.add(name)` runs outside, so other threads aren't blocked longer than necessary.
+
+Blocks also allow **fine-grained** synchronization. Say class `MsLunch` has two fields, `c1` and `c2`, that are **never used together**. Every update must be synchronized, but there's no reason to stop an update of `c1` from interleaving with an update of `c2`: that would only cause unnecessary blocking. So instead of locking `this`, we create **two objects just to be locks**:
+
+```java
+public class MsLunch {
+    private long c1 = 0;
+    private long c2 = 0;
+    private Object lock1 = new Object();
+    private Object lock2 = new Object();
+
+    public void inc1() {
+        synchronized (lock1) {
+            c1++;
+        }
+    }
+
+    public void inc2() {
+        synchronized (lock2) {
+            c2++;
+        }
+    }
+}
+```
+
+Now one thread can run `inc1()` while another runs `inc2()`, at the same time.
+
+## 2. Cooperation
+
+Class `java.lang.Object` has five methods for thread cooperation. They can **only be called from inside a synchronized method or block**: the thread must **already own** the object's lock.
+
+| Method | What it does |
+| --- | --- |
+| `void wait()` | the thread that owns the lock **suspends**. It **releases the lock** and enters the object's **wait set**, and stays there until another thread calls `notify` on the object |
+| `void wait(long timeout)` | wait until notified, or until `timeout` milliseconds have passed |
+| `void wait(long timeout, int nanos)` | wait until notified, or until `timeout` milliseconds plus `nanos` nanoseconds have passed |
+| `void notify()` | **wake up one** thread in the wait set |
+| `void notifyAll()` | **wake up all** threads in the wait set |
+
+Every object works like a little room with one key. Threads queue at the door for the key (the **entry set**). The key holder can step aside to a waiting area by calling `wait()` (the **wait set**), handing the key on. `notify()` sends a sleeper back to the door queue, where it must get the key again before continuing.
+
+<JavaMonitor />
+
+## Problem 1: a counting semaphore
+
+Let's build a **semaphore**: a tool for synchronization and cooperation. A semaphore S is an integer that's only accessed through two **atomic** operations, **wait** and **signal**. Call wait **before** entering the critical section and signal **after** leaving it. There are two main types:
+
+- **binary**: only one process can enter the critical section,
+- **counting**: more than one process can enter.
+
+**What the count means:**
+
+- **0 or more** means **nobody is waiting**.
+- **Negative n** means **n processes are waiting**.
+- **Positive n** means **n resources are available**: n requests can be granted without delay.
+
+**The atomic methods:**
+
+- **`wait(sem)`**, also called **`P(sem)`**: **decrement** the value. If it's negative, **suspend** the process.
+- **`signal(sem)`**, also called **`V(sem)`**: **increment** the value, and let the **first** process in the waiting queue continue.
+
+We'll use **synchronized methods** to make them atomic.
+
+A semaphore can be built with **busy waiting**, or by **blocking** threads in a waiting queue:
+
+```c
+/* busy waiting */
+Wait(S) {
+    while (S <= 0)
+        ;   // no-op
+    S--;
+}
+
+Signal(S) {
+    S++;
+}
+```
+
+```c
+/* blocking in a waiting queue */
+typedef struct {
+    int value;
+    struct process *L;
+} semaphore;
+
+Wait(semaphore S) {
+    S.value--;
+    if (S.value < 0) {
+        // Object.wait();
+        add this process to S.L;
+        block();
+    }
+}
+
+Signal(semaphore S) {
+    S.value++;
+    if (S.value <= 0) {
+        // Object.notify();
+        remove a process P from S.L;
+        wakeup(P);
+    }
+}
+```
+
+Here's a counting semaphore in Java that **blocks** instead of busy waiting. Java's own `wait()` and `notify()` give us the waiting queue for free:
+
+```java
+class semaphore {
+    protected int value = 0;
+
+    protected semaphore() { value = 0; }
+    protected semaphore(int initial) { value = initial; }
+
+    public synchronized void P() {
+        value--;
+        if (value < 0)
+            try { wait(); } catch (InterruptedException e) { }
+    }
+
+    public synchronized void V() {
+        value++;
+        if (value <= 0) notify();
+    }
+}
+```
+
+<Callout tone="orange" label="For real projects">
+This small class is perfect for learning. In production Java code, use `java.util.concurrent.Semaphore`, which handles interrupts, fairness and rare "spurious" wake-ups for you.
+</Callout>
+
+## Problem 2: producer-consumer with semaphores
+
+The producer and consumer cooperate through a **bounded buffer**:
+
+- The **producer** inserts a new element **only if there's free space**. After producing, it **tells the consumer** an element is ready.
+- The **consumer** removes an element **only if there's one in the buffer**. After consuming, it **tells the producer** a space is free.
+
+```java
+class buffer {
+    private int size = 5;                    // the buffer bound
+    private Object store[] = new Object[size];
+    private int inptr = 0;
+    private int outptr = 0;
+
+    semaphore spaces = new semaphore(size);
+    semaphore elements = new semaphore(0);
+
+    public void produce(Object value) {
+        spaces.P();
+        store[inptr] = value;
+        inptr = (inptr + 1) % size;
+        elements.V();
+    }
+
+    public Object consume() {
+        Object value;
+        elements.P();
+        value = store[outptr];
+        outptr = (outptr + 1) % size;
+        spaces.V();
+        return value;
+    }
+}
+```
+
+```java
+class producer extends Thread {
+    buffer buf;
+    public producer(buffer buf) { this.buf = buf; }
+
+    public void run() {
+        for (int i = 1; i <= 50; i++)
+            buf.produce(Integer.valueOf(i));
+    }
+}
+
+class consumer extends Thread {
+    buffer buf;
+    public consumer(buffer buf) { this.buf = buf; }
+
+    public void run() {
+        for (int i = 1; i <= 50; i++)
+            System.out.println(buf.consume());
+    }
+}
+
+class pc {
+    static buffer buf = new buffer();
+
+    public static void main(String[] args) {
+        producer P = new producer(buf);
+        consumer C = new consumer(buf);
+        P.start();
+        C.start();
+    }
+}
+```
+
+<SemaphoreBuffer java />
+
+<Callout tone="mint" label="Think about it">
+Do `produce` or `consume` need to be `synchronized`? **No.** There's exactly **one** producer thread calling `produce`, and **one** consumer thread calling `consume`. `inptr` is only ever changed by the producer, and `outptr` only by the consumer, so no variable is updated by two threads. (With **several** producers, you'd need a lock around `store[inptr] = value; inptr = ...`, which is what `mutex` did in the semaphore lesson.)
+</Callout>
+
+## Further reading
+
+- Oracle's Java tutorial on synchronization: [docs.oracle.com/javase/tutorial/essential/concurrency/sync.html](https://docs.oracle.com/javase/tutorial/essential/concurrency/sync.html)
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Thread-safe collections" tool="SYNCHRONIZED">
+    Collections.synchronizedList wraps every method of a list in synchronized, exactly like SynchronizedCounter.
+  </PracticalApplication>
+  <PracticalApplication title="Work queues" tool="WAIT / NOTIFY">
+    Java's BlockingQueue puts a thread to sleep when the queue is empty and wakes it when work arrives, built on the same wait-and-notify idea.
+  </PracticalApplication>
+  <PracticalApplication title="Rate limiting" tool="SEMAPHORE">
+    "At most 5 downloads at once" is a semaphore initialized to 5: P() before each download, V() after it.
+  </PracticalApplication>
+  <PracticalApplication title="Logging from many threads" tool="PRODUCER-CONSUMER">
+    Fast logging libraries let many threads drop messages into a buffer while one background thread writes them to disk.
+  </PracticalApplication>
+</ApplicationsGrid>

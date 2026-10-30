@@ -146,8 +146,25 @@ const ExamMindLesson01 = lesson(() => import("@/content/the-exam-mind/01-the-pro
 const ExamMindLesson02 = lesson(() => import("@/content/the-exam-mind/02-the-one-week-plan.mdx"));
 const ExamMindLesson03 = lesson(() => import("@/content/the-exam-mind/03-stress-and-anxiety.mdx"));
 const ExamMindLesson04 = lesson(() => import("@/content/the-exam-mind/04-exam-day.mdx"));
-import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
+const OsWhatAnOsDoes = lesson(() => import("@/content/operating-systems/m1-01-what-an-os-does.mdx"));
+const OsArchitecture = lesson(() => import("@/content/operating-systems/m1-02-os-architecture-and-operations.mdx"));
+const OsServicesSyscalls = lesson(() => import("@/content/operating-systems/m1-03-services-and-system-calls.mdx"));
+const OsDesignStructure = lesson(() => import("@/content/operating-systems/m1-04-os-design-and-structure.mdx"));
+const OsLabLinux = lesson(() => import("@/content/operating-systems/m1-05-lab-linux-commands.mdx"));
+const OsProcesses = lesson(() => import("@/content/operating-systems/m2-01-processes.mdx"));
+const OsIpc = lesson(() => import("@/content/operating-systems/m2-02-interprocess-communication.mdx"));
+const OsLabThreads = lesson(() => import("@/content/operating-systems/m2-03-lab-java-threads.mdx"));
+const OsCriticalSection = lesson(() => import("@/content/operating-systems/m3-01-critical-section-problem.mdx"));
+const OsSemaphores = lesson(() => import("@/content/operating-systems/m3-02-semaphores-and-classic-problems.mdx"));
+const OsLabSync = lesson(() => import("@/content/operating-systems/m3-03-lab-java-synchronization.mdx"));
+const OsSchedulingBasics = lesson(() => import("@/content/operating-systems/m4-01-cpu-scheduling-basics.mdx"));
+const OsRoundRobin = lesson(() => import("@/content/operating-systems/m4-02-round-robin-and-beyond.mdx"));
+const OsMemoryAllocation = lesson(() => import("@/content/operating-systems/m5-01-memory-allocation.mdx"));
+const OsPaging = lesson(() => import("@/content/operating-systems/m5-02-paging.mdx"));
+const OsVirtualMemory = lesson(() => import("@/content/operating-systems/m5-03-virtual-memory.mdx"));
+const OsPageReplacement = lesson(() => import("@/content/operating-systems/m5-04-page-replacement-and-thrashing.mdx"));
 
+import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 export type LessonKind = "theory" | "practical" | "quiz";
 
@@ -651,11 +668,60 @@ export const courses: Course[] = [
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
     description:
-      "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
-    accent: "violet",
-    status: "coming-soon",
+      "What really happens between your click and the hardware. Interrupts and system calls, processes and threads, synchronization, CPU scheduling, main memory and virtual memory, plus hands-on Linux and threads labs. Every lesson follows the lectures and labs, in plain language, with animations you can step through.",
+    accent: "mint",
+    status: "available",
     number: "10",
-    modules: [],
+    authors: [asmaaFarouq],
+    modules: [
+      {
+        title: "Meet the Operating System",
+        blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
+        lessons: [
+          { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
+          { slug: "os-architecture-and-operations", title: "Inside the OS: Architecture, Operations and Environments", duration: "22 min", Component: OsArchitecture },
+          { slug: "services-and-system-calls", title: "OS Services, Interfaces and System Calls", duration: "18 min", Component: OsServicesSyscalls },
+          { slug: "os-design-and-structure", title: "System Programs, OS Design and Structure", duration: "20 min", Component: OsDesignStructure },
+          { slug: "lab-linux-commands", title: "Lab: Linux and the Command Line", duration: "25 min", kind: "practical", Component: OsLabLinux },
+        ],
+      },
+      {
+        title: "Processes and Threads",
+        blurb: "A program in motion: its states, how the OS switches between processes, how they talk, and threads.",
+        lessons: [
+          { slug: "processes", title: "Processes: The Program in Motion", duration: "22 min", Component: OsProcesses },
+          { slug: "interprocess-communication", title: "Interprocess Communication", duration: "22 min", Component: OsIpc },
+          { slug: "lab-java-threads", title: "Lab: Threads in Java", duration: "25 min", kind: "practical", Component: OsLabThreads },
+        ],
+      },
+      {
+        title: "Process Synchronization",
+        blurb: "When processes share data: race conditions, critical sections, locks, semaphores and the classic problems.",
+        lessons: [
+          { slug: "critical-section-problem", title: "Race Conditions and the Critical-Section Problem", duration: "24 min", Component: OsCriticalSection },
+          { slug: "semaphores-and-classic-problems", title: "Semaphores and the Classic Synchronization Problems", duration: "26 min", Component: OsSemaphores },
+          { slug: "lab-java-synchronization", title: "Lab: Synchronization in Java", duration: "25 min", kind: "practical", Component: OsLabSync },
+        ],
+      },
+      {
+        title: "CPU Scheduling",
+        blurb: "Who runs next? FCFS, SJF, priority, round robin and multilevel queues, and how to judge them.",
+        lessons: [
+          { slug: "cpu-scheduling-basics", title: "CPU Scheduling: FCFS, SJF and Priority", duration: "26 min", Component: OsSchedulingBasics },
+          { slug: "round-robin-and-beyond", title: "Round Robin, Multilevel Queues and Choosing a Scheduler", duration: "24 min", Component: OsRoundRobin },
+        ],
+      },
+      {
+        title: "Memory Management",
+        blurb: "Sharing RAM safely: addresses and the MMU, swapping, allocation, segmentation, paging and virtual memory.",
+        lessons: [
+          { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
+          { slug: "paging", title: "Paging", duration: "26 min", Component: OsPaging },
+          { slug: "virtual-memory", title: "Virtual Memory and Demand Paging", duration: "24 min", Component: OsVirtualMemory },
+          { slug: "page-replacement-and-thrashing", title: "Page Replacement and Thrashing", duration: "28 min", Component: OsPageReplacement },
+        ],
+      },
+    ],
   },
   {
     slug: "distributed-systems",
