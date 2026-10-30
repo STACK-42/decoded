@@ -84,6 +84,31 @@ $$
 
 With $a = 3$ and $n = 10$: $\phi(10) = 4$ and $3^4 = 81 \equiv 1$. With $a = 2$ and $n = 11$: $\phi(11) = 10$ and $2^{10} = 1024 \equiv 1$. When $n$ is prime, $\phi(n) = n - 1$, and you get Fermat's theorem back.
 
+## In Python
+
+Python's three-argument `pow` is modular exponentiation, and its integers don't overflow, so even Wilson's theorem runs exactly:
+
+```python
+import math
+import numpy as np
+
+print(pow(7, 18, 19))  # 1
+print(pow(5, 38, 11))  # 4
+print(math.factorial(12) % 13)  # 12
+print(pow(2, 560, 561))  # 1
+print(int(np.sum(np.gcd(np.arange(1, 1000), 1000) == 1)))  # 400
+```
+
+The fourth line is the Carmichael number 561 passing Fermat's test despite being composite.
+
+## In machine learning
+
+The link is privacy. Hospitals or phones may want to train a shared model without showing anyone their raw data.
+
+Paillier is a homomorphic encryption scheme, built on the same kind of modular arithmetic as RSA, that lets a server add numbers it can't read. So it can sum encrypted model updates from many clients and only ever see the total. Its security also depends on keeping the factors of $n$ secret, which is the same as keeping $\phi(n)$ secret.
+
+There's also a shared style of thinking. Miller-Rabin accepts a tiny chance of error in exchange for speed, in the same way that stochastic gradient descent uses a noisy estimate because it's far cheaper than the exact gradient.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

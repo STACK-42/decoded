@@ -38,6 +38,34 @@ kron(X, I)             kron(I, X)
 
 `kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
 
+## In Python
+
+```python
+import numpy as np
+
+A = np.array([[1, -2], [-1, 0]])
+B = np.array([[4, -3], [2, 3]])
+
+print(np.kron(A, B)[0].tolist())  # [4, -3, -8, 6]
+print(np.kron(np.eye(2, dtype=int), np.array([[1, 2], [3, 4]]))[2].tolist())  # [0, 0, 1, 2]
+```
+
+Plain Python spells out all four loops:
+
+```python
+A = [[1, 2]]
+B = [[0, 5], [6, 7]]
+
+K = [[a * b for a in ra for b in rb] for ra in A for rb in B]
+print(K)  # [[0, 5, 0, 10], [6, 7, 12, 14]]
+```
+
+## In machine learning
+
+Some optimizers need the curvature of the loss, a matrix far too large to store or invert. K-FAC approximates each layer's block of it as a Kronecker product of two small matrices. That helps because $(A \otimes B)^{-1} = A^{-1} \otimes B^{-1}$, so inverting two small matrices replaces inverting a huge one.
+
+Gaussian processes on grid-shaped data use the same shortcut, since their covariance matrix often factors this way.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

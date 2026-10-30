@@ -7,7 +7,9 @@ Two more jobs that become a single function call: finding how fast a polynomial 
 
 ## Derivatives
 
-The derivative of $ax^n$ is $nax^{n-1}$, and on a coefficient vector that just means multiplying by the powers and dropping the last entry. `polyder` does it for you:
+The derivative of $ax^n$ is $nax^{n-1}$. On a coefficient vector, that takes two steps: multiply each coefficient by its power of $x$, then delete the constant term, the rightmost number, because a constant has a derivative of zero.
+
+Take $x^3 - 2x - 5$. Its coefficients `[1 0 -2 -5]` go with the powers 3, 2, 1 and 0, so multiplying gives `[3 0 -2 0]`. Deleting the constant term leaves `[3 0 -2]`, which is $3x^2 - 2$. `polyder` does this for you:
 
 ```matlab
 p = [1 0 -2 -5];      % x³ - 2x - 5
@@ -17,16 +19,28 @@ q =
      3     0    -2     % 3x² - 2
 ```
 
-Given two polynomials, it can also differentiate their product or quotient directly. Ask for one output and you get the derivative of the product. Ask for two and you get the numerator and denominator of the derivative of the quotient:
+`polyder` also accepts two polynomials, and the number of outputs you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
+
+With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. The product is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
 
 ```matlab
 a = [1 3 5];  b = [2 4 6];
 
 c = polyder(a, b)        % 8  30  56  38
+```
 
+With two outputs, it returns the derivative of the quotient $a(x) / b(x)$. The result is a fraction, so you get its top and bottom separately. By the quotient rule, `q` is $a'b - ab'$ and `d` is $b^2$:
+
+```matlab
 [q, d] = polyder(a, b)   % q = -2  -8  -2
                          % d =  4  16  40  48  36
 ```
+
+So the derivative of the quotient is
+
+$$
+\frac{-2x^2 - 8x - 2}{4x^4 + 16x^3 + 40x^2 + 48x + 36}
+$$
 
 ## Fitting a curve to data
 
@@ -52,6 +66,54 @@ Now try it. Change the degree, and drag the points to see the curve respond:
 <Callout tone="orange" label="Lower error isn't always better">
 Five points can always be matched exactly by a polynomial of degree 4. Zero error looks perfect, but it often means the curve has learned the noise in your data and will predict poorly between and beyond the points. This is called overfitting, and it's one of the main problems in machine learning.
 </Callout>
+
+## In Python
+
+```python
+import numpy as np
+
+print(np.polyder([1, 0, -2, -5]).tolist())  # [3, 0, -2]
+
+x = [1, 2, 3, 4, 5]
+y = [5.5, 43.1, 128, 290.7, 498.4]
+
+print(np.round(np.polyfit(x, y, 3), 4).tolist())  # [-0.1917, 31.5821, -60.3262, 35.34]
+```
+
+## In machine learning
+
+This lesson is the core of ML in miniature. `polyfit` is linear regression on polynomial features, the sum of squared errors is the mean squared error loss without the division, and the degree is the model's complexity.
+
+**Overfitting.** Hold some points back, and error on the training points keeps falling as the degree rises, while error on the held-out points eventually climbs. That's why ML practice splits data into training and test sets, and you can try it in NumPy:
+
+```python
+import numpy as np
+
+x = np.arange(10.0)
+y = 2 * x + np.array([0.3, -0.4, 0.2, 0.5, -0.3, 0.1, -0.5, 0.4, -0.2, 0.3])
+train, test = x % 2 == 0, x % 2 == 1
+
+def errors(degree):
+    p = np.polyfit(x[train], y[train], degree)
+    return [np.mean((np.polyval(p, x[m]) - y[m]) ** 2) for m in (train, test)]
+
+low, high = errors(1), errors(4)
+print(high[0] < low[0])  # True
+print(high[1] > low[1])  # True
+```
+
+**Gradient descent.** Deep networks have no formula like `polyfit`'s, so they follow the derivative downhill. For a single weight fitting $y = wx$, plain Python is enough:
+
+```python
+xs, ys = [1.0, 2.0, 3.0], [2.0, 4.0, 6.0]
+w = 0.0
+
+for step in range(100):
+    grad = sum(2 * (w * x - y) * x for x, y in zip(xs, ys)) / len(xs)
+    w -= 0.05 * grad
+
+print(round(w, 4))  # 2.0
+```
 
 ## Where you'll meet this
 

@@ -49,6 +49,38 @@ In a secret-key system, $e_k = d_k = k$. Anyone who can encrypt can also decrypt
 
 The ciphertext crosses the insecure channel in full view, so all the security rests on the key.
 
+## In Python
+
+The notation translates directly into two functions that undo each other:
+
+```python
+def E(k, m):
+    return "".join(chr((ord(ch) - 65 + k) % 26 + 65) for ch in m)
+
+def D(k, c):
+    return E(-k, c)
+
+print(E(3, "HELLO"))  # KHOOR
+print(D(3, E(3, "HELLO")))  # HELLO
+```
+
+Python's standard library warns you about randomness here. Use `secrets` for keys, and never `random`, because `random` is designed to be reproducible, which is exactly what a key must not be:
+
+```python
+import secrets
+
+print(len(secrets.token_bytes(16)))  # 16
+```
+
+## In machine learning
+
+Training data and model weights are both valuable, and often sensitive, so ML systems rely on these same guarantees:
+
+- **Privacy.** Medical or financial training data is encrypted at rest and in transit. Calls to a hosted model travel over TLS.
+- **Authentication.** Signed model files show that weights came from the claimed source.
+
+Researchers have also pointed ML at the problem itself. In 2016, Abadi and Andersen at Google trained neural networks to invent their own encryption so that a third network couldn't read it. It's an interesting result, though nobody uses learned ciphers to protect real data, because they come with no security proof.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

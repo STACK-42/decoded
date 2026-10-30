@@ -64,6 +64,52 @@ Y =
 
 Note that this differs from `polyval(p, X)`, which evaluates the polynomial separately on each entry.
 
+## In Python
+
+NumPy kept MATLAB's function names and its descending coefficient order:
+
+```python
+import numpy as np
+
+p = [1, -2, -1, 2]
+
+print(np.round(np.sort(np.roots(p)), 6).tolist())  # [-1.0, 1.0, 2.0]
+print(np.round(np.poly([-1, 2, 1]), 6).tolist())  # [1.0, -2.0, -1.0, 2.0]
+print(np.polyval(p, 3))  # 8
+```
+
+`polyval` uses Horner's method, which is short enough to write in pure Python. It needs only one multiplication per coefficient:
+
+```python
+def polyval(p, x):
+    result = 0
+    for c in p:
+        result = result * x + c
+    return result
+
+print(polyval([1, -2, -1, 2], 3))  # 8
+```
+
+## In machine learning
+
+**Polynomial features.** Adding $x^2$ and $x^3$ as extra columns lets a linear model fit curves. The model stays linear in its weights, so the same solver works.
+
+**Eigenvalues.** The eigenvalues of a matrix are the roots of its characteristic polynomial, and PCA ranks directions by those eigenvalues:
+
+```python
+import numpy as np
+
+A = np.array([[2.0, 1.0], [1.0, 2.0]])
+char_poly = np.poly(A)
+
+print(np.round(char_poly, 6).tolist())  # [1.0, -4.0, 3.0]
+print(np.round(np.sort(np.roots(char_poly)), 6).tolist())  # [1.0, 3.0]
+```
+
+Real libraries don't compute eigenvalues this way, because finding polynomial roots is numerically touchy. In fact, `np.roots` works the other way round: it builds a matrix and computes its eigenvalues.
+
+**Minimising a loss.** A minimum of a smooth loss is a place where the derivative is zero, so training looks for a root of the gradient.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

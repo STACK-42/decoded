@@ -43,6 +43,46 @@ A shift cipher has only 25 useful keys, so an attacker can try them all. This is
 Even without trying keys, letter frequencies give a shift cipher away. E is the most common letter in English, so the most common ciphertext letter is probably E shifted by $k$.
 </Callout>
 
+## In Python
+
+`str.translate` applies a whole substitution in one call, and pandas can count letters for a frequency attack:
+
+```python
+import string
+import pandas as pd
+
+def shift(text, k):
+    letters = string.ascii_uppercase
+    return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
+
+print(shift("IBM", 3))  # LEP
+print(shift("ENCRYPTION", 7))  # LUJYFWAPVU
+
+counts = pd.Series(list(shift("EEEEATTN", 3))).value_counts()
+print(counts.idxmax())  # H
+```
+
+The most common ciphertext letter is H, and H is E shifted by 3, so the frequency count has given away the key.
+
+## In machine learning
+
+**Letters as numbers.** Mapping A to 0 is what a character-level tokenizer does. Models can only process numbers, so each symbol gets an index first.
+
+**Picking the right key is classification.** You spotted the readable line in the brute-force list because you know English. To automate that, score each candidate against a statistical model of the language, then keep the best one. This is the same idea as an n-gram language model, the ancestor of today's large language models:
+
+```python
+import math
+
+freq = {"E": 0.127, "T": 0.091, "A": 0.082, "O": 0.075, "H": 0.061, "L": 0.040, "R": 0.060, "K": 0.008}
+
+def score(text):
+    return sum(math.log(freq.get(ch, 0.001)) for ch in text)
+
+print(score("HELLO") > score("KHOOR"))  # True
+```
+
+The logs turn a product of probabilities into a sum, which avoids numbers too small to store. Training a language model maximises this same kind of score.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

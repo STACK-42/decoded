@@ -42,6 +42,49 @@ r =
 
 A remainder of all zeros tells you that $a$ divides $c$ exactly. This also gives a quick test for a root: $r$ is a root of $p$ exactly when `deconv(p, [1 -r])` leaves no remainder.
 
+## In Python
+
+```python
+import numpy as np
+
+c = np.convolve([1, 2, 3], [4, 5, 6])
+print(c.tolist())  # [4, 13, 28, 27, 18]
+
+q, r = np.polydiv(c, [1, 2, 3])
+print(np.round(q).astype(int).tolist())  # [4, 5, 6]
+```
+
+The plain Python version is the definition, a sum over pairs of positions:
+
+```python
+a, b = [1, 2, 3], [4, 5, 6]
+c = [0] * (len(a) + len(b) - 1)
+
+for i, x in enumerate(a):
+    for j, y in enumerate(b):
+        c[i + j] += x * y
+
+print(c)  # [4, 13, 28, 27, 18]
+```
+
+A moving average in pandas is a convolution with equal weights:
+
+```python
+import numpy as np
+import pandas as pd
+
+s = pd.Series([2.0, 4.0, 6.0, 8.0])
+
+print(s.rolling(2).mean().dropna().tolist())  # [3.0, 5.0, 7.0]
+print(np.convolve(s, [0.5, 0.5], mode="valid").tolist())  # [3.0, 5.0, 7.0]
+```
+
+## In machine learning
+
+**Convolutional networks.** A CNN layer slides small learned filters across an image, and this works because a pattern means the same thing wherever it appears. Frameworks usually skip the flip you saw above, so strictly they compute a correlation, but everyone still calls it convolution. The flip makes no practical difference, because the weights are learned.
+
+**Time series features.** Rolling means like the one above are common inputs for forecasting models. Be careful to use only past values, or the model can peek at the future during training.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

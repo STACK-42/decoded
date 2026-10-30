@@ -55,6 +55,51 @@ $$
 
 For `magic(4)`, `trace` returns $16 + 11 + 6 + 1 = 34$, which is also what every row and column of that matrix adds up to.
 
+## In Python
+
+```python
+import numpy as np
+
+B = np.array([[5, -4, 2], [-1, 2, 3], [-2, 1, 0]])
+
+print(np.linalg.norm(B, 1))  # 8.0
+print(np.linalg.norm(B, np.inf))  # 11.0
+print(np.linalg.norm(B, "fro"))  # 8.0
+print(np.trace(B))  # 7
+```
+
+The defaults differ between the two languages. With no second argument, `np.linalg.norm(B)` is the Frobenius norm, while MATLAB's `norm(B)` is the 2-norm.
+
+pandas makes the definitions easy to read, since each one is a sum and a max:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame([[5, -4, 2], [-1, 2, 3], [-2, 1, 0]])
+
+print(df.abs().sum(axis=0).max())  # 8
+print(df.abs().sum(axis=1).max())  # 11
+```
+
+## In machine learning
+
+Norms show up in training in several ways:
+
+- **Regularization.** Weight decay adds the squared norm of the weights to the loss, which favours small weights. Lasso adds the sum of absolute values, which tends to push weights to exactly zero. Note that this "L1 penalty" sums all the entries, so it isn't the matrix 1-norm from this lesson.
+- **Gradient clipping.** If the norm of the gradient gets too large, it's scaled back down. This keeps training stable, especially for RNNs and transformers.
+
+```python
+import numpy as np
+
+g = np.array([30.0, 40.0])
+limit = 5.0
+
+clipped = g * min(1.0, limit / np.linalg.norm(g))
+print(clipped.tolist())  # [3.0, 4.0]
+```
+
+The trace has a job too. The trace of a covariance matrix is the total variance of the data, which is what PCA divides up when it reports the share of variance each component explains.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

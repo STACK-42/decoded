@@ -47,6 +47,44 @@ diag(A, -1)     % the diagonal just below the main one
 diag(diag(A))   % a 4-by-4 diagonal matrix
 ```
 
+## In Python
+
+The names mostly match MATLAB's, with the size as a tuple:
+
+```python
+import numpy as np
+
+A = np.array([[16, 2, 3, 13], [5, 11, 10, 8], [9, 7, 6, 12], [4, 14, 15, 1]])
+
+print(np.diag(A).tolist())  # [16, 11, 6, 1]
+print(np.triu(np.ones((3, 3), dtype=int), -1).tolist())  # [[1, 1, 1], [1, 1, 1], [0, 1, 1]]
+print(np.tril(np.ones((2, 2), dtype=int)).tolist())  # [[1, 0], [1, 1]]
+print(np.zeros((1, 2)).tolist())  # [[0.0, 0.0]]
+```
+
+## In machine learning
+
+**Masks.** A transformer decoder uses a triangular matrix to stop each token looking at later tokens. Position $i$ may only see positions up to $i$:
+
+```python
+import numpy as np
+
+print(np.tril(np.ones((3, 3), dtype=int)).tolist())  # [[1, 0, 0], [1, 1, 0], [1, 1, 1]]
+```
+
+**One-hot labels.** Each row of an identity matrix is a one-hot vector, so indexing into it encodes a whole list of classes:
+
+```python
+import numpy as np
+
+labels = [2, 0, 1]
+print(np.eye(3, dtype=int)[labels].tolist())  # [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+```
+
+**Correlation heatmaps.** A pandas correlation matrix is symmetric, so plots often hide one triangle with `np.triu` to avoid showing everything twice.
+
+**Diagonal covariance.** Variational autoencoders commonly assume a diagonal covariance, which reduces $n^2$ numbers to $n$.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

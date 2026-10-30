@@ -49,6 +49,49 @@ For $8132619$, the alternating sum is $8-1+3-2+6-1+9 = 22 = 2 \cdot 11$, so 11 d
 
 In MATLAB, `isprime(3457)` returns true and `isprime(3453)` returns false.
 
+## In Python
+
+NumPy's boolean indexing mirrors the MATLAB code in the panel:
+
+```python
+import numpy as np
+
+n = 30
+is_prime = np.ones(n + 1, dtype=bool)
+is_prime[:2] = False
+
+for p in range(2, int(n ** 0.5) + 1):
+    if is_prime[p]:
+        is_prime[p * p :: p] = False
+
+print(np.flatnonzero(is_prime).tolist())  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+```
+
+Trial division up to the square root is also a short job in pure Python:
+
+```python
+def is_prime(n):
+    return n > 1 and all(n % d for d in range(2, int(n ** 0.5) + 1))
+
+print(is_prime(3457), is_prime(3453))  # True False
+```
+
+## In machine learning
+
+Primes show up in ML through hashing. Universal hash functions have the form $h(x) = ((ax + b) \bmod p) \bmod m$, with $p$ a large prime and $a, b$ random:
+
+```python
+p = 2_147_483_647  # a large prime
+a, b, m = 1_000_003, 12_345, 1000
+
+def h(x):
+    return ((a * x + b) % p) % m
+
+print(h(42))  # 471
+```
+
+MinHash uses a family of such functions to spot near-duplicate documents without comparing every pair. This is a standard way to clean up large text training sets, since duplicates waste compute and can leak test examples into the training data.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

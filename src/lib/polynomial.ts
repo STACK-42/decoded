@@ -121,6 +121,17 @@ export function polyfit(xs: number[], ys: number[], deg: number): Poly {
 
 export const sumSquaredError = (p: Poly, xs: number[], ys: number[]) => xs.reduce((s, x, i) => s + (polyval(p, x) - ys[i]) ** 2, 0);
 
+export type FitQuality = "exact" | "close" | "poor";
+
+/** Judge a fit by the share of the data's spread it explains (R²), so the wording matches the picture. */
+export function fitQuality(p: Poly, xs: number[], ys: number[]): FitQuality {
+  const err = sumSquaredError(p, xs, ys);
+  if (err < 1e-6) return "exact";
+  const mean = ys.reduce((s, y) => s + y, 0) / ys.length;
+  const spread = ys.reduce((s, y) => s + (y - mean) ** 2, 0);
+  return spread > 0 && 1 - err / spread >= 0.99 ? "close" : "poor";
+}
+
 /** Show a polynomial as readable text, such as x³ - 2x² - x + 2. */
 export function polyText(p: Poly, v = "x"): string {
   const sup = "⁰¹²³⁴⁵⁶⁷⁸⁹";

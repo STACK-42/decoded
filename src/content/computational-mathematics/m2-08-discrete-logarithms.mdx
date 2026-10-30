@@ -54,6 +54,41 @@ Modulo 19 you can finish by hand. With a prime of hundreds of digits, this searc
 
 There's a second problem of this kind. Given a composite number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
 
+## In Python
+
+The brute-force search takes a few lines of pure Python, and it's also a good way to see the time grow as $p$ does:
+
+```python
+def discrete_log(b, a, p):
+    v = 1
+    for k in range(p):
+        if v == b:
+            return k
+        v = v * a % p
+    return None
+
+print(discrete_log(11, 2, 19))  # 12
+print({pow(2, k, 9): k for k in range(6)})  # {1: 0, 2: 1, 4: 2, 8: 3, 7: 4, 5: 5}
+```
+
+Here's Diffie-Hellman with toy numbers. Both sides reach the same secret without ever sending it:
+
+```python
+p, a = 19, 2
+x, y = 5, 7
+
+print(pow(pow(a, y, p), x, p) == pow(pow(a, x, p), y, p))  # True
+```
+
+## In machine learning
+
+Models don't compute discrete logs, but ML systems depend on this one-way street for protection:
+
+- **Secure aggregation.** Clients in federated learning use Diffie-Hellman to agree on pairs of random masks. Each pair cancels out in the sum, so the server sees the total update and not the individual ones.
+- **Model signing.** Downloading pretrained weights means trusting a file. Signatures, which are built on this kind of one-way maths, prove who published it and that nobody altered it.
+
+Note the contrast with gradient descent. A neural network can learn a function because small changes in the input cause small changes in the output. The powers on the ring above jump around with no such pattern, so there's no slope to follow, and that's a large part of why these functions resist attack by learning.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>
