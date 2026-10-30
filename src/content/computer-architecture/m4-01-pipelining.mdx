@@ -1,0 +1,52 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { LaundryPipeline, PipelineStepper } from "@/components/mdx/ArchitectureVisualizers";
+
+# Pipelining
+
+Doing laundry has four steps: wash, dry, fold and put away. If you finish one load completely before starting the next, the washer sits idle for most of the time. The obvious improvement: as soon as the first load goes in the dryer, start the second in the washer.
+
+<LaundryPipeline />
+
+Each load takes just as long as before. But loads finish far more often. That's the central idea: pipelining doesn't make any one instruction faster, it raises **throughput**, the number finished per second.
+
+## The five classic stages
+
+The [machine cycle](/courses/computer-organization/machine-cycle) splits naturally into stages:
+
+| Stage | Name | What happens |
+|---|---|---|
+| **IF** | Instruction fetch | Read the instruction at the PC |
+| **ID** | Instruction decode | Work out what it means, and read the registers |
+| **EX** | Execute | The ALU does the work |
+| **MEM** | Memory | Load or store, if needed |
+| **WB** | Write back | Put the result in a register |
+
+Between each pair of stages there's a [register](/courses/logic-design/registers), and all of those registers load on the same clock edge. That's what makes this work: at each tick, every instruction moves forward one stage together, and a [flip-flop's edge-triggered behaviour](/courses/logic-design/flip-flops) is what keeps them from running into each other.
+
+Step through it. Read a row to follow one instruction, or a column to see what the CPU is doing at one moment.
+
+<PipelineStepper />
+
+## How much faster?
+
+With $k$ stages and $n$ instructions:
+
+$$
+\text{without a pipeline: } n \times k \text{ cycles} \qquad\qquad \text{with: } k + (n - 1) \text{ cycles}
+$$
+
+The first instruction takes $k$ cycles to come out, and then one finishes on every cycle after that. So for large $n$, the speedup approaches $k$:
+
+$$
+\text{speedup} = \frac{n k}{k + n - 1} \to k
+$$
+
+Take 100 instructions and 5 stages: 500 cycles without, and 104 with, for a speedup of about 4.8.
+
+## Why not 100 stages?
+
+There are limits. The clock can only be as fast as the **slowest stage**, so stages need to be evenly balanced. The registers between stages add a little delay each, so that eventually more stages stop helping. And as you'll see next, things can go wrong in a pipeline, and in a longer pipeline they cost more.
+
+<Callout tone="violet" label="This is what you've been building to">
+The [8086's two-stage fetch and execute](/courses/microprocessors/inside-the-8086) was an early pipeline. A modern CPU has 15 to 20 stages. Add several parallel pipelines, and a **superscalar** chip can finish more than one instruction per clock, giving a CPI below 1.
+</Callout>

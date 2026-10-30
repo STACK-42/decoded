@@ -1,0 +1,39 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { MemoryPyramid, CacheSearch } from "@/components/mdx/OrganizationVisualizers";
+
+# The Memory Hierarchy and Cache
+
+Everyone wants memory that's huge, fast and cheap. Physics and economics let you pick two. As capacity goes up, the cost per bit goes down and the access time gets longer. So instead of one kind of memory, computers use several, in layers.
+
+Think about where you keep things. What you're using is on your desk. What you used last week is on a shelf. The rest is in boxes in the attic. It's quick to reach the desk, but the desk is small.
+
+Click each layer. The numbers are typical ones, and the comparison on the right is what makes them meaningful.
+
+<MemoryPyramid />
+
+## Cache: the desk next to the CPU
+
+A CPU is far faster than main memory. Without help, it would spend most of its time waiting. **Cache** is a small, fast memory (SRAM) between the CPU and RAM, holding copies of what's being used right now.
+
+It's usually split into levels. **L1** is the smallest and fastest, built into the processor core. **L2** is larger and a little slower. Larger chips add **L3**, shared between cores.
+
+The CPU searches from the top down: L1, then L2, then RAM, then disk. When it finds what it wants, that's a **hit**. When it doesn't, that's a **miss**, and it goes down a level. Whatever it finds is copied upward, in case it's wanted again soon.
+
+<CacheSearch />
+
+## Why such a small cache works
+
+A cache of a few megabytes can serve a program using gigabytes, and it can hit over 90% of the time. That sounds too good to be true, but it works because programs are predictable in two ways:
+
+- **Temporal locality**: what you just used, you'll probably use again. Think of a loop counter.
+- **Spatial locality**: what's next to what you used, you'll probably use next. Think of walking through an array.
+
+<Callout tone="sky" label="Cache is invisible to programs">
+You don't ask for the cache in your code. The hardware manages it, and that's why it's called transparent to the programmer. However, code that walks memory in order does run faster, because it fits the way cache works.
+</Callout>
+
+How does a cache decide where to put things, and what to throw out when full? The answers are in [Computer Architecture](/courses/computer-architecture/cache-mapping), which has a simulator you can run.
+
+## Using disk as extra memory
+
+Most operating systems also use a technique called **virtual memory**, which treats part of the disk as an extension of RAM. It lets you run more than fits in RAM, but it's slow when it's used heavily. That's the [virtual memory lesson](/courses/computer-architecture/virtual-memory).

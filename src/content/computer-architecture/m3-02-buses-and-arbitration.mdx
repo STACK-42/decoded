@@ -1,0 +1,39 @@
+import { BusArbiter } from "@/components/mdx/ArchitectureVisualizers";
+
+# Buses and Arbitration
+
+You've met the [address, data and control buses](/courses/computer-organization/buses). Here we look at the rules for using them. A bus is a shared road, so it needs traffic laws.
+
+## Bus types
+
+Early computers had one bus for everything, and everything slowed down to the speed of the slowest device. Modern computers use a hierarchy, connected by bridges:
+
+- **Processor-memory buses** are short and very fast, and they're tuned for one job.
+- **I/O buses** are longer and slower, and they support many kinds of device, such as PCIe and USB.
+- **Backplane buses** connect the two.
+
+## Bus protocols
+
+A **protocol** is the agreed way of carrying out a transfer. There are two main kinds:
+
+- **Synchronous**: everything happens on a shared clock. It's simple and fast, and the [read cycle](/courses/microprocessors/bus-cycles) you stepped through is an example. All devices have to keep up with the clock, and long wires suffer from clock skew.
+- **Asynchronous**: no shared clock. A [handshake](/courses/computer-architecture/io-methods) coordinates each step, so devices of any speed can share the bus, at the cost of extra overhead.
+
+## Arbitration: whose turn is it?
+
+If two devices drive the same wire at once, the signals collide. So only one device, the **bus master**, may start a transfer at a time. **Arbitration** decides who that is. Click devices to change who's asking.
+
+<BusArbiter />
+
+A good scheme has to balance two things: **priority** (urgent things go first) and **fairness** (nothing waits forever).
+
+| Scheme | How it works | Trade-off |
+|---|---|---|
+| Daisy chain | The grant signal passes from device to device, and the first that wants it takes it | Simple, but priority is fixed, and distant devices can starve |
+| Centralized, parallel | Each device has its own request and grant lines to an arbiter | Flexible, but it takes more wires |
+| Distributed | Devices settle it among themselves | No single point of failure, but more logic in each device |
+| Round robin | Devices take turns | Fair, but with no way to rush urgent work |
+
+Who usually has the highest priority? Often the device with the least room for delay, like a DMA controller moving data from a disk that can't wait. The CPU often comes last, because it can always wait a little.
+
+An arbiter is often built around a [priority encoder](/courses/logic-design/comparators-decoders-encoders): the same circuit as a keypad that reports the highest key held down.

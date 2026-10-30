@@ -51,6 +51,35 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01" strokeWidth={2.6} strokeLinecap="round" />
     </svg>
   ),
+  // a processor with its registers
+  "computer-organization": ({ className }) => (
+    <svg {...base} className={className}>
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <path d="M3 10h18M9 10v10M13 15h4" />
+    </svg>
+  ),
+  // assembly: an instruction pointer on a line of code
+  microprocessors: ({ className }) => (
+    <svg {...base} className={className}>
+      <path d="M3 8l4 4-4 4M11 7h10M11 12h6M11 17h10" />
+    </svg>
+  ),
+  // pipeline stages, overlapped
+  "computer-architecture": ({ className }) => (
+    <svg {...base} className={className}>
+      <rect x="2" y="4" width="9" height="4" />
+      <rect x="7.5" y="10" width="9" height="4" />
+      <rect x="13" y="16" width="9" height="4" />
+    </svg>
+  ),
+  // a NAND gate
+  "logic-design": ({ className }) => (
+    <svg {...base} className={className}>
+      <path d="M5 5h6a7 7 0 010 14H5z" />
+      <circle cx="19.5" cy="12" r="1.8" />
+      <path d="M1 9h4M1 15h4M21.3 12H23" />
+    </svg>
+  ),
   // chip
   "operating-systems": ({ className }) => (
     <svg {...base} className={className}>

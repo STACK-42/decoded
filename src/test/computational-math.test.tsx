@@ -1,3 +1,4 @@
+import { renderLesson } from "./renderLesson";
 import { describe, it, expect, beforeAll } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import path from "path";
@@ -19,9 +20,8 @@ describe("Computational Mathematics course", () => {
   const course = getCourse("computational-mathematics")!;
 
   for (const lesson of flattenLessons(course)) {
-    it(`renders lesson "${lesson.slug}" with its title`, () => {
-      const Lesson = lesson.Component;
-      const { container, unmount } = render(<Lesson />);
+    it(`renders lesson "${lesson.slug}" with its title`, async () => {
+      const { container, unmount } = await renderLesson(lesson);
       expect(container.querySelector("h1")?.textContent).toBe(lesson.title);
       unmount();
     });

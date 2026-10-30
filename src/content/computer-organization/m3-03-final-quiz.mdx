@@ -1,0 +1,133 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Computer Organization
+
+Ten questions on the whole course. Get 7 right to pass.
+
+<Quiz
+  courseSlug="computer-organization"
+  lessonSlug="final-quiz"
+  passThreshold={7/10}
+  questions={[
+    {
+      id: "q1",
+      prompt: "What makes up the CPU?",
+      options: [
+        { id: "a", text: "The control unit, ALU and registers" },
+        { id: "b", text: "The memory, disk and bus" },
+        { id: "c", text: "The input and output units" },
+        { id: "d", text: "RAM and ROM" },
+      ],
+      correctOptionId: "a",
+      explanation: "The control unit directs, the ALU calculates and registers hold what's being worked on.",
+    },
+    {
+      id: "q2",
+      prompt: "What does the stored-program idea mean?",
+      options: [
+        { id: "a", text: "Programs are saved to the hard disk" },
+        { id: "b", text: "Instructions sit in memory in the same form as data, so changing the program needs no rewiring" },
+        { id: "c", text: "Each program has its own CPU" },
+        { id: "d", text: "Programs can't be changed once loaded" },
+      ],
+      correctOptionId: "b",
+      explanation: "That's what lets the same hardware run any software.",
+    },
+    {
+      id: "q3",
+      prompt: "The PC register holds:",
+      options: [
+        { id: "a", text: "The instruction running now" },
+        { id: "b", text: "The address of the next instruction" },
+        { id: "c", text: "The result of the last calculation" },
+        { id: "d", text: "The number of instructions executed" },
+      ],
+      correctOptionId: "b",
+      explanation: "The instruction running now is in the IR, and results go in the AC.",
+    },
+    {
+      id: "q4",
+      prompt: "What's the correct order of the machine cycle?",
+      options: [
+        { id: "a", text: "Decode, fetch, execute, store" },
+        { id: "b", text: "Fetch, execute, decode, store" },
+        { id: "c", text: "Fetch, decode, execute, store" },
+        { id: "d", text: "Execute, store, fetch, decode" },
+      ],
+      correctOptionId: "c",
+      explanation: "The CPU can't decode what it hasn't fetched, or execute what it hasn't decoded.",
+    },
+    {
+      id: "q5",
+      prompt: "A CPU has 24 address lines. How much byte-addressable memory can it reach?",
+      options: [
+        { id: "a", text: "24 MB" },
+        { id: "b", text: "16 MB" },
+        { id: "c", text: "4 GB" },
+        { id: "d", text: "1 MB" },
+      ],
+      correctOptionId: "b",
+      explanation: "2²⁴ = 16,777,216 bytes, which is 16 MB.",
+    },
+    {
+      id: "q6",
+      prompt: "Which bus carries values in both directions?",
+      options: [
+        { id: "a", text: "The address bus" },
+        { id: "b", text: "The data bus" },
+        { id: "c", text: "Neither" },
+        { id: "d", text: "All of them equally" },
+      ],
+      correctOptionId: "b",
+      explanation: "The CPU both reads and writes data, while it alone normally puts addresses on the address bus.",
+    },
+    {
+      id: "q7",
+      prompt: "Why is cache made from SRAM and main memory from DRAM?",
+      options: [
+        { id: "a", text: "SRAM is faster but costs more per bit, while DRAM is cheaper and denser" },
+        { id: "b", text: "SRAM keeps its data when the power is off" },
+        { id: "c", text: "DRAM can't be used near the CPU" },
+        { id: "d", text: "DRAM is faster, so it is saved for large memories" },
+      ],
+      correctOptionId: "a",
+      explanation: "SRAM is also volatile. The choice comes down to speed against cost.",
+    },
+    {
+      id: "q8",
+      prompt: "A program loops over an array. Which property of programs makes cache effective here?",
+      options: [
+        { id: "a", text: "Volatility" },
+        { id: "b", text: "Locality" },
+        { id: "c", text: "Random access" },
+        { id: "d", text: "Parallelism" },
+      ],
+      correctOptionId: "b",
+      explanation: "It reuses the same loop instructions (temporal) and reads neighbouring elements (spatial).",
+    },
+    {
+      id: "q9",
+      prompt: "A disk has 1000 cylinders, 4 heads, 100 sectors per track and 512-byte sectors. What's its capacity?",
+      options: [
+        { id: "a", text: "20,480,000 bytes" },
+        { id: "b", text: "204,800,000 bytes" },
+        { id: "c", text: "400,000 bytes" },
+        { id: "d", text: "2,048,000 bytes" },
+      ],
+      correctOptionId: "b",
+      explanation: "1000 × 4 × 100 × 512 = 204,800,000 bytes.",
+    },
+    {
+      id: "q10",
+      prompt: "Why does a Blu-ray disc hold more than a CD of the same size?",
+      options: [
+        { id: "a", text: "It spins faster" },
+        { id: "b", text: "It's made of a denser plastic" },
+        { id: "c", text: "Its shorter-wavelength laser makes a smaller spot, so pits can be smaller and closer together" },
+        { id: "d", text: "It stores data magnetically" },
+      ],
+      correctOptionId: "c",
+      explanation: "405 nm against 780 nm. Smaller pits mean more of them in the same area.",
+    },
+  ]}
+/>

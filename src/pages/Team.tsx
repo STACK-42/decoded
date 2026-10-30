@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
+import { ahmedAlghali, asmaaFarouq } from "@/content/authors";
 
 export default function Team() {
   useEffect(() => {
-    document.title = "Team — Decoded";
+    document.title = "Contributors — Decoded";
   }, []);
 
   return (
@@ -17,25 +18,25 @@ export default function Team() {
         <div className="container py-20 md:py-28 max-w-5xl">
           <div className="text-center mb-16">
             <div className="eyebrow text-muted-foreground mb-3">The People</div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold">The Minds Behind Decoded</h2>
+            <h2 className="font-display text-4xl md:text-5xl font-bold">Contributors</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             <CreatorCard
-              name="Ahmed Alghali"
-              role="Architect & Lead"
-              bio="I love when I finally understand what a theoratical CS course talks about"
-              image="https://github.com/a7med7x7.png"
+              name={ahmedAlghali.name}
+              role="Maintainer"
+              bio="I love when I finally understand what a theoretical CS course talks about"
+              image={ahmedAlghali.image}
             />
             <CreatorCard
-              name="Asmaa Farouq"
+              name={asmaaFarouq.name}
               role="Course Author"
-              image="https://github.com/Asmaa6777.png"
-              href="https://github.com/Asmaa6777"
+              image={asmaaFarouq.image}
+              href={asmaaFarouq.href}
             />
             <div className="flex flex-col items-center justify-center border border-dashed border-border p-8 text-center bg-muted/5">
               <div className="h-16 w-16 rounded-full bg-border/20 mb-4 animate-pulse" />
-              <div className="font-display font-bold text-muted-foreground">Join the Team</div>
+              <div className="font-display font-bold text-muted-foreground">Join in</div>
               <div className="font-mono text-[10px] text-muted-foreground mt-2 uppercase tracking-widest">Open Source</div>
             </div>
           </div>
@@ -54,6 +55,9 @@ function CreatorCard({ name, role, bio, image, href }: { name: string; role: str
     <Wrapper {...linkProps} className="group block border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
       <div className="flex items-center gap-4 mb-4">
         <img
+          width={56}
+          height={56}
+          loading="lazy"
           src={image}
           alt={name}
           className="h-14 w-14 rounded-full border border-border object-cover grayscale group-hover:grayscale-0 transition-all"

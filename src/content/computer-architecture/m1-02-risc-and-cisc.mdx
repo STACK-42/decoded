@@ -1,0 +1,40 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { RiscCiscCompare } from "@/components/mdx/ArchitectureVisualizers";
+
+# RISC and CISC
+
+There are two philosophies of instruction set design. A chef's knife set is a good way to see the difference. You could own one gadget for each task: an apple corer, an egg slicer and a garlic press. Or you could own one good knife and combine simple cuts.
+
+**CISC** (Complex Instruction Set Computer) is the gadget drawer: many instructions, some doing a lot of work. **RISC** (Reduced Instruction Set Computer) is the knife: fewer, simpler instructions that you combine.
+
+<RiscCiscCompare />
+
+## Side by side
+
+| | RISC | CISC |
+|---|---|---|
+| Instructions | Few and simple | Many, some complex |
+| Instruction length | Fixed | Variable |
+| Cycles per instruction | Near 1 | Several, and it varies |
+| Addressing modes | Few | Many |
+| Memory access | Only `LOAD` and `STORE` | Many instructions can touch memory |
+| Registers | Many | Fewer |
+| [Control unit](/courses/computer-architecture/control-unit) | Usually hardwired | Usually microprogrammed |
+| Program size | Larger | Smaller |
+| Examples | ARM, RISC-V, MIPS | x86 |
+
+## Why RISC came about
+
+CISC made sense when memory was tiny and costly: a single rich instruction saved space. Then researchers measured real programs and found that most of the time was spent on a handful of simple instructions, while many complex ones were hardly used.
+
+Simple, same-length instructions have one big advantage: they fit neatly into a [pipeline](/courses/computer-architecture/pipelining). Each stage takes the same time, so the CPU can finish about one instruction per clock tick.
+
+Recall the formula from the next lesson: time = instructions × cycles per instruction × clock period. RISC accepts more instructions in exchange for fewer cycles per instruction and a faster clock.
+
+<Callout tone="violet" label="Today the line is blurred">
+Inside a modern x86 chip, a decoder breaks each CISC instruction into RISC-like micro-operations and pipelines those. So software sees CISC while the hardware runs RISC. Your phone most likely has an ARM chip, a RISC design chosen largely because simpler decoding saves power.
+</Callout>
+
+## Calling a subroutine
+
+Architectures also differ in how they call procedures. The 8086 [pushes the return address on the stack](/courses/microprocessors/stack-and-procedures), which takes a memory access. Many RISC machines keep the return address in a register instead, which is faster for simple calls. A procedure that calls another has to save that register to memory first.

@@ -1,0 +1,48 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { VoltageBands, ClockExplorer, SerialParallel } from "@/components/mdx/LogicVisualizers";
+
+# Signals: Why Computers Use Only Two Values
+
+Picture a dimmer switch and a normal light switch. The dimmer can sit anywhere from dark to bright. The normal switch has two positions and nothing in between. An **analog** signal is the dimmer: it can take any value, like the sound wave hitting a microphone. A **digital** signal is the switch: it is either HIGH or LOW.
+
+Most real devices use both. A CD player reads digital data off the disc, then a **DAC** (digital-to-analog converter) turns it into the smooth voltage a speaker needs. Recording goes the other way, through an **ADC**.
+
+## Why two values?
+
+Electricity is messy. A wire picks up interference, so a voltage is never exactly what was sent. If a circuit had to tell 3.1 V from 3.2 V, one small bump would change the data.
+
+With only two values, a voltage has a wide margin for error. In a common 3.3 V circuit, anything from 2 V to 3.3 V counts as 1 and anything from 0 V to 0.8 V counts as 0. Those voltages are called **logic levels**. The gap in the middle is off limits, and a circuit is designed to pass through it quickly.
+
+Push the noise slider up. For a while the readings stay perfect even though the line looks awful. That is the reason computers are digital.
+
+<VoltageBands />
+
+## Bits
+
+Each 0 or 1 is a **bit**, short for binary digit. Groups of bits are called **codes**, and they can stand for numbers, letters, instructions or anything else. You will meet the most common codes in [the numbers module](/courses/logic-design/number-systems).
+
+## The clock
+
+Most digital systems march to a steady pulse called the **clock**. It is a signal that repeats HIGH, LOW, HIGH, LOW forever, like a drummer keeping a band together.
+
+Three measurements describe a repeating pulse:
+
+- **Period** ($T$): the time for one full repeat.
+- **Frequency** ($f$): repeats per second, in hertz. $f = 1/T$, so a 2 ns period is 500 MHz.
+- **Duty cycle**: the share of each period spent HIGH. $\text{duty cycle} = (t_w / T) \times 100\%$, where $t_w$ is the pulse width.
+
+<ClockExplorer />
+
+A pulse has a **rising edge** (LOW to HIGH) and a **falling edge** (HIGH to LOW). Real edges aren't instant. The **rise time** is how long a signal takes to go from 10% to 90% of its height, and the **fall time** is the same in reverse. These edges will matter a lot when [flip-flops](/courses/logic-design/flip-flops) use them as a signal to act.
+
+## Moving bits: serial and parallel
+
+There are two ways to send a group of bits. **Serial** sends them one after another down a single wire. **Parallel** sends them all together on one wire each.
+
+<SerialParallel />
+
+Parallel takes one time interval for 8 bits where serial takes eight, but it costs eight wires.
+
+<Callout tone="sky" label="Where you see this">
+USB and SATA are serial. Inside the CPU, data moves in parallel on [buses](/courses/computer-organization/buses), and "64-bit" tells you how many of those lanes there are.
+</Callout>

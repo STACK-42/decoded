@@ -1,0 +1,51 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { PageTableLab } from "@/components/mdx/ArchitectureVisualizers";
+
+# Virtual Memory
+
+Here's a puzzle. Your computer runs dozens of programs at once. Each is compiled as if it had memory all to itself, starting from address 0. How can they all be at address 0? And how do programs run when they add up to more than the RAM you have?
+
+The answer is that the addresses a program uses aren't real. A **virtual address** is translated to a **physical address** by hardware each time memory is used. Think of phone extensions in an office: you dial "extension 12", and the switchboard connects you to whichever desk that person sits at today. The person can change desks, and your number still works.
+
+The idea also treats RAM as a [cache](/courses/computer-organization/memory-hierarchy) for the disk.
+
+## Pages and frames
+
+Memory is split up into fixed-size chunks. In virtual memory they're called **pages**, and in physical memory **frames**, and they're the same size (commonly 4 KB). Any page can go in any frame.
+
+The address splits into two parts, a lot like a [cache address](/courses/computer-architecture/cache-mapping):
+
+$$
+\text{page} = \lfloor \text{address} / \text{page size} \rfloor \qquad \text{offset} = \text{address} \bmod \text{page size}
+$$
+
+The offset never changes. Only the page number gets translated, using a table in memory for each program, the **page table**.
+
+$$
+\text{physical address} = \text{frame} \times \text{page size} + \text{offset}
+$$
+
+Move the slider. Then pick an address on a page that's on disk.
+
+<PageTableLab />
+
+## Page faults
+
+What if a page isn't in RAM? The table entry says so, the hardware raises a **page fault** (a kind of [interrupt](/courses/microprocessors/interrupts)), and the operating system steps in. It finds a free frame, or evicts a page using a policy like [LRU](/courses/computer-architecture/cache-policies), reads the page from disk, updates the table and reruns the instruction. The program never knows.
+
+Disks are slow: a page fault costs millions of times more than a memory access. If a computer has too little RAM, it can spend nearly all of its time moving pages in and out, an effect called **thrashing**. When your computer gets very slow with too many things open, this is usually why.
+
+## Making it fast: the TLB
+
+There's a problem. Every memory access now needs a page table lookup first, which is itself a memory access, so every access costs twice as much. The fix is another cache. The **TLB** (translation lookaside buffer) is a small, fast cache of recent translations, and thanks to locality it hits the vast majority of the time.
+
+## What you get from it
+
+- **Isolation**: each program has its own table, so it can't even name another program's memory. A crash stays contained. This is the basis of [protected mode](/courses/microprocessors/bus-cycles).
+- **More memory than you have**: rarely used pages can wait on disk.
+- **Simple programs**: each one can assume it starts at address 0, with memory all in one piece.
+- **Sharing**: two programs can map the same frame, so a shared library only needs one copy in RAM.
+
+<Callout tone="violet" label="Cache and virtual memory compared">
+Same idea at different levels of the hierarchy, with different names. Block becomes page, cache miss becomes page fault. A cache is managed entirely by hardware because a miss costs nanoseconds. A page fault costs milliseconds, which is long enough for the operating system to run software to deal with it.
+</Callout>

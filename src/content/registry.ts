@@ -1,91 +1,173 @@
-import type { ComponentType } from "react";
+import { lazy, type ComponentType } from "react";
 
-// Lesson MDX modules (eagerly loaded so we can render synchronously)
-import TocIntro from "@/content/theory-of-computation/m0-01-intro.mdx";
-import TocLanguageOfLanguages from "@/content/theory-of-computation/m0-02-language-of-languages.mdx";
-import TocHowToReadAMachine from "@/content/theory-of-computation/m0-03-how-to-read-a-machine.mdx";
-import TocGrammars from "@/content/theory-of-computation/m0-04-grammars.mdx";
-import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx";
-import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
-import TocRegularExpressions from "@/content/theory-of-computation/m1-03-regular-expressions.mdx";
-import TocTransitionGraphs from "@/content/theory-of-computation/m1-04-transition-graphs.mdx";
-import TocKleenesTheorem from "@/content/theory-of-computation/m1-05-kleenes-theorem.mdx";
-import TocRegexPlayground from "@/content/theory-of-computation/m1-06-regex-playground.mdx";
-import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx";
-import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
-import TocContextFreeGrammars from "@/content/theory-of-computation/m2-02-context-free-grammars.mdx";
-import TocNormalForms from "@/content/theory-of-computation/m2-03-normal-forms.mdx";
-import TocPushdownAutomata from "@/content/theory-of-computation/m2-04-pushdown-automata.mdx";
-import TocCfgEqualsPda from "@/content/theory-of-computation/m2-05-cfg-equals-pda.mdx";
-import TocContextFreeQuiz from "@/content/theory-of-computation/m2-06-context-free-quiz.mdx";
-import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
-import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
-import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
-import AdaWhatIsAnAlgorithm from "@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx";
-import AdaCountingSteps from "@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx";
-import AdaJavaLabToolkit from "@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx";
-import AdaSelectionBubble from "@/content/algorithm-design-and-analysis/m1-01-selection-and-bubble-sort.mdx";
-import AdaInsertionSort from "@/content/algorithm-design-and-analysis/m1-02-insertion-sort.mdx";
-import AdaMergeSort from "@/content/algorithm-design-and-analysis/m1-03-merge-sort.mdx";
-import AdaQuickSort from "@/content/algorithm-design-and-analysis/m1-04-quick-sort.mdx";
-import AdaSortingQuiz from "@/content/algorithm-design-and-analysis/m1-05-sorting-quiz.mdx";
-import AdaSearch from "@/content/algorithm-design-and-analysis/m2-01-linear-and-binary-search.mdx";
-import AdaEuclid from "@/content/algorithm-design-and-analysis/m2-02-euclid-gcd.mdx";
-import AdaBfsDfs from "@/content/algorithm-design-and-analysis/m3-01-bfs-and-dfs.mdx";
-import AdaGreedy from "@/content/algorithm-design-and-analysis/m4-01-greedy-and-mst.mdx";
-import AdaDynamic from "@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx";
-import AdaFinalQuiz from "@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx";
-import AaAnalysis from "@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx";
-import AaCountingOperations from "@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx";
-import AaAsymptotic from "@/content/advanced-algorithms/m0-03-asymptotic-notation.mdx";
-import AaRecurrences from "@/content/advanced-algorithms/m0-04-solving-recurrences.mdx";
-import AaLabBits from "@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx";
-import AaLabAnalysis from "@/content/advanced-algorithms/m0-06-lab-algorithm-analysis.mdx";
-import AaDivideConquer from "@/content/advanced-algorithms/m1-01-divide-and-conquer.mdx";
-import AaLabDivideConquer from "@/content/advanced-algorithms/m1-02-lab-divide-and-conquer.mdx";
-import AaQuicksort from "@/content/advanced-algorithms/m1-03-quicksort.mdx";
-import AaLowerBounds from "@/content/advanced-algorithms/m1-04-sorting-lower-bounds.mdx";
-import AaOrderStatistics from "@/content/advanced-algorithms/m1-05-order-statistics.mdx";
-import AaHashing from "@/content/advanced-algorithms/m2-01-hashing.mdx";
-import AaCollisions from "@/content/advanced-algorithms/m2-02-collision-resolution.mdx";
-import AaLabHashing from "@/content/advanced-algorithms/m2-03-lab-hashing.mdx";
-import AaBalancedTrees from "@/content/advanced-algorithms/m2-04-balanced-search-trees.mdx";
-import AaRedBlackOps from "@/content/advanced-algorithms/m2-05-red-black-insert-delete.mdx";
-import AaAugmenting from "@/content/advanced-algorithms/m2-06-augmenting-data-structures.mdx";
-import AaSkipLists from "@/content/advanced-algorithms/m2-07-skip-lists.mdx";
-import AaDynamic from "@/content/advanced-algorithms/m3-01-dynamic-programming.mdx";
-import AaGreedy from "@/content/advanced-algorithms/m3-02-greedy-algorithms.mdx";
-import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.mdx";
-import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
-import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
-import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
-import CmMatrices from "@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx";
-import CmTranspose from "@/content/computational-mathematics/m0-02-transpose-and-products.mdx";
-import CmMultiply from "@/content/computational-mathematics/m0-03-multiplying-matrices.mdx";
-import CmKronecker from "@/content/computational-mathematics/m0-04-kronecker-product.mdx";
-import CmNorms from "@/content/computational-mathematics/m0-05-norms-and-trace.mdx";
-import CmSpecial from "@/content/computational-mathematics/m0-06-special-matrices.mdx";
-import CmDeterminants from "@/content/computational-mathematics/m0-07-determinants-and-inverses.mdx";
-import CmMatricesQuiz from "@/content/computational-mathematics/m0-08-matrices-quiz.mdx";
-import CmPolyRoots from "@/content/computational-mathematics/m1-01-polynomials-and-roots.mdx";
-import CmPolyConv from "@/content/computational-mathematics/m1-02-multiplying-and-dividing.mdx";
-import CmPolyFit from "@/content/computational-mathematics/m1-03-derivatives-and-curve-fitting.mdx";
-import CmPolyResidue from "@/content/computational-mathematics/m1-04-partial-fractions.mdx";
-import CmPolyQuiz from "@/content/computational-mathematics/m1-05-polynomials-quiz.mdx";
-import CmEuclid from "@/content/computational-mathematics/m2-01-divisibility-and-euclid.mdx";
-import CmModular from "@/content/computational-mathematics/m2-02-modular-arithmetic.mdx";
-import CmPrimes from "@/content/computational-mathematics/m2-03-primes-and-the-sieve.mdx";
-import CmTotient from "@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx";
-import CmOrder from "@/content/computational-mathematics/m2-05-order-and-primitive-roots.mdx";
-import CmInverses from "@/content/computational-mathematics/m2-06-modular-inverses.mdx";
-import CmFastPow from "@/content/computational-mathematics/m2-07-fast-exponentiation.mdx";
-import CmDiscreteLog from "@/content/computational-mathematics/m2-08-discrete-logarithms.mdx";
-import CmNtQuiz from "@/content/computational-mathematics/m2-09-number-theory-quiz.mdx";
-import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
-import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
-import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
-import ExamMindLesson04 from "@/content/the-exam-mind/04-exam-day.mdx";
+type LessonComponent = ComponentType<Record<string, unknown>>;
 
+// Each lesson is its own chunk, fetched when opened. Render inside a Suspense boundary.
+const lesson = (load: () => Promise<{ default: LessonComponent }>) => lazy(load) as unknown as LessonComponent;
+
+const TocIntro = lesson(() => import("@/content/theory-of-computation/m0-01-intro.mdx"));
+const TocLanguageOfLanguages = lesson(() => import("@/content/theory-of-computation/m0-02-language-of-languages.mdx"));
+const TocHowToReadAMachine = lesson(() => import("@/content/theory-of-computation/m0-03-how-to-read-a-machine.mdx"));
+const TocGrammars = lesson(() => import("@/content/theory-of-computation/m0-04-grammars.mdx"));
+const TocStatesSymbols = lesson(() => import("@/content/theory-of-computation/m1-01-states-symbols.mdx"));
+const TocNfa = lesson(() => import("@/content/theory-of-computation/m1-02-nfa.mdx"));
+const TocRegularExpressions = lesson(() => import("@/content/theory-of-computation/m1-03-regular-expressions.mdx"));
+const TocTransitionGraphs = lesson(() => import("@/content/theory-of-computation/m1-04-transition-graphs.mdx"));
+const TocKleenesTheorem = lesson(() => import("@/content/theory-of-computation/m1-05-kleenes-theorem.mdx"));
+const TocRegexPlayground = lesson(() => import("@/content/theory-of-computation/m1-06-regex-playground.mdx"));
+const TocFiniteAutomataQuiz = lesson(() => import("@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx"));
+const TocLimitsOfFiniteMemory = lesson(() => import("@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx"));
+const TocContextFreeGrammars = lesson(() => import("@/content/theory-of-computation/m2-02-context-free-grammars.mdx"));
+const TocNormalForms = lesson(() => import("@/content/theory-of-computation/m2-03-normal-forms.mdx"));
+const TocPushdownAutomata = lesson(() => import("@/content/theory-of-computation/m2-04-pushdown-automata.mdx"));
+const TocCfgEqualsPda = lesson(() => import("@/content/theory-of-computation/m2-05-cfg-equals-pda.mdx"));
+const TocContextFreeQuiz = lesson(() => import("@/content/theory-of-computation/m2-06-context-free-quiz.mdx"));
+const LitTyping = lesson(() => import("@/content/computer-literacy/01-physical-layer.mdx"));
+const LitLanguage = lesson(() => import("@/content/computer-literacy/02-language-layer.mdx"));
+const LitSystems = lesson(() => import("@/content/computer-literacy/03-systems-layer.mdx"));
+const AdaWhatIsAnAlgorithm = lesson(() => import("@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx"));
+const AdaCountingSteps = lesson(() => import("@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx"));
+const AdaJavaLabToolkit = lesson(() => import("@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx"));
+const AdaSelectionBubble = lesson(() => import("@/content/algorithm-design-and-analysis/m1-01-selection-and-bubble-sort.mdx"));
+const AdaInsertionSort = lesson(() => import("@/content/algorithm-design-and-analysis/m1-02-insertion-sort.mdx"));
+const AdaMergeSort = lesson(() => import("@/content/algorithm-design-and-analysis/m1-03-merge-sort.mdx"));
+const AdaQuickSort = lesson(() => import("@/content/algorithm-design-and-analysis/m1-04-quick-sort.mdx"));
+const AdaSortingQuiz = lesson(() => import("@/content/algorithm-design-and-analysis/m1-05-sorting-quiz.mdx"));
+const AdaSearch = lesson(() => import("@/content/algorithm-design-and-analysis/m2-01-linear-and-binary-search.mdx"));
+const AdaEuclid = lesson(() => import("@/content/algorithm-design-and-analysis/m2-02-euclid-gcd.mdx"));
+const AdaBfsDfs = lesson(() => import("@/content/algorithm-design-and-analysis/m3-01-bfs-and-dfs.mdx"));
+const AdaGreedy = lesson(() => import("@/content/algorithm-design-and-analysis/m4-01-greedy-and-mst.mdx"));
+const AdaDynamic = lesson(() => import("@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx"));
+const AdaFinalQuiz = lesson(() => import("@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx"));
+const AaAnalysis = lesson(() => import("@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx"));
+const AaCountingOperations = lesson(() => import("@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx"));
+const AaAsymptotic = lesson(() => import("@/content/advanced-algorithms/m0-03-asymptotic-notation.mdx"));
+const AaRecurrences = lesson(() => import("@/content/advanced-algorithms/m0-04-solving-recurrences.mdx"));
+const AaLabBits = lesson(() => import("@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx"));
+const AaLabAnalysis = lesson(() => import("@/content/advanced-algorithms/m0-06-lab-algorithm-analysis.mdx"));
+const AaDivideConquer = lesson(() => import("@/content/advanced-algorithms/m1-01-divide-and-conquer.mdx"));
+const AaLabDivideConquer = lesson(() => import("@/content/advanced-algorithms/m1-02-lab-divide-and-conquer.mdx"));
+const AaQuicksort = lesson(() => import("@/content/advanced-algorithms/m1-03-quicksort.mdx"));
+const AaLowerBounds = lesson(() => import("@/content/advanced-algorithms/m1-04-sorting-lower-bounds.mdx"));
+const AaOrderStatistics = lesson(() => import("@/content/advanced-algorithms/m1-05-order-statistics.mdx"));
+const AaHashing = lesson(() => import("@/content/advanced-algorithms/m2-01-hashing.mdx"));
+const AaCollisions = lesson(() => import("@/content/advanced-algorithms/m2-02-collision-resolution.mdx"));
+const AaLabHashing = lesson(() => import("@/content/advanced-algorithms/m2-03-lab-hashing.mdx"));
+const AaBalancedTrees = lesson(() => import("@/content/advanced-algorithms/m2-04-balanced-search-trees.mdx"));
+const AaRedBlackOps = lesson(() => import("@/content/advanced-algorithms/m2-05-red-black-insert-delete.mdx"));
+const AaAugmenting = lesson(() => import("@/content/advanced-algorithms/m2-06-augmenting-data-structures.mdx"));
+const AaSkipLists = lesson(() => import("@/content/advanced-algorithms/m2-07-skip-lists.mdx"));
+const AaDynamic = lesson(() => import("@/content/advanced-algorithms/m3-01-dynamic-programming.mdx"));
+const AaGreedy = lesson(() => import("@/content/advanced-algorithms/m3-02-greedy-algorithms.mdx"));
+const AaMst = lesson(() => import("@/content/advanced-algorithms/m3-03-minimum-spanning-trees.mdx"));
+const AaHuffman = lesson(() => import("@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx"));
+const AaShortestPaths = lesson(() => import("@/content/advanced-algorithms/m3-05-shortest-paths.mdx"));
+const AaPNP = lesson(() => import("@/content/advanced-algorithms/m4-01-p-and-np.mdx"));
+const CmMatrices = lesson(() => import("@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx"));
+const CmTranspose = lesson(() => import("@/content/computational-mathematics/m0-02-transpose-and-products.mdx"));
+const CmMultiply = lesson(() => import("@/content/computational-mathematics/m0-03-multiplying-matrices.mdx"));
+const CmKronecker = lesson(() => import("@/content/computational-mathematics/m0-04-kronecker-product.mdx"));
+const CmNorms = lesson(() => import("@/content/computational-mathematics/m0-05-norms-and-trace.mdx"));
+const CmSpecial = lesson(() => import("@/content/computational-mathematics/m0-06-special-matrices.mdx"));
+const CmDeterminants = lesson(() => import("@/content/computational-mathematics/m0-07-determinants-and-inverses.mdx"));
+const CmMatricesQuiz = lesson(() => import("@/content/computational-mathematics/m0-08-matrices-quiz.mdx"));
+const CmPolyRoots = lesson(() => import("@/content/computational-mathematics/m1-01-polynomials-and-roots.mdx"));
+const CmPolyConv = lesson(() => import("@/content/computational-mathematics/m1-02-multiplying-and-dividing.mdx"));
+const CmPolyFit = lesson(() => import("@/content/computational-mathematics/m1-03-derivatives-and-curve-fitting.mdx"));
+const CmPolyResidue = lesson(() => import("@/content/computational-mathematics/m1-04-partial-fractions.mdx"));
+const CmPolyQuiz = lesson(() => import("@/content/computational-mathematics/m1-05-polynomials-quiz.mdx"));
+const CmEuclid = lesson(() => import("@/content/computational-mathematics/m2-01-divisibility-and-euclid.mdx"));
+const CmModular = lesson(() => import("@/content/computational-mathematics/m2-02-modular-arithmetic.mdx"));
+const CmPrimes = lesson(() => import("@/content/computational-mathematics/m2-03-primes-and-the-sieve.mdx"));
+const CmTotient = lesson(() => import("@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx"));
+const CmOrder = lesson(() => import("@/content/computational-mathematics/m2-05-order-and-primitive-roots.mdx"));
+const CmInverses = lesson(() => import("@/content/computational-mathematics/m2-06-modular-inverses.mdx"));
+const CmFastPow = lesson(() => import("@/content/computational-mathematics/m2-07-fast-exponentiation.mdx"));
+const CmDiscreteLog = lesson(() => import("@/content/computational-mathematics/m2-08-discrete-logarithms.mdx"));
+const CmNtQuiz = lesson(() => import("@/content/computational-mathematics/m2-09-number-theory-quiz.mdx"));
+const LdSignals = lesson(() => import("@/content/logic-design/m0-01-signals.mdx"));
+const LdNumbers = lesson(() => import("@/content/logic-design/m1-01-number-systems.mdx"));
+const LdArithmetic = lesson(() => import("@/content/logic-design/m1-02-binary-arithmetic.mdx"));
+const LdCodes = lesson(() => import("@/content/logic-design/m1-03-codes-and-floating-point.mdx"));
+const LdNumbersQuiz = lesson(() => import("@/content/logic-design/m1-04-numbers-quiz.mdx"));
+const LdGates = lesson(() => import("@/content/logic-design/m2-01-logic-gates.mdx"));
+const LdBoolean = lesson(() => import("@/content/logic-design/m2-02-boolean-algebra.mdx"));
+const LdSop = lesson(() => import("@/content/logic-design/m2-03-sop-and-pos.mdx"));
+const LdKmap = lesson(() => import("@/content/logic-design/m2-04-karnaugh-maps.mdx"));
+const LdUniversal = lesson(() => import("@/content/logic-design/m2-05-universal-gates.mdx"));
+const LdGatesQuiz = lesson(() => import("@/content/logic-design/m2-06-gates-quiz.mdx"));
+const LdAdders = lesson(() => import("@/content/logic-design/m3-01-adders.mdx"));
+const LdCarries = lesson(() => import("@/content/logic-design/m3-02-fast-carries.mdx"));
+const LdDecoders = lesson(() => import("@/content/logic-design/m3-03-comparators-decoders-encoders.mdx"));
+const LdMux = lesson(() => import("@/content/logic-design/m3-04-multiplexers.mdx"));
+const LdBlocksQuiz = lesson(() => import("@/content/logic-design/m3-05-building-blocks-quiz.mdx"));
+const LdSr = lesson(() => import("@/content/logic-design/m4-01-sr-latch.mdx"));
+const LdDLatch = lesson(() => import("@/content/logic-design/m4-02-d-latch-and-clock.mdx"));
+const LdFlipFlops = lesson(() => import("@/content/logic-design/m4-03-flip-flops.mdx"));
+const LdRegisters = lesson(() => import("@/content/logic-design/m4-04-registers.mdx"));
+const LdCounters = lesson(() => import("@/content/logic-design/m4-05-counters.mdx"));
+const LdMemory = lesson(() => import("@/content/logic-design/m4-06-memory-unit.mdx"));
+const LdSeqQuiz = lesson(() => import("@/content/logic-design/m4-07-sequential-quiz.mdx"));
+const OrgInside = lesson(() => import("@/content/computer-organization/m0-01-whats-inside.mdx"));
+const OrgBits = lesson(() => import("@/content/computer-organization/m0-02-bits-and-bytes.mdx"));
+const OrgCpu = lesson(() => import("@/content/computer-organization/m1-01-inside-the-cpu.mdx"));
+const OrgCycle = lesson(() => import("@/content/computer-organization/m1-02-machine-cycle.mdx"));
+const OrgBuses = lesson(() => import("@/content/computer-organization/m1-03-buses.mdx"));
+const OrgRam = lesson(() => import("@/content/computer-organization/m2-01-ram-and-rom.mdx"));
+const OrgHierarchy = lesson(() => import("@/content/computer-organization/m2-02-memory-hierarchy.mdx"));
+const OrgHdd = lesson(() => import("@/content/computer-organization/m3-01-hard-disks.mdx"));
+const OrgSsd = lesson(() => import("@/content/computer-organization/m3-02-ssds-and-optical.mdx"));
+const OrgQuiz = lesson(() => import("@/content/computer-organization/m3-03-final-quiz.mdx"));
+const MpInside = lesson(() => import("@/content/microprocessors/m0-01-inside-the-8086.mdx"));
+const MpRegisters = lesson(() => import("@/content/microprocessors/m0-02-registers.mdx"));
+const MpFlags = lesson(() => import("@/content/microprocessors/m0-03-flags.mdx"));
+const MpSegments = lesson(() => import("@/content/microprocessors/m1-01-segments-and-addresses.mdx"));
+const MpModes = lesson(() => import("@/content/microprocessors/m1-02-addressing-modes.mdx"));
+const MpFirst = lesson(() => import("@/content/microprocessors/m2-01-first-program.mdx"));
+const MpArith = lesson(() => import("@/content/microprocessors/m2-02-arithmetic-and-logic.mdx"));
+const MpJumps = lesson(() => import("@/content/microprocessors/m2-03-jumps-and-loops.mdx"));
+const MpStack = lesson(() => import("@/content/microprocessors/m2-04-stack-and-procedures.mdx"));
+const MpInterrupts = lesson(() => import("@/content/microprocessors/m3-01-interrupts.mdx"));
+const MpBusCycles = lesson(() => import("@/content/microprocessors/m3-02-bus-cycles.mdx"));
+const MpQuiz = lesson(() => import("@/content/microprocessors/m3-03-final-quiz.mdx"));
+const ArchIntro = lesson(() => import("@/content/computer-architecture/m0-01-architecture-and-organization.mdx"));
+const ArchFormats = lesson(() => import("@/content/computer-architecture/m1-01-instruction-formats.mdx"));
+const ArchRisc = lesson(() => import("@/content/computer-architecture/m1-02-risc-and-cisc.mdx"));
+const ArchPerf = lesson(() => import("@/content/computer-architecture/m1-03-measuring-performance.mdx"));
+const ArchControl = lesson(() => import("@/content/computer-architecture/m1-04-control-unit.mdx"));
+const ArchMemory = lesson(() => import("@/content/computer-architecture/m2-01-main-memory.mdx"));
+const ArchMapping = lesson(() => import("@/content/computer-architecture/m2-02-cache-mapping.mdx"));
+const ArchPolicies = lesson(() => import("@/content/computer-architecture/m2-03-cache-policies.mdx"));
+const ArchVm = lesson(() => import("@/content/computer-architecture/m2-04-virtual-memory.mdx"));
+const ArchIo = lesson(() => import("@/content/computer-architecture/m3-01-io-methods.mdx"));
+const ArchArbiter = lesson(() => import("@/content/computer-architecture/m3-02-buses-and-arbitration.mdx"));
+const ArchPipe = lesson(() => import("@/content/computer-architecture/m4-01-pipelining.mdx"));
+const ArchHazards = lesson(() => import("@/content/computer-architecture/m4-02-pipeline-hazards.mdx"));
+const ArchParallel = lesson(() => import("@/content/computer-architecture/m4-03-parallel-processing.mdx"));
+const ArchQuiz = lesson(() => import("@/content/computer-architecture/m4-04-final-quiz.mdx"));
+const ExamMindLesson01 = lesson(() => import("@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx"));
+const ExamMindLesson02 = lesson(() => import("@/content/the-exam-mind/02-the-one-week-plan.mdx"));
+const ExamMindLesson03 = lesson(() => import("@/content/the-exam-mind/03-stress-and-anxiety.mdx"));
+const ExamMindLesson04 = lesson(() => import("@/content/the-exam-mind/04-exam-day.mdx"));
+const OsWhatAnOsDoes = lesson(() => import("@/content/operating-systems/m1-01-what-an-os-does.mdx"));
+const OsArchitecture = lesson(() => import("@/content/operating-systems/m1-02-os-architecture-and-operations.mdx"));
+const OsServicesSyscalls = lesson(() => import("@/content/operating-systems/m1-03-services-and-system-calls.mdx"));
+const OsDesignStructure = lesson(() => import("@/content/operating-systems/m1-04-os-design-and-structure.mdx"));
+const OsLabLinux = lesson(() => import("@/content/operating-systems/m1-05-lab-linux-commands.mdx"));
+const OsProcesses = lesson(() => import("@/content/operating-systems/m2-01-processes.mdx"));
+const OsIpc = lesson(() => import("@/content/operating-systems/m2-02-interprocess-communication.mdx"));
+const OsLabThreads = lesson(() => import("@/content/operating-systems/m2-03-lab-java-threads.mdx"));
+const OsCriticalSection = lesson(() => import("@/content/operating-systems/m3-01-critical-section-problem.mdx"));
+const OsSemaphores = lesson(() => import("@/content/operating-systems/m3-02-semaphores-and-classic-problems.mdx"));
+const OsLabSync = lesson(() => import("@/content/operating-systems/m3-03-lab-java-synchronization.mdx"));
+const OsSchedulingBasics = lesson(() => import("@/content/operating-systems/m4-01-cpu-scheduling-basics.mdx"));
+const OsRoundRobin = lesson(() => import("@/content/operating-systems/m4-02-round-robin-and-beyond.mdx"));
+const OsMemoryAllocation = lesson(() => import("@/content/operating-systems/m5-01-memory-allocation.mdx"));
+const OsPaging = lesson(() => import("@/content/operating-systems/m5-02-paging.mdx"));
+const OsVirtualMemory = lesson(() => import("@/content/operating-systems/m5-03-virtual-memory.mdx"));
+const OsPageReplacement = lesson(() => import("@/content/operating-systems/m5-04-page-replacement-and-thrashing.mdx"));
+
+import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 export type LessonKind = "theory" | "practical" | "quiz";
 
@@ -94,7 +176,7 @@ export type Lesson = {
   title: string;
   duration: string; // e.g. "8 min"
   kind?: LessonKind; // omitted = "theory" (default)
-  Component: ComponentType<Record<string, unknown>>;
+  Component: LessonComponent;
 };
 
 export function lessonKind(lesson: Lesson): LessonKind {
@@ -115,6 +197,7 @@ export type Course = {
   accent: "neon" | "orange" | "sky" | "violet" | "mint";
   status: "available" | "coming-soon";
   number: string; // "01"
+  authors?: Author[];
   modules: Module[];
 };
 
@@ -128,6 +211,7 @@ export const courses: Course[] = [
     accent: "neon",
     status: "available",
     number: "01",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Foundations",
@@ -175,6 +259,7 @@ export const courses: Course[] = [
     accent: "orange",
     status: "available",
     number: "02",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "The Three Layers of Fluency",
@@ -196,6 +281,7 @@ export const courses: Course[] = [
     accent: "sky",
     status: "available",
     number: "03",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Foundations",
@@ -252,6 +338,7 @@ export const courses: Course[] = [
     accent: "violet",
     status: "available",
     number: "04",
+    authors: [asmaaFarouq],
     modules: [
       {
         title: "Foundations of Analysis",
@@ -318,6 +405,7 @@ export const courses: Course[] = [
     accent: "mint",
     status: "available",
     number: "05",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Matrices",
@@ -362,15 +450,284 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "computer-organization",
+    title: "Computer Organization",
+    tagline: "What's inside the box, and how the parts work together.",
+    description:
+      "A top-down tour of a computer with the history left out. Step a working CPU through a program, follow a read across the buses, cut the power on RAM, and spin a hard disk to see why it's the slowest part of the machine.",
+    accent: "sky",
+    status: "available",
+    number: "06",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "The Big Picture",
+        blurb: "What a computer is made of, and why it all comes down to bits.",
+        lessons: [
+          { slug: "whats-inside", title: "What's Inside a Computer", duration: "8 min", Component: OrgInside },
+          { slug: "bits-and-bytes", title: "Bits and Bytes", duration: "9 min", Component: OrgBits },
+        ],
+      },
+      {
+        title: "The CPU",
+        blurb: "The parts of a processor and the one loop it runs forever.",
+        lessons: [
+          { slug: "inside-the-cpu", title: "Inside the CPU", duration: "8 min", Component: OrgCpu },
+          { slug: "machine-cycle", title: "The Machine Cycle", duration: "12 min", Component: OrgCycle },
+          { slug: "buses", title: "Buses: The Computer's Roads", duration: "9 min", Component: OrgBuses },
+        ],
+      },
+      {
+        title: "Memory",
+        blurb: "Words and addresses, kinds of RAM and ROM, and why cache works.",
+        lessons: [
+          { slug: "ram-and-rom", title: "Memory: Words, Addresses, RAM and ROM", duration: "12 min", Component: OrgRam },
+          { slug: "memory-hierarchy", title: "The Memory Hierarchy and Cache", duration: "11 min", Component: OrgHierarchy },
+        ],
+      },
+      {
+        title: "Storage",
+        blurb: "Where data lives when the power's off: disks, flash and light.",
+        lessons: [
+          { slug: "hard-disks", title: "Hard Disks", duration: "10 min", Component: OrgHdd },
+          { slug: "ssds-and-optical", title: "SSDs and Optical Discs", duration: "10 min", Component: OrgSsd },
+          { slug: "final-quiz", title: "Quiz: Computer Organization", duration: "10 min", kind: "quiz", Component: OrgQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "logic-design",
+    title: "Logic Design",
+    tagline: "From a single switch to working memory, one live circuit at a time.",
+    description:
+      "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
+    accent: "neon",
+    status: "available",
+    number: "07",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Signals",
+        blurb: "Why digital hardware settles for two values, and what a clock does.",
+        lessons: [
+          { slug: "signals", title: "Signals: Why Computers Use Only Two Values", duration: "9 min", Component: LdSignals },
+        ],
+      },
+      {
+        title: "Numbers and Codes",
+        blurb: "Binary, hex, negative numbers, and agreeing on what a pattern of bits means.",
+        lessons: [
+          { slug: "number-systems", title: "Number Systems", duration: "12 min", Component: LdNumbers },
+          { slug: "binary-arithmetic", title: "Binary Arithmetic and Negative Numbers", duration: "12 min", Component: LdArithmetic },
+          { slug: "codes-and-floating-point", title: "Codes and Floating Point", duration: "13 min", Component: LdCodes },
+          { slug: "numbers-quiz", title: "Quiz: Numbers and Codes", duration: "8 min", kind: "quiz", Component: LdNumbersQuiz },
+        ],
+      },
+      {
+        title: "Gates and Boolean Algebra",
+        blurb: "The eight gates, the algebra that describes them, and how to make circuits smaller.",
+        lessons: [
+          { slug: "logic-gates", title: "Logic Gates", duration: "10 min", Component: LdGates },
+          { slug: "boolean-algebra", title: "Boolean Algebra", duration: "14 min", Component: LdBoolean },
+          { slug: "sop-and-pos", title: "Truth Tables to Circuits: SOP and POS", duration: "11 min", Component: LdSop },
+          { slug: "karnaugh-maps", title: "Karnaugh Maps", duration: "14 min", Component: LdKmap },
+          { slug: "universal-gates", title: "Universal Gates: Everything from NAND", duration: "9 min", Component: LdUniversal },
+          { slug: "gates-quiz", title: "Quiz: Gates and Boolean Algebra", duration: "8 min", kind: "quiz", Component: LdGatesQuiz },
+        ],
+      },
+      {
+        title: "Combinational Building Blocks",
+        blurb: "Adders, comparators, decoders, encoders and multiplexers: the parts a CPU is made of.",
+        lessons: [
+          { slug: "adders", title: "Adders: Teaching Gates to Count", duration: "11 min", Component: LdAdders },
+          { slug: "fast-carries", title: "Ripple Carry and Look-Ahead", duration: "9 min", Component: LdCarries },
+          { slug: "comparators-decoders-encoders", title: "Comparators, Decoders and Encoders", duration: "13 min", Component: LdDecoders },
+          { slug: "multiplexers", title: "Multiplexers and Demultiplexers", duration: "9 min", Component: LdMux },
+          { slug: "building-blocks-quiz", title: "Quiz: Combinational Building Blocks", duration: "7 min", kind: "quiz", Component: LdBlocksQuiz },
+        ],
+      },
+      {
+        title: "Sequential Logic",
+        blurb: "Feedback gives circuits memory: latches, flip-flops, registers, counters and RAM.",
+        lessons: [
+          { slug: "sr-latch", title: "The SR Latch: How a Circuit Remembers", duration: "15 min", Component: LdSr },
+          { slug: "d-latch-and-clock", title: "Control Inputs and the D Latch", duration: "11 min", Component: LdDLatch },
+          { slug: "flip-flops", title: "Flip-Flops: Changing Only on the Edge", duration: "13 min", Component: LdFlipFlops },
+          { slug: "registers", title: "Registers and Shift Registers", duration: "10 min", Component: LdRegisters },
+          { slug: "counters", title: "Binary Counters", duration: "8 min", Component: LdCounters },
+          { slug: "memory-unit", title: "The Memory Unit: Putting It All Together", duration: "10 min", Component: LdMemory },
+          { slug: "sequential-quiz", title: "Quiz: Sequential Logic", duration: "10 min", kind: "quiz", Component: LdSeqQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "microprocessors",
+    title: "Microprocessors",
+    tagline: "Program a real 8086, one instruction at a time.",
+    description:
+      "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
+    accent: "orange",
+    status: "available",
+    number: "08",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "The 8086",
+        blurb: "A real chip: its two units, its registers and its flags.",
+        lessons: [
+          { slug: "inside-the-8086", title: "Inside the 8086", duration: "11 min", Component: MpInside },
+          { slug: "registers", title: "The 8086's Registers", duration: "11 min", Component: MpRegisters },
+          { slug: "flags", title: "The Flags Register", duration: "10 min", Component: MpFlags },
+        ],
+      },
+      {
+        title: "Addressing Memory",
+        blurb: "How 16-bit registers reach 1 MB, and the ways of saying where data is.",
+        lessons: [
+          { slug: "segments-and-addresses", title: "Segments and Physical Addresses", duration: "12 min", Component: MpSegments },
+          { slug: "addressing-modes", title: "Addressing Modes", duration: "13 min", Component: MpModes },
+        ],
+      },
+      {
+        title: "Programming in Assembly",
+        blurb: "Write and step through real programs in the browser.",
+        lessons: [
+          { slug: "first-program", title: "Your First Program", duration: "12 min", kind: "practical", Component: MpFirst },
+          { slug: "arithmetic-and-logic", title: "Arithmetic and Logic Instructions", duration: "15 min", kind: "practical", Component: MpArith },
+          { slug: "jumps-and-loops", title: "Jumps and Loops", duration: "14 min", kind: "practical", Component: MpJumps },
+          { slug: "stack-and-procedures", title: "The Stack and Procedures", duration: "13 min", kind: "practical", Component: MpStack },
+        ],
+      },
+      {
+        title: "Talking to the Outside World",
+        blurb: "Interrupts, bus timing and the modes modern chips run in.",
+        lessons: [
+          { slug: "interrupts", title: "Interrupts", duration: "11 min", Component: MpInterrupts },
+          { slug: "bus-cycles", title: "Reading from Memory: The Bus Cycle", duration: "9 min", Component: MpBusCycles },
+          { slug: "final-quiz", title: "Quiz: Microprocessors", duration: "10 min", kind: "quiz", Component: MpQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "computer-architecture",
+    title: "Computer Architecture",
+    tagline: "What actually makes a computer fast.",
+    description:
+      "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
+    accent: "violet",
+    status: "available",
+    number: "09",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Foundations",
+        blurb: "What architecture means, and what you should already know.",
+        lessons: [
+          { slug: "architecture-and-organization", title: "Architecture and Organization", duration: "7 min", Component: ArchIntro },
+        ],
+      },
+      {
+        title: "Instructions and Control",
+        blurb: "What the hardware promises software, and how to measure it.",
+        lessons: [
+          { slug: "instruction-formats", title: "Instruction Formats", duration: "10 min", Component: ArchFormats },
+          { slug: "risc-and-cisc", title: "RISC and CISC", duration: "10 min", Component: ArchRisc },
+          { slug: "measuring-performance", title: "Measuring Performance", duration: "12 min", Component: ArchPerf },
+          { slug: "control-unit", title: "The Control Unit", duration: "9 min", Component: ArchControl },
+        ],
+      },
+      {
+        title: "The Storage System",
+        blurb: "Bandwidth, interleaving, cache design and virtual memory.",
+        lessons: [
+          { slug: "main-memory", title: "Main Memory Performance", duration: "9 min", Component: ArchMemory },
+          { slug: "cache-mapping", title: "Cache Mapping", duration: "15 min", Component: ArchMapping },
+          { slug: "cache-policies", title: "Cache Policies: Replacement, Writes and Block Size", duration: "13 min", Component: ArchPolicies },
+          { slug: "virtual-memory", title: "Virtual Memory", duration: "14 min", Component: ArchVm },
+        ],
+      },
+      {
+        title: "Input and Output",
+        blurb: "Moving data to and from devices without wasting the CPU.",
+        lessons: [
+          { slug: "io-methods", title: "Input and Output", duration: "10 min", Component: ArchIo },
+          { slug: "buses-and-arbitration", title: "Buses and Arbitration", duration: "9 min", Component: ArchArbiter },
+        ],
+      },
+      {
+        title: "Parallelism",
+        blurb: "Overlapping instructions, the hazards that follow, and many processors at once.",
+        lessons: [
+          { slug: "pipelining", title: "Pipelining", duration: "12 min", Component: ArchPipe },
+          { slug: "pipeline-hazards", title: "Pipeline Hazards", duration: "14 min", Component: ArchHazards },
+          { slug: "parallel-processing", title: "Parallel Processing", duration: "13 min", Component: ArchParallel },
+          { slug: "final-quiz", title: "Quiz: Computer Architecture", duration: "12 min", kind: "quiz", Component: ArchQuiz },
+        ],
+      },
+    ],
+  },
+  {
     slug: "operating-systems",
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
     description:
-      "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
-    accent: "violet",
-    status: "coming-soon",
-    number: "06",
-    modules: [],
+      "What really happens between your click and the hardware. Interrupts and system calls, processes and threads, synchronization, CPU scheduling, main memory and virtual memory, plus hands-on Linux and threads labs. Every lesson follows the lectures and labs, in plain language, with animations you can step through.",
+    accent: "mint",
+    status: "available",
+    number: "10",
+    authors: [asmaaFarouq],
+    modules: [
+      {
+        title: "Meet the Operating System",
+        blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
+        lessons: [
+          { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
+          { slug: "os-architecture-and-operations", title: "Inside the OS: Architecture, Operations and Environments", duration: "22 min", Component: OsArchitecture },
+          { slug: "services-and-system-calls", title: "OS Services, Interfaces and System Calls", duration: "18 min", Component: OsServicesSyscalls },
+          { slug: "os-design-and-structure", title: "System Programs, OS Design and Structure", duration: "20 min", Component: OsDesignStructure },
+          { slug: "lab-linux-commands", title: "Lab: Linux and the Command Line", duration: "25 min", kind: "practical", Component: OsLabLinux },
+        ],
+      },
+      {
+        title: "Processes and Threads",
+        blurb: "A program in motion: its states, how the OS switches between processes, how they talk, and threads.",
+        lessons: [
+          { slug: "processes", title: "Processes: The Program in Motion", duration: "22 min", Component: OsProcesses },
+          { slug: "interprocess-communication", title: "Interprocess Communication", duration: "22 min", Component: OsIpc },
+          { slug: "lab-java-threads", title: "Lab: Threads in Java", duration: "25 min", kind: "practical", Component: OsLabThreads },
+        ],
+      },
+      {
+        title: "Process Synchronization",
+        blurb: "When processes share data: race conditions, critical sections, locks, semaphores and the classic problems.",
+        lessons: [
+          { slug: "critical-section-problem", title: "Race Conditions and the Critical-Section Problem", duration: "24 min", Component: OsCriticalSection },
+          { slug: "semaphores-and-classic-problems", title: "Semaphores and the Classic Synchronization Problems", duration: "26 min", Component: OsSemaphores },
+          { slug: "lab-java-synchronization", title: "Lab: Synchronization in Java", duration: "25 min", kind: "practical", Component: OsLabSync },
+        ],
+      },
+      {
+        title: "CPU Scheduling",
+        blurb: "Who runs next? FCFS, SJF, priority, round robin and multilevel queues, and how to judge them.",
+        lessons: [
+          { slug: "cpu-scheduling-basics", title: "CPU Scheduling: FCFS, SJF and Priority", duration: "26 min", Component: OsSchedulingBasics },
+          { slug: "round-robin-and-beyond", title: "Round Robin, Multilevel Queues and Choosing a Scheduler", duration: "24 min", Component: OsRoundRobin },
+        ],
+      },
+      {
+        title: "Memory Management",
+        blurb: "Sharing RAM safely: addresses and the MMU, swapping, allocation, segmentation, paging and virtual memory.",
+        lessons: [
+          { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
+          { slug: "paging", title: "Paging", duration: "26 min", Component: OsPaging },
+          { slug: "virtual-memory", title: "Virtual Memory and Demand Paging", duration: "24 min", Component: OsVirtualMemory },
+          { slug: "page-replacement-and-thrashing", title: "Page Replacement and Thrashing", duration: "28 min", Component: OsPageReplacement },
+        ],
+      },
+    ],
   },
   {
     slug: "distributed-systems",
@@ -380,7 +737,7 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "07",
+    number: "11",
     modules: [],
   },
   {
@@ -391,7 +748,8 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
-    number: "08",
+    number: "12",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "The Strategy",

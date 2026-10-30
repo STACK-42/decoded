@@ -25,3 +25,9 @@ dist-ssr
 
 # Raw reference material (never committed)
 _sources/
+
+# Cloudflare Worker local state
+.wrangler/
+.dev.vars*
+
+.claude/

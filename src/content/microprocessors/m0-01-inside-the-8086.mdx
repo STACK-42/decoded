@@ -1,0 +1,44 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { BiuEuQueue, FetchExecuteCompare } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Inside the 8086
+
+A **microprocessor** is a whole [CPU](/courses/computer-organization/inside-the-cpu) on one chip. This course uses the Intel 8086 as its example. It's old, but today's PCs still descend from it, it's small enough to understand fully, and its assembly language still works on the x86 family today. Learn it and you can read what's underneath modern code.
+
+Three numbers describe it:
+
+| Feature | 8085 (before) | 8086 |
+|---|---|---|
+| Word size | 8-bit | 16-bit |
+| Address bus | 16 lines, so 64 KB | 20 lines, so 1 MB |
+| Instruction queue | None | 6 bytes |
+| Pipelining | None | Two stages |
+
+**Word size** is how many bits it can handle in one go, and it applies to the ALU, the registers and the data bus. **Address lines** decide [how much memory it can reach](/courses/computer-organization/buses): $2^{20}$ bytes is 1 MB.
+
+The speed of a clock tick isn't everything. A faster clock means more steps per second, but what matters is how much useful work each step does.
+
+## Two units instead of one
+
+In the [simple CPU](/courses/computer-organization/machine-cycle), fetching and executing took turns, and a CPU waiting on memory did nothing else. The 8086's big idea was to split the chip into two independent parts:
+
+- **Bus Interface Unit (BIU)**: the only part that talks to the outside world. It fetches instructions, reads and writes data, and calculates addresses.
+- **Execution Unit (EU)**: it runs instructions. It contains the ALU, the general registers and the flags. It never touches the outside bus.
+
+Between them sits a 6-byte **instruction queue**. Think of a kitchen: a helper keeps the counter stocked with ingredients while the cook works, so the cook doesn't have to stop and walk to the pantry.
+
+<BiuEuQueue />
+
+The queue's main job is to make use of time that would be wasted. While the EU is busy running an instruction, the BIU is free to use the bus, so it reads ahead.
+
+## This is pipelining
+
+Fetching the next instruction while running the current one is called **pipelining**, and the 8086 does it in two stages.
+
+<FetchExecuteCompare />
+
+There's one catch. If an instruction jumps somewhere else, all the bytes read ahead are for the wrong place, and the queue has to be thrown away and refilled. Modern CPUs still pay this price, as you'll see in [pipeline hazards](/courses/computer-architecture/pipeline-hazards).
+
+<Callout tone="orange" label="How to read this course">
+You don't need an 8086 to follow along. Each lesson from here on has a simulator that runs real 8086 instructions. To run the same code on your own computer, try the free emu8086 or DOSBox with NASM.
+</Callout>

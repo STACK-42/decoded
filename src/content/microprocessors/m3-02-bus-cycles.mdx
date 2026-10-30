@@ -1,0 +1,40 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { MemoryReadCycle } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Reading from Memory: The Bus Cycle
+
+You've written `MOV AX, [BX]` and it seemed to take no time. In the hardware, several things have to happen in the right order across the [buses](/courses/computer-organization/buses), with each step tied to the clock. Here's a read, the way a logic analyser would show it.
+
+Step through it. Then add some wait states.
+
+<MemoryReadCycle />
+
+Each line is a signal over time: the same [timing diagram](/courses/logic-design/flip-flops) you saw with flip-flops. RD is active low, so it means "read" when it's at 0.
+
+## The memory wall
+
+CPUs have become far faster than memory. A CPU clock can run at several GHz, but it reaches memory over a much slower system bus. Whenever a value isn't ready, the CPU simply has to wait. Those wasted ticks are called **wait states**.
+
+So a program's speed depends heavily on how often it goes to memory. Reducing that is the reason for having [registers](/courses/microprocessors/registers) and [cache](/courses/computer-organization/memory-hierarchy).
+
+<Callout tone="orange" label="Sharing the pins">
+A chip has only so many pins. To save some, the 8086 uses the same 16 pins for both address and data at different moments: an address during the first clock cycle, and data after that. The ALE signal tells outside circuits when the pins hold an address, so they can latch it in. Another signal, M/IO, tells memory and I/O devices which of them the bus cycle is for.
+</Callout>
+
+## Minimum and maximum mode
+
+A pin called MN/MX sets up the chip in one of two ways:
+
+- **Minimum mode** is for a system with one processor. The 8086 produces all of the bus control signals itself.
+- **Maximum mode** is for systems with several processors, such as an 8086 with a maths coprocessor. A separate bus controller chip produces the control signals, and the freed-up pins are used to coordinate the processors.
+
+That's all you need of the chip's pin layout. The two groups of pins worth remembering are the ones that carry signals you've already met: the buses, and the interrupt pins INTR and NMI.
+
+## From the 8086 to today
+
+Every later x86 chip kept this programming model and added to it: wider registers (EAX, RAX), more cores, more cache. A modern chip runs in several **modes**:
+
+- **Real mode** behaves like an 8086, with the 1 MB limit and no protection. A PC still starts up this way.
+- **Protected mode** gives each program its own memory area, so one crash can't take down the others. This is normal operation.
+- **Virtual-8086 mode** runs real-mode programs safely inside protected mode.
+- **System management mode** is a hidden mode for firmware tasks such as power management.

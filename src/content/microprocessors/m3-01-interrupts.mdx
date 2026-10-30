@@ -1,0 +1,47 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { InterruptFlow } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Interrupts
+
+Imagine you're cooking and expecting a package. You could go to the door every minute to check, or you could carry on cooking and let the doorbell tell you. The second way is obviously better, and it's how a CPU deals with devices. An **interrupt** is a doorbell.
+
+Without interrupts, a CPU would have to keep asking the keyboard "any key yet?" millions of times, wasting nearly all of its time. That approach is called [polling](/courses/computer-architecture/io-methods).
+
+## What happens
+
+An interrupt is a forced `CALL`. Step through it, then try masking it.
+
+<InterruptFlow />
+
+**ISR** stands for Interrupt Service Routine, the code that handles the event. It's a normal procedure, except it ends with `IRET` rather than `RET`, because it has to restore the flags too.
+
+The time between the request and the start of the ISR is the **interrupt latency**.
+
+## Types of interrupt
+
+| Type | Caused by | Example |
+|---|---|---|
+| Hardware (external) | A device signalling on a pin | A key press, a disk finishing |
+| Software | An instruction in the program | `INT 21h`, the [DOS call](/courses/microprocessors/first-program) you've used |
+| Exception | The CPU itself, when something goes wrong | Divide by zero, or `INTO` after an overflow |
+
+The 8086 supports 256 interrupt types, numbered 0 to 255. Each has a 4-byte entry at the very bottom of memory, holding the CS and IP of its handler, which is the **interrupt vector table**.
+
+## Maskable and non-maskable
+
+The chip has two interrupt pins, and the difference between them is whether software can switch them off:
+
+| | Maskable (INTR) | Non-maskable (NMI) |
+|---|---|---|
+| Can be ignored? | Yes, with `CLI` (IF = 0) | No |
+| Used for | Normal devices such as a keyboard | Critical events such as hardware failure |
+| Example on the 8085 | RST 7.5, RST 6.5, RST 5.5 | TRAP |
+| Priority | Lower | Higher |
+
+Why would you ever turn interrupts off? While an ISR is updating some shared data, another interrupt arriving halfway through could find it half-changed. So critical code runs `CLI`, does its work quickly and runs `STI`. A real emergency, like a memory error, still gets through on NMI.
+
+<Callout tone="orange" label="Everything depends on this">
+A computer that seems to run many programs at once uses a timer interrupt, firing many times a second, to take control back from a running program and let the next one have a turn. That's how an [operating system](/courses/operating-systems) stays in charge.
+</Callout>
+
+When several devices ask at once, a [priority encoder](/courses/logic-design/comparators-decoders-encoders) decides who goes first.

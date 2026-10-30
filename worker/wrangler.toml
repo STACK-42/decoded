@@ -1,0 +1,15 @@
+name = "decoded-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+routes = [{ pattern = "decoded-api.stack42.tech", custom_domain = true }]
+
+[vars]
+SITE_ORIGIN = "https://decoded.stack42.tech"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "decoded"
+database_id = "61e810ad-3f8b-468d-961a-cbd011ddae7f"
+migrations_dir = "migrations"
