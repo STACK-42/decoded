@@ -65,6 +65,8 @@ npm run dev      # http://localhost:8080
 
 Lessons are MDX files under `src/content/<course-slug>/`. [`src/content/registry.ts`](src/content/registry.ts) lists every course, module and lesson, and the pages look everything up there. To add a lesson, write the `.mdx` file, import it in the registry and add an entry to its module.
 
+To add a whole course, follow [docs/building-a-course.md](docs/building-a-course.md), which includes a prompt you can give a coding agent.
+
 > [!IMPORTANT]
 > There is no `MDXProvider`. An MDX file that uses `Callout`, `PracticalApplication` or another custom component has to import it from `@/components/mdx/MdxComponents` itself.
 
