@@ -1,0 +1,66 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { DiscreteLogSearch } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Discrete Logarithms
+
+The last lesson showed that $a^k \bmod p$ is fast to compute. This lesson is about going backwards, finding $k$ when you know the result. Nobody knows a fast way to do that in general, and public-key cryptography is built on that gap.
+
+## Logarithms, modulo a prime
+
+An ordinary logarithm undoes a power: if $y = x^{\log_x y}$, then $\log_x y$ is the exponent. Three rules go with it:
+
+$$
+\log_x 1 = 0, \qquad \log_x (yz) = \log_x y + \log_x z, \qquad \log_x (y^r) = r \log_x y
+$$
+
+Now take a primitive root $a$ of a prime $p$. Its powers hit every value from 1 to $p - 1$ exactly once, so for any $b$ in that range there's a unique exponent $k$ with
+
+$$
+b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
+$$
+
+This $k$ is the **discrete logarithm** of $b$ to the base $a$. The same rules hold, with the exponents worked out modulo $\phi(p)$.
+
+## A small example
+
+It also works for some non-prime moduli. For $n = 9$, $\phi(9) = 6$ and 2 is a primitive root:
+
+$$
+2^0 = 1,\ 2^1 = 2,\ 2^2 = 4,\ 2^3 = 8,\ 2^4 \equiv 7,\ 2^5 \equiv 5 \pmod 9
+$$
+
+Rearranged, that gives a table of logs:
+
+| Number | 1 | 2 | 4 | 5 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Log | 0 | 1 | 2 | 5 | 4 | 3 |
+
+## Try finding one
+
+Pick a base and a target modulo 19. The chords jump around with no visible pattern, so the search gets no hint about whether it's close:
+
+<DiscreteLogSearch />
+
+Modulo 19 you can finish by hand. With a prime of hundreds of digits, this search would never end. Better algorithms exist, such as baby-step giant-step and the number field sieve, but none of them are fast enough at those sizes.
+
+## A one-way street
+
+| Direction | Problem | Effort |
+| --- | --- | --- |
+| Forward | Compute $a^k \bmod p$ | Fast, about $\log k$ multiplications |
+| Backward | Find $k$ from $a^k \bmod p$ | No known fast method on classical computers |
+
+## Integer factorization
+
+There's a second problem of this kind. Given a composite number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Sharing a secret in public" tool="Diffie-Hellman, TLS">
+Two people exchange $a^x$ and $a^y$ in the open, and both can compute $a^{xy}$. An eavesdropper would need a discrete log to do the same.
+</PracticalApplication>
+<PracticalApplication title="Why quantum computers matter" tool="Post-quantum cryptography">
+Shor's algorithm would solve both discrete logs and factoring quickly on a large quantum computer, which is why NIST has standardised new algorithms based on different problems.
+</PracticalApplication>
+</ApplicationsGrid>

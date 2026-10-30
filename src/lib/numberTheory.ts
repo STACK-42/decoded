@@ -235,3 +235,84 @@ export function extendedFrames(a: number, b: number): Frame<ExtState>[] {
   frames.push({ state: { a, b, rows, down: rows.length - 1, up: 0 }, line: 1, message: g === 1 ? `Done: ${a} × (${top.x}) + ${b} × (${top.y}) = 1. Modulo ${a}, the first term vanishes, so the inverse of ${b} is ${inv}.` : `Done: ${a} × (${top.x}) + ${b} × (${top.y}) = ${g}. The gcd isn't 1, so there's no inverse.`, stats: {} });
   return frames;
 }
+
+/* ---------------------------- fast exponentiation --------------------------- */
+
+export function modPow(a: number, m: number, n: number): number {
+  let r = 1 % n;
+  let b = mod(a, n);
+  for (let e = m; e > 0; e = Math.floor(e / 2)) {
+    if (e % 2) r = (r * b) % n;
+    b = (b * b) % n;
+  }
+  return r;
+}
+
+export type FastPowState = { a: number; m: number; n: number; bits: string; i: number; value: number; history: { bit: string; text: string; value: number }[]; mults: number };
+
+export const MATLAB_FASTPOW = ["bits = dec2bin(m);", "r = mod(a, n);", "for i = 2:length(bits)", "  r = mod(r * r, n);", "  if bits(i) == '1'", "    r = mod(r * a, n);", "  end", "end", "r"];
+
+/** Left-to-right square and multiply: read m in binary, always square, multiply on a 1. */
+export function fastPowFrames(a: number, m: number, n: number): Frame<FastPowState>[] {
+  const bits = m.toString(2);
+  let value = mod(a, n);
+  let mults = 0;
+  const history = [{ bit: bits[0], text: `${a} mod ${n}`, value }];
+  const frames: Frame<FastPowState>[] = [{ state: { a, m, n, bits, i: 0, value, history: [...history], mults }, line: 1, message: `${m} in binary is ${bits}. The first bit just sets up the starting value, ${a}.`, stats: { multiplications: 0, naive: m - 1 } }];
+  for (let i = 1; i < bits.length; i++) {
+    const before = value;
+    const sq = before * before;
+    value = sq % n;
+    mults++;
+    if (bits[i] === "1") {
+      const big = value * a;
+      const text = `(${before}² mod ${n}) × ${a} mod ${n}`;
+      value = big % n;
+      mults++;
+      history.push({ bit: "1", text, value });
+      frames.push({ state: { a, m, n, bits, i, value, history: [...history], mults }, line: 5, message: `Bit 1: square and multiply. ${before}² ≡ ${sq % n}, and ${sq % n} × ${a} ≡ ${value} (mod ${n}).`, stats: { multiplications: mults, naive: m - 1 } });
+    } else {
+      history.push({ bit: "0", text: `${before}² mod ${n}`, value });
+      frames.push({ state: { a, m, n, bits, i, value, history: [...history], mults }, line: 3, message: `Bit 0: just square. ${before}² = ${sq} ≡ ${value} (mod ${n}).`, stats: { multiplications: mults, naive: m - 1 } });
+    }
+  }
+  frames.push({ state: { a, m, n, bits, i: bits.length, value, history: [...history], mults }, line: 8, message: `${a}^${m} mod ${n} = ${value}, using ${mults} multiplications where the naive way needs ${m - 1}.`, stats: { multiplications: mults, naive: m - 1 } });
+  return frames;
+}
+
+/* ---------------------------- discrete logarithms --------------------------- */
+
+export function discreteLog(b: number, a: number, n: number): number | null {
+  let v = 1 % n;
+  for (let k = 0; k < n; k++) {
+    if (v === mod(b, n)) return k;
+    v = (v * a) % n;
+  }
+  return null;
+}
+
+/** The inverse lookup for a primitive root: number → its discrete log. */
+export function logTable(a: number, n: number): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (let v = 1, k = 0; k < phi(n); k++, v = (v * a) % n) out[v] = k;
+  return out;
+}
+
+export type DlogState = { a: number; n: number; target: number; seq: number[]; found: boolean };
+
+export const MATLAB_DLOG = ["v = 1;  k = 0;", "while v ~= b", "  v = mod(v * a, n);", "  k = k + 1;", "end", "k    % the discrete log of b"];
+
+export function dlogFrames(a: number, b: number, n: number): Frame<DlogState>[] {
+  const seq = [1];
+  const frames: Frame<DlogState>[] = [{ state: { a, n, target: b, seq: [...seq], found: b === 1 }, line: 0, message: `Find k with ${a}^k ≡ ${b} (mod ${n}). The powers look random, so the plain method is to try them one by one.`, stats: { tries: 0 } }];
+  let v = 1;
+  let k = 0;
+  while (v !== b && k < n) {
+    v = (v * a) % n;
+    k++;
+    seq.push(v);
+    const hit = v === b;
+    frames.push({ state: { a, n, target: b, seq: [...seq], found: hit }, line: hit ? 5 : 2, message: hit ? `${a}^${k} ≡ ${b}. Found it: the discrete log of ${b} to the base ${a} is ${k}.` : `${a}^${k} ≡ ${v}. Not ${b} yet.`, stats: { tries: k } });
+  }
+  return frames;
+}

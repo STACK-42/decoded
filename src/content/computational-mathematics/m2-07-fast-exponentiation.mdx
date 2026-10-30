@@ -1,0 +1,52 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { FastModPowVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Fast Exponentiation
+
+RSA has to compute things like $a^m \bmod n$ where $m$ has hundreds of digits. Multiplying $m - 1$ times would take longer than the age of the universe, and yet your browser does it in milliseconds. The trick is a tiny algorithm that reads $m$ in binary.
+
+## Why the naive way fails
+
+The obvious method is to multiply by $a$ over and over, reducing modulo $n$ after each step. Reducing keeps the numbers small, but it still takes $m - 1$ multiplications.
+
+## Square and multiply
+
+Write $m$ in binary and read it from left to right. Start with $a$ for the first bit. For each bit after that:
+
+- **Always** square the running value.
+- If the bit is **1**, also multiply by $a$.
+
+For $a^{100}$, we have $100 = (1100100)_2$, so the bits build the exponent like this:
+
+| Bit | Operation | Power so far |
+| --- | --- | --- |
+| 1 | start | $a^1$ |
+| 1 | square, multiply | $a^3$ |
+| 0 | square | $a^6$ |
+| 0 | square | $a^{12}$ |
+| 1 | square, multiply | $a^{25}$ |
+| 0 | square | $a^{50}$ |
+| 0 | square | $a^{100}$ |
+
+Squaring doubles the exponent, which shifts its binary form left, and multiplying by $a$ sets the new last bit to 1. Step through $25^{193} \bmod 469$, where $193 = (11000001)_2$:
+
+<FastModPowVisualizer />
+
+## How much it saves
+
+The count of multiplications grows with the number of binary digits in $m$, which is about $\log_2 m$, rather than with $m$ itself. For a 2048-bit exponent, that's at most about 4096 multiplications, instead of a number with more than 600 digits.
+
+<Callout tone="orange" label="Don't write mod(a^m, n)">
+In MATLAB, `mod(25^193, 469)` is wrong. `25^193` is too big for a double to store exactly, so its low digits are gone before `mod` sees them. Use `powermod(25, 193, 469)` from the Symbolic Math Toolbox, or reduce after each step as in the code panel. The same goes for Python's `pow(a, m, n)` versus `a**m % n`, where the slow form gives the right answer but can take forever.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Every RSA signature" tool="TLS, SSH">
+Signing and verifying both come down to one modular exponentiation, done with a hardened form of this algorithm.
+</PracticalApplication>
+<PracticalApplication title="Fast Fibonacci and matrix powers" tool="Competitive programming">
+The same idea works for anything you can multiply. Raising a 2-by-2 matrix to the $n$-th power finds the $n$-th Fibonacci number in about $\log n$ steps.
+</PracticalApplication>
+</ApplicationsGrid>
