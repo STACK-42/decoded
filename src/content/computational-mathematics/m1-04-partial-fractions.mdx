@@ -59,6 +59,37 @@ a2 =
      1     6     8
 ```
 
+## In Python
+
+NumPy has no `residue`, but SciPy does (`scipy.signal.residue`). For distinct poles, the rule is short enough to write yourself: a residue is $b(p) / a'(p)$, which is the cover-up method in one line.
+
+```python
+import numpy as np
+
+b = [-4, 8]
+a = [1, 6, 8]
+
+p = np.roots(a)
+r = np.polyval(b, p) / np.polyval(np.polyder(a), p)
+
+print(np.round(p, 6).tolist())  # [-4.0, -2.0]
+print(np.round(r, 6).tolist())  # [-12.0, 8.0]
+```
+
+## In machine learning
+
+The link here is less direct than in most lessons, and it comes through filters. An exponential moving average updates as $y_t = \alpha x_t + (1 - \alpha) y_{t-1}$, which is a filter with a single pole. Splitting a complicated filter into fractions breaks it into simple pieces of this kind.
+
+These averages are used a lot in training. Momentum and the Adam optimizer keep moving averages of the gradient, and many models keep one of their own weights to use for evaluation. pandas has them built in:
+
+```python
+import pandas as pd
+
+s = pd.Series([1.0, 2.0, 3.0])
+
+print(s.ewm(alpha=0.5, adjust=False).mean().tolist())  # [1.0, 1.5, 2.25]
+```
+
 ## Where you'll meet this
 
 <ApplicationsGrid>

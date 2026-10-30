@@ -53,6 +53,54 @@ Now try it. Change the degree, and drag the points to see the curve respond:
 Five points can always be matched exactly by a polynomial of degree 4. Zero error looks perfect, but it often means the curve has learned the noise in your data and will predict poorly between and beyond the points. This is called overfitting, and it's one of the main problems in machine learning.
 </Callout>
 
+## In Python
+
+```python
+import numpy as np
+
+print(np.polyder([1, 0, -2, -5]).tolist())  # [3, 0, -2]
+
+x = [1, 2, 3, 4, 5]
+y = [5.5, 43.1, 128, 290.7, 498.4]
+
+print(np.round(np.polyfit(x, y, 3), 4).tolist())  # [-0.1917, 31.5821, -60.3262, 35.34]
+```
+
+## In machine learning
+
+This lesson is the core of ML in miniature. `polyfit` is linear regression on polynomial features, the sum of squared errors is the mean squared error loss without the division, and the degree is the model's complexity.
+
+**Overfitting.** Hold some points back, and error on the training points keeps falling as the degree rises, while error on the held-out points eventually climbs. That's why ML practice splits data into training and test sets, and you can try it in NumPy:
+
+```python
+import numpy as np
+
+x = np.arange(10.0)
+y = 2 * x + np.array([0.3, -0.4, 0.2, 0.5, -0.3, 0.1, -0.5, 0.4, -0.2, 0.3])
+train, test = x % 2 == 0, x % 2 == 1
+
+def errors(degree):
+    p = np.polyfit(x[train], y[train], degree)
+    return [np.mean((np.polyval(p, x[m]) - y[m]) ** 2) for m in (train, test)]
+
+low, high = errors(1), errors(4)
+print(high[0] < low[0])  # True
+print(high[1] > low[1])  # True
+```
+
+**Gradient descent.** Deep networks have no formula like `polyfit`'s, so they follow the derivative downhill. For a single weight fitting $y = wx$, plain Python is enough:
+
+```python
+xs, ys = [1.0, 2.0, 3.0], [2.0, 4.0, 6.0]
+w = 0.0
+
+for step in range(100):
+    grad = sum(2 * (w * x - y) * x for x, y in zip(xs, ys)) / len(xs)
+    w -= 0.05 * grad
+
+print(round(w, 4))  # 2.0
+```
+
 ## Where you'll meet this
 
 <ApplicationsGrid>
