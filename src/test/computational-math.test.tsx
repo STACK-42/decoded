@@ -39,6 +39,19 @@ describe("Computational Mathematics course", () => {
   });
 });
 
+describe("Python and machine learning sections", () => {
+  const dir = path.resolve(__dirname, "../content/computational-mathematics");
+  const lessons = readdirSync(dir).filter((f) => f.endsWith(".mdx") && !f.includes("quiz"));
+
+  it.each(lessons)("%s keeps MATLAB as the main language", (file) => {
+    const text = readFileSync(path.join(dir, file), "utf8");
+    expect(text).toContain("## In Python");
+    expect(text).toContain("```python");
+    expect(text).toContain("## In machine learning");
+    expect(text.indexOf("## In Python")).toBeGreaterThan(0);
+  });
+});
+
 describe("matrix arithmetic", () => {
   const A = pascal(3);
   it("builds pascal(3) and recovers B after adding and subtracting A", () => {
