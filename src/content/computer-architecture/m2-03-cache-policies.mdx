@@ -1,0 +1,51 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { ReplacementLab, WritePolicyLab, AmatCalculator } from "@/components/mdx/ArchitectureVisualizers";
+
+# Cache Policies: Replacement, Writes and Block Size
+
+[Mapping](/courses/computer-architecture/cache-mapping) says where a block may go. Designers have three more decisions to make.
+
+## What gets thrown out?
+
+When a set is full, something has to go. In a direct-mapped cache there's no choice, but in the others there is.
+
+- **LRU** (least recently used): throw out whatever hasn't been used for the longest. It's like clearing your desk of whatever you haven't touched lately.
+- **FIFO** (first in, first out): throw out whatever has been there the longest, even if you're using it constantly.
+- **Random**: pick one at random. It's the cheapest to build, and it's surprisingly close to LRU.
+
+Click through each access in both modes. Block 1 keeps getting used. Does it survive?
+
+<ReplacementLab />
+
+## What happens on a write?
+
+The CPU changes a value that's in the cache. Now the cache and main memory disagree. When should memory be updated?
+
+- **Write-through**: write to both at once. Memory is always correct, but every write takes the slow trip to memory.
+- **Write-back**: write only to the cache, and mark the block with a **dirty bit**. Memory is only updated when that block gets thrown out. It's much faster, but more complicated.
+
+Consider a loop updating a counter a thousand times. Write-through sends all thousand writes to memory. Write-back sends only the last.
+
+<WritePolicyLab />
+
+To lessen the waiting, write-through caches often use a small **write buffer**, so the CPU can drop off the write and move on.
+
+<Callout tone="violet" label="The coherence problem">
+On a multicore chip, each core has its own cache. If one core uses write-back, the others can see old values. **Cache coherence** protocols keep them in step, and they're one reason multicore chips are hard to design.
+</Callout>
+
+## How big should a block be?
+
+A bigger block brings in more neighbours, which helps spatial locality, up to a point. Too large, and you have two problems: fewer blocks fit, so useful data gets thrown out sooner, and each miss takes longer because there's more to copy. Common sizes settle around 64 bytes.
+
+## Putting a number on it
+
+The measure that ties all of this together is the **average memory access time**:
+
+$$
+\text{AMAT} = \text{hit time} + \text{miss rate} \times \text{miss penalty}
+$$
+
+<AmatCalculator />
+
+Every decision in this lesson is an attempt to shrink one of these three terms. Larger caches lower the miss rate but raise the hit time. Adding another level of cache lowers the miss penalty.

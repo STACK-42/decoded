@@ -1,0 +1,62 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { HazardLab } from "@/components/mdx/ArchitectureVisualizers";
+
+# Pipeline Hazards
+
+A pipeline works wonderfully as long as each instruction is independent. Real programs aren't like that. A **hazard** is a situation that stops the next instruction from running in its turn. There are three kinds.
+
+Try each type. Switch between "Just stall" and "With forwarding", and count the dashed bubbles.
+
+<HazardLab />
+
+## Data hazards
+
+```
+ADD R1, R2, R3     ; writes R1 in stage 5
+SUB R4, R1, R5     ; wants R1 in stage 2. Too early!
+```
+
+`SUB` reads its registers while `ADD` is still in the pipeline, so R1 still holds the old value.
+
+**Fix 1, stalling.** Hold `SUB` back until the value is ready. The empty slot is called a **bubble**. It works, but it wastes two cycles here.
+
+**Fix 2, forwarding** (also called bypassing). Here's the key insight: the answer exists at the end of EX, long before it's written back in WB. So add extra wires and [multiplexers](/courses/logic-design/multiplexers) that take the result straight from the ALU's output to its input. No waiting at all.
+
+**The case forwarding can't fix.** A load gets its value only at the end of MEM. An instruction right after it wants that value at the start of EX, one cycle before it exists. So one stall remains. Compilers try to avoid it by moving an unrelated instruction into that slot.
+
+## Control hazards
+
+```
+BEQ R1, R2, far    ; do we jump? Not known until EX
+ADD ...            ; already fetched. Was that right?
+SUB ...            ; this one too
+```
+
+The CPU has to keep fetching but doesn't yet know the way the branch will go. If it turns out to be taken, the instructions fetched after it are wrong, and they have to be **flushed**: thrown away, wasting those cycles.
+
+There are a few ways to reduce the cost:
+
+- **Stall** until the outcome is known. It's simple, but it costs on every branch.
+- **Predict** and carry on, flushing only when wrong. Assuming "not taken" is the simplest form.
+- **Dynamic branch prediction** records what each branch did in the past. Loops mostly repeat, so predicting from history is correct well over 90% of the time.
+- **Delayed branch**: the instruction after the branch always runs, and the compiler tries to put something useful there.
+
+Since around one instruction in five is a branch and pipelines are long, good prediction is essential.
+
+## Structural hazards
+
+Two instructions need the same hardware at the same moment. For example, if there's only one memory, an instruction doing a load in MEM and another being fetched in IF will collide. Designers fix this with more hardware, which is the reason for having separate instruction and data caches.
+
+## The real CPI
+
+Hazards are why a pipeline's CPI is above its ideal value of 1:
+
+$$
+\text{CPI} = 1 + \text{stall cycles per instruction}
+$$
+
+Suppose 20% of instructions are branches costing 2 cycles when mispredicted, and 10% of those are mispredicted. That's $0.2 \times 0.1 \times 2 = 0.04$ extra cycles, for a CPI of 1.04.
+
+<Callout tone="violet" label="A real-world consequence">
+The famous Spectre security flaw (2018) comes from this. CPUs run predicted instructions before they know if the prediction was right. The results get flushed, but traces remain in the cache, and an attacker can measure those traces. One performance trick, taken together with another, leaked secrets.
+</Callout>

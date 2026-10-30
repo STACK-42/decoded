@@ -1,0 +1,157 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Computer Architecture
+
+Twelve questions on the whole course. Get 9 right to pass.
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="final-quiz"
+  passThreshold={9/12}
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which of these is part of a computer's architecture, not its organization?",
+      options: [
+        { id: "a", text: "The instruction set" },
+        { id: "b", text: "The cache size" },
+        { id: "c", text: "The clock speed" },
+        { id: "d", text: "The type of memory chip" },
+      ],
+      correctOptionId: "a",
+      explanation: "A programmer sees the instruction set. The others can change between chips without any change to software.",
+    },
+    {
+      id: "q2",
+      prompt: "A program's instructions are 50% ALU at 1 cycle, 30% load/store at 3 cycles and 20% branch at 2 cycles. What is the CPI?",
+      options: [
+        { id: "a", text: "1.8" },
+        { id: "b", text: "2.0" },
+        { id: "c", text: "2.2" },
+        { id: "d", text: "6" },
+      ],
+      correctOptionId: "a",
+      explanation: "0.5(1) + 0.3(3) + 0.2(2) = 0.5 + 0.9 + 0.4 = 1.8.",
+    },
+    {
+      id: "q3",
+      prompt: "A 500 MHz machine has a CPI of 2. What is its MIPS?",
+      options: [
+        { id: "a", text: "1000" },
+        { id: "b", text: "500" },
+        { id: "c", text: "250" },
+        { id: "d", text: "125" },
+      ],
+      correctOptionId: "c",
+      explanation: "500 × 10⁶ ÷ (2 × 10⁶) = 250.",
+    },
+    {
+      id: "q4",
+      prompt: "Which is typical of RISC?",
+      options: [
+        { id: "a", text: "Variable-length instructions" },
+        { id: "b", text: "Many addressing modes" },
+        { id: "c", text: "Only LOAD and STORE touch memory" },
+        { id: "d", text: "A microprogrammed control unit" },
+      ],
+      correctOptionId: "c",
+      explanation: "The others are all typical of CISC. Keeping memory access separate is what keeps RISC instructions simple and regular.",
+    },
+    {
+      id: "q5",
+      prompt: "What's the main advantage of a microprogrammed control unit over a hardwired one?",
+      options: [
+        { id: "a", text: "It's faster" },
+        { id: "b", text: "It's easier to change and handles complex instructions more easily" },
+        { id: "c", text: "It uses no memory" },
+        { id: "d", text: "It needs no clock" },
+      ],
+      correctOptionId: "b",
+      explanation: "Hardwired is faster. Microcode is effectively software for the control unit.",
+    },
+    {
+      id: "q6",
+      prompt: "A direct-mapped cache has 256 blocks of 16 bytes, with 32-bit addresses. How many tag bits are there?",
+      options: [
+        { id: "a", text: "20" },
+        { id: "b", text: "24" },
+        { id: "c", text: "28" },
+        { id: "d", text: "16" },
+      ],
+      correctOptionId: "a",
+      explanation: "Offset is 4 bits, index is 8 bits, and 32 - 8 - 4 = 20 are left for the tag.",
+    },
+    {
+      id: "q7",
+      prompt: "A program alternates between two blocks and keeps missing, even though the cache has empty lines. Which change is most likely to fix it?",
+      options: [
+        { id: "a", text: "Making the cache more associative" },
+        { id: "b", text: "Switching to write-through" },
+        { id: "c", text: "Using FIFO in place of LRU" },
+        { id: "d", text: "Lowering the clock speed" },
+      ],
+      correctOptionId: "a",
+      explanation: "They're fighting over one slot, which is a conflict miss. With two ways, both fit in the set.",
+    },
+    {
+      id: "q8",
+      prompt: "What does a dirty bit record?",
+      options: [
+        { id: "a", text: "The block has an error" },
+        { id: "b", text: "The cached block has changed and memory hasn't been updated" },
+        { id: "c", text: "The block is about to be evicted" },
+        { id: "d", text: "The block came from the disk" },
+      ],
+      correctOptionId: "b",
+      explanation: "Under write-back, a dirty block must be written to memory when it's evicted.",
+    },
+    {
+      id: "q9",
+      prompt: "With 4 KB pages, what is the page and offset of virtual address 9000?",
+      options: [
+        { id: "a", text: "Page 1, offset 5000" },
+        { id: "b", text: "Page 2, offset 808" },
+        { id: "c", text: "Page 2, offset 1000" },
+        { id: "d", text: "Page 9, offset 0" },
+      ],
+      correctOptionId: "b",
+      explanation: "4 KB is 4096 bytes. 9000 ÷ 4096 = 2, with a remainder of 9000 - 8192 = 808.",
+    },
+    {
+      id: "q10",
+      prompt: "Which I/O method lets the CPU transfer a large block with just one interrupt?",
+      options: [
+        { id: "a", text: "Polling" },
+        { id: "b", text: "Interrupt-driven I/O" },
+        { id: "c", text: "DMA" },
+        { id: "d", text: "Handshaking" },
+      ],
+      correctOptionId: "c",
+      explanation: "The DMA controller moves the whole block and interrupts when it's finished.",
+    },
+    {
+      id: "q11",
+      prompt: "A 5-stage pipeline runs 20 instructions with no hazards. How many cycles does that take?",
+      options: [
+        { id: "a", text: "20" },
+        { id: "b", text: "24" },
+        { id: "c", text: "25" },
+        { id: "d", text: "100" },
+      ],
+      correctOptionId: "b",
+      explanation: "k + n - 1 = 5 + 20 - 1 = 24. The first takes 5, and one finishes per cycle after that.",
+    },
+    {
+      id: "q12",
+      prompt: "Which hazard does forwarding fix, and which remains?",
+      options: [
+        { id: "a", text: "It fixes all data hazards" },
+        { id: "b", text: "It fixes most data hazards, but a load followed at once by a use still needs one stall" },
+        { id: "c", text: "It fixes control hazards only" },
+        { id: "d", text: "It fixes structural hazards only" },
+      ],
+      correctOptionId: "b",
+      explanation: "A loaded value only exists after MEM, which is one cycle too late for the next instruction's EX.",
+    },
+  ]}
+/>

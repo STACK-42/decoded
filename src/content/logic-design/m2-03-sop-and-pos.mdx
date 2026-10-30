@@ -1,0 +1,48 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { TruthTableBuilder } from "@/components/mdx/LogicVisualizers";
+
+# Truth Tables to Circuits: SOP and POS
+
+Say you want a circuit for a rule such as "sound the alarm when the door is open and the system is armed, or when the panic button is pressed". You write out what should happen in every case, and that's a truth table. Is there a mechanical way to turn the table into gates? There are two.
+
+## Sum of products
+
+Find every row where the output is 1. Each of those rows is one exact situation, and you can describe it with one AND term. The output is 1 if the first situation is happening, or the second, and so on. So you OR the terms together.
+
+In a term, a variable that's 1 in that row appears plain and a variable that's 0 appears inverted. Row `A=0, B=1, C=1` becomes $A'BC$, which is true only for that row.
+
+Click the output column to design your own function.
+
+<TruthTableBuilder />
+
+This form is the **sum of products** (SOP). "Sum" means OR and "product" means AND, so it builds straight into a layer of AND gates feeding one OR gate.
+
+## Product of sums
+
+The **product of sums** (POS) comes at it from the opposite side. Find every row where the output is 0, and write one OR term that's false only for that row. AND them all, so that the output is 0 if any bad row occurs.
+
+Row `A=1, B=0, C=1` gives $(A' + B + C')$. Check it: plugging in $A=1$, $B=0$, $C=1$ makes all three parts 0.
+
+Use whichever is shorter. A function with few 1s is short in SOP, and one with few 0s is short in POS.
+
+## Standard form
+
+When every variable appears in every term, the expression is in **standard form**, and the tables above produce exactly that. To expand a term that's missing a variable, multiply by a harmless 1:
+
+$$
+A'B' + ABC = A'B'(C + C') + ABC = A'B'C + A'B'C' + ABC
+$$
+
+For POS, add a harmless 0 and use the rule $A + BC = (A + B)(A + C)$:
+
+$$
+(A' + B') = (A' + B' + CC') = (A' + B' + C)(A' + B' + C')
+$$
+
+Standard form is usually long. Its use is that it is a fixed recipe, and a Karnaugh map needs it as a starting point.
+
+<Callout tone="neon" label="From expression to gates">
+Each term becomes a gate. $X = AB + CDE$ takes a 2-input AND, a 3-input AND and a 2-input OR. Factored forms like $X = AB(CD' + EF)$ can use fewer gates, but they're deeper, and every extra layer adds delay.
+</Callout>
+
+The standard form always works, and it's nearly always wasteful. The next lesson shows you how to shrink it.

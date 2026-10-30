@@ -1,0 +1,53 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { GatedSrLatch, DLatch } from "@/components/mdx/CircuitVisualizers";
+import { ClockExplorer } from "@/components/mdx/LogicVisualizers";
+
+# Control Inputs and the D Latch
+
+The plain [SR latch](/courses/logic-design/sr-latch) obeys its inputs immediately. Imagine an office where anyone can change the shared whiteboard at any moment. You'd want a rule: only write when the meeting leader says "now". In a circuit, that "now" signal is called a **control input** or **enable**, written C.
+
+## Adding a door
+
+Put a NAND gate in front of each input. You've seen [AND gates used as doors](/courses/logic-design/logic-gates), and this is the same thing. When C is 0, both of these gates output 1 regardless of S and R, and 1 is the resting state of a NAND latch, so the latch holds. When C is 1, S and R get through.
+
+<GatedSrLatch />
+
+Use the buttons in order: set S while C is 0 (nothing happens), then open C (now it takes effect).
+
+Because this latch pays attention to the **level** of C (is it 1 right now?), we call it **level-sensitive** or **level-triggered**. The forbidden input is still there, though: C=1, S=1, R=1.
+
+## The D latch: removing the forbidden input
+
+S and R are only ever useful as opposites: one says "store 1" and the other says "store 0". So let's use just one wire. Connect S to a new input D (for data) and R to its inverse:
+
+$$
+S = D \qquad R = D'
+$$
+
+Now S and R can never both be 1. The forbidden state has been designed out.
+
+<DLatch />
+
+| C | D | Q |
+|---|---|---|
+| 0 | x | No change |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+The `x` means "doesn't matter". Think of a camera: with C = 1 the shutter is open and Q follows D live, and when C falls to 0, the shutter closes and Q keeps the last thing it saw. It's called **transparent** while C is 1.
+
+## The clock
+
+In a real design, C is connected to the [clock](/courses/logic-design/signals), so all the latches open and close together. Circuits that act on a clock like this are called **synchronous**. Circuits that don't are **asynchronous**.
+
+<ClockExplorer />
+
+A clock signal gives us three moments to act on:
+
+- **Level**: while the clock is high (or low). This is what a latch uses.
+- **Rising edge**: the instant it goes from 0 to 1.
+- **Falling edge**: the instant it goes from 1 to 0.
+
+<Callout tone="orange" label="The trouble with staying open">
+While the clock is high, a latch's output can change as many times as its input does. If that output feeds, through some logic, back into its own input, the signal can race around the loop several times in a single clock pulse. To count reliably, you need something that changes exactly once per clock. That is the next lesson.
+</Callout>

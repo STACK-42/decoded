@@ -1,10 +1,11 @@
 // Build-time social previews. Runs after `vite build` (see package.json).
 //
-// For the home page, /courses, every course and every lesson it writes
+// For the home page, /courses, /tools, /team, /privacy, every course and every lesson it writes
 // dist/<route>/index.html with that page's <title>, description, canonical
 // URL and Open Graph / Twitter tags, so link unfurlers (which don't run JS)
 // see the right card. It also renders a 1200×630 PNG per course plus one for
-// home and /courses into dist/og/. Lessons reuse their course's image.
+// home and /courses into dist/og/. Lessons reuse their course's image. Every
+// route it writes also goes into dist/sitemap.xml.
 //
 // GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>,
 // and the SPA boots from it exactly as it does from the root index.html.
@@ -253,9 +254,14 @@ function seoBlock({ title, description, url, image }) {
 
 const SEO_BLOCK = /<!-- seo:start[\s\S]*?<!-- seo:end -->/;
 
+const routes = [];
+
 async function writeRoute(template, route, meta) {
+  // GitHub Pages redirects /route to /route/, so that's the address to advertise.
+  const url = meta.url.endsWith("/") ? meta.url : `${meta.url}/`;
+  routes.push(url);
   if (!SEO_BLOCK.test(template)) throw new Error("seo markers not found in dist/index.html");
-  const html = template.replace(SEO_BLOCK, seoBlock(meta));
+  const html = template.replace(SEO_BLOCK, seoBlock({ ...meta, url }));
   const file = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, html);
@@ -284,7 +290,26 @@ await writeRoute(template, "/courses", {
   image: img("courses"),
 });
 
-let pages = 2;
+await writeRoute(template, "/tools", {
+  title: "Browse by Tool — Decoded",
+  description: "Start from a tool you already use, like regex engines, hash maps or CPU caches, and go straight to the theory that explains it.",
+  url: `${SITE}/tools`,
+  image: img("courses"),
+});
+await writeRoute(template, "/team", {
+  title: "Contributors — Decoded",
+  description: "The people behind Decoded, mapping computer science theory to the real tools it powers.",
+  url: `${SITE}/team`,
+  image: img("home"),
+});
+await writeRoute(template, "/privacy", {
+  title: "Privacy — Decoded",
+  description: "What Decoded stores when you sign in, and how to delete it.",
+  url: `${SITE}/privacy`,
+  image: img("home"),
+});
+
+let pages = 5;
 for (const course of mod.courses) {
   await renderPng(courseCard(mod, course), fonts, path.join(DIST, `og/${course.slug}.png`));
   await writeRoute(template, `/courses/${course.slug}`, {
@@ -304,5 +329,48 @@ for (const course of mod.courses) {
     pages++;
   }
 }
+
+/* ---------- search index, fetched by the search dialog when it first opens ---------- */
+
+const SEARCH_TEXT_LIMIT = 6000;
+
+/** course/lesson -> MDX file, read from registry.ts because the build stubs lessons out. */
+async function lessonFiles() {
+  const source = await readFile(path.join(ROOT, "src/content/registry.ts"), "utf8");
+  const imports = new Map([...source.matchAll(/const (\w+) = lesson\(\(\) => import\("@\/([^"]+\.mdx)"\)\)/g)].map((m) => [m[1], m[2]]));
+  return [...source.matchAll(/slug: "([a-z0-9-]+)"[^{}]*?Component: (\w+)/g)].map((m) => ({ slug: m[1], file: imports.get(m[2]) }));
+}
+
+function plainText(mdx) {
+  return mdx
+    .replace(/^(import|export) .*$/gm, " ")
+    .replace(/^# .*$/gm, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#*_`|>{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const files = await lessonFiles();
+const searchIndex = [];
+for (const course of mod.courses) {
+  for (const lesson of mod.flattenLessons(course)) {
+    const match = files.find((f) => f.slug === lesson.slug && f.file?.includes(`/${course.slug}/`)) ?? files.find((f) => f.slug === lesson.slug && f.file);
+    if (!match) throw new Error(`no MDX file found for ${course.slug}/${lesson.slug}`);
+    const mdx = await readFile(path.join(ROOT, "src", match.file), "utf8");
+    const headings = [...mdx.matchAll(/^#{2,3} (.+)$/gm)].map((m) => plainText(m[1]));
+    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(mdx).slice(0, SEARCH_TEXT_LIMIT) });
+  }
+}
+await writeFile(path.join(DIST, "search-index.json"), JSON.stringify(searchIndex));
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${routes.map((url) => `  <url><loc>${esc(url)}</loc></url>`).join("\n")}
+</urlset>
+`;
+await writeFile(path.join(DIST, "sitemap.xml"), sitemap);
 
 console.log(`og: ${mod.courses.length + 2} images, ${pages} pages`);

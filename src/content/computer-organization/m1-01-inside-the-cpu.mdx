@@ -1,0 +1,34 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CpuParts } from "@/components/mdx/OrganizationVisualizers";
+
+# Inside the CPU
+
+The CPU is often called the computer's brain, but it's closer to a very fast, very obedient clerk. It can only do a few simple things, one after another, exactly as told. It seems clever only because it does billions of them every second.
+
+It has three main parts, connected by wires called a bus.
+
+<CpuParts />
+
+## The registers that matter most
+
+Registers are small storage slots inside the CPU, and each one has a job. You don't need many to run a computer. These five appear in nearly every design:
+
+| Register | Name | What it holds |
+|---|---|---|
+| **PC** | Program Counter | The address of the **next** instruction |
+| **IR** | Instruction Register | The instruction being run **right now** |
+| **MAR** (or AR) | Memory Address Register | The address the CPU wants to use |
+| **DR** | Data Register | The data on its way to or from memory |
+| **AC** | Accumulator | The working total: inputs and results of the ALU |
+
+Think of following a recipe. The PC is your finger on the line you'll read next. The IR is the line you're carrying out. The AC is what's in the mixing bowl.
+
+Other general-purpose registers, often named B, C, D, E and so on, hold extra values so the CPU doesn't have to keep returning to memory.
+
+<Callout tone="sky" label="How they're built">
+A register is a row of flip-flops, and the ALU is mostly adders and multiplexers. The [Logic Design course](/courses/logic-design/registers) builds these from gates, one at a time. Here we'll treat them as boxes and look at what they do together.
+</Callout>
+
+## Why have registers at all?
+
+Why not just use main memory for everything? Speed. A register answers in a fraction of a nanosecond, and main memory is hundreds of times slower. If the CPU went to memory for every small step, it would spend nearly all its time waiting. The [memory hierarchy](/courses/computer-organization/memory-hierarchy) lesson shows the gap to scale.

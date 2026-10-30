@@ -1,0 +1,41 @@
+import { PowerCut, DramLeak } from "@/components/mdx/OrganizationVisualizers";
+import { MemoryUnit } from "@/components/mdx/LogicVisualizers";
+
+# Memory: Words, Addresses, RAM and ROM
+
+Picture a long row of numbered lockers. Each locker holds one **word**, a fixed-size group of bits that moves in and out as a unit. The number on the door is its **address**. Addresses start at 0.
+
+Set an address with the blue bits, and notice that one row lights up. A decoder inside the chip does that.
+
+<MemoryUnit />
+
+The structure of a memory is given by two numbers: how many words, and how many bits each. A $k$-bit address reaches $2^k$ words, so 10 address lines reach 1,024 words and 32 lines reach about 4 billion. Capacity is usually quoted in bytes.
+
+## Primary memory: four kinds of chip
+
+Memory chips are split by one big question: **what happens when the power goes off?** Volatile memory forgets, and non-volatile memory remembers. Try it.
+
+<PowerCut />
+
+- **RAM** (random access memory) is the computer's working memory. "Random access" means any location takes the same time to reach. It's volatile, which is why unsaved work vanishes in a power cut.
+- **ROM** (read-only memory) is written at the factory. It holds the first instructions a computer runs when it starts.
+- **CMOS** is a small battery-powered memory that holds settings that change, like the date and time.
+- **Flash** can be erased and rewritten, and keeps its data without power. Phones, USB sticks and SSDs use it.
+
+## Two kinds of RAM
+
+Why are there two kinds of RAM? Because of a trade-off between speed and cost. Stop the refresh below and see what DRAM has to deal with.
+
+<DramLeak />
+
+| | DRAM | SRAM |
+|---|---|---|
+| Stores a bit as | Charge in a capacitor | A latch (a loop of gates) |
+| Needs refreshing | Yes, constantly | No |
+| Speed | Slower | Faster |
+| Cost per bit | Low | High |
+| Used for | Main memory | Cache |
+
+**SDRAM** is DRAM that keeps in step with the system clock, and the DDR family (DDR3, DDR4 and later) transfers data on both edges of each clock tick. That is why a DDR module's data rate is twice its clock rate.
+
+Memory comes on small plug-in boards. A **DIMM** has chips on both sides and a 64-bit data path, so it moves 8 bytes per transfer.

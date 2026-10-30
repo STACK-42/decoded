@@ -1,26 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "decoded:progress:v1";
-
 import type { ProgressMap } from "@/lib/progressBackup";
-
-function read(): ProgressMap {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ProgressMap) : {};
-  } catch {
-    return {};
-  }
-}
+import { readProgress as read, writeProgress } from "@/lib/progressStore";
+import { queueProgressChange } from "@/lib/progressSync";
 
 function write(map: ProgressMap) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-    window.dispatchEvent(new CustomEvent("decoded:progress"));
-  } catch {
-    /* ignore quota errors */
-  }
+  const before = read();
+  writeProgress(map);
+  queueProgressChange(before, map);
 }
 
 /** Every course's completed lessons, straight from storage (for backups). */

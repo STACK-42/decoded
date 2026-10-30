@@ -1,3 +1,4 @@
+import { renderLesson } from "./renderLesson";
 import { describe, it, expect, beforeAll } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import path from "path";
@@ -23,9 +24,8 @@ describe("Advanced Algorithms & Analysis course", () => {
   });
 
   for (const lesson of flattenLessons(getCourse("advanced-algorithms")!)) {
-    it(`renders lesson "${lesson.slug}" without throwing`, () => {
-      const Lesson = lesson.Component;
-      const { container, unmount } = render(<Lesson />);
+    it(`renders lesson "${lesson.slug}" without throwing`, async () => {
+      const { container, unmount } = await renderLesson(lesson);
       expect(container.querySelector("h1")?.textContent).toBe(lesson.title);
       const bad = [...container.querySelectorAll(".katex-error")].map((e) => e.getAttribute("title") ?? e.textContent);
       expect(bad, "math that KaTeX could not render").toEqual([]);

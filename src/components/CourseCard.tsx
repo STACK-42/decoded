@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { courses, flattenLessons } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 
 const accentText: Record<string, string> = {
@@ -21,6 +22,7 @@ const accentBg: Record<string, string> = {
 export default function CourseCard({ slug }: { slug: string }) {
   const course = courses.find((c) => c.slug === slug)!;
   const { allProgress } = useProgress();
+  const { registered } = useRegistration(course.slug);
   const total = flattenLessons(course).length;
   const done = (allProgress[course.slug] ?? []).filter((s) =>
     flattenLessons(course).some((l) => l.slug === s)
@@ -59,7 +61,13 @@ export default function CourseCard({ slug }: { slug: string }) {
           {course.tagline}
         </p>
 
-        {!disabled && total > 0 && (
+        {!disabled && total > 0 && !registered && (
+          <div className={`font-mono text-[10px] tracking-widest uppercase ${accentText[course.accent]}`}>
+            Register to track progress →
+          </div>
+        )}
+
+        {!disabled && total > 0 && registered && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
               <span>Progress</span>

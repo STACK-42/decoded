@@ -1,0 +1,231 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { OsStructures, BootSequence } from "@/components/mdx/OsVisualizers";
+
+# System Programs, OS Design and Structure
+
+Last lesson was about what an OS *offers*. This one is about how an OS is *built*: the system programs that ship with it, the goals its designers balance, the different ways to organize millions of lines of kernel code, and finally how all of it gets started when you press the power button.
+
+## System programs
+
+**System programs** provide a convenient environment for **developing and running programs**.
+
+- Some are just **user interfaces to system calls**. Others are much more complex.
+- **Most users' view of the OS is defined by its system programs**, not by the actual system calls. To most people, "Windows" *is* File Explorer and Task Manager.
+
+They fall into these categories:
+
+| Category | What they do |
+| --- | --- |
+| **File management** | create, delete, copy, rename, print, dump, list and generally manipulate files and directories |
+| **Status information** | some ask the system for simple info: date, time, free memory, disk space, number of users. Others give detailed **performance**, **logging** and **debugging** information. They format and print the output to the terminal or other devices. Some systems keep a **registry** to store and retrieve configuration information |
+| **File modification** | **text editors** to create and modify files, and special commands to **search** file contents or **transform** the text |
+| **Programming-language support** | **compilers**, **assemblers**, **debuggers** and **interpreters** |
+| **Program loading and execution** | **absolute loaders**, **relocatable loaders**, **linkage editors** and **overlay loaders**, plus debugging systems for high-level and machine language |
+| **Communications** | create **virtual connections** among processes, users and computer systems |
+| **Background services** | see below |
+
+### Background services
+
+- They **launch at boot time**. Some run only during startup and then stop. Others run **from boot to shutdown**.
+- They provide things like **disk checking**, **process scheduling**, **error logging** and **printing**.
+- They run in **user context**, not kernel context.
+- They're known as **services**, **subsystems** or **daemons**.
+
+### Application programs
+
+- They **don't relate to running the system**.
+- They are **run by users**.
+- They are **not usually considered part of the OS**.
+- They're launched by a command line, a mouse click or a finger tap.
+
+## Operating-system design and implementation
+
+Designing an OS is **not a "solvable" problem**: there's no single right answer. But some approaches have proven successful.
+
+- The internal structure of different OSs **varies widely**.
+- Design starts by defining **goals and specifications**, which are affected by the **choice of hardware** and the **type of system** (desktop, phone, real-time...).
+
+There are two kinds of goals, and they pull in different directions:
+
+| User goals | System goals |
+| --- | --- |
+| convenient to use, easy to learn, **reliable**, **safe** and **fast** | easy to **design, implement and maintain**, as well as flexible, **reliable**, error-free and **efficient** |
+
+### Policy vs. mechanism
+
+An important principle is to **separate**:
+
+- **Policy: *what* will be done?**
+- **Mechanism: *how* to do it?**
+
+Mechanisms decide **how** to do something. Policies decide **what** will be done. Separating them gives **maximum flexibility** if the policy decisions change later.
+
+<Callout tone="mint" label="Example">
+The **timer** is a *mechanism*: it guarantees the OS gets the CPU back. **How long** each program is allowed to run before the timer fires is a *policy*. Change the policy (give games longer slices) without touching the mechanism.
+</Callout>
+
+Specifying and designing an OS is a **highly creative** task of software engineering.
+
+### Implementation
+
+There's a lot of variation:
+
+- **Early OSs** were written in **assembly language**.
+- Then in system programming languages like **Algol** and **PL/1**.
+- **Now in C and C++.**
+
+In practice it's usually **a mix of languages**:
+
+- the **lowest levels** in **assembly**,
+- the **main body** in **C**,
+- **system programs** in C, C++ and scripting languages like **Perl**, **Python** and **shell scripts**.
+
+A higher-level language is **easier to port** to other hardware, but **slower**. **Emulation** can let an OS run on non-native hardware.
+
+## Operating-system structure
+
+A general-purpose OS is a **very large program**. There are several ways to structure one:
+
+1. **Simple structure**
+2. **Layered approach**
+3. **Microkernel**
+4. **Modules**
+5. **Hybrid systems**
+
+### Simple structure: MS-DOS
+
+**MS-DOS** was written to provide the **most functionality in the least space**.
+
+- It's **not divided into modules**.
+- Although it has some structure, its **interfaces and levels of functionality are not well separated**. An application can skip the OS and write to the hardware directly.
+
+### UNIX
+
+**UNIX** was limited by the hardware of its time, so the original UNIX had **limited structuring**. It has **two separable parts**:
+
+1. **System programs.**
+2. **The kernel**: everything **below the system-call interface** and **above the physical hardware**. It provides the file system, CPU scheduling, memory management and other OS functions. That's a **large number of functions for one level**.
+
+Traditional UNIX is **beyond simple, but not fully layered**. We call a big kernel like this **monolithic**.
+
+### Layered approach
+
+- The OS is divided into a number of **layers (levels)**, each built **on top of lower layers**.
+- The **bottom layer (layer 0)** is the **hardware**. The **highest (layer N)** is the **user interface**.
+- With **modularity**, layers are chosen so that each one uses the functions and services of **only lower-level layers**.
+
+### Microkernel
+
+**Move as much as possible from the kernel into user space.**
+
+- **Mach** is an example. The macOS kernel (**Darwin**) is partly based on Mach.
+- User modules communicate using **message passing**, through the microkernel.
+
+**Benefits:**
+
+- **easier to extend** a microkernel,
+- **easier to port** the OS to new architectures,
+- **more reliable** (less code runs in kernel mode),
+- **more secure**.
+
+**Detriment:** the **performance overhead** of communication between user space and kernel space.
+
+### Modules
+
+**Most modern operating systems** implement **loadable kernel modules**:
+
+- they use an **object-oriented** approach,
+- each core component is **separate**,
+- each talks to the others over **known interfaces**,
+- each is **loadable as needed** within the kernel.
+
+Overall it's **similar to layers but more flexible**. Linux and Solaris work this way.
+
+### Hybrid systems
+
+**Most modern OSs are not one pure model.** A hybrid combines several approaches to balance **performance, security and usability**:
+
+- **Linux and Solaris** kernels run in kernel address space, so they're **monolithic**, plus **modular** for dynamic loading of functionality.
+- **Windows** is mostly **monolithic**, plus **microkernel** ideas for different subsystem personalities.
+- **Apple macOS** is hybrid and **layered**: the **Aqua** UI plus the **Cocoa** programming environment, and below them a kernel made of the **Mach microkernel** and **BSD UNIX** parts, plus the **I/O kit** and dynamically loadable modules called **kernel extensions**.
+
+Click through all six designs. On the microkernel, watch a single request bounce through the kernel as messages:
+
+<OsStructures />
+
+### Mobile systems: iOS and Android
+
+**iOS** is Apple's mobile OS for the iPhone and iPad.
+
+- It's **structured on macOS**, with added functionality.
+- It **doesn't run macOS applications** natively, and it runs on a **different CPU architecture** (ARM vs. Intel).
+- Layers, from top to bottom:
+  - **Cocoa Touch**: the Objective-C API for developing apps,
+  - **Media services**: graphics, audio, video,
+  - **Core services**: cloud computing, databases,
+  - **Core OS**: based on the macOS kernel.
+
+**Android** was developed by the **Open Handset Alliance** (mostly Google), and it's **open source**.
+
+- It has a **stack similar to iOS**.
+- It's based on a **modified Linux kernel**, which provides process, memory and device-driver management, and **adds power management**.
+- The **runtime environment** includes a core set of libraries and the **Dalvik virtual machine**.
+  - Apps are written in **Java plus the Android API**.
+  - Java class files are compiled to Java bytecode, then translated to an executable that runs in the Dalvik VM.
+- **Libraries** include frameworks for the web browser (**WebKit**), database (**SQLite**), multimedia, and a smaller **libc**.
+
+From top to bottom: **applications → application framework → libraries + Android runtime → Linux kernel**.
+
+## Operating-system debugging
+
+**Debugging** is finding and fixing errors, or **bugs**.
+
+- OSs generate **log files** containing error information.
+- When an **application fails**, it can generate a **core dump** file that captures the process's memory.
+- When the **OS itself fails**, it can generate a **crash dump** file containing the kernel's memory.
+
+Beyond crashes, **performance tuning** can make the system faster:
+
+- **Trace listings** record activities for later analysis.
+- **Profiling** periodically **samples the instruction pointer** to look for statistical trends: where does the CPU spend its time?
+
+### Performance tuning
+
+Improve performance by **removing bottlenecks**. The OS must provide ways to **compute and display measures of system behavior**: for example, the **`top`** program on Linux or the **Windows Task Manager**.
+
+## Operating-system generation
+
+OSs are designed to run on **any of a class of machines**. So each system must be **configured** for its specific computer.
+
+- A **SYSGEN** program collects information about the **specific hardware configuration**.
+- That's used to build a **system-specific compiled kernel**, or a **system-tuned** one.
+- This can produce **more efficient code** than one general kernel.
+
+## System boot
+
+- When power is turned on, **execution starts at a fixed memory location**.
+- **Firmware ROM** holds the initial boot code.
+- The OS must be **made available to the hardware** so the hardware can start it.
+  - A small piece of code, the **bootstrap loader**, stored in **ROM or EEPROM**, **locates the kernel, loads it into memory and starts it**.
+  - Sometimes it's a **two-step process**: a **boot block** at a fixed location is loaded by the ROM code, and the boot block loads the bootstrap loader from disk.
+- A common bootstrap loader, **GRUB**, lets you **select a kernel** from multiple disks, versions and kernel options.
+- The **kernel loads**, and the system is **running**.
+
+<BootSequence />
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Task Manager and top" tool="PERFORMANCE TUNING">
+    Sorting by CPU or memory to find the program slowing your laptop down is exactly the bottleneck hunting the OS was built to support.
+  </PracticalApplication>
+  <PracticalApplication title="Plugging in a new device" tool="LOADABLE MODULES">
+    Linux loads the right driver module into the running kernel the moment you plug in hardware, with no reboot.
+  </PracticalApplication>
+  <PracticalApplication title="Dual-booting Linux and Windows" tool="GRUB">
+    The menu that asks which OS to start is the bootstrap loader letting you pick a kernel.
+  </PracticalApplication>
+  <PracticalApplication title="The blue screen" tool="CRASH DUMP">
+    When Windows itself crashes, it writes the kernel's memory to a crash dump file so the bug can be found later.
+  </PracticalApplication>
+</ApplicationsGrid>

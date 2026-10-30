@@ -9,6 +9,7 @@ import {
 } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import { useProgress } from "@/hooks/useProgress";
+import { recordQuizScore } from "@/lib/progressSync";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -1024,6 +1025,13 @@ export function Quiz(props: QuizProps) {
   const allAnswered = answeredCount === questions.length;
   const scoreFraction = questions.length ? correctCount / questions.length : 0;
   const passed = allAnswered && scoreFraction >= passThreshold;
+
+  // Saved once per attempt; the store keeps only the best one.
+  useEffect(() => {
+    if (allAnswered && questions.length > 0) {
+      recordQuizScore(courseSlug, lessonSlug, { best: correctCount, total: questions.length });
+    }
+  }, [allAnswered, correctCount, courseSlug, lessonSlug, questions.length]);
 
   const handleRetry = useCallback(() => {
     setAnswers({});

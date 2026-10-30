@@ -1,0 +1,40 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { TextToBytes, UnitLadder } from "@/components/mdx/OrganizationVisualizers";
+import { PlaceValueBits } from "@/components/mdx/LogicVisualizers";
+
+# Bits and Bytes
+
+Computers run on electricity, and the simplest thing a wire can tell you is whether current is flowing. On or off. So a computer stores everything using two symbols, 0 and 1, and each one is called a **bit** (binary digit). Physically, a bit is a tiny switch called a transistor, set one way or the other.
+
+One switch can't say much, but they multiply. 2 switches have 4 possible patterns, and 8 switches have 256.
+
+## The byte
+
+A group of **8 bits** is a **byte**, and it's enough to hold one character. Each switch is worth double the one to its right. Add up the ones that are on to get the number.
+
+<PlaceValueBits />
+
+To go further with binary, including converting by hand, see [Number Systems](/courses/logic-design/number-systems) in the Logic Design course.
+
+## Letters are numbers
+
+There's nothing inside a computer except numbers, so letters use a shared code: an agreed table of which number means which character.
+
+- **ASCII** is the classic table. G is 71, or `01000111`.
+- **Unicode** extends the idea to every writing system in the world, including Arabic, using more bytes per character where needed.
+
+Type something here, and try an Arabic letter too.
+
+<TextToBytes />
+
+## How much is a lot?
+
+Sizes go up in steps of $2^{10} = 1024$. People often round this to 1000, which is why "about a thousand" and "exactly 1024" both show up.
+
+<UnitLadder />
+
+<Callout tone="sky" label="Why your new drive looks smaller">
+Drive makers count 1 GB as 1,000,000,000 bytes, but many operating systems count it as 1,073,741,824. So a "500 GB" drive shows up as about 465 GB. Nothing is missing.
+</Callout>
+
+A **word** is the amount of data a CPU handles in one go, usually a multiple of 8 bits. When a processor is called "64-bit", that's its word size: 8 bytes at a time.
