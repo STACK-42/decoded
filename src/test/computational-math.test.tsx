@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
+import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
@@ -291,5 +291,41 @@ describe("order, primitive roots and inverses", () => {
     for (const r of extendedRows(240, 46)) expect(r.x! * r.a + r.y! * r.b).toBe(2);
     expect(extendedFrames(61, 17).at(-1)!.message).toContain("inverse of 17 is 18");
     expect((17 * 18) % 61).toBe(1);
+  });
+});
+
+describe("fast powers and discrete logs", () => {
+  it("reproduces the worked square-and-multiply run", () => {
+    const f = fastPowFrames(25, 193, 469);
+    const last = f.at(-1)!.state;
+    expect(last.value).toBe(263);
+    expect(modPow(25, 193, 469)).toBe(263);
+    expect(last.history.map((h) => h.value)).toEqual([25, 148, 330, 92, 22, 15, 225, 263]);
+    expect(last.mults).toBe(9);
+    expect((193).toString(2)).toBe("11000001");
+    expect((100).toString(2)).toBe("1100100");
+  });
+
+  it("agrees with modPow on many inputs", () => {
+    for (const [a, m, n] of [[3, 100, 7], [7, 18, 19], [2, 16, 17], [10, 7, 17], [5, 38, 11], [2, 90, 11]]) {
+      expect(fastPowFrames(a, m, n).at(-1)!.state.value).toBe(modPow(a, m, n));
+    }
+    expect(modPow(5, 38, 11)).toBe(4);
+    expect(modPow(10, 7, 17)).toBe(5);
+    expect(modPow(2, 16, 17)).toBe(1);
+  });
+
+  it("finds discrete logs, including the modulo 9 table", () => {
+    expect(logTable(2, 9)).toEqual({ 1: 0, 2: 1, 4: 2, 8: 3, 7: 4, 5: 5 });
+    expect(discreteLog(11, 2, 19)).toBe(12);
+    expect(modPow(2, 12, 19)).toBe(11);
+    expect(discreteLog(37, 3, 101)).not.toBeNull();
+    expect(dlogFrames(2, 11, 19).at(-1)!.state.found).toBe(true);
+    expect(discreteLog(3, 2, 7)).toBeNull();
+  });
+
+  it("satisfies the log rules with a primitive root", () => {
+    const t = logTable(2, 19);
+    expect(t[(4 * 6) % 19]).toBe((t[4] + t[6]) % 18);
   });
 });

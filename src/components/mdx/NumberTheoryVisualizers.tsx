@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { Panel } from "@/components/mdx/MatrixVisualizers";
-import { cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
+import { dlogFrames, fastPowFrames, logTable, MATLAB_DLOG, MATLAB_FASTPOW, cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
 
 /* ------------------------------- Euclid tiles ------------------------------ */
 
@@ -372,6 +372,123 @@ export function ExtendedEuclidVisualizer() {
             })}
           </tbody>
         </table>
+      )}
+    />
+  );
+}
+
+/* --------------------------- fast exponentiation -------------------------- */
+
+const FAST_PRESETS: Record<string, [number, number, number]> = { a: [25, 193, 469], b: [3, 100, 7], c: [7, 18, 19] };
+
+export function FastModPowVisualizer() {
+  const [preset, setPreset] = useState("a");
+  const [a, m, n] = FAST_PRESETS[preset];
+  const frames = useMemo(() => fastPowFrames(a, m, n), [a, m, n]);
+  return (
+    <Stepper
+      title="Square and multiply"
+      frames={frames}
+      code={MATLAB_FASTPOW}
+      codeLabel="MATLAB"
+      legend={[["bg-neon", "current bit"], ["bg-orange", "bit 1: extra multiply"], ["bg-mint", "result"]]}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={Object.entries(FAST_PRESETS).map(([k, [x, y, z]]) => [k, `${x}^${y} mod ${z}`] as [string, string])} />}
+      render={(s) => (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-1 font-mono">
+            <span className="text-[11px] text-muted-foreground mr-2">{s.m} =</span>
+            {s.bits.split("").map((b, i) => (
+              <div
+                key={i}
+                className={`w-8 h-9 flex items-center justify-center rounded-sm border transition-[transform,background-color,border-color] duration-300 motion-reduce:transition-none ${i === s.i ? `-translate-y-1 ${b === "1" ? "bg-orange/30 border-orange" : "bg-neon/25 border-neon"}` : i < s.i ? "border-mint bg-mint/10" : "border-border"}`}
+              >
+                {b}
+              </div>
+            ))}
+            <span className="text-[11px] text-muted-foreground ml-1">₂</span>
+          </div>
+          <div className="flex flex-wrap items-end gap-6">
+            <div className="flex flex-col gap-0.5 font-mono text-[12px] min-w-[230px] min-h-[12em]">
+              {s.history.map((h, i) => (
+                <div key={i} className={`flex justify-between gap-4 ${i === s.history.length - 1 ? "text-foreground" : "text-muted-foreground"}`}>
+                  <span>{h.text}</span>
+                  <span className={i === s.history.length - 1 ? "text-mint" : ""}>{h.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 min-w-[200px] flex flex-col gap-2 font-mono text-[11px]">
+              <div className="text-muted-foreground uppercase tracking-widest">multiplications</div>
+              <div className="flex items-center gap-2">
+                <span className="w-14">fast</span>
+                <div className="flex-1 h-3 bg-background/60 rounded-[2px] overflow-hidden"><div className="h-full bg-mint transition-all duration-300 motion-reduce:transition-none" style={{ width: `${Math.max(1, (s.mults / (s.m - 1)) * 100)}%` }} /></div>
+                <span className="w-8 text-right">{s.mults}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-14">naive</span>
+                <div className="flex-1 h-3 bg-orange rounded-[2px]" />
+                <span className="w-8 text-right">{s.m - 1}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+/* --------------------------- discrete logarithm -------------------------- */
+
+const DLOG_BASES = [2, 3, 10, 13, 14, 15];
+
+export function DiscreteLogSearch() {
+  const [a, setA] = useState("2");
+  const [b, setB] = useState(11);
+  const base = Number(a);
+  const frames = useMemo(() => dlogFrames(base, b, 19), [base, b]);
+  const table = useMemo(() => logTable(base, 19), [base]);
+  return (
+    <Stepper
+      title="Searching for a discrete log"
+      frames={frames}
+      code={MATLAB_DLOG}
+      codeLabel="MATLAB"
+      legend={[["bg-orange", "target"], ["bg-neon", "current power"], ["bg-mint", "tried"]]}
+      inputs={
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-muted-foreground">
+            base <Toggle<string> value={a} onChange={setA} options={DLOG_BASES.map((v) => [String(v), String(v)] as [string, string])} />
+          </div>
+          <div className="flex flex-wrap items-center gap-1 font-mono text-[11px] text-muted-foreground">
+            <span className="mr-1">target b</span>
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((v) => (
+              <button key={v} type="button" className={`w-7 h-7 border rounded-sm ${v === b ? "border-orange text-orange" : "border-border text-foreground"}`} onClick={() => setB(v)}>{v}</button>
+            ))}
+          </div>
+        </div>
+      }
+      render={(s) => (
+        <div className="flex flex-wrap items-center gap-5">
+          <CycleRing n={s.n} seq={s.seq} target={s.target} />
+          <table className="font-mono text-[11px] border-separate border-spacing-[2px]">
+            <tbody>
+              {[0, 1].map((half) => {
+                const nums = Array.from({ length: 9 }, (_, i) => i + 1 + half * 9);
+                return (
+                  <tr key={half} className="align-top">
+                    <td className="p-0">
+                      <table className="border-separate border-spacing-[2px]">
+                        <tbody>
+                          <tr><td className="pr-1 text-muted-foreground">b</td>{nums.map((v) => <td key={v} className={`w-6 text-center ${v === s.target ? "text-orange font-bold" : ""}`}>{v}</td>)}</tr>
+                          <tr><td className="pr-1 text-muted-foreground">log</td>{nums.map((v) => <td key={v} className={`w-6 h-6 text-center rounded-[2px] transition-colors duration-300 ${s.seq.includes(v) ? "bg-mint/25" : "bg-background/60 text-transparent"}`}>{table[v]}</td>)}</tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     />
   );

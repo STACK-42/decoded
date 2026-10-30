@@ -82,6 +82,9 @@ const CmPrimes = lesson(() => import("@/content/computational-mathematics/m2-03-
 const CmTotient = lesson(() => import("@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx"));
 const CmOrder = lesson(() => import("@/content/computational-mathematics/m2-05-order-and-primitive-roots.mdx"));
 const CmInverses = lesson(() => import("@/content/computational-mathematics/m2-06-modular-inverses.mdx"));
+const CmFastPow = lesson(() => import("@/content/computational-mathematics/m2-07-fast-exponentiation.mdx"));
+const CmDiscreteLog = lesson(() => import("@/content/computational-mathematics/m2-08-discrete-logarithms.mdx"));
+const CmNtQuiz = lesson(() => import("@/content/computational-mathematics/m2-09-number-theory-quiz.mdx"));
 const LdSignals = lesson(() => import("@/content/logic-design/m0-01-signals.mdx"));
 const LdNumbers = lesson(() => import("@/content/logic-design/m1-01-number-systems.mdx"));
 const LdArithmetic = lesson(() => import("@/content/logic-design/m1-02-binary-arithmetic.mdx"));
@@ -439,6 +442,9 @@ export const courses: Course[] = [
           { slug: "primality-and-the-totient", title: "Primality Tests and Euler's Totient", duration: "15 min", Component: CmTotient },
           { slug: "order-and-primitive-roots", title: "Order and Primitive Roots", duration: "12 min", Component: CmOrder },
           { slug: "modular-inverses", title: "Modular Inverses", duration: "11 min", Component: CmInverses },
+          { slug: "fast-exponentiation", title: "Fast Exponentiation", duration: "11 min", Component: CmFastPow },
+          { slug: "discrete-logarithms", title: "Discrete Logarithms", duration: "12 min", Component: CmDiscreteLog },
+          { slug: "number-theory-quiz", title: "Quiz: Number Theory", duration: "10 min", kind: "quiz", Component: CmNtQuiz },
         ],
       },
     ],
