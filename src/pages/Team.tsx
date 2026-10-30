@@ -34,10 +34,15 @@ export default function Team() {
               image={asmaaFarouq.image}
               href={asmaaFarouq.href}
             />
-            <div className="flex flex-col items-center justify-center border border-dashed border-border p-8 text-center bg-muted/5">
-              <div className="h-16 w-16 rounded-full bg-border/20 mb-4 animate-pulse" />
-              <div className="font-display font-bold text-muted-foreground">Join in</div>
-              <div className="font-mono text-[10px] text-muted-foreground mt-2 uppercase tracking-widest">Open Source</div>
+            <div className="border border-dashed border-border p-6 bg-muted/5">
+              <div className="font-display font-bold text-lg mb-2">Join in</div>
+              <p className="text-sm text-muted-foreground leading-relaxed font-body mb-4">
+                Decoded is open source. Add a course from your class notes, or pick up something smaller.
+              </p>
+              <div className="flex flex-col gap-2 font-mono text-[11px] uppercase tracking-widest">
+                <a href="https://github.com/STACK-42/decoded/blob/main/docs/building-a-course.md" target="_blank" rel="noopener noreferrer" className="text-neon hover:underline underline-offset-4">Build a course →</a>
+                <a href="https://github.com/STACK-42/decoded/issues" target="_blank" rel="noopener noreferrer" className="text-neon hover:underline underline-offset-4">See open issues →</a>
+              </div>
             </div>
           </div>
         </div>

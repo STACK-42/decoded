@@ -7,7 +7,7 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 - **A subject that is missing from the site.** Check the [course list](../README.md#courses) and the [open issues](https://github.com/STACK-42/decoded/issues) first.
 - **Source material:** lecture notes, slides, a syllabus or a textbook chapter list. Put it in `_sources/<course-slug>/`, which git ignores.
 - **Time to check the result.** You are responsible for the content being correct, whoever or whatever drafted it.
-- **The project running locally.** [development.md](development.md) covers setup.
+- **The project running locally.** [Fork the repository](https://github.com/STACK-42/decoded/fork) and clone your fork, then follow [development.md](development.md) for setup.
 - **A public GitHub profile,** so the course page can credit you.
 
 > [!WARNING]
