@@ -4,7 +4,7 @@ import { ahmedAlghali, asmaaFarouq } from "@/content/authors";
 
 export default function Team() {
   useEffect(() => {
-    document.title = "Team — Decoded";
+    document.title = "Contributors — Decoded";
   }, []);
 
   return (
@@ -18,13 +18,13 @@ export default function Team() {
         <div className="container py-20 md:py-28 max-w-5xl">
           <div className="text-center mb-16">
             <div className="eyebrow text-muted-foreground mb-3">The People</div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold">The Minds Behind Decoded</h2>
+            <h2 className="font-display text-4xl md:text-5xl font-bold">Contributors</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             <CreatorCard
               name={ahmedAlghali.name}
-              role="Architect & Lead"
+              role="Maintainer"
               bio="I love when I finally understand what a theoretical CS course talks about"
               image={ahmedAlghali.image}
             />
@@ -36,7 +36,7 @@ export default function Team() {
             />
             <div className="flex flex-col items-center justify-center border border-dashed border-border p-8 text-center bg-muted/5">
               <div className="h-16 w-16 rounded-full bg-border/20 mb-4 animate-pulse" />
-              <div className="font-display font-bold text-muted-foreground">Join the Team</div>
+              <div className="font-display font-bold text-muted-foreground">Join in</div>
               <div className="font-mono text-[10px] text-muted-foreground mt-2 uppercase tracking-widest">Open Source</div>
             </div>
           </div>

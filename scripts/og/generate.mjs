@@ -297,7 +297,7 @@ await writeRoute(template, "/tools", {
   image: img("courses"),
 });
 await writeRoute(template, "/team", {
-  title: "Team — Decoded",
+  title: "Contributors — Decoded",
   description: "The people behind Decoded, mapping computer science theory to the real tools it powers.",
   url: `${SITE}/team`,
   image: img("home"),
