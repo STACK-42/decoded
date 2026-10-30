@@ -7,7 +7,9 @@ Two more jobs that become a single function call: finding how fast a polynomial 
 
 ## Derivatives
 
-The derivative of $ax^n$ is $nax^{n-1}$, and on a coefficient vector that just means multiplying by the powers and dropping the last entry. `polyder` does it for you:
+The derivative of $ax^n$ is $nax^{n-1}$. On a coefficient vector, that takes two steps: multiply each coefficient by its power of $x$, then delete the constant term, the rightmost number, because a constant has a derivative of zero.
+
+Take $x^3 - 2x - 5$. Its coefficients `[1 0 -2 -5]` go with the powers 3, 2, 1 and 0, so multiplying gives `[3 0 -2 0]`. Deleting the constant term leaves `[3 0 -2]`, which is $3x^2 - 2$. `polyder` does this for you:
 
 ```matlab
 p = [1 0 -2 -5];      % x³ - 2x - 5
@@ -17,16 +19,28 @@ q =
      3     0    -2     % 3x² - 2
 ```
 
-Given two polynomials, it can also differentiate their product or quotient directly. Ask for one output and you get the derivative of the product. Ask for two and you get the numerator and denominator of the derivative of the quotient:
+`polyder` also accepts two polynomials, and the number of outputs you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
+
+With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. The product is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
 
 ```matlab
 a = [1 3 5];  b = [2 4 6];
 
 c = polyder(a, b)        % 8  30  56  38
+```
 
+With two outputs, it returns the derivative of the quotient $a(x) / b(x)$. The result is a fraction, so you get its top and bottom separately. By the quotient rule, `q` is $a'b - ab'$ and `d` is $b^2$:
+
+```matlab
 [q, d] = polyder(a, b)   % q = -2  -8  -2
                          % d =  4  16  40  48  36
 ```
+
+So the derivative of the quotient is
+
+$$
+\frac{-2x^2 - 8x - 2}{4x^4 + 16x^3 + 40x^2 + 48x + 36}
+$$
 
 ## Fitting a curve to data
 

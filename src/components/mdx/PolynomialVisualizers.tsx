@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { MatrixStage, matCells, Op, Panel, useTween, type CellTone, type StageCell } from "@/components/mdx/MatrixVisualizers";
-import { convFrames, coverUpFrames, MATLAB_CONV, MATLAB_RESIDUE, polyder, polyfit, polyText, polyval, roots, sumSquaredError, type Poly } from "@/lib/polynomial";
+import { convFrames, coverUpFrames, fitQuality, MATLAB_CONV, MATLAB_RESIDUE, polyder, polyfit, polyText, polyval, roots, sumSquaredError, type Poly } from "@/lib/polynomial";
 
 /* ------------------------------- plotting ------------------------------ */
 
@@ -162,6 +162,7 @@ export function CurveFitExplorer() {
   const sx = (v: number) => ((v - xr[0]) / (xr[1] - xr[0])) * W;
   const sy = (v: number) => H - ((v - yr[0]) / (yr[1] - yr[0])) * H;
   const err = sumSquaredError(p, FIT_X, ys);
+  const quality = fitQuality(p, FIT_X, ys);
   const onMove: React.PointerEventHandler<SVGSVGElement> = (e) => {
     if (drag.current === null || !svg.current) return;
     const box = svg.current.getBoundingClientRect();
@@ -194,7 +195,11 @@ export function CurveFitExplorer() {
           <div className="text-sm break-words">{polyText(p.map((c) => Number(c.toFixed(3))))}</div>
           <div>sum of squared errors: <span className="text-orange">{err < 1e-6 ? "0" : num(err)}</span></div>
           <p className="font-body text-sm leading-relaxed text-foreground min-h-[5em]">
-            {deg === 4 ? "Five points and degree 4: the curve goes through every point, so the error is zero. Drag one point and watch the whole curve swing. That's overfitting." : deg === 1 ? "A straight line can't follow this data, so the errors stay large." : "The curve can't pass through every point, so it settles on the smallest total squared error."}
+            {quality === "exact"
+              ? "The curve goes through every point, so the error is zero. Drag one point and watch the whole curve swing. That's overfitting."
+              : quality === "close"
+                ? `A close fit. The curve runs almost through all five points, and the leftover error is tiny next to the size of the data. It can't be exact, because a degree ${deg} curve has only ${deg + 1} coefficients to match five points.`
+                : `A poor fit. This is the best a degree ${deg} curve can do with these points, and the orange errors are still large.`}
           </p>
         </div>
       </div>

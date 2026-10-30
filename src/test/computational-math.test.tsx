@@ -5,7 +5,7 @@ import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
-import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
+import { conv, convFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
@@ -199,6 +199,12 @@ describe("polynomials", () => {
     const f = polyfit(x, y, 3);
     [-0.1917, 31.5821, -60.3262, 35.34].forEach((c, i) => expect(f[i]).toBeCloseTo(c, 3));
     expect(sumSquaredError(polyfit(x, y, 4), x, y)).toBeLessThan(1e-6);
+  });
+
+  it("describes each fit by how well it matches the data", () => {
+    const x = [1, 2, 3, 4, 5];
+    const y = [5.5, 43.1, 128, 290.7, 498.4];
+    expect([1, 2, 3, 4].map((d) => fitQuality(polyfit(x, y, d), x, y))).toEqual(["poor", "close", "close", "exact"]);
   });
 
   it("splits the worked partial fraction", () => {
