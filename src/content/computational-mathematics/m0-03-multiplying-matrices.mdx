@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { MatMulVisualizer, LinearMapGrid } from "@/components/mdx/MatrixVisualizers";
 
 # Multiplying Matrices
@@ -19,7 +19,11 @@ In words: entry $(i, j)$ of the answer is the [dot product](/courses/computation
 
 MATLAB uses a single asterisk, and it's far faster than the loop in the code panel:
 
+<CodeTabs>
+
 ```matlab
+A = pascal(3);
+B = magic(3);
 X = A * B              Y = B * A
 
 X =                    Y =
@@ -28,13 +32,82 @@ X =                    Y =
     41    70    39         15    28    43
 ```
 
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+
+print((A @ B).tolist())  # [[15, 15, 15], [26, 38, 26], [41, 70, 39]]
+print((B @ A).tolist())  # [[15, 28, 47], [15, 34, 60], [15, 28, 43]]
+
+# @ is the matrix product. * multiplies entry by entry, like MATLAB's .*
+# Mixing them up is a common bug, because both run without error on square arrays:
+print((A * B)[0].tolist())  # [8, 1, 6]
+
+# The row-times-column rule in plain Python:
+P = [[2, -1, 3], [0, 4, 1]]
+Q = [[1, 2], [3, -1], [0, 5]]
+print([[sum(a * b for a, b in zip(row, col)) for col in zip(*Q)] for row in P])  # [[-1, 20], [12, 1]]
+```
+
+</CodeTabs>
+
 <Callout tone="orange" label="Order matters">
 Compare `X` and `Y`. They use the same two matrices and only one entry matches. Matrix multiplication is **not commutative**, so $AB$ and $BA$ are usually different, and one of them may not exist at all. Use `.*` when you want entry-by-entry multiplication instead.
 </Callout>
 
+This one operation is most of the arithmetic in machine learning. A **linear model** gives each feature a weight and predicts by adding up feature times weight, which is a dot product. Put the examples in the rows of $X$ and the weights in a column $w$, and a single product $\hat{y} = Xw$ predicts every example at once. Here, three examples with two features each:
+
+<CodeTabs>
+
+```matlab
+X = [1 2; 3 4; 5 6];
+w = [0.5; -1.0];
+yhat = X * w
+
+yhat =
+   -1.5000
+   -2.5000
+   -3.5000
+```
+
+```python
+import numpy as np
+
+X = np.array([[1, 2], [3, 4], [5, 6]])
+w = np.array([0.5, -1.0])
+
+print((X @ w).tolist())  # [-1.5, -2.5, -3.5]
+```
+
+</CodeTabs>
+
+A large language model does the same thing on a vast scale: generating each word takes billions of these multiply-and-add steps. That's why GPUs, chips built to do thousands of them in parallel, became the hardware of AI.
+
 ## The identity matrix
 
 The **identity matrix** $I$ has ones on its main diagonal and zeros everywhere else. It's the matrix version of the number 1: $AI = A$ and $IA = A$. `eye(n)` builds the $n$-by-$n$ one, and `eye(m, n)` builds a rectangular version.
+
+<CodeTabs>
+
+```matlab
+A = pascal(3);
+isequal(A * eye(3), A)
+
+ans =
+  logical
+   1
+```
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+print(np.array_equal(A @ np.eye(3), A))  # True
+```
+
+</CodeTabs>
 
 ## Why the rule looks like that
 
@@ -46,47 +119,35 @@ Try the presets, or drag the sliders and read the columns as the two arrows:
 
 Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$, and the row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
 
+This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$: the matrix $W$ rotates, stretches and shears the points, the way the grid above bends, so that later layers can pull the classes apart. Each layer then applies a non-linear function, such as setting negatives to zero. That step isn't decoration. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
+
+<CodeTabs>
+
+```matlab
+W1 = [1 2; 0 1];
+W2 = [0 -1; 1 0];
+x = [3; 1];
+
+isequal(W2 * (W1 * x), (W2 * W1) * x)
+
+ans =
+  logical
+   1
+```
+
+```python
+import numpy as np
+
+W1 = np.array([[1, 2], [0, 1]])
+W2 = np.array([[0, -1], [1, 0]])
+x = np.array([3, 1])
+
+print(np.array_equal(W2 @ (W1 @ x), (W2 @ W1) @ x))  # True
+```
+
+</CodeTabs>
+
 The number labelled det is the factor by which the map scales area. It gets [its own lesson](/courses/computational-mathematics/determinants-and-inverses) later in this module.
-
-## In Python
-
-`@` multiplies matrices, while `*` multiplies entry by entry, like MATLAB's `.*`. Mixing them up is a common bug, because both run without an error on square arrays.
-
-```python
-import numpy as np
-
-A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
-B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
-
-print((A @ B)[0].tolist())  # [15, 15, 15]
-print((A * B)[0].tolist())  # [8, 1, 6]
-print(np.eye(2).tolist())  # [[1.0, 0.0], [0.0, 1.0]]
-```
-
-The plain Python version shows the row-times-column rule directly:
-
-```python
-A = [[2, -1, 3], [0, 4, 1]]
-B = [[1, 2], [3, -1], [0, 5]]
-
-C = [[sum(a * b for a, b in zip(row, col)) for col in zip(*B)] for row in A]
-print(C)  # [[-1, 20], [12, 1]]
-```
-
-## In machine learning
-
-A linear model predicts every example at once with one product, $\hat{y} = Xw$. Here, three examples with two features use two weights:
-
-```python
-import numpy as np
-
-X = np.array([[1, 2], [3, 4], [5, 6]])
-w = np.array([0.5, -1.0])
-
-print((X @ w).tolist())  # [-1.5, -2.5, -3.5]
-```
-
-A dense neural network layer computes $WX + b$, followed by a non-linear function. The grid above shows what $W$ does: it rotates, stretches and shears the data so that later layers can separate it. Stacking linear layers without a non-linearity gains nothing, because their product is just one matrix.
 
 ## Where you'll meet this
 

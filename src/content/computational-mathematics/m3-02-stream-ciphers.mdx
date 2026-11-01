@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { XorStreamVisualizer } from "@/components/mdx/CipherVisualizers";
 
 # Stream Ciphers
@@ -19,25 +19,53 @@ $$
 (m \oplus k) \oplus k = m
 $$
 
-So decryption is the same operation as encryption, with the same key stream. The receiver just needs the same generator and the same seed. Run it in both directions:
+XOR also has a famous place in the history of AI. The earliest neural network, the **perceptron**, decides by drawing one straight line through its inputs, and no straight line can separate XOR's outputs: on the four corners of a square, the 1s sit on one diagonal and the 0s on the other. A 1969 book on perceptrons by Minsky and Papert made that limit famous, and enthusiasm for neural networks cooled for years. The fix is a **hidden layer**. One hidden unit computes OR and another computes AND, and the output says "OR but not AND", which is XOR. That's the whole reason networks need depth and a non-linear step:
 
-<XorStreamVisualizer />
+<CodeTabs>
 
-<Callout tone="orange" label="Never reuse a key stream">
-If two messages use the same key stream, an attacker can XOR the ciphertexts. The key cancels, leaving $m_1 \oplus m_2$, which is often enough to recover both messages. WEP, an early Wi-Fi security standard, was broken partly because its key streams repeated.
-</Callout>
+```matlab
+X = [0 0; 0 1; 1 0; 1 1];          % the four possible inputs
+step = @(v) double(v > 0);          % the non-linear step
 
-The generator in this visualizer is a toy, a small linear-feedback [shift register](/courses/logic-design/registers#shift-registers). Its output looks random, but an attacker who sees a little of it can work out the rest, so real systems use far stronger generators.
-
-If the key stream is truly random, as long as the message, and never reused, you have the **one-time pad**, which is provably unbreakable. It's rarely practical, because sharing that much key is as hard as sharing the message.
-
-## In Python
-
-XOR is `^` in Python, and it works on whole NumPy arrays. The `bytes` type lets you run the cipher on real text:
+h = step(X * [1; 1] - 0.5);         % hidden unit 1: OR
+g = step(X * [1; 1] - 1.5);         % hidden unit 2: AND
+step(h - g - 0.5)'                  % OR but not AND: 0 1 1 0
+```
 
 ```python
 import numpy as np
 
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])  # the four possible inputs
+step = lambda v: (v > 0).astype(int)             # the non-linear step
+
+h = step(X @ np.array([1, 1]) - 0.5)  # hidden unit 1: OR
+g = step(X @ np.array([1, 1]) - 1.5)  # hidden unit 2: AND
+print(step(h - g - 0.5).tolist())  # [0, 1, 1, 0]
+```
+
+</CodeTabs>
+
+So decryption is the same operation as encryption, with the same key stream. The receiver just needs the same generator and the same seed. Run it in both directions:
+
+<XorStreamVisualizer />
+
+<CodeTabs>
+
+```matlab
+m = [0 1 1 0];  k = [1 1 0 0];
+c = xor(m, k)          % 1 0 1 0
+xor(c, k)              % 0 1 1 0, the message again
+
+% On real text, bitxor works on whole bytes
+key = uint8([90 195]);
+cipher = bitxor(uint8('HI'), key);
+char(bitxor(cipher, key))     % HI
+```
+
+```python
+import numpy as np
+
+# XOR is ^ in Python, and it works on whole NumPy arrays
 m = np.array([0, 1, 1, 0])
 k = np.array([1, 1, 0, 0])
 c = m ^ k
@@ -45,32 +73,23 @@ c = m ^ k
 print(c.tolist())  # [1, 0, 1, 0]
 print((c ^ k).tolist())  # [0, 1, 1, 0]
 
-text = b"HI"
+# On real text, bytes XOR one at a time
 key = bytes([0x5A, 0xC3])
-cipher = bytes(t ^ s for t, s in zip(text, key))
-
+cipher = bytes(t ^ s for t, s in zip(b"HI", key))
 print(bytes(t ^ s for t, s in zip(cipher, key)))  # b'HI'
 ```
 
-## In machine learning
+</CodeTabs>
 
-XOR has a special place in ML history. A single-layer perceptron draws one straight line through its inputs, and no straight line can separate XOR's outputs. Minsky and Papert's 1969 book on perceptrons discussed this limit. Adding a hidden layer solves it, and this is why networks need depth and non-linearity:
+<Callout tone="orange" label="Never reuse a key stream">
+If two messages use the same key stream, an attacker can XOR the ciphertexts. The key cancels, leaving $m_1 \oplus m_2$, which is often enough to recover both messages. WEP, an early Wi-Fi security standard, was broken partly because its key streams repeated.
+</Callout>
 
-```python
-import numpy as np
+The generator in this visualizer is a toy, a small linear-feedback [shift register](/courses/logic-design/registers#shift-registers). Its output looks random, but an attacker who sees a little of it can work out the rest, so real systems use far stronger generators.
 
-X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-step = lambda v: (v > 0).astype(int)
+Machine learning needs random bits too, but of a different kind. Shuffling data and initialising weights need numbers that are fast and statistically even, and ML libraries pick generators built for exactly that. A stream cipher also needs numbers nobody can predict, which is a much stronger demand, so it uses a **cryptographically secure** generator. Swapping one for the other is a classic security bug.
 
-h = step(X @ np.array([1, 1]) - 0.5)
-g = step(X @ np.array([1, 1]) - 1.5)
-
-print(step(h - g - 0.5).tolist())  # [0, 1, 1, 0]
-```
-
-Here `h` is OR and `g` is AND, two hidden units, and the output means "OR but not AND", which is XOR.
-
-Random bits matter here as well. Good training needs pseudorandom numbers, but not cryptographic ones: ML libraries choose fast generators with good statistics, while a stream cipher also needs a generator that nobody can predict.
+If the key stream is truly random, as long as the message, and never reused, you have the **one-time pad**, which is provably unbreakable. It's rarely practical, because sharing that much key is as hard as sharing the message.
 
 ## Where you'll meet this
 

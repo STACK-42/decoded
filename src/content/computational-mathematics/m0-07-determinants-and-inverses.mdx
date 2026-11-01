@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { LinearMapGrid, InverseVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Determinants and Inverses
@@ -16,6 +16,29 @@ $$
 Geometrically, it's the factor by which the map scales area, with a minus sign if space gets flipped. Press Squash below and watch the square collapse into a line. Once that happens, many points share the same destination, so nothing can send them back:
 
 <LinearMapGrid start="squash" />
+
+The Squash preset is a real problem in data science. If one column of your data is a copy or a multiple of another, say a price in dollars and the same price in cents, the data matrix has lost a direction just like the squashed grid. Its **rank**, the number of directions it really spans, drops below its number of columns, and a regression model has no single best answer for how to split the weight between the two columns.
+
+<CodeTabs>
+
+```matlab
+X = [1 2; 2 4; 3 6];   % the second column is twice the first
+rank(X)
+
+ans =
+     1
+```
+
+```python
+import numpy as np
+
+X = np.array([[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]])
+print(np.linalg.matrix_rank(X))  # 1
+```
+
+</CodeTabs>
+
+The area-scaling meaning drives a family of generative AI models too. **Normalizing flows** turn simple random noise into realistic data through a chain of invertible maps, and they track the determinant of each one to know how much it stretches or squeezes probability, like the grid above stretching area.
 
 ## Larger determinants
 
@@ -62,11 +85,30 @@ Step through all four stages, and then try the singular matrix to see the method
 
 In MATLAB, `det` and `inv` do the whole job:
 
+<CodeTabs>
+
 ```matlab
 A = pascal(3);
 D = det(A)     % 1
 H = inv(A)
+
+H =
+     3    -3     1
+    -3     5    -2
+     1    -2     1
 ```
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+
+# Results are floats, so round before comparing with whole numbers
+print(round(np.linalg.det(A), 6))  # 1.0
+print(np.round(np.linalg.inv(A)).astype(int).tolist())  # [[3, -3, 1], [-3, 5, -2], [1, -2, 1]]
+```
+
+</CodeTabs>
 
 <Callout tone="orange" label="Computers round">
 `magic(4)` is singular, so its determinant is exactly 0. MATLAB's `det(magic(4))` returns a tiny value around $-1.45 \times 10^{-12}$ instead, because it works in floating point. Don't test `det(A) == 0` in real code. Use `rank` or `cond`.
@@ -76,25 +118,50 @@ H = inv(A)
 
 To solve $Ax = b$, write `x = A \ b` rather than `x = inv(A) * b`. The backslash solves the system directly using a [triangular](/courses/computational-mathematics/special-matrices#triangular-and-diagonal-matrices) factorization, which is faster and usually more accurate. The cofactor method here also [explodes in cost](/courses/algorithm-design-and-analysis/counting-steps) as the matrix grows, so it's a tool for understanding and small examples.
 
-## In Python
+<CodeTabs>
 
-The functions live in `np.linalg`. Results are floats, so the same rounding warning applies:
+```matlab
+A = [1 2 3; 0 1 4; 5 6 0];
+b = [14; 14; 17];
+x = A \ b
+
+x =
+     1
+     2
+     3
+```
 
 ```python
 import numpy as np
 
 A = np.array([[1, 2, 3], [0, 1, 4], [5, 6, 0]])
+b = np.array([14, 14, 17])
 
-print(round(np.linalg.det(A), 6))  # 1.0
-print(np.round(np.linalg.inv(A)).astype(int)[0].tolist())  # [-24, 18, 5]
-print(np.round(np.linalg.solve(A, np.array([14, 14, 17]))).astype(int).tolist())  # [1, 2, 3]
+# np.linalg.solve is MATLAB's backslash, and better than inv(A) @ b for the same reasons
+print(np.round(np.linalg.solve(A, b)).astype(int).tolist())  # [1, 2, 3]
 ```
 
-`np.linalg.solve(A, b)` is the counterpart of MATLAB's `A \ b`, and for the same reasons it's better than `inv(A) @ b`.
+</CodeTabs>
 
-## In machine learning
+This advice matters most in **linear regression**, the simplest model in machine learning. Its best weights have an exact formula, the normal equation
 
-**Linear regression.** The exact solution is the normal equation, $w = (X^T X)^{-1} X^T y$. In practice, libraries use a [least-squares](/courses/computational-mathematics/derivatives-and-curve-fitting#fitting-a-curve-to-data) solver and never form that inverse:
+$$
+w = (X^T X)^{-1} X^T y
+$$
+
+but libraries never form that inverse. They hand the problem to a [least-squares](/courses/computational-mathematics/derivatives-and-curve-fitting#fitting-a-curve-to-data) solver, which in MATLAB is the same backslash. Here a column of ones lets the line have an intercept, and the data fits $y = 1 + 2x$:
+
+<CodeTabs>
+
+```matlab
+X = [1 1; 1 2; 1 3];
+y = [3; 5; 7];
+w = X \ y      % backslash does least squares on a tall matrix
+
+w =
+     1
+     2
+```
 
 ```python
 import numpy as np
@@ -106,17 +173,9 @@ w = np.linalg.lstsq(X, y, rcond=None)[0]
 print(np.round(w, 6).tolist())  # [1.0, 2.0]
 ```
 
-**Duplicate features.** If one column is a copy or a multiple of another, $X^T X$ is singular. The Squash preset above is what happens to the data: a direction gets lost, so the weights have no single answer. Ridge regression fixes this by inverting $X^T X + \lambda I$ instead, which always works for $\lambda > 0$.
+</CodeTabs>
 
-```python
-import numpy as np
-
-X = np.array([[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]])
-
-print(np.linalg.matrix_rank(X))  # 1
-```
-
-**Generative models.** The density of a multivariate Gaussian contains a determinant. Normalizing flows rely on the area-scaling meaning directly: they track the log of the determinant to see how much each invertible layer stretches probability.
+When $X^T X$ is singular, as with the duplicate columns above, **ridge regression** inverts $X^T X + \lambda I$ instead. Adding a small $\lambda$ to the diagonal lifts the squashed direction back off zero, so the inverse exists for any $\lambda > 0$.
 
 ## Where you'll meet this
 

@@ -1,4 +1,4 @@
-import { ReactNode, useId, useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { Children, ReactNode, isValidElement, useId, useMemo, useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import {
   ReactFlow,
   Handle,
@@ -53,6 +53,112 @@ export function CodeBlock(props: React.ComponentPropsWithoutRef<"pre">) {
       >
         {copied ? "Copied" : "Copy"}
       </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   CodeTabs — one code block shown in several languages, with a
+   toggle. Wrap fenced blocks in it:
+
+     <CodeTabs>
+
+     ```matlab
+     ...
+     ```
+
+     ```python
+     ...
+     ```
+
+     </CodeTabs>
+
+   The reader's choice is remembered and shared by every CodeTabs
+   on the site, so picking Python once switches the whole course.
+   ============================================================ */
+
+const CODE_LANG_KEY = "decoded:code-lang";
+const CODE_LANG_EVENT = "decoded:code-lang";
+const LANG_LABEL: Record<string, string> = { matlab: "MATLAB", python: "Python" };
+
+function readCodeLang() {
+  try {
+    return localStorage.getItem(CODE_LANG_KEY);
+  } catch {
+    return null; // private mode
+  }
+}
+
+/** The data-language rehype-pretty-code puts on the <pre>, found anywhere inside a block. */
+function languageOf(node: ReactNode): string | undefined {
+  if (!isValidElement(node)) return undefined;
+  const props = node.props as Record<string, unknown>;
+  if (typeof props["data-language"] === "string") return props["data-language"];
+  for (const child of Children.toArray(props.children as ReactNode)) {
+    const lang = languageOf(child);
+    if (lang) return lang;
+  }
+  return undefined;
+}
+
+export function CodeTabs({ children }: { children: ReactNode }) {
+  const blocks = Children.toArray(children)
+    .map((el) => ({ el, lang: languageOf(el) }))
+    .filter((b) => b.lang !== undefined) as { el: ReactNode; lang: string }[];
+  const [preferred, setPreferred] = useState(readCodeLang);
+  const active = blocks.find((b) => b.lang === preferred) ?? blocks[0];
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const anchorTop = useRef<number | null>(null);
+
+  useEffect(() => {
+    const sync = () => setPreferred(readCodeLang());
+    window.addEventListener(CODE_LANG_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(CODE_LANG_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  // Blocks above change height when every block switches language. Keep the one
+  // the reader clicked where it was on screen, so the page doesn't jump under them.
+  useLayoutEffect(() => {
+    if (anchorTop.current === null || !rootRef.current) return;
+    const shift = rootRef.current.getBoundingClientRect().top - anchorTop.current;
+    anchorTop.current = null;
+    if (shift !== 0) window.scrollBy(0, shift);
+  }, [preferred]);
+
+  const choose = (lang: string) => {
+    anchorTop.current = rootRef.current?.getBoundingClientRect().top ?? null;
+    try {
+      localStorage.setItem(CODE_LANG_KEY, lang);
+    } catch {
+      /* private mode: still switch this page */
+    }
+    setPreferred(lang);
+    window.dispatchEvent(new Event(CODE_LANG_EVENT));
+  };
+
+  if (!active) return <>{children}</>;
+  return (
+    <div className="code-tabs" ref={rootRef}>
+      <div className="code-tabs-bar" role="tablist" aria-label="Code language">
+        {blocks.map((b) => (
+          <button
+            key={b.lang}
+            type="button"
+            role="tab"
+            aria-selected={b.lang === active.lang}
+            onClick={() => choose(b.lang)}
+            className={b.lang === active.lang ? "is-active" : undefined}
+          >
+            {LANG_LABEL[b.lang] ?? b.lang}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel">{active.el}</div>
     </div>
   );
 }

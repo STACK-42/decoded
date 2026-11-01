@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SecretKeyFlow } from "@/components/mdx/CipherVisualizers";
 
 # What Is Cryptography?
@@ -13,10 +13,12 @@ Everything from the [last module](/courses/computational-mathematics/divisibilit
 
 Modern cryptography solves two main security problems:
 
-1. **Privacy** stops unauthorised parties from reading messages sent over a public channel. The sender can be sure that only the intended receiver can read it.
-2. **Authentication** stops unauthorised parties from injecting messages. The receiver can be sure who sent it.
+1. **Privacy** stops unauthorised parties from reading messages sent over a public channel. The sender can be sure that only the intended receiver can read it. Every question you type to a hosted AI model travels this way, encrypted with TLS, and medical or financial training data is kept encrypted when it's stored and when it moves.
+2. **Authentication** stops unauthorised parties from injecting messages. The receiver can be sure who sent it. A signed model file, for example, shows that the weights you downloaded really came from the lab that published them.
 
 Cryptanalysis also helped create the modern computer. At Bletchley Park in the Second World War, Alan Turing helped design the Bombe, an electromechanical machine for breaking Enigma, and Tommy Flowers built Colossus, one of the first programmable electronic computers, to attack another German cipher.
+
+Machine learning has been pointed at the problem too. In 2016, researchers at Google trained one neural network to encrypt messages for a second while a third tried to eavesdrop, and the first two learned a scheme the third couldn't read. It's a striking result, but nobody protects real data with learned ciphers, because they come with no proof of security. Real systems use ciphers whose strength rests on mathematics like the number theory in this course.
 
 ## Two kinds of system
 
@@ -41,21 +43,21 @@ $$
 D_{d_k}(E_{e_k}(m)) = m
 $$
 
-## Secret-key systems
+In code, that's two functions that undo each other. Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you'll take apart in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers):
 
-In a secret-key system, $e_k = d_k = k$. Anyone who can encrypt can also decrypt, so the key must travel to the receiver over a separate secure channel. Follow one message through:
+<CodeTabs>
 
-<SecretKeyFlow />
+```matlab
+E = @(k, m) char(mod(double(m) - 65 + k, 26) + 65);   % 'A' is character 65
+D = @(k, c) E(-k, c);
 
-The ciphertext crosses the insecure channel in full view, so all the security rests on the key.
-
-## In Python
-
-The notation translates directly into two functions that undo each other:
+E(3, 'HELLO')          % KHOOR
+D(3, E(3, 'HELLO'))    % HELLO
+```
 
 ```python
 def E(k, m):
-    return "".join(chr((ord(ch) - 65 + k) % 26 + 65) for ch in m)
+    return "".join(chr((ord(ch) - 65 + k) % 26 + 65) for ch in m)  # "A" is character 65
 
 def D(k, c):
     return E(-k, c)
@@ -64,22 +66,40 @@ print(E(3, "HELLO"))  # KHOOR
 print(D(3, E(3, "HELLO")))  # HELLO
 ```
 
-Python's standard library warns you about randomness here. Use `secrets` for keys, and never `random`, because `random` is designed to be reproducible, which is exactly what a key must not be:
+</CodeTabs>
+
+## Secret-key systems
+
+In a secret-key system, $e_k = d_k = k$. Anyone who can encrypt can also decrypt, so the key must travel to the receiver over a separate secure channel. Follow one message through:
+
+<SecretKeyFlow />
+
+The ciphertext crosses the insecure channel in full view, so all the security rests on the key.
+
+So the key has to be truly unpredictable, and that rules out the random numbers you use for everything else. The generators in MATLAB and NumPy are built to be **reproducible**: give them the same seed and they replay the same numbers, which is exactly what you want when you shuffle training data and exactly what a key must never do.
+
+<CodeTabs>
+
+```matlab
+% rand and randi are reproducible on purpose: rng(42) replays them exactly.
+% MATLAB has no secure generator built in, so real keys come from the
+% operating system or a cryptography library, never from rand.
+rng(42);  a = randi(255, 1, 4);
+rng(42);  b = randi(255, 1, 4);
+isequal(a, b)          % true: fine for experiments, fatal for keys
+```
 
 ```python
 import secrets
 
-print(len(secrets.token_bytes(16)))  # 16
+# The secrets module draws from the operating system's secure generator.
+# Never make keys with the random module: like MATLAB's rand, it's
+# designed to be reproducible.
+key = secrets.token_bytes(16)  # a 128-bit key
+print(len(key))  # 16
 ```
 
-## In machine learning
-
-Training data and model weights are both valuable, and often sensitive, so ML systems rely on these same guarantees:
-
-- **Privacy.** Medical or financial training data is encrypted at rest and in transit. Calls to a hosted model travel over TLS.
-- **Authentication.** Signed model files show that weights came from the claimed source.
-
-Researchers have also pointed ML at the problem itself. In 2016, Abadi and Andersen at Google trained neural networks to invent their own encryption so that a third network couldn't read it. It's an interesting result, though nobody uses learned ciphers to protect real data, because they come with no security proof.
+</CodeTabs>
 
 ## Where you'll meet this
 

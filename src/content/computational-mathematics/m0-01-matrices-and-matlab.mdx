@@ -1,15 +1,36 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { ElementwiseVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Matrices and MATLAB
 
 A **matrix** is a rectangular grid of numbers. That plain definition covers a surprising amount of software: a photo is a matrix of pixel values, a spreadsheet is a matrix with labels, and a neural network layer is mostly a matrix of weights.
 
-This course uses MATLAB because its syntax is close to the maths on paper. Every lesson works in MATLAB first, then shows the same ideas in Python and where they turn up in machine learning.
+This course uses MATLAB because its syntax is close to the maths on paper. Every code block also has a Python version, using NumPy and pandas: switch with the tabs on top, and your choice applies to every block in the course.
 
 ## Writing a matrix down
 
 We describe size as **rows by columns**, always in that order. A 2-by-3 matrix has 2 rows and 3 columns. The entry in row $i$, column $j$ of $A$ is written $a_{ij}$.
+
+<CodeTabs>
+
+```matlab
+A = pascal(3);
+A(2, 3)        % row 2, column 3; MATLAB counts from 1
+
+ans =
+     3
+```
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+
+# Python counts from 0, so MATLAB's A(2, 3) is A[1, 2]
+print(A[1, 2])  # 3
+```
+
+</CodeTabs>
 
 Three shapes get their own names:
 
@@ -19,15 +40,58 @@ Three shapes get their own names:
 
 In MATLAB, a space or comma moves to the next column and a semicolon starts a new row:
 
+<CodeTabs>
+
 ```matlab
 u = [3; 1; 4]      % column vector
 v = [2 0 -1]       % row vector
 s = 7              % scalar
 ```
 
+```python
+import numpy as np
+
+u = np.array([[3], [1], [4]])  # column vector, shape (3, 1)
+v = np.array([[2, 0, -1]])     # row vector, shape (1, 3)
+s = 7                          # scalar
+
+# NumPy also has plain 1-D arrays, np.array([2, 0, -1]), with shape (3,).
+# They're neither rows nor columns, and most code uses them for vectors.
+print(u.shape, v.shape)  # (3, 1) (1, 3)
+```
+
+</CodeTabs>
+
+This is also how machine learning stores data. A training set is one matrix, usually called $X$, with **one row per example and one column per feature**. Three people described by height and weight make a 3-by-2 matrix:
+
+<CodeTabs>
+
+```matlab
+X = [170 65; 182 80; 165 54];
+size(X)
+
+ans =
+     3     2
+```
+
+```python
+import pandas as pd
+
+# Data usually arrives as a pandas DataFrame, with named columns.
+# .to_numpy() drops the labels and leaves the matrix.
+df = pd.DataFrame({"height": [170, 182, 165], "weight": [65, 80, 54]})
+X = df.to_numpy()
+
+print(X.shape)  # (3, 2)
+```
+
+</CodeTabs>
+
 ## Two example matrices
 
 MATLAB ships with dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. `pascal(3)` is **symmetric**, meaning it looks the same when you mirror it across its main diagonal. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
+
+<CodeTabs>
 
 ```matlab
 A = pascal(3)          B = magic(3)
@@ -38,11 +102,35 @@ A =                    B =
      1     3     6          4     9     2
 ```
 
+```python
+import numpy as np
+
+# NumPy has no pascal or magic, so write them out
+# (scipy.linalg.pascal(3) builds the first one).
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+
+print(B.sum(axis=0).tolist())  # [15, 15, 15]
+```
+
+</CodeTabs>
+
 When you need test data, `rand` gives numbers between 0 and 1, and `fix` chops off the fractional part. This line makes a 3-by-2 matrix of random integers from 0 to 9:
+
+<CodeTabs>
 
 ```matlab
 C = fix(10 * rand(3, 2))
 ```
+
+```python
+import numpy as np
+
+rng = np.random.default_rng()
+C = rng.integers(0, 10, size=(3, 2))  # integers from 0 to 9; the 10 is excluded
+```
+
+</CodeTabs>
 
 ## Adding and subtracting
 
@@ -53,6 +141,56 @@ c_{ij} = a_{ij} + b_{ij}
 $$
 
 Subtraction works the same way. Adding $A$ to $B$ and then subtracting $A$ brings you back to $B$, just as it does with ordinary numbers.
+
+<CodeTabs>
+
+```matlab
+A + B
+
+ans =
+     9     2     7
+     4     7    10
+     5    12     8
+```
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+
+print((A + B).tolist())  # [[9, 2, 7], [4, 7, 10], [5, 12, 8]]
+
+# Plain Python has no matrix type. With nested lists you write the loop:
+P, Q = [[1, 2], [3, 4]], [[5, 6], [7, 8]]
+print([[a + b for a, b in zip(rp, rq)] for rp, rq in zip(P, Q)])  # [[6, 8], [10, 12]]
+```
+
+</CodeTabs>
+
+Machine learning uses this all the time to prepare data. Features measured in different units, like centimetres and kilograms, are usually **standardised** first: subtract each column's mean and divide by its spread, so every feature sits around 0 on a similar scale. Both steps work entry by entry. Without it, the feature with the biggest numbers would dominate the model.
+
+<CodeTabs>
+
+```matlab
+X = [170 65; 182 80; 165 54];
+Z = (X - mean(X)) ./ std(X, 1);
+round(mean(Z), 6)
+
+ans =
+     0     0
+```
+
+```python
+import numpy as np
+
+X = np.array([[170, 65], [182, 80], [165, 54]], dtype=float)
+Z = (X - X.mean(axis=0)) / X.std(axis=0)  # the 1-row means stretch to fit every row
+
+print(np.allclose(Z.mean(axis=0), 0))  # True
+```
+
+</CodeTabs>
 
 ## Multiplying by a scalar
 
@@ -66,50 +204,60 @@ Pick an operation and step through it. Each entry only ever talks to the entry i
 
 <ElementwiseVisualizer />
 
-<Callout tone="orange" label="Common error">
-Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up.
-</Callout>
+Training a neural network is mostly this step, repeated millions of times. **Gradient descent** updates the weights with
 
-## In Python
+$$
+w \leftarrow w - \eta \nabla L
+$$
 
-MATLAB is this course's main language, and each lesson also shows the Python version. NumPy arrays cover matrices, and pandas adds labelled rows and columns on top. Python counts from 0, so MATLAB's `A(1, 1)` is `A[0, 0]`.
+where $\nabla L$ says which way each weight should move to reduce the error, and the **learning rate** $\eta$ is a scalar that sets the step size. So one training step is a scalar multiple followed by a subtraction:
+
+<CodeTabs>
+
+```matlab
+w = [0.5 -1.2];
+grad = [0.2 -0.4];
+eta = 0.1;
+
+w = w - eta * grad
+
+w =
+    0.4800   -1.1600
+```
 
 ```python
 import numpy as np
 
-A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
-B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+w = np.array([0.5, -1.2])
+grad = np.array([0.2, -0.4])
+eta = 0.1
 
-print((A + B).tolist())  # [[9, 2, 7], [4, 7, 10], [5, 12, 8]]
-print((-2 * A)[0].tolist())  # [-2, -2, -2]
+w = w - eta * grad
+print(np.round(w, 4).tolist())  # [0.48, -1.16]
 ```
 
-Plain Python has no matrix type, so you'd write the loop yourself, usually with nested lists:
+</CodeTabs>
+
+<Callout tone="orange" label="Common error">
+Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up.
+</Callout>
+
+<CodeTabs>
+
+```matlab
+pascal(3) + ones(3, 2)
+
+error: operator +: nonconformant arguments (op1 is 3x3, op2 is 3x2)
+```
 
 ```python
-A = [[1, 2], [3, 4]]
-B = [[5, 6], [7, 8]]
+import numpy as np
 
-C = [[a + b for a, b in zip(ra, rb)] for ra, rb in zip(A, B)]
-print(C)  # [[6, 8], [10, 12]]
+np.ones((3, 3)) + np.ones((3, 2))
+# ValueError: operands could not be broadcast together with shapes (3,3) (3,2)
 ```
 
-A pandas DataFrame turns into a matrix with one call:
-
-```python
-import pandas as pd
-
-df = pd.DataFrame({"height": [170, 182, 165], "weight": [65, 80, 54]})
-X = df.to_numpy()
-
-print(X.shape)  # (3, 2)
-```
-
-## In machine learning
-
-A training set is normally one matrix, called $X$, with one row per example and one column per feature. The DataFrame above is 3 examples with 2 features each.
-
-Rescaling features uses this lesson's operations: subtracting a column's mean and dividing by its spread are both entry-by-entry steps. So is one step of gradient descent, $w \leftarrow w - \eta \nabla L$, a scalar multiple followed by a subtraction.
+</CodeTabs>
 
 ## Where you'll meet this
 

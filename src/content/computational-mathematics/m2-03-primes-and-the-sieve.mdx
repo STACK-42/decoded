@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SieveVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Primes and the Sieve
@@ -17,9 +17,86 @@ $$
 
 For example, $91 = 7 \cdot 13$, $3600 = 2^4 \cdot 3^2 \cdot 5^2$, and $11011 = 7 \cdot 11^2 \cdot 13$. There are also infinitely many primes, so the list never runs out.
 
+<CodeTabs>
+
+```matlab
+factor(3600)    % 2 2 2 2 3 3 5 5
+factor(11011)   % 7 11 11 13
+```
+
+```python
+def factor(n):
+    """Prime factors by trial division, smallest first."""
+    out, d = [], 2
+    while d * d <= n:
+        while n % d == 0:
+            out.append(d)
+            n //= d
+        d += 1
+    return out + [n] if n > 1 else out
+
+print(factor(3600))  # [2, 2, 2, 2, 3, 3, 5, 5]
+print(factor(11011))  # [7, 11, 11, 13]
+# sympy.factorint(3600) gives the same as a dictionary, {2: 4, 3: 2, 5: 2}
+```
+
+</CodeTabs>
+
+Primes do quiet work in machine learning through **hashing**. A good hash spreads inputs evenly over its buckets, and multiplying by a number and then reducing modulo a large prime $p$ is a classic way to scramble them. **Universal hash functions** have the form
+
+$$
+h(x) = \bigl((ax + b) \bmod p\bigr) \bmod m
+$$
+
+with $a$ and $b$ chosen at random. Whatever the data looks like, any two different inputs then collide with a probability of only about $1/m$, so no unlucky pattern in the keys can pile them into a few buckets.
+
+<CodeTabs>
+
+```matlab
+p = 2147483647;            % a large prime, 2^31 - 1
+a = 1000003;  b = 12345;  m = 1000;
+
+h = @(x) mod(mod(a*x + b, p), m);
+h(42)
+
+ans =
+   471
+```
+
+```python
+p = 2_147_483_647  # a large prime, 2**31 - 1
+a, b, m = 1_000_003, 12_345, 1000
+
+def h(x):
+    return ((a * x + b) % p) % m
+
+print(h(42))  # 471
+```
+
+</CodeTabs>
+
+**MinHash** runs a whole family of these functions over a document's words to build a short signature, so two documents with similar signatures are near-duplicates, and you never have to compare every pair. Teams building large language models use it to clean their training text, because the web repeats itself endlessly: duplicates waste training time, make the model memorise instead of generalise, and can leak test questions into the training data.
+
 ## You only need to check up to the square root
 
 If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. The reason is simple: if $n = a \cdot b$ with both factors above $\sqrt{n}$, their product would be more than $n$. So any composite number has a factor on the small side.
+
+<CodeTabs>
+
+```matlab
+isprime(3457)     % true
+isprime(3453)     % false
+```
+
+```python
+# Trial division up to the square root, in one line of plain Python
+def is_prime(n):
+    return n > 1 and all(n % d for d in range(2, int(n ** 0.5) + 1))
+
+print(is_prime(3457), is_prime(3453))  # True False
+```
+
+</CodeTabs>
 
 ## The Sieve of Eratosthenes
 
@@ -34,6 +111,40 @@ For $n = 100$, you can stop as soon as you reach a prime above 10. Step through 
 
 <SieveVisualizer />
 
+<CodeTabs>
+
+```matlab
+n = 30;
+is_prime = true(1, n);
+is_prime(1) = false;
+
+for p = 2:floor(sqrt(n))
+    if is_prime(p)
+        is_prime(p*p:p:n) = false;    % strike out the multiples
+    end
+end
+find(is_prime)       % primes(30) does all of this in one call
+
+ans =
+     2     3     5     7    11    13    17    19    23    29
+```
+
+```python
+import numpy as np
+
+n = 30
+is_prime = np.ones(n + 1, dtype=bool)  # index 0 to n, so position = number
+is_prime[:2] = False
+
+for p in range(2, int(n ** 0.5) + 1):
+    if is_prime[p]:
+        is_prime[p * p :: p] = False  # strike out the multiples
+
+print(np.flatnonzero(is_prime).tolist())  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+```
+
+</CodeTabs>
+
 ## Quick tests for divisibility
 
 Some factors can be spotted from the digits of $n$:
@@ -47,50 +158,18 @@ Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add u
 
 For $8132619$, the alternating sum is $8-1+3-2+6-1+9 = 22 = 2 \cdot 11$, so 11 divides it.
 
-In MATLAB, `isprime(3457)` returns true and `isprime(3453)` returns false.
+<CodeTabs>
 
-## In Python
-
-NumPy's boolean indexing mirrors the MATLAB code in the panel:
-
-```python
-import numpy as np
-
-n = 30
-is_prime = np.ones(n + 1, dtype=bool)
-is_prime[:2] = False
-
-for p in range(2, int(n ** 0.5) + 1):
-    if is_prime[p]:
-        is_prime[p * p :: p] = False
-
-print(np.flatnonzero(is_prime).tolist())  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+```matlab
+mod(17865843, 3)    % 0
+mod(8132619, 11)    % 0
 ```
 
-Trial division up to the square root is also a short job in pure Python:
-
 ```python
-def is_prime(n):
-    return n > 1 and all(n % d for d in range(2, int(n ** 0.5) + 1))
-
-print(is_prime(3457), is_prime(3453))  # True False
+print(17865843 % 3, 8132619 % 11)  # 0 0
 ```
 
-## In machine learning
-
-Primes show up in ML through hashing. Universal hash functions have the form $h(x) = ((ax + b) \bmod p) \bmod m$, with $p$ a large prime and $a, b$ random:
-
-```python
-p = 2_147_483_647  # a large prime
-a, b, m = 1_000_003, 12_345, 1000
-
-def h(x):
-    return ((a * x + b) % p) % m
-
-print(h(42))  # 471
-```
-
-MinHash uses a family of such functions to spot near-duplicate documents without comparing every pair. This is a standard way to clean up large text training sets, since duplicates waste compute and can leak test examples into the training data.
+</CodeTabs>
 
 ## Where you'll meet this
 

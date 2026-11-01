@@ -22,7 +22,8 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 5. **Plan the modules and lessons.** For each idea that is hard to picture, decide what the reader will click, step through or change to understand it.
 6. **Build the simulations.** Put the logic in `src/lib/` with its own tests, then the interface in `src/components/mdx/<Topic>Visualizers.tsx`. Reuse `Stepper` and `Panel` where they fit.
 7. **Write the lessons.** Use plain language, start from something the reader already knows, and name the real tools each idea powers. End each module or the course with a `Quiz`.
-8. **Check the facts.** Class notes contain mistakes. Work every example again and run every code sample instead of copying it.
+8. **Check the facts.** Class notes contain mistakes. Work every example again and run every code sample instead of copying it. If a course shows code in more than one language, put each example in one `<CodeTabs>` with a block per language, and run them with `python3 scripts/check-code-samples.py`.
+   Applications, such as where an idea shows up in machine learning or AI, belong in the explanation of the idea itself, not in a separate section at the end.
 9. **Register the course.** See the checklist below.
 10. **Verify it and open a pull request.** Say what you tested, and list any source errors you corrected.
 

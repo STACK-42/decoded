@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { PowerCycleVisualizer, PowersTable } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Order and Primitive Roots
@@ -23,6 +23,38 @@ So the order is 4. Other names for the same number are the exponent to which $a$
 
 <PowerCycleVisualizer />
 
+<CodeTabs>
+
+```matlab
+a = 3;  n = 16;
+k = 1;  v = mod(a, n);
+while v ~= 1
+    v = mod(v * a, n);    % one more hop around the ring
+    k = k + 1;
+end
+k
+
+k =
+     4
+```
+
+```python
+from math import gcd
+
+def order(a, n):
+    if gcd(a, n) != 1:
+        return None  # no power of a ever reaches 1
+    k, v = 1, a % n
+    while v != 1:
+        v = v * a % n  # one more hop around the ring
+        k += 1
+    return k
+
+print(order(3, 16))  # 4
+```
+
+</CodeTabs>
+
 ## Primitive roots
 
 $a$ is a **primitive root** of $n$ if its order is as large as it can be, $\operatorname{ord}_n(a) = \phi(n)$. Its powers then reach every number coprime to $n$.
@@ -35,39 +67,35 @@ $$
 
 2 isn't, because $2^3 \equiv 1 \pmod 7$ cuts it short. The other primitive root of 7 is 5.
 
-## The whole picture
+<CodeTabs>
 
-This table shows the powers of every base at once. Three things stand out:
-
-- Every sequence ends in 1.
-- The length of each sequence divides $\phi(n)$.
-- A few rows use the full length. Those are the primitive roots. For 19, they are 2, 3, 10, 13, 14 and 15.
-
-<PowersTable />
-
-If $a$ is a primitive root of a prime $p$, then $a^1, a^2, \dots, a^{p-1}$ are all distinct modulo $p$, and they cover each of $1, \dots, p - 1$ exactly once. The next lessons rely on this.
-
-## In Python
-
-```python
-from math import gcd
-
-def order(a, n):
-    if gcd(a, n) != 1:
-        return None
-    k, v = 1, a % n
-    while v != 1:
-        v = v * a % n
-        k += 1
-    return k
-
-print(order(3, 16))  # 4
-print([a for a in range(1, 19) if order(a, 19) == 18])  # [2, 3, 10, 13, 14, 15]
+```matlab
+mod(3 .^ (1:6), 7)    % 3 2 6 4 5 1, every non-zero value
+mod(2 .^ (1:6), 7)    % 2 4 1 2 4 1, a cycle of only 3
 ```
 
-## In machine learning
+```python
+print([pow(3, k, 7) for k in range(1, 7)])  # [3, 2, 6, 4, 5, 1]
+print([pow(2, k, 7) for k in range(1, 7)])  # [2, 4, 1, 2, 4, 1]
+```
 
-Training uses random numbers everywhere: initial weights, data shuffling, dropout. These come from generators, which are deterministic cycles like the ones on the ring above. A simple Lehmer generator is a power sequence modulo a prime, and a primitive root gives it the longest possible period:
+</CodeTabs>
+
+That long cycle is how computers fake randomness, and machine learning runs on fake randomness: the starting weights of a network, the order the training examples are shuffled into, and the neurons that **dropout** switches off at random all come from a random number generator. The simplest kind, a **Lehmer generator**, is exactly this power sequence: it keeps multiplying by $a$ modulo a prime. Choose a primitive root for $a$ and the numbers run through every value before they repeat, the longest period possible:
+
+<CodeTabs>
+
+```matlab
+x = 1;  seq = zeros(1, 7);
+for t = 1:7
+    x = mod(3 * x, 7);    % a = 3 is a primitive root of 7
+    seq(t) = x;
+end
+seq
+
+seq =
+     3     2     6     4     5     1     3
+```
 
 ```python
 def lehmer(seed, a=3, p=7):
@@ -80,7 +108,21 @@ g = lehmer(1)
 print([next(g) for _ in range(7)])  # [3, 2, 6, 4, 5, 1, 3]
 ```
 
-Modern libraries use much larger generators, but the idea of a seed is the same. A fixed start gives the same sequence, and that's what makes an experiment reproducible:
+</CodeTabs>
+
+Real libraries use far larger generators, but the idea of a **seed**, the starting value, is the same. The same seed always produces the same "random" numbers, which is what makes a training run repeatable. It's also a trap: some models swing a lot from one seed to the next, so a result reported from a single lucky seed may not hold up. Careful research reports several.
+
+<CodeTabs>
+
+```matlab
+rng(42);  first = randperm(5);
+rng(42);  second = randperm(5);
+isequal(first, second)
+
+ans =
+  logical
+   1
+```
 
 ```python
 import numpy as np
@@ -91,7 +133,52 @@ second = np.random.default_rng(42).permutation(5).tolist()
 print(first == second)  # True
 ```
 
-Reporting a result from only one seed is a known trap in ML research, because some models vary a lot from run to run.
+</CodeTabs>
+
+## The whole picture
+
+This table shows the powers of every base at once. Three things stand out:
+
+- Every sequence ends in 1.
+- The length of each sequence divides $\phi(n)$.
+- A few rows use the full length. Those are the primitive roots. For 19, they are 2, 3, 10, 13, 14 and 15.
+
+<PowersTable />
+
+<CodeTabs>
+
+```matlab
+n = 19;  found = [];
+for a = 1:n-1
+    v = 1;  seen = zeros(1, n - 1);
+    for k = 1:n-1
+        v = mod(v * a, n);    % reduce every step: a.^(1:18) is too big for a double
+        seen(k) = v;
+    end
+    if numel(unique(seen)) == n - 1    % the powers hit every value
+        found(end + 1) = a;
+    end
+end
+found
+
+found =
+     2     3    10    13    14    15
+```
+
+```python
+def order(a, n):
+    k, v = 1, a % n
+    while v != 1:
+        v = v * a % n
+        k += 1
+    return k
+
+print([a for a in range(1, 19) if order(a, 19) == 18])  # [2, 3, 10, 13, 14, 15]
+```
+
+</CodeTabs>
+
+If $a$ is a primitive root of a prime $p$, then $a^1, a^2, \dots, a^{p-1}$ are all distinct modulo $p$, and they cover each of $1, \dots, p - 1$ exactly once. The next lessons rely on this.
 
 ## Where you'll meet this
 

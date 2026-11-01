@@ -1,8 +1,9 @@
 import { renderLesson } from "./renderLesson";
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import path from "path";
-import { render } from "@testing-library/react";
+import { render, fireEvent, cleanup } from "@testing-library/react";
+import { CodeTabs } from "@/components/mdx/MdxComponents";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
@@ -39,16 +40,70 @@ describe("Computational Mathematics course", () => {
   });
 });
 
-describe("Python and machine learning sections", () => {
+describe("code and applications are woven into each lesson", () => {
   const dir = path.resolve(__dirname, "../content/computational-mathematics");
   const lessons = readdirSync(dir).filter((f) => f.endsWith(".mdx") && !f.includes("quiz"));
 
-  it.each(lessons)("%s keeps MATLAB as the main language", (file) => {
+  it.each(lessons)("%s shows every example in MATLAB and Python, with no separate sections", (file) => {
     const text = readFileSync(path.join(dir, file), "utf8");
-    expect(text).toContain("## In Python");
-    expect(text).toContain("```python");
-    expect(text).toContain("## In machine learning");
-    expect(text.indexOf("## In Python")).toBeGreaterThan(0);
+    // Python and machine learning live inside the explanations, not in sections of their own
+    expect(text).not.toMatch(/^## In Python/m);
+    expect(text).not.toMatch(/^## In machine learning/m);
+
+    // every example is one toggle holding exactly one MATLAB and one Python block
+    const tabs = [...text.matchAll(/<CodeTabs>([\s\S]*?)<\/CodeTabs>/g)].map((m) => m[1]);
+    expect(tabs.length).toBeGreaterThan(0);
+    for (const tab of tabs) {
+      expect([...tab.matchAll(/^```(\w+)/gm)].map((m) => m[1]).sort()).toEqual(["matlab", "python"]);
+    }
+    const outside = text.replace(/<CodeTabs>[\s\S]*?<\/CodeTabs>/g, "");
+    expect(outside).not.toMatch(/^```(matlab|python)/m);
+
+    // and each lesson ties its ideas to machine learning or AI somewhere in the prose
+    expect(outside).toMatch(/machine learning|neural network|language model|\bAI\b/i);
+  });
+});
+
+describe("CodeTabs", () => {
+  const block = (lang: string, code: string) => (
+    <figure>
+      <pre data-language={lang}>
+        <code>{code}</code>
+      </pre>
+    </figure>
+  );
+  const twoBlocks = () => (
+    <>
+      <CodeTabs>
+        {block("matlab", "A * B")}
+        {block("python", "A @ B")}
+      </CodeTabs>
+      <CodeTabs>
+        {block("matlab", "A'")}
+        {block("python", "A.T")}
+      </CodeTabs>
+    </>
+  );
+
+  beforeEach(() => localStorage.clear());
+
+  it("shows MATLAB first, and one click switches every block on the page", () => {
+    const { container, getAllByRole } = render(twoBlocks());
+    expect(container.textContent).toContain("A * B");
+    expect(container.textContent).not.toContain("A @ B");
+
+    fireEvent.click(getAllByRole("tab", { name: "Python" })[0]);
+    expect(container.textContent).toContain("A @ B");
+    expect(container.textContent).toContain("A.T");
+    expect(container.textContent).not.toContain("A * B");
+    expect(getAllByRole("tab", { name: "Python" })[1].getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("remembers the choice for the next page", () => {
+    render(twoBlocks()).getAllByRole("tab", { name: "Python" })[0].click();
+    cleanup();
+    const { container } = render(twoBlocks());
+    expect(container.textContent).toContain("A @ B");
   });
 });
 

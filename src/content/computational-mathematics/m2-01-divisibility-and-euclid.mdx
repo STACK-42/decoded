@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { EuclidTilesVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Divisibility and the Euclidean Algorithm
@@ -9,12 +9,25 @@ Every secure connection your browser opens rests on arithmetic with whole number
 
 A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, which means division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** of $a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
 
+<CodeTabs>
+
 ```matlab
-divisors(100)    % needs the Symbolic Math Toolbox
+n = 100;
+find(mod(n, 1:n) == 0)    % every d from 1 to n that leaves no remainder
+% divisors(100) gives the same, with the Symbolic Math Toolbox
 
 ans =
-     1  2  4  5  10  20  25  50  100
+     1     2     4     5    10    20    25    50   100
 ```
+
+```python
+n = 100
+print([d for d in range(1, n + 1) if n % d == 0])  # [1, 2, 4, 5, 10, 20, 25, 50, 100]
+```
+
+</CodeTabs>
+
+Divisibility decides real design choices in AI. A **vision transformer**, the kind of model behind many image recognisers, cuts each picture into square patches and reads them like words in a sentence. The patch size has to divide the image size exactly, or the last row and column of patches would hang off the edge. The standard 224-pixel image with 16-pixel patches works, because $16 \mid 224$: it gives $14 \times 14 = 196$ patches.
 
 ## The division algorithm
 
@@ -28,6 +41,35 @@ Here $\lfloor x \rfloor$ means the largest integer not greater than $x$. The rem
 
 - $11 = 1 \cdot 7 + 4$, so $r = 4$
 - $-11 = (-2) \cdot 7 + 3$, so $r = 3$
+
+<CodeTabs>
+
+```matlab
+q = floor(-11 / 7)    % -2
+r = mod(-11, 7)       % 3
+```
+
+```python
+# divmod returns the quotient and the remainder together
+print(divmod(-11, 7))  # (-2, 3)
+```
+
+</CodeTabs>
+
+Every training loop does this division. A model learns from small **batches** of examples at a time, so splitting 1000 examples into batches of 32 gives a quotient and a remainder: 31 full batches, and a short final batch of 8. That leftover batch is why PyTorch has a `drop_last` option to throw it away, since an unusually small batch makes for a noisy training step.
+
+<CodeTabs>
+
+```matlab
+full_batches = floor(1000 / 32)   % 31
+leftover = mod(1000, 32)          % 8
+```
+
+```python
+print(divmod(1000, 32))  # (31, 8)
+```
+
+</CodeTabs>
 
 ## Greatest common divisor
 
@@ -57,27 +99,21 @@ $$
 
 So $\gcd(1281, 243) = 3$. MATLAB's `gcd` does this for you, and it also works entry by entry on vectors:
 
+<CodeTabs>
+
 ```matlab
 gcd(65, 70)                                % 5
 gcd([250 1050 6022], [180 1150 5622])      % 10  50  2
 ```
 
-The Algorithm Design course writes the same algorithm in Java and [steps through it](/courses/algorithm-design-and-analysis/euclid-gcd), if you'd like to see it run as code.
-
-## In Python
-
 ```python
 import math
 import numpy as np
 
-print(math.gcd(1281, 243))  # 3
+print(math.gcd(65, 70))  # 5
 print(np.gcd([250, 1050, 6022], [180, 1150, 5622]).tolist())  # [10, 50, 2]
-print(divmod(-11, 7))  # (-2, 3)
-```
 
-The whole algorithm fits in three lines of pure Python:
-
-```python
+# The whole algorithm fits in three lines of plain Python
 def gcd(a, b):
     while b:
         a, b = b, a % b
@@ -86,19 +122,9 @@ def gcd(a, b):
 print(gcd(1281, 243))  # 3
 ```
 
-## In machine learning
+</CodeTabs>
 
-Number theory touches ML less directly than matrices do, but division with remainder comes up in everyday training code.
-
-**Batches.** Dividing a dataset into batches gives a quotient and a remainder. The quotient is the number of full batches, and the remainder is the short final batch, which PyTorch's `drop_last` option throws away:
-
-```python
-n_examples, batch_size = 1000, 32
-
-print(divmod(n_examples, batch_size))  # (31, 8)
-```
-
-**Image patches.** A vision transformer cuts images into square patches, so the image size has to be divisible by the patch size. A 224-pixel image with 16-pixel patches gives $14 \times 14$ patches.
+The Algorithm Design course writes the same algorithm in Java and [steps through it](/courses/algorithm-design-and-analysis/euclid-gcd), if you'd like to see it run as code.
 
 ## Where you'll meet this
 

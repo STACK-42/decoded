@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { ExtendedEuclidVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Modular Inverses
@@ -23,6 +23,25 @@ To find them, run [Euclid's algorithm](/courses/computational-mathematics/divisi
 
 For $\gcd(130, 61)$ this gives $130 \cdot 23 + 61 \cdot (-49) = 1$. Check it: $2990 - 2989 = 1$.
 
+<CodeTabs>
+
+```matlab
+[g, x, y] = gcd(130, 61)    % three outputs: g = 1, x = 23, y = -49
+```
+
+```python
+def extended_gcd(a, b):
+    """Returns g, x, y with a*x + b*y = g."""
+    if b == 0:
+        return a, 1, 0
+    g, x, y = extended_gcd(b, a % b)  # run Euclid down...
+    return g, y, x - (a // b) * y     # ...and climb back up
+
+print(extended_gcd(130, 61))  # (1, 23, -49)
+```
+
+</CodeTabs>
+
 ## From there to the inverse
 
 To solve $17x \equiv 1 \pmod{61}$, find $x$ and $y$ with $17x + 61y = 1$. The algorithm gives:
@@ -35,37 +54,41 @@ Now look at this equation modulo 61. The second term is a multiple of 61, so it 
 
 MATLAB returns the coefficients if you ask for three outputs from `gcd`:
 
+<CodeTabs>
+
 ```matlab
 [g, x, y] = gcd(17, 61)    % g = 1, x = 18, y = -5
 inverse = mod(x, 61)       % 18
 ```
 
+```python
+# Since Python 3.8, pow finds the inverse directly with an exponent of -1
+print(pow(17, -1, 61))  # 18
+```
+
+</CodeTabs>
+
 <Callout tone="sky" label="Negative answers are fine">
 If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 18$, the same inverse is $13$.
 </Callout>
 
-## In Python
+Division modulo a prime protects some of the most sensitive training in machine learning. **Federated learning** trains one model across thousands of phones without collecting anyone's data: each phone sends only an update. **Secure aggregation** goes further, so the server learns only the sum of everyone's updates and not any single one. Those protocols must survive phones dropping out midway, and they use **Shamir secret sharing** to do it.
 
-Since Python 3.8, `pow` can compute inverses directly with an exponent of -1. The extended algorithm is also a neat recursive function:
+The idea fits in a line. Hide the secret as the value at $x = 0$ of a line, say $f(x) = 23 + 17x$ modulo 97, and hand out points on it as shares. One point says nothing, since infinitely many lines pass through it, but any two pin the line down and give back $f(0)$. Drawing that line means dividing by $x_2 - x_1$, which modulo a prime means multiplying by its inverse:
 
-```python
-print(pow(17, -1, 61))  # 18
+<CodeTabs>
 
-def extended_gcd(a, b):
-    if b == 0:
-        return a, 1, 0
-    g, x, y = extended_gcd(b, a % b)
-    return g, y, x - (a // b) * y
+```matlab
+p = 97;
+x1 = 1;  y1 = 40;     % two shares: points on f(x) = 23 + 17x mod 97
+x2 = 2;  y2 = 57;
 
-print(extended_gcd(130, 61))  # (1, 23, -49)
-print(extended_gcd(17, 61))  # (1, 18, -5)
+[~, d] = gcd(x2 - x1, p);                   % d is the inverse of x2 - x1
+secret = mod((y1*x2 - y2*x1) * d, p)
+
+secret =
+    23
 ```
-
-## In machine learning
-
-Federated learning trains a model across many phones without collecting their data. Secure aggregation goes further, so that the server only learns the sum of everyone's updates.
-
-Those protocols must survive phones dropping out midway, and they use Shamir secret sharing for it. A secret is split into shares, and any large enough group of them can rebuild it. Rebuilding needs division modulo a prime, which means modular inverses:
 
 ```python
 p = 97
@@ -75,7 +98,7 @@ secret = (y1 * x2 - y2 * x1) * pow(x2 - x1, -1, p) % p
 print(secret)  # 23
 ```
 
-Here two shares recover $f(0)$, the secret, by drawing a line through the two points. A single share reveals nothing about it.
+</CodeTabs>
 
 ## Where you'll meet this
 

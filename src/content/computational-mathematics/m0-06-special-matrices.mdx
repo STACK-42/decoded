@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SpecialMatrixExplorer } from "@/components/mdx/MatrixVisualizers";
 
 # Some Special Matrices
@@ -9,6 +9,8 @@ Most zeros in a matrix mean less work. A matrix with a known pattern of zeros ca
 
 `ones` and `zeros` fill a matrix with one value, and `eye` builds the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix):
 
+<CodeTabs>
+
 ```matlab
 ones(2)         % 2-by-2 of all ones
 ones(3, 5)      % 3-by-5 of all ones
@@ -16,6 +18,45 @@ zeros(3, 2)     % 3-by-2 of all zeros
 eye(3)          % 3-by-3 identity
 eye(3, 2)       % 3-by-2 with ones on the main diagonal
 ```
+
+```python
+import numpy as np
+
+# The names match MATLAB's, but the size is one tuple: ones((3, 5)), not ones(3, 5)
+np.ones((2, 2))
+np.ones((3, 5))
+np.zeros((3, 2))
+np.eye(3)
+np.eye(3, 2)
+
+print(np.zeros((1, 2)).tolist())  # [[0.0, 0.0]]
+```
+
+</CodeTabs>
+
+The identity matrix has a neat use in machine learning. A classifier can't train on labels like "cat", "dog" and "bird" directly, so each label becomes a **one-hot** vector: all zeros except a single 1 in that class's position. Those are exactly the rows of an identity matrix, so indexing into `eye` encodes a whole list of labels in one line:
+
+<CodeTabs>
+
+```matlab
+labels = [3 1 2];      % bird, cat, dog
+I = eye(3);
+I(labels, :)
+
+ans =
+     0     0     1
+     1     0     0
+     0     1     0
+```
+
+```python
+import numpy as np
+
+labels = [2, 0, 1]  # counting from 0 in Python
+print(np.eye(3, dtype=int)[labels].tolist())  # [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+```
+
+</CodeTabs>
 
 ## Triangular and diagonal matrices
 
@@ -29,6 +70,8 @@ Slide $k$ and switch between the commands:
 
 For example, `triu(ones(4), -1)` keeps the main diagonal and one diagonal below it:
 
+<CodeTabs>
+
 ```matlab
 triu(ones(4), -1)
 
@@ -38,9 +81,44 @@ triu(ones(4), -1)
   0  0  1  1
 ```
 
+```python
+import numpy as np
+
+print(np.triu(np.ones((4, 4), dtype=int), -1).tolist())  # [[1, 1, 1, 1], [1, 1, 1, 1], [0, 1, 1, 1], [0, 0, 1, 1]]
+print(np.tril(np.ones((2, 2), dtype=int)).tolist())  # [[1, 0], [1, 1]]
+```
+
+</CodeTabs>
+
+A lower triangle is how a chatbot is kept from cheating. While a GPT-style model learns to predict the next word, it reads a whole sentence at once, so it could simply look ahead at the answer. A **causal mask** stops that: row $i$ says which positions word $i$ may look at, and the lower triangle allows only itself and the words before it.
+
+<CodeTabs>
+
+```matlab
+mask = tril(ones(3))   % word 1 sees 1; word 2 sees 1-2; word 3 sees 1-3
+
+mask =
+     1     0     0
+     1     1     0
+     1     1     1
+```
+
+```python
+import numpy as np
+
+# PyTorch builds the same mask with torch.tril
+print(np.tril(np.ones((3, 3), dtype=int)).tolist())  # [[1, 0, 0], [1, 1, 0], [1, 1, 1]]
+```
+
+</CodeTabs>
+
+Triangles also tidy up charts. A correlation matrix is symmetric, so a heatmap of one shows every number twice, and plotting code usually hides one triangle with `triu`.
+
 ## `diag` does two jobs
 
 `diag` depends on what you give it. A matrix returns its diagonal as a vector, and a vector builds a diagonal matrix. Calling it twice therefore wipes out everything off the diagonal:
+
+<CodeTabs>
 
 ```matlab
 A = magic(4);
@@ -49,43 +127,19 @@ diag(A, -1)     % the diagonal just below the main one
 diag(diag(A))   % a 4-by-4 diagonal matrix
 ```
 
-## In Python
-
-The names mostly match MATLAB's, with the size as a tuple:
-
 ```python
 import numpy as np
 
 A = np.array([[16, 2, 3, 13], [5, 11, 10, 8], [9, 7, 6, 12], [4, 14, 15, 1]])
 
 print(np.diag(A).tolist())  # [16, 11, 6, 1]
-print(np.triu(np.ones((3, 3), dtype=int), -1).tolist())  # [[1, 1, 1], [1, 1, 1], [0, 1, 1]]
-print(np.tril(np.ones((2, 2), dtype=int)).tolist())  # [[1, 0], [1, 1]]
-print(np.zeros((1, 2)).tolist())  # [[0.0, 0.0]]
+print(np.diag(A, -1).tolist())  # [5, 7, 15]
+print(np.diag(np.diag(A))[1].tolist())  # [0, 11, 0, 0]
 ```
 
-## In machine learning
+</CodeTabs>
 
-**Masks.** A transformer decoder uses a triangular matrix to stop each token looking at later tokens. Position $i$ may only see positions up to $i$:
-
-```python
-import numpy as np
-
-print(np.tril(np.ones((3, 3), dtype=int)).tolist())  # [[1, 0, 0], [1, 1, 0], [1, 1, 1]]
-```
-
-**One-hot labels.** Each row of an identity matrix is a one-hot vector, so indexing into it encodes a whole list of classes:
-
-```python
-import numpy as np
-
-labels = [2, 0, 1]
-print(np.eye(3, dtype=int)[labels].tolist())  # [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
-```
-
-**Correlation heatmaps.** A pandas correlation matrix is symmetric, so plots often hide one triangle with `np.triu` to avoid showing everything twice.
-
-**Diagonal covariance.** Variational autoencoders commonly assume a diagonal covariance, which reduces $n^2$ numbers to $n$.
+Diagonal matrices are a favourite shortcut in machine learning, because $n$ numbers stand in for $n^2$. **Variational autoencoders**, a kind of generative model, describe each input with a covariance matrix and usually assume it's diagonal: every feature varies on its own, and a 1000-dimensional model stores 1000 numbers instead of a million.
 
 ## Where you'll meet this
 

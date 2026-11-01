@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { ModClock } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Modular Arithmetic
@@ -17,6 +17,8 @@ So $11 \bmod 7 = 4$ and $-11 \bmod 7 = 3$. Picture a clock with $n$ positions: p
 
 <ModClock />
 
+<CodeTabs>
+
 ```matlab
 mod(-28, 81)              % 53
 mod(7653, 915)            % 333
@@ -24,9 +26,51 @@ mod([-4 -1 7 9], 3)       % 2  2  1  0
 mod(1:10, 5)              % 1 2 3 4 0 1 2 3 4 0
 ```
 
+```python
+import numpy as np
+import pandas as pd
+
+# Python's % matches MATLAB's mod, negative numbers included
+print(-28 % 81)  # 53
+print(7653 % 915)  # 333
+print(np.mod([-4, -1, 7, 9], 3).tolist())  # [2, 2, 1, 0]
+print((np.arange(1, 11) % 5).tolist())  # [1, 2, 3, 4, 0, 1, 2, 3, 4, 0]
+
+# pandas columns work the same way, e.g. wrapping hours past midnight
+print((pd.Series([23, 24, 25]) % 24).tolist())  # [23, 0, 1]
+```
+
+</CodeTabs>
+
 <Callout tone="orange" label="A trap in other languages">
 In C, Java and JavaScript, the `%` operator keeps the sign of the first number, so `-11 % 7` gives `-4`. MATLAB's `mod` and Python's `%` give `3`. This difference is a common source of bugs.
 </Callout>
+
+Mod is how machine learning copes with too many categories. A recommendation model can't keep a separate column for each of a billion user IDs or every word ever typed. The **hashing trick** turns each one into a number with a hash function and keeps only that number mod the number of buckets, so any ID lands in one of, say, 1000 columns. Here's a simple string hash, which multiplies the running total by 31 and adds each character's code:
+
+<CodeTabs>
+
+```matlab
+s = 'user_42';
+h = sum(double(s) .* 31 .^ (numel(s)-1:-1:0));
+bucket = mod(h, 1000)
+
+bucket = 794
+```
+
+```python
+s = "user_42"
+h = sum(ord(c) * 31 ** (len(s) - 1 - i) for i, c in enumerate(s))
+print(h % 1000)  # 794
+
+# Real systems use a fast stable hash such as zlib.crc32 or MurmurHash.
+# Avoid Python's built-in hash() for this: it gives strings different values
+# each time the program runs, so a model trained with it breaks on the next run.
+```
+
+</CodeTabs>
+
+Two different IDs sometimes share a bucket, and the model just learns to live with it. It's the same trade a [hash table](/courses/advanced-algorithms/hashing) makes.
 
 ## Congruence
 
@@ -38,6 +82,34 @@ Congruence behaves much like equality:
 2. $a \equiv a$, for any $n$.
 3. If $a \equiv b$ then $b \equiv a$.
 4. If $a \equiv b$ and $b \equiv c$, then $a \equiv c$.
+
+The clock picture solves a real problem in machine learning. Give a model the hour of the day as a plain number and it thinks 23:00 and 00:00 are as far apart as possible, when they're an hour apart. The fix is to place each hour on a circle, as the clock above does, and feed the model the point's two coordinates. Hours that are close on the clock are then close in the data:
+
+<CodeTabs>
+
+```matlab
+hours = [23 0 12];
+angle = 2 * pi * hours / 24;
+P = [sin(angle') cos(angle')];
+
+norm(P(1,:) - P(2,:))     % 23:00 to 00:00, about 0.26
+norm(P(1,:) - P(3,:))     % 23:00 to 12:00, about 1.98
+```
+
+```python
+import numpy as np
+
+hours = np.array([23, 0, 12])
+angle = 2 * np.pi * hours / 24
+P = np.column_stack([np.sin(angle), np.cos(angle)])
+
+print(round(np.linalg.norm(P[0] - P[1]), 2))  # 0.26
+print(round(np.linalg.norm(P[0] - P[2]), 2))  # 1.98
+```
+
+</CodeTabs>
+
+Transformers use a related idea to tell a model where each word sits in a sentence. Their **positional encodings** are sines and cosines at many different speeds, a whole set of clocks, so every position gets its own pattern of angles.
 
 ## You can reduce at any time
 
@@ -65,50 +137,26 @@ $$
 
 [Fast Exponentiation](/courses/computational-mathematics/fast-exponentiation) turns this trick into an algorithm that handles exponents hundreds of digits long.
 
+<CodeTabs>
+
+```matlab
+mod(mod(11, 8) * mod(15, 8), 8)    % 5, reducing first
+mod(11 * 15, 8)                    % 5, the same
+```
+
+```python
+print((11 % 8) * (15 % 8) % 8)  # 5
+print(11 * 15 % 8)  # 5
+
+# Python's three-argument pow reduces as it goes
+print(pow(10, 7, 17))  # 5
+```
+
+</CodeTabs>
+
 ## Be careful when cancelling
 
 If $(a + b) \equiv (a + c) \pmod n$, you can always cancel to get $b \equiv c$. For multiplication, you can only cancel when $a$ is [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$. For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both are 6, yet $3 \not\equiv 7 \pmod 8$.
-
-## In Python
-
-Python's `%` matches MATLAB's `mod`, including for negative numbers, and NumPy and pandas work the same way:
-
-```python
-import numpy as np
-import pandas as pd
-
-print(-11 % 7)  # 3
-print(np.mod([-4, -1, 7, 9], 3).tolist())  # [2, 2, 1, 0]
-print((pd.Series([23, 24, 25]) % 24).tolist())  # [23, 0, 1]
-```
-
-## In machine learning
-
-**The hashing trick.** A model can't have a separate column for every possible user ID or word. Feature hashing maps each one to a fixed number of buckets, using a hash modulo the number of buckets:
-
-```python
-import zlib
-
-bucket = zlib.crc32(b"user_42") % 1000
-
-print(0 <= bucket < 1000)  # True
-```
-
-Use a stable hash like this one. Python's built-in `hash` gives strings different values each time the program runs, so a model trained with it would break on the next run.
-
-**Cyclic features.** Hour 23 and hour 0 are neighbours on a clock, yet they look far apart as plain numbers. The usual fix places them on a circle, which is the picture from the clock above:
-
-```python
-import numpy as np
-
-hours = np.array([23, 0])
-angle = 2 * np.pi * hours / 24
-points = np.column_stack([np.sin(angle), np.cos(angle)])
-
-print(round(np.linalg.norm(points[0] - points[1]), 2))  # 0.26
-```
-
-Transformer position encodings use a similar set of sine and cosine waves.
 
 ## Where you'll meet this
 

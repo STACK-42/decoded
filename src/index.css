@@ -209,6 +209,24 @@
   .prose-reading figure[data-rehype-pretty-code-figure] pre { margin: 0; }
   .prose-reading .code-block { position: relative; }
   .prose-reading .code-block pre { padding-right: 4.5rem; }
+  /* CodeTabs: a language toggle sitting on top of the code block */
+  .prose-reading .code-tabs { margin: 1.5rem 0; }
+  .prose-reading .code-tabs figure[data-rehype-pretty-code-figure] { margin: 0; }
+  .prose-reading .code-tabs pre { border-top-left-radius: 0; border-top-right-radius: 0; }
+  .prose-reading .code-tabs-bar {
+    display: flex; gap: 4px; padding: 6px 8px 0;
+    background: hsl(240 24% 5%); border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid hsl(240 10% 100% / 0.08);
+  }
+  .prose-reading .code-tabs-bar button {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 6px 10px 7px; color: hsl(240 20% 93% / 0.5);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s;
+  }
+  .prose-reading .code-tabs-bar button:hover { color: hsl(240 20% 93% / 0.85); }
+  .prose-reading .code-tabs-bar button.is-active { color: hsl(240 20% 93%); border-bottom-color: hsl(var(--orange)); }
+  .dark .prose-reading .code-tabs-bar { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-bottom-color: hsl(var(--border)); }
+  .dark .prose-reading .code-tabs pre { border-top: 0; }
   /* Lift code blocks off the page background in dark mode */
   .dark .prose-reading pre { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
   .prose-reading ul, .prose-reading ol { margin: 0 0 1.25rem 1.5rem; }

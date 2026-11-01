@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { CipherWheel, ShiftBruteForce } from "@/components/mdx/CipherVisualizers";
 
 # Caesar and Shift Ciphers
@@ -8,6 +8,8 @@ Earlier ciphers transformed each letter of the plaintext into a different letter
 ## Letters as numbers
 
 First, give each letter a number, with $A = 0, B = 1, \dots, Z = 25$. All the operations happen on these numbers, [modulo 26](/courses/computational-mathematics/modular-arithmetic#the-mod-operation).
+
+Language models start the same way. A neural network can only do arithmetic, so before a chatbot reads your message, a **tokenizer** turns the text into a list of numbers, one per piece of text. The simplest, a character-level tokenizer, does exactly what this cipher does and gives each symbol an index. Modern ones give common word pieces their own numbers too, so "the" or "ing" is a single token.
 
 ## The Caesar cipher
 
@@ -33,19 +35,76 @@ Turn the wheel to change the key. The inner ring gives the ciphertext letter und
 
 For example, with $k = 3$, IBM becomes LEP. With $k = 4$, NIST becomes RMWX. With $k = 7$, ENCRYPTION becomes LUJYFWAPVU.
 
+<CodeTabs>
+
+```matlab
+shift = @(t, k) char(mod(double(t) - 65 + k, 26) + 65);   % 'A' is character 65
+
+shift('IBM', 3)           % LEP
+shift('NIST', 4)          % RMWX
+shift('ENCRYPTION', 7)    % LUJYFWAPVU
+```
+
+```python
+import string
+
+def shift(text, k):
+    # str.translate applies a whole substitution table in one call
+    letters = string.ascii_uppercase
+    return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
+
+print(shift("IBM", 3))  # LEP
+print(shift("NIST", 4))  # RMWX
+print(shift("ENCRYPTION", 7))  # LUJYFWAPVU
+```
+
+</CodeTabs>
+
 ## How to break it
 
 A shift cipher has only 25 useful keys, so an attacker can try them all. This is a **brute-force attack**. Try it on this ciphertext:
 
 <ShiftBruteForce />
 
+You spotted the readable line because you know English. To automate that, a program gives each candidate a score from a statistical model of the language, how likely those letters are in English, and keeps the best. That's the idea behind an **n-gram language model**, the ancestor of today's large language models, and training a language model means maximising exactly this kind of score over a mountain of text:
+
+<CodeTabs>
+
+```matlab
+f = 0.001 * ones(1, 26);                    % rare letters get a small chance
+f(double('ETAOHLRK') - 64) = [0.127 0.091 0.082 0.075 0.061 0.040 0.060 0.008];
+score = @(t) sum(log(f(double(t) - 64)));   % log-probability of the text
+
+score('HELLO') > score('KHOOR')             % true: HELLO looks like English
+```
+
+```python
+import math
+
+freq = {"E": 0.127, "T": 0.091, "A": 0.082, "O": 0.075, "H": 0.061, "L": 0.040, "R": 0.060, "K": 0.008}
+
+def score(text):
+    return sum(math.log(freq.get(ch, 0.001)) for ch in text)  # log-probability of the text
+
+print(score("HELLO") > score("KHOOR"))  # True
+```
+
+</CodeTabs>
+
+The logs turn a product of tiny probabilities into a sum, which avoids numbers too small for a computer to store. Language models report their scores in logs for the same reason.
+
 <Callout tone="sky" label="Another weakness">
 Even without trying keys, letter frequencies give a shift cipher away. E is the most common letter in English, so the most common ciphertext letter is probably E shifted by $k$.
 </Callout>
 
-## In Python
+<CodeTabs>
 
-`str.translate` applies a whole substitution in one call, and pandas can count letters for a frequency attack:
+```matlab
+c = shift('EEEEATTN', 3);
+counts = accumarray(double(c)' - 64, 1, [26 1]);   % how often each letter appears
+[~, i] = max(counts);
+char(64 + i)          % H: E shifted by 3, so the key is 3
+```
 
 ```python
 import string
@@ -55,33 +114,13 @@ def shift(text, k):
     letters = string.ascii_uppercase
     return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
 
-print(shift("IBM", 3))  # LEP
-print(shift("ENCRYPTION", 7))  # LUJYFWAPVU
-
 counts = pd.Series(list(shift("EEEEATTN", 3))).value_counts()
 print(counts.idxmax())  # H
 ```
 
+</CodeTabs>
+
 The most common ciphertext letter is H, and H is E shifted by 3, so the frequency count has given away the key.
-
-## In machine learning
-
-**Letters as numbers.** Mapping A to 0 is what a character-level tokenizer does. Models can only process numbers, so each symbol gets an index first.
-
-**Picking the right key is classification.** You spotted the readable line in the brute-force list because you know English. To automate that, score each candidate against a statistical model of the language, then keep the best one. This is the same idea as an n-gram language model, the ancestor of today's large language models:
-
-```python
-import math
-
-freq = {"E": 0.127, "T": 0.091, "A": 0.082, "O": 0.075, "H": 0.061, "L": 0.040, "R": 0.060, "K": 0.008}
-
-def score(text):
-    return sum(math.log(freq.get(ch, 0.001)) for ch in text)
-
-print(score("HELLO") > score("KHOOR"))  # True
-```
-
-The logs turn a product of probabilities into a sum, which avoids numbers too small to store. Training a language model maximises this same kind of score.
 
 ## Where you'll meet this
 

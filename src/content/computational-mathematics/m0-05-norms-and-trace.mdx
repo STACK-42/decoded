@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { NormVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Matrix Norms and the Trace
@@ -41,21 +41,15 @@ All three use the same matrix below, and they don't agree. There's no single tru
 
 <NormVisualizer />
 
-<Callout tone="orange" label="Watch the name in MATLAB">
-Many books call this the Frobenius norm, and MATLAB does too: use `norm(A, 'fro')`. Plain `norm(A)` computes something else, the 2-norm, which is the largest singular value of $A$.
-</Callout>
+<CodeTabs>
 
-## The trace
+```matlab
+B = [5 -4 2; -1 2 3; -2 1 0];
 
-The **trace** of a square matrix is the sum of its main diagonal:
-
-$$
-\operatorname{tr}(A) = \sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}
-$$
-
-For `magic(4)`, `trace` returns $16 + 11 + 6 + 1 = 34$, which is also what every row and column of that matrix adds up to.
-
-## In Python
+norm(B, 1)       % 8
+norm(B, Inf)     % 11
+norm(B, 'fro')   % 8, the Euclidean norm
+```
 
 ```python
 import numpy as np
@@ -65,28 +59,40 @@ B = np.array([[5, -4, 2], [-1, 2, 3], [-2, 1, 0]])
 print(np.linalg.norm(B, 1))  # 8.0
 print(np.linalg.norm(B, np.inf))  # 11.0
 print(np.linalg.norm(B, "fro"))  # 8.0
-print(np.trace(B))  # 7
-```
 
-The defaults differ between the two languages. With no second argument, `np.linalg.norm(B)` is the Frobenius norm, while MATLAB's `norm(B)` is the 2-norm.
+# The defaults differ: with no second argument, np.linalg.norm(B) is the
+# Euclidean (Frobenius) norm, while MATLAB's norm(B) is the 2-norm.
 
-pandas makes the definitions easy to read, since each one is a sum and a max:
-
-```python
+# In pandas each definition reads as a sum and a max:
 import pandas as pd
 
-df = pd.DataFrame([[5, -4, 2], [-1, 2, 3], [-2, 1, 0]])
-
+df = pd.DataFrame(B)
 print(df.abs().sum(axis=0).max())  # 8
 print(df.abs().sum(axis=1).max())  # 11
 ```
 
-## In machine learning
+</CodeTabs>
 
-Norms show up in training in several ways:
+<Callout tone="orange" label="Watch the name in MATLAB">
+Many books call this the Frobenius norm, and MATLAB does too: use `norm(A, 'fro')`. Plain `norm(A)` computes something else, the 2-norm, which is the largest singular value of $A$.
+</Callout>
 
-- **Regularization.** Weight decay adds the squared norm of the weights to the loss, which favours small weights. Lasso adds the sum of absolute values, which tends to push weights to exactly zero. Note that this "L1 penalty" sums all the entries, so it isn't the matrix 1-norm from this lesson.
-- **Gradient clipping.** If the norm of the gradient gets too large, it's scaled back down. This keeps training stable, especially for RNNs and transformers.
+Norms are how machine learning keeps a model under control while it trains:
+
+- **Regularization.** A model with huge weights tends to memorise its training data instead of learning the pattern. **Weight decay** adds the squared Euclidean norm of the weights to the loss, so training pays a price for large weights. **Lasso** adds the sum of absolute values instead, which tends to push unhelpful weights to exactly zero. Note that this "L1 penalty" sums all the entries, so it isn't the matrix 1-norm above.
+- **Gradient clipping.** Now and then a gradient comes out enormous, and one step that size would wreck the weights learned so far. So if the gradient's norm passes a limit, the gradient is scaled back down to that length, keeping its direction. Large language models are trained with this switched on.
+
+<CodeTabs>
+
+```matlab
+g = [30 40];
+limit = 5;
+
+clipped = g * min(1, limit / norm(g))
+
+clipped =
+     3     4
+```
 
 ```python
 import numpy as np
@@ -98,7 +104,37 @@ clipped = g * min(1.0, limit / np.linalg.norm(g))
 print(clipped.tolist())  # [3.0, 4.0]
 ```
 
-The trace has a job too. The trace of a covariance matrix is the total variance of the data, which is what PCA divides up when it reports the share of variance each component explains.
+</CodeTabs>
+
+## The trace
+
+The **trace** of a square matrix is the sum of its main diagonal:
+
+$$
+\operatorname{tr}(A) = \sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}
+$$
+
+For `magic(4)`, `trace` returns $16 + 11 + 6 + 1 = 34$, which is also what every row and column of that matrix adds up to.
+
+<CodeTabs>
+
+```matlab
+trace(magic(4))
+
+ans =
+    34
+```
+
+```python
+import numpy as np
+
+M = np.array([[16, 2, 3, 13], [5, 11, 10, 8], [9, 7, 6, 12], [4, 14, 15, 1]])
+print(np.trace(M))  # 34
+```
+
+</CodeTabs>
+
+The trace has a job in data science too. The diagonal of a covariance matrix holds the variance of each feature, so its trace is the **total variance** of the data. PCA divides that total up when it reports how much of the variation each of its components explains, and that's how you decide how many dimensions you can safely throw away.
 
 ## Where you'll meet this
 

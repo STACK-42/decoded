@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { WilsonVisualizer, TotientGrid } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Primality Tests and Euler's Totient
@@ -17,9 +17,20 @@ The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has 
 
 <WilsonVisualizer />
 
+<CodeTabs>
+
 ```matlab
 mod(factorial(13 - 1), 13) - 13    % -1, so 13 is prime
 ```
+
+```python
+import math
+
+# Python's integers never overflow, so even large factorials stay exact
+print(math.factorial(13 - 1) % 13 - 13)  # -1
+```
+
+</CodeTabs>
 
 <Callout tone="orange" label="Beautiful, and useless in practice">
 Wilson's theorem is an exact test, but you'd have to compute a factorial. MATLAB's `factorial` is only exact up to $21!$ because it uses doubles, and even exact arithmetic would take far too long for large $n$.
@@ -41,9 +52,27 @@ $$
 5^{38} = (5^{10})^3 \cdot 5^8 \equiv 1^3 \cdot (5^2)^4 \equiv 3^4 = 81 \equiv 4 \pmod{11}
 $$
 
-`powermod(2, 16, 17)` in MATLAB returns 1, as the theorem predicts.
+<CodeTabs>
 
-So if $a^{n-1} \not\equiv 1$, then $n$ is definitely composite. The reverse doesn't always hold: rare composites called Carmichael numbers, such as 561, pass this test for every coprime $a$. Real systems use the stronger Miller-Rabin test for that reason.
+```matlab
+powermod(7, 18, 19)     % 1, as the theorem predicts
+powermod(5, 38, 11)     % 4
+powermod(2, 560, 561)   % 1, yet 561 = 3 * 11 * 17
+% powermod needs the Symbolic Math Toolbox
+```
+
+```python
+# Python's three-argument pow is modular exponentiation, built in
+print(pow(7, 18, 19))  # 1
+print(pow(5, 38, 11))  # 4
+print(pow(2, 560, 561))  # 1
+```
+
+</CodeTabs>
+
+So if $a^{n-1} \not\equiv 1$, then $n$ is definitely composite. The reverse doesn't always hold: rare composites called Carmichael numbers, such as 561, pass this test for every coprime $a$, as the last line shows. Real systems use the stronger Miller-Rabin test for that reason.
+
+Miller-Rabin is a **randomised** test: it tries random bases, and a composite number slips through each round with a probability of at most 1 in 4. Forty rounds push the chance of a mistake below one in a trillion trillion, far less likely than a hardware fault, at a tiny fraction of the cost of a proof. Machine learning makes the same bargain. **Stochastic gradient descent** works out the gradient from a small random batch of examples instead of the whole dataset: the answer is slightly noisy, but it's thousands of times cheaper, and over many steps the noise averages out.
 
 ## Euler's totient function
 
@@ -63,6 +92,8 @@ So $\phi(23) = 22$, $\phi(81) = 81 \cdot \tfrac{2}{3} = 54$, and $\phi(100) = 10
 
 The direct count takes a few lines of MATLAB, using the fact that $\gcd$ is quick:
 
+<CodeTabs>
+
 ```matlab
 n = 1000;
 z = 0;
@@ -74,6 +105,21 @@ end
 fprintf('Euler Phi (n) = %1.0f\n', z)    % 400
 ```
 
+```python
+import math
+import numpy as np
+
+n = 1000
+print(sum(1 for i in range(1, n) if math.gcd(i, n) == 1))  # 400
+
+# NumPy's gcd works on a whole array at once, so no loop is needed
+print(int(np.sum(np.gcd(np.arange(1, n), n) == 1)))  # 400
+```
+
+</CodeTabs>
+
+The totient guards some of the most private data in machine learning. Hospitals or phones may want to train one shared model without anyone seeing their raw records. **Paillier encryption**, built on the same modular arithmetic as RSA, lets a server add numbers it can't read, so it can sum encrypted model updates from many clients and only ever see the total. Its security rests on keeping $\phi(n)$ secret, which is the same as keeping the prime factors of $n$ secret.
+
 ## The Euler-Fermat theorem
 
 Euler generalised Fermat's result to any modulus. If $\gcd(a, n) = 1$, then
@@ -84,30 +130,18 @@ $$
 
 With $a = 3$ and $n = 10$: $\phi(10) = 4$ and $3^4 = 81 \equiv 1$. With $a = 2$ and $n = 11$: $\phi(11) = 10$ and $2^{10} = 1024 \equiv 1$. When $n$ is prime, $\phi(n) = n - 1$, and you get Fermat's theorem back.
 
-## In Python
+<CodeTabs>
 
-Python's three-argument `pow` is modular exponentiation, and its integers don't overflow, so even Wilson's theorem runs exactly:
-
-```python
-import math
-import numpy as np
-
-print(pow(7, 18, 19))  # 1
-print(pow(5, 38, 11))  # 4
-print(math.factorial(12) % 13)  # 12
-print(pow(2, 560, 561))  # 1
-print(int(np.sum(np.gcd(np.arange(1, 1000), 1000) == 1)))  # 400
+```matlab
+mod(3^4, 10)      % 1
+mod(2^10, 11)     % 1
 ```
 
-The fourth line is the Carmichael number 561 passing Fermat's test despite being composite.
+```python
+print(pow(3, 4, 10), pow(2, 10, 11))  # 1 1
+```
 
-## In machine learning
-
-The link is privacy. Hospitals or phones may want to train a shared model without showing anyone their raw data.
-
-Paillier is a homomorphic encryption scheme, built on the same kind of modular arithmetic as RSA, that lets a server add numbers it can't read. So it can sum encrypted model updates from many clients and only ever see the total. Its security also depends on keeping the factors of $n$ secret, which is the same as keeping $\phi(n)$ secret.
-
-There's also a shared style of thinking. Miller-Rabin accepts a tiny chance of error in exchange for speed, in the same way that stochastic gradient descent uses a noisy estimate because it's far cheaper than the exact gradient.
+</CodeTabs>
 
 ## Where you'll meet this
 

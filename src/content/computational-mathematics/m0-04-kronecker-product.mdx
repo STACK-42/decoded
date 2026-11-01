@@ -1,4 +1,4 @@
-import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # The Kronecker Product
@@ -23,11 +23,51 @@ Watch the blocks appear one at a time:
 
 <KroneckerVisualizer />
 
+<CodeTabs>
+
+```matlab
+A = [1 -2; -1 0];
+B = [4 -3; 2 3];
+kron(A, B)
+
+ans =
+     4    -3    -8     6
+     2     3    -4    -6
+    -4     3     0     0
+    -2    -3     0     0
+```
+
+```python
+import numpy as np
+
+A = np.array([[1, -2], [-1, 0]])
+B = np.array([[4, -3], [2, 3]])
+print(np.kron(A, B).tolist())  # [[4, -3, -8, 6], [2, 3, -4, -6], [-4, 3, 0, 0], [-2, -3, 0, 0]]
+
+# Plain Python spells out all four loops: rows of A, rows of B, then their entries
+P, Q = [[1, 2]], [[0, 5], [6, 7]]
+print([[a * b for a in rp for b in rq] for rp in P for rq in Q])  # [[0, 5, 0, 10], [6, 7, 12, 14]]
+```
+
+</CodeTabs>
+
+The size grows fast, and machine learning puts that to work in reverse. Some optimizers need the curvature of the loss for every pair of weights, a matrix far too large to store, let alone invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
+
+$$
+(A \otimes B)^{-1} = A^{-1} \otimes B^{-1}
+$$
+
+so [inverting](/courses/computational-mathematics/determinants-and-inverses#the-inverse) two small matrices replaces inverting a huge one. **Gaussian processes**, which predict with an honest error bar around each prediction, use the same shortcut on grid-shaped data such as images or measurements over space and time, because their covariance matrix often factors this way.
+
 ## Order changes the pattern
 
 `kron(X, Y)` and `kron(Y, X)` have the same size and the same entries in a different arrangement. Using the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix) makes this easy to see. With $X = \begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}$ and `I = eye(2)`:
 
+<CodeTabs>
+
 ```matlab
+X = [1 2; 3 4];
+I = eye(2);
 kron(X, I)             kron(I, X)
 
   1  0  2  0             1  2  0  0
@@ -36,35 +76,19 @@ kron(X, I)             kron(I, X)
   0  3  0  4             0  0  3  4
 ```
 
-`kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
-
-## In Python
-
 ```python
 import numpy as np
 
-A = np.array([[1, -2], [-1, 0]])
-B = np.array([[4, -3], [2, 3]])
+X = np.array([[1, 2], [3, 4]])
+I = np.eye(2, dtype=int)
 
-print(np.kron(A, B)[0].tolist())  # [4, -3, -8, 6]
-print(np.kron(np.eye(2, dtype=int), np.array([[1, 2], [3, 4]]))[2].tolist())  # [0, 0, 1, 2]
+print(np.kron(X, I).tolist())  # [[1, 0, 2, 0], [0, 1, 0, 2], [3, 0, 4, 0], [0, 3, 0, 4]]
+print(np.kron(I, X).tolist())  # [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 0, 3, 4]]
 ```
 
-Plain Python spells out all four loops:
+</CodeTabs>
 
-```python
-A = [[1, 2]]
-B = [[0, 5], [6, 7]]
-
-K = [[a * b for a in ra for b in rb] for ra in A for rb in B]
-print(K)  # [[0, 5, 0, 10], [6, 7, 12, 14]]
-```
-
-## In machine learning
-
-Some optimizers need the curvature of the loss, a matrix far too large to store or invert. K-FAC approximates each layer's block of it as a Kronecker product of two small matrices. That helps because $(A \otimes B)^{-1} = A^{-1} \otimes B^{-1}$, so [inverting](/courses/computational-mathematics/determinants-and-inverses#the-inverse) two small matrices replaces inverting a huge one.
-
-Gaussian processes on grid-shaped data use the same shortcut, since their covariance matrix often factors this way.
+`kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
 
 ## Where you'll meet this
 

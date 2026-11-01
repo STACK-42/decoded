@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { TransposeVisualizer, VectorProductVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Transpose and Vector Products
@@ -19,6 +19,8 @@ Press the button and watch where each number goes. Entries on the main diagonal 
 
 MATLAB writes the transpose with an apostrophe:
 
+<CodeTabs>
+
 ```matlab
 B = magic(3);
 B'
@@ -29,10 +31,23 @@ ans =
      6     7     2
 ```
 
+```python
+import numpy as np
+
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+print(B.T.tolist())  # [[8, 3, 4], [1, 5, 9], [6, 7, 2]]
+
+# Plain Python: zip(*rows) pairs up the columns
+A = [[1, 2, 3], [4, 5, 6]]
+print([list(col) for col in zip(*A)])  # [[1, 4], [2, 5], [3, 6]]
+```
+
+</CodeTabs>
+
 A matrix is **symmetric** when $A' = A$. `pascal(3)` is symmetric and `magic(3)` isn't. Transposing also turns a row vector into a column vector, which is the move you need next.
 
 <Callout tone="sky" label="For complex numbers">
-In MATLAB, `'` also conjugates complex entries. Use `.'` when you want the transpose alone. For real matrices the two are identical.
+In MATLAB, `'` also conjugates complex entries. Use `.'` when you want the transpose alone. For real matrices the two are identical. NumPy's `.T` never conjugates; write `.conj().T` when you want both.
 </Callout>
 
 ## The dot product
@@ -49,6 +64,58 @@ $$
 u \cdot v = (1)(2) + (-2)(3) + (3)(-2) + (4)(1) = -6
 $$
 
+<CodeTabs>
+
+```matlab
+u = [1 -2 3 4];
+v = [2 3 -2 1];
+dot(u, v)
+
+ans =
+    -6
+```
+
+```python
+import numpy as np
+
+u = np.array([1, -2, 3, 4])
+v = np.array([2, 3, -2, 1])
+print(u @ v)  # -6
+
+# Without NumPy, it's the definition: multiply pairs, then add
+print(sum(a * b for a, b in zip([1, -2, 3, 4], [2, 3, -2, 1])))  # -6
+```
+
+</CodeTabs>
+
+The sign tells you something. A large positive dot product means the two vectors point roughly the same way, zero means they're at right angles, and negative means they point apart. Divide by both lengths, which are [Euclidean norms](/courses/computational-mathematics/norms-and-trace#three-norms-to-know), and you get the **cosine similarity**, a score from $-1$ to $1$ that ignores length and keeps only direction.
+
+This is how AI systems decide that two things are alike. A language model turns each word, sentence or image into a long vector called an **embedding**, and a search engine or chatbot finds related documents by ranking their cosine similarity to your question. Two vectors pointing the same way score 1, however long they are:
+
+<CodeTabs>
+
+```matlab
+a = [1 2 0];
+b = [2 4 0];
+dot(a, b) / (norm(a) * norm(b))
+
+ans =
+     1
+```
+
+```python
+import numpy as np
+
+a = np.array([1.0, 2.0, 0.0])
+b = np.array([2.0, 4.0, 0.0])
+
+print(round(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)), 4))  # 1.0
+```
+
+</CodeTabs>
+
+Transformers, the networks behind chatbots, use the same idea inside **attention**: each word scores how relevant every other word is with a dot product between two learned vectors, called the query and the key.
+
 ## One pair of vectors, two products
 
 Take a column vector $u$ and a row vector $v$ of the same length. Both orders are legal [matrix products](/courses/computational-mathematics/multiplying-matrices#the-rule), because the inner sizes match either way, yet the results have nothing in common:
@@ -60,11 +127,24 @@ Switch between the two and compare:
 
 <VectorProductVisualizer />
 
-If `x` and `y` are both column vectors, then `x * y` is an error because the inner sizes are n and 1. Transpose one of them and it works: `x' * y` is the inner product and `x * y'` is the outer product.
+<CodeTabs>
 
-## In Python
+```matlab
+u = [3; 1; 4];
+v = [2 0 -1];
 
-`.T` is the transpose, `@` is matrix multiplication, and `np.outer` builds the outer product:
+v * u          % inner product, 1-by-1
+
+ans =
+     2
+
+u * v          % outer product, 3-by-3
+
+ans =
+     6     0    -3
+     2     0    -1
+     8     0    -4
+```
 
 ```python
 import numpy as np
@@ -72,34 +152,39 @@ import numpy as np
 u = np.array([3, 1, 4])
 v = np.array([2, 0, -1])
 
+# NumPy's 1-D arrays have no row or column orientation, so there's no
+# transpose to get right: @ gives the inner product, np.outer the outer one.
 print(u @ v)  # 2
 print(np.outer(u, v).tolist())  # [[6, 0, -3], [2, 0, -1], [8, 0, -4]]
-print(np.array([[1, 2, 3], [4, 5, 6]]).T.tolist())  # [[1, 4], [2, 5], [3, 6]]
 ```
 
-NumPy's one-dimensional arrays have no row or column orientation, so `u @ v` needs no transpose, unlike MATLAB. In plain Python, `zip` does the flipping:
+</CodeTabs>
 
-```python
-A = [[1, 2, 3], [4, 5, 6]]
+If `x` and `y` are both column vectors, then `x * y` is an error because the inner sizes are n and 1. Transpose one of them and it works: `x' * y` is the inner product and `x * y'` is the outer product.
 
-print([list(col) for col in zip(*A)])  # [[1, 4], [2, 5], [3, 6]]
-print(sum(a * b for a, b in zip([3, 1, 4], [2, 0, -1])))  # 2
+Recommendation systems use both. A classic film recommender learns a short vector for every user and every film, and predicts a rating as the **dot product** of the two: high when the user's tastes line up with what the film offers. The **outer product** of the same vectors fills in a whole table of predictions at once.
+
+The transpose earns its place in machine learning too. If $X$ holds one example per row, then $X'X$ takes the dot product of every feature column with every other. For centred data, it's the **covariance matrix** up to a scaling factor, which records which features rise and fall together, and it's where PCA starts when it compresses data to its most important directions.
+
+<CodeTabs>
+
+```matlab
+X = [1 2; 3 4; 5 6];
+X' * X
+
+ans =
+    35    44
+    44    56
 ```
-
-## In machine learning
-
-The dot product measures how much two vectors point the same way, which is how models compare things. Cosine similarity divides it by both lengths, which are [Euclidean norms](/courses/computational-mathematics/norms-and-trace#three-norms-to-know):
 
 ```python
 import numpy as np
 
-a = np.array([1.0, 2.0, 0.0])
-b = np.array([2.0, 4.0, 0.0])
-
-print(round(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)), 4))  # 1.0
+X = np.array([[1, 2], [3, 4], [5, 6]])
+print((X.T @ X).tolist())  # [[35, 44], [44, 56]]
 ```
 
-The product $X^T X$ also appears all over ML. For centred data, it's the covariance matrix up to a scaling factor, and PCA starts from it. Attention in transformers scores tokens using dot products between query and key vectors.
+</CodeTabs>
 
 ## Where you'll meet this
 
