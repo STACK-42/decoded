@@ -1,0 +1,121 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { WilsonVisualizer, TotientGrid } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Primality Tests and Euler's Totient
+
+Trial division stops working when numbers have hundreds of digits. This lesson covers three classic theorems that say something about primes without searching for factors, and the third one is the engine inside RSA.
+
+## Wilson's theorem
+
+An integer $n > 1$ is prime if and only if
+
+$$
+(n - 1)! \equiv -1 \pmod{n}
+$$
+
+The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1. These pairs all cancel, except for 1 and $n - 1$, which are their own partners:
+
+<WilsonVisualizer />
+
+```matlab
+mod(factorial(13 - 1), 13) - 13    % -1, so 13 is prime
+```
+
+<Callout tone="orange" label="Beautiful, and useless in practice">
+Wilson's theorem is an exact test, but you'd have to compute a factorial. MATLAB's `factorial` is only exact up to $21!$ because it uses doubles, and even exact arithmetic would take far too long for large $n$.
+</Callout>
+
+## Fermat's Little Theorem
+
+If $n$ is prime and $\gcd(a, n) = 1$, then
+
+$$
+a^{n-1} \equiv 1 \pmod{n}
+$$
+
+For $a = 7$ and $n = 19$: $7^2 \equiv 11$, $7^4 \equiv 7$, $7^8 \equiv 11$, $7^{16} \equiv 7$, and so $7^{18} = 7^{16} \cdot 7^2 \equiv 7 \cdot 11 \equiv 1 \pmod{19}$.
+
+It's also a shortcut for big powers. To show $5^{38} \equiv 4 \pmod{11}$, use $5^{10} \equiv 1$:
+
+$$
+5^{38} = (5^{10})^3 \cdot 5^8 \equiv 1^3 \cdot (5^2)^4 \equiv 3^4 = 81 \equiv 4 \pmod{11}
+$$
+
+`powermod(2, 16, 17)` in MATLAB returns 1, as the theorem predicts.
+
+So if $a^{n-1} \not\equiv 1$, then $n$ is definitely composite. The reverse doesn't always hold: rare composites called Carmichael numbers, such as 561, pass this test for every coprime $a$. Real systems use the stronger Miller-Rabin test for that reason.
+
+## Euler's totient function
+
+$\phi(n)$ counts the positive integers less than $n$ that are coprime to $n$. Some values follow directly:
+
+- If $p$ is prime, $\phi(p) = p - 1$. An integer $n > 1$ is prime exactly when $\phi(n) = n - 1$.
+- For a prime power, $\phi(p^k) = p^k - p^{k-1}$.
+- In general, if $p_1, \dots, p_r$ are the distinct primes dividing $n$:
+
+$$
+\phi(n) = n \left(1 - \frac{1}{p_1}\right)\left(1 - \frac{1}{p_2}\right) \cdots \left(1 - \frac{1}{p_r}\right)
+$$
+
+So $\phi(23) = 22$, $\phi(81) = 81 \cdot \tfrac{2}{3} = 54$, and $\phi(100) = 100 \cdot \tfrac{1}{2} \cdot \tfrac{4}{5} = 40$. Slide $n$ and watch the coprime numbers change. Primes light up almost the whole grid:
+
+<TotientGrid />
+
+The direct count takes a few lines of MATLAB, using the fact that $\gcd$ is quick:
+
+```matlab
+n = 1000;
+z = 0;
+for i = 1:n-1
+    if gcd(i, n) == 1
+        z = z + 1;
+    end
+end
+fprintf('Euler Phi (n) = %1.0f\n', z)    % 400
+```
+
+## The Euler-Fermat theorem
+
+Euler generalised Fermat's result to any modulus. If $\gcd(a, n) = 1$, then
+
+$$
+a^{\phi(n)} \equiv 1 \pmod{n}
+$$
+
+With $a = 3$ and $n = 10$: $\phi(10) = 4$ and $3^4 = 81 \equiv 1$. With $a = 2$ and $n = 11$: $\phi(11) = 10$ and $2^{10} = 1024 \equiv 1$. When $n$ is prime, $\phi(n) = n - 1$, and you get Fermat's theorem back.
+
+## In Python
+
+Python's three-argument `pow` is modular exponentiation, and its integers don't overflow, so even Wilson's theorem runs exactly:
+
+```python
+import math
+import numpy as np
+
+print(pow(7, 18, 19))  # 1
+print(pow(5, 38, 11))  # 4
+print(math.factorial(12) % 13)  # 12
+print(pow(2, 560, 561))  # 1
+print(int(np.sum(np.gcd(np.arange(1, 1000), 1000) == 1)))  # 400
+```
+
+The fourth line is the Carmichael number 561 passing Fermat's test despite being composite.
+
+## In machine learning
+
+The link is privacy. Hospitals or phones may want to train a shared model without showing anyone their raw data.
+
+Paillier is a homomorphic encryption scheme, built on the same kind of modular arithmetic as RSA, that lets a server add numbers it can't read. So it can sum encrypted model updates from many clients and only ever see the total. Its security also depends on keeping the factors of $n$ secret, which is the same as keeping $\phi(n)$ secret.
+
+There's also a shared style of thinking. Miller-Rabin accepts a tiny chance of error in exchange for speed, in the same way that stochastic gradient descent uses a noisy estimate because it's far cheaper than the exact gradient.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="How RSA decrypts" tool="TLS, SSH, PGP">
+RSA chooses its two exponents so their product is $1$ modulo $\phi(n)$. The Euler-Fermat theorem then guarantees that encrypting followed by decrypting returns the original message.
+</PracticalApplication>
+<PracticalApplication title="Generating large primes" tool="OpenSSL">
+Key generation picks random large numbers and runs Miller-Rabin, a descendant of Fermat's test, until one passes.
+</PracticalApplication>
+</ApplicationsGrid>

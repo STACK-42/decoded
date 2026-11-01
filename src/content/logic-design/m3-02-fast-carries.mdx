@@ -1,0 +1,40 @@
+import { CarryRace } from "@/components/mdx/LogicVisualizers";
+
+# Ripple Carry and Look-Ahead
+
+Gates aren't instant. After an input changes, it takes a brief moment (the **propagation delay**) before the output follows. One gate's delay is tiny, but delays add up along a path.
+
+## The problem: dominoes
+
+The adder from the last lesson is a **ripple-carry adder**. Each stage can't finalise its answer until the carry arrives from the stage before. Think of a row of dominoes. Add 1 to `11111111` and the carry has to topple through all 8 stages before the top bit is right.
+
+Since a CPU can't know in advance which numbers it will get, its clock has to allow for the worst case, even if most additions finish sooner. A slow adder slows down the whole chip.
+
+## The fix: work out the carries ahead of time
+
+Instead of waiting, ask what makes a stage produce a carry at all. There are only two ways:
+
+- **Generate**: both inputs are 1. The stage makes a carry by itself, whatever comes in. $C_g = AB$
+- **Propagate**: at least one input is 1. An incoming carry will pass straight through. $C_p = A + B$
+
+So the carry out of any stage is:
+
+$$
+C_{out} = C_g + C_p C_{in}
+$$
+
+Here's the clever part. Replace each $C_{in}$ with the expression for the stage before, and keep substituting. Every carry ends up written directly in terms of the original inputs:
+
+$$
+C_2 = C_{g2} + C_{p2} C_{g1} + C_{p2} C_{p1} C_{in}
+$$
+
+No carry waits for another now. A separate block of gates computes them all at the same moment.
+
+<CarryRace />
+
+Press Race with 15 + 1, then try 255 + 1 and 1 + 2. Ripple's time depends on the numbers. Look-ahead's doesn't.
+
+## What it costs
+
+Nothing is free. The carry equations get bigger with every stage, and they soon need a lot of gates with many inputs. So real adders usually use look-ahead on small groups of bits, say 4 at a time, and combine the groups. It's a recurring trade-off in hardware: spend more transistors to save time.

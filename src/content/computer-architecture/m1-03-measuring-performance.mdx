@@ -1,0 +1,66 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CpiCalculator, ClockTrap } from "@/components/mdx/ArchitectureVisualizers";
+
+# Measuring Performance
+
+Before making a computer faster, you have to know what "faster" means. The only true measure is how long a program takes. Three things decide that:
+
+$$
+\text{CPU time} = \text{instruction count} \times \text{CPI} \times \text{clock period}
+$$
+
+Because the clock period is 1 ÷ clock rate, you can also write:
+
+$$
+\text{CPU time} = \frac{\text{instruction count} \times \text{CPI}}{\text{clock rate}}
+$$
+
+- **Instruction count**: how many instructions the program runs.
+- **CPI** (cycles per instruction): the average number of clock ticks per instruction.
+- **Clock rate**: ticks per second.
+
+IPC (instructions per cycle) is just CPI upside down. It's the number you'll usually see in chip reviews.
+
+## Clock speed isn't everything
+
+<ClockTrap />
+
+A chip with a higher clock rate but a higher CPI can lose, which is why you can't compare two chips by GHz alone.
+
+## Working out CPI
+
+Different kinds of instruction take different numbers of cycles, so CPI is an average, weighted by how often each kind occurs:
+
+$$
+\text{CPI} = \frac{\sum_i \text{CPI}_i \times I_i}{\text{instruction count}}
+$$
+
+Here $I_i$ is how many times type $i$ runs, and $\text{CPI}_i$ is the cycles it takes.
+
+## MIPS
+
+**MIPS** (million instructions per second) puts the rate as a single number:
+
+$$
+\text{MIPS} = \frac{\text{clock rate}}{\text{CPI} \times 10^6}
+$$
+
+Here is a comparison of two machines at 200 MHz. You can edit any number.
+
+<CpiCalculator />
+
+The starting numbers work out like this:
+
+$$
+\text{CPI}_A = \frac{38(1) + 15(3) + 42(4) + 5(5)}{100} = 2.76 \qquad \text{MIPS}_A = \frac{200}{2.76} = 72.46
+$$
+
+$$
+\text{CPI}_B = \frac{35(1) + 30(2) + 15(3) + 20(5)}{100} = 2.4 \qquad \text{MIPS}_B = \frac{200}{2.4} = 83.33
+$$
+
+Notice the coloured bars in the calculator. Branches are a big slice of Machine A's time, so improving branches would help most. That's called the **common case** rule: spend your effort on what happens most often.
+
+<Callout tone="violet" label="MIPS can mislead">
+MIPS only counts instructions, not how much each one achieves. A RISC chip can post a higher MIPS than a CISC chip while running the same program no faster, because it needs more instructions for the same work. Comparing MIPS is fair only between machines with the same instruction set.
+</Callout>

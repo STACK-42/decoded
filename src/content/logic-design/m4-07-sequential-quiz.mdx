@@ -1,0 +1,109 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Sequential Logic
+
+Eight questions on latches, flip-flops and memory. Get 6 right to pass.
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="sequential-quiz"
+  passThreshold={6/8}
+  questions={[
+    {
+      id: "q1",
+      prompt: "What gives an SR latch its memory?",
+      options: [
+        { id: "a", text: "A small capacitor between the gates" },
+        { id: "b", text: "Each gate's output feeds back into the other gate's input" },
+        { id: "c", text: "The clock signal" },
+        { id: "d", text: "Inverted inputs" },
+      ],
+      correctOptionId: "b",
+      explanation: "The cross-coupled loop holds itself in place after the input goes away.",
+    },
+    {
+      id: "q2",
+      prompt: "A NOR SR latch has Q=1. S and R are both 0. What happens next?",
+      options: [
+        { id: "a", text: "Q drops to 0" },
+        { id: "b", text: "Q stays 1" },
+        { id: "c", text: "Q oscillates" },
+        { id: "d", text: "Q and Q' both become 1" },
+      ],
+      correctOptionId: "b",
+      explanation: "S=R=0 is the hold state, so the latch keeps its last value.",
+    },
+    {
+      id: "q3",
+      prompt: "Which input is forbidden on a NAND SR latch?",
+      options: [
+        { id: "a", text: "S=0, R=0" },
+        { id: "b", text: "S=1, R=1" },
+        { id: "c", text: "S=0, R=1" },
+        { id: "d", text: "S=1, R=0" },
+      ],
+      correctOptionId: "a",
+      explanation: "NAND latches are active low, so 0 means 'act'. Both at 0 forces both outputs to 1. S=R=1 is the normal hold state here.",
+    },
+    {
+      id: "q4",
+      prompt: "How does a D latch get rid of the forbidden state?",
+      options: [
+        { id: "a", text: "It adds a third NOR gate" },
+        { id: "b", text: "It sets S = D and R = D', so S and R are never equal" },
+        { id: "c", text: "It uses a faster clock" },
+        { id: "d", text: "It uses two latches" },
+      ],
+      correctOptionId: "b",
+      explanation: "With one wire and an inverter, S and R are always opposite.",
+    },
+    {
+      id: "q5",
+      prompt: "A D latch has C=1, and D changes three times. How many times can Q change?",
+      options: [
+        { id: "a", text: "None" },
+        { id: "b", text: "Once" },
+        { id: "c", text: "Three times" },
+        { id: "d", text: "Six times" },
+      ],
+      correctOptionId: "c",
+      explanation: "While C is high a latch is transparent, so Q follows D. An edge-triggered flip-flop would change only at the edge.",
+    },
+    {
+      id: "q6",
+      prompt: "A JK flip-flop has J=1, K=1, and Q=0. What is Q after the clock edge?",
+      options: [
+        { id: "a", text: "0" },
+        { id: "b", text: "1" },
+        { id: "c", text: "Undefined" },
+        { id: "d", text: "It depends on the previous input" },
+      ],
+      correctOptionId: "b",
+      explanation: "J=K=1 means toggle, so 0 becomes 1.",
+    },
+    {
+      id: "q7",
+      prompt: "A shift register holds 0101 (0 first). A 1 is shifted in at the left. What does it now hold?",
+      options: [
+        { id: "a", text: "1010" },
+        { id: "b", text: "0101" },
+        { id: "c", text: "1011" },
+        { id: "d", text: "0011" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every bit moves one place right, the last one falls off, and the new 1 enters on the left.",
+    },
+    {
+      id: "q8",
+      prompt: "A memory has 16 address lines and 8-bit words. What is its capacity?",
+      options: [
+        { id: "a", text: "16 bytes" },
+        { id: "b", text: "128 bytes" },
+        { id: "c", text: "64 KB" },
+        { id: "d", text: "1 MB" },
+      ],
+      correctOptionId: "c",
+      explanation: "2¹⁶ = 65,536 words of 1 byte each, which is 64 KB.",
+    },
+  ]}
+/>

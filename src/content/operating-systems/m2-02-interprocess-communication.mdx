@@ -1,0 +1,264 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { BoundedBuffer, MessageBuffering } from "@/components/mdx/OsVisualizers";
+
+# Interprocess Communication
+
+Processes are isolated from each other on purpose: one can't read another's memory. But real work often needs teamwork. Your browser talks to its tab processes; a web server talks to your browser across the world. This lesson covers how processes **communicate**: by sharing memory, by sending messages, and with the tools used between clients and servers.
+
+## Independent and cooperating processes
+
+Processes in a system may be:
+
+- **independent**: they can't affect, or be affected by, other processes,
+- **cooperating**: they **can** affect or be affected by other processes, including by **sharing data**.
+
+Why let processes cooperate?
+
+- **Information sharing**: several processes need the same data.
+- **Computation speedup**: split a task into parts that run in parallel.
+- **Modularity**: build the system out of separate pieces.
+- **Convenience**: one user doing many things at once.
+
+Cooperating processes need an **interprocess communication (IPC)** mechanism. There are **two models**:
+
+| Model | How it works |
+| --- | --- |
+| **(a) Message passing** | processes send messages **through the kernel**. Simple and safe, good for smaller amounts of data, but every message costs a system call |
+| **(b) Shared memory** | the processes set up a **region of memory they both can read and write**. Very fast once set up, since the kernel isn't involved for each access, but the processes must coordinate access themselves |
+
+## The producer-consumer problem
+
+A classic pattern for cooperating processes: a **producer** process produces information that a **consumer** process consumes.
+
+- A **compiler** produces assembly code that an **assembler** consumes.
+- A **web server** produces HTML files that a **web browser** consumes.
+
+To let them run **at the same time**, put a **buffer** of items between them, in **shared memory**. The producer fills it and the consumer empties it.
+
+- An **unbounded buffer** has no practical limit on its size.
+- A **bounded buffer** has a **fixed size**.
+
+### Bounded buffer: the shared-memory solution
+
+The shared data:
+
+```c
+#define BUFFER_SIZE 10
+typedef struct {
+    . . .
+} item;
+
+item buffer[BUFFER_SIZE];
+int in = 0;     /* next free slot */
+int out = 0;    /* first full slot */
+```
+
+The buffer is used as a **circular array**: when `in` or `out` reaches the end, `% BUFFER_SIZE` wraps it back to 0.
+
+**Producer:**
+
+```c
+item next_produced;
+while (true) {
+    /* produce an item in next_produced */
+    while (((in + 1) % BUFFER_SIZE) == out)
+        ;   /* do nothing -- no free buffers */
+    buffer[in] = next_produced;
+    in = (in + 1) % BUFFER_SIZE;
+}
+```
+
+**Consumer:**
+
+```c
+item next_consumed;
+while (true) {
+    while (in == out)
+        ;   /* do nothing -- empty buffers */
+    next_consumed = buffer[out];
+    out = (out + 1) % BUFFER_SIZE;
+    /* consume the item in next_consumed */
+}
+```
+
+- The buffer is **empty** when `in == out`.
+- The buffer is **full** when `(in + 1) % BUFFER_SIZE == out`.
+
+This solution is correct, but it can only use **BUFFER_SIZE − 1** elements. Try to fill the buffer below and see why:
+
+<BoundedBuffer />
+
+## Message passing
+
+Message passing is a mechanism for processes to **communicate and to synchronize** their actions **without sharing variables**.
+
+The IPC facility provides at least two operations:
+
+- **`send(message)`**: the message size can be fixed or variable,
+- **`receive(message)`**.
+
+If processes **P** and **Q** want to talk, they need to:
+
+1. **establish a communication link** between them,
+2. **exchange messages** with send and receive.
+
+The link can be implemented in different logical ways: **direct or indirect**, **synchronous or asynchronous**, with **automatic or explicit buffering**. Some implementation questions:
+
+- How are links established?
+- Can a link be associated with more than two processes?
+- How many links can there be between each pair of processes?
+- What is a link's **capacity**?
+- Is the message size fixed or variable?
+- Is a link **unidirectional** or **bidirectional**?
+
+### Direct communication
+
+Processes must **name each other explicitly**:
+
+- `send(P, message)`: send a message to process P,
+- `receive(Q, message)`: receive a message from process Q.
+
+Properties of the link:
+
+- links are established **automatically**,
+- a link is associated with **exactly one pair** of processes,
+- between each pair there is **exactly one link**,
+- the link may be unidirectional, but is **usually bidirectional**.
+
+### Indirect communication
+
+Messages are sent to and received from **mailboxes** (also called **ports**).
+
+- Each mailbox has a **unique id**.
+- Processes can communicate **only if they share a mailbox**.
+
+Properties of the link:
+
+- a link exists only if the processes **share a common mailbox**,
+- a link may be associated with **many processes**,
+- each pair of processes may share **several** links,
+- a link may be unidirectional or bidirectional.
+
+Operations: **create** a mailbox (owned by a process or by the OS), **send and receive** through it (only the **owner** process can receive from its mailbox), and **destroy** it (by its owner).
+
+- `send(A, message)`: send a message to mailbox A,
+- `receive(A, message)`: receive a message from mailbox A.
+
+<Callout tone="orange" label="A puzzle: who gets the message?">
+P1, P2 and P3 share mailbox A, owned by the OS. P1 sends; P2 and P3 both call receive. Who gets it? Possible solutions:
+
+- allow a link to be associated with **at most two** processes,
+- allow only **one process at a time** to execute a receive,
+- let the **system pick** the receiver arbitrarily, and **tell the sender** who it was.
+</Callout>
+
+### Synchronization
+
+Message passing may be **blocking** or **non-blocking**.
+
+| | Blocking (**synchronous**) | Non-blocking (**asynchronous**) |
+| --- | --- | --- |
+| **send** | the sender **waits** until the message is received | the sender sends and **continues** |
+| **receive** | the receiver **waits** until a message is available | the receiver gets a valid message, **or null** |
+
+Different combinations are possible. If **both** send and receive are blocking, it's called a **rendezvous**. Then the producer-consumer problem becomes trivial:
+
+```c
+/* producer */
+message next_produced;
+while (true) {
+    /* produce an item in next_produced */
+    send(next_produced);
+}
+
+/* consumer */
+message next_consumed;
+while (true) {
+    receive(next_consumed);
+    /* consume the item in next_consumed */
+}
+```
+
+### Buffering
+
+A **queue of messages** is attached to the link. It's implemented in one of three ways:
+
+1. **Zero capacity**: 0 messages. The sender must wait for the receiver (rendezvous).
+2. **Bounded capacity**: a finite length of *n* messages. The sender must wait if the link is **full**.
+3. **Unbounded capacity**: infinite length. The sender **never waits**.
+
+<MessageBuffering />
+
+## Communication in client-server systems
+
+Shared memory and message passing work for client-server systems too. Four other techniques are common:
+
+1. **Sockets**
+2. **Remote procedure calls (RPC)**
+3. **Pipes**
+4. **Remote method invocation (RMI, in Java)**
+
+### Sockets
+
+A **socket** is an **endpoint for communication**. Two processes talking over a network use **a pair of sockets**, one each.
+
+- A socket is identified by an **IP address** plus a **port number**: `161.25.19.8:1625` means port 1625 on host 161.25.19.8.
+- A **server** waits for client requests by **listening** on a specific port.
+- All ports **below 1024** are **well known**, used for standard services (web servers use port 80, for example).
+- The special IP address **127.0.0.1** (**loopback**) means "this same machine", so a client and server on one host can talk.
+
+Java has three types of socket:
+
+| Type | Java class |
+| --- | --- |
+| **Connection-oriented** (TCP) | `Socket` |
+| **Connectionless** (UDP) | `DatagramSocket` |
+| **Multicast**: data can go to **multiple recipients** | `MulticastSocket` |
+
+### Remote procedure calls (RPC)
+
+**RPC** makes calling a procedure on **another machine** look like a normal local function call.
+
+- It uses **ports** to tell services apart.
+- **Stubs** are client-side proxies for the real procedure on the server.
+  - The **client-side stub** locates the server and **marshals** the parameters (packs them into a message).
+  - The **server-side stub** receives the message, **unpacks** the marshalled parameters, and runs the procedure on the server.
+
+### Pipes
+
+A **pipe** acts as a **channel** that lets two processes communicate. Pipes are one of the simpler ways to communicate, but have some limits. Questions to ask about any pipe:
+
+- Is communication **unidirectional** or **bidirectional**?
+- If two-way, is it **half-duplex** (one direction at a time) or **full-duplex** (both at once)?
+- Must the processes have a **relationship**, like parent and child?
+- Can the pipe be used **over a network**, or only on the same machine?
+
+| | Ordinary pipes | Named pipes |
+| --- | --- | --- |
+| **Direction** | **unidirectional**: the producer writes to the **write end**, the consumer reads from the **read end** | can be **bidirectional** |
+| **Relationship needed?** | yes: a **parent** creates the pipe and uses it to talk to its **child** | **no** parent-child relationship needed; **several** processes can use one |
+| **On UNIX** | a special type of file, used with `read()` and `write()` | called **FIFOs**; once created they look like ordinary files, used with `open()`, `read()`, `write()`, `close()` |
+| **On Windows** | anonymous pipes | richer: **full-duplex**, can be on the **same or different machines**, **byte- or message-oriented** |
+
+You already used ordinary pipes in the Linux lab: in `sort file3 | uniq`, the shell creates a pipe, and `sort` writes into one end while `uniq` reads from the other.
+
+### Remote method invocation (RMI)
+
+**RMI** is a **Java** mechanism similar to RPC. It lets a Java program on one machine **invoke a method on a remote object**. Parameters are **marshalled** the same way as in RPC.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Every website you open" tool="SOCKETS">
+    Your browser opens a socket to the server's IP address on port 443 (or 80). The server process has been listening on that port the whole time.
+  </PracticalApplication>
+  <PracticalApplication title="localhost:8080" tool="LOOPBACK">
+    When you run a dev server and open localhost, client and server are on the same machine, talking through 127.0.0.1.
+  </PracticalApplication>
+  <PracticalApplication title="Video playback" tool="BOUNDED BUFFER">
+    A video player downloads ahead into a fixed-size buffer (producer) while the decoder plays from it (consumer). The spinner means the buffer is empty.
+  </PracticalApplication>
+  <PracticalApplication title="Microservices and gRPC" tool="RPC">
+    Big apps are split into services that call each other with RPC frameworks like gRPC, using stubs that marshal parameters just as described.
+  </PracticalApplication>
+</ApplicationsGrid>

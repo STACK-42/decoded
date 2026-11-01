@@ -1,0 +1,208 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PageFaultSteps, DemandPagingCost, CopyOnWrite } from "@/components/mdx/OsVisualizers";
+
+# Virtual Memory and Demand Paging
+
+Your laptop has maybe 16 GB of RAM, yet it happily runs programs that, added together, want far more. The trick is that programs never need **all** of themselves at once. Virtual memory loads only the pieces that are actually used, the moment they're used. This lesson shows how, and what it costs when it goes wrong.
+
+## Background
+
+Code needs to be in memory to run, but the **entire program is rarely used**:
+
+- **error-handling code**, **unusual routines**, **large data structures** (an array declared with room for 1,000 items that only ever holds 10),
+- even code that is used isn't all needed **at the same time**.
+
+What if we could run a program that's only **partially loaded**?
+
+- A program would **no longer be limited** by the size of physical memory.
+- Each program would take **less memory** while running, so **more programs** could run at the same time: higher CPU utilization and throughput, with no increase in response or turnaround time.
+- **Less I/O** would be needed to load or swap programs, so each one would start faster.
+
+### Virtual memory
+
+**Virtual memory** is the **separation of user logical memory from physical memory**:
+
+- only **part** of the program needs to be in memory to run,
+- so the **logical address space** can be **much larger** than the physical address space,
+- address spaces can be **shared** by several processes,
+- process creation is **more efficient**,
+- **more programs** run concurrently,
+- **less I/O** is needed to load or swap processes.
+
+The **virtual address space** is the **logical view** of how a process is stored in memory: usually it starts at address 0 and is **contiguous** up to the end. Meanwhile, physical memory is organized in **page frames**, scattered anywhere. The **MMU** maps one to the other.
+
+Virtual memory can be implemented with:
+
+- **demand paging**,
+- **demand segmentation**.
+
+## Demand paging
+
+We **could** bring the entire process into memory at load time. Or we could bring a page into memory **only when it's needed**:
+
+- **less I/O**, and no unnecessary I/O,
+- **less memory** needed,
+- **faster response**,
+- **more users**.
+
+It's similar to a paging system with swapping. When a page is **needed**, there's a reference to it:
+
+- **invalid** reference → **abort**,
+- **not in memory** → **bring it into memory**.
+
+A **lazy swapper** never swaps a page into memory unless that page **will be needed**. A swapper that deals with pages is called a **pager**.
+
+### Basic concepts
+
+- With plain swapping, the pager **guesses** which pages will be used before swapping out again.
+- Instead, the pager brings in **only those pages** into memory.
+- How do we know which pages are needed? We need **new MMU functionality**:
+  - if the needed pages are **already in memory**, nothing is different from ordinary paging,
+  - if a needed page is **not in memory**, the system must **detect** that and **load** it from storage, **without changing program behavior** and **without the programmer changing any code**.
+
+### The valid-invalid bit
+
+Each page-table entry has a **valid-invalid bit**:
+
+- **v**: the page is **in memory** (memory resident),
+- **i**: the page is **not in memory**.
+
+Initially, the bit is set to **i** on **all** entries. During address translation, if the MMU finds the bit is **i**, it raises a **page fault**.
+
+## Page fault
+
+The **first** reference to a page that isn't in memory **traps** to the OS: a **page fault**. The OS then:
+
+1. **looks at the process's internal table** to decide:
+   - **invalid** reference → **abort** the process,
+   - just **not in memory** → continue,
+2. **finds a free frame**,
+3. **swaps the page into the frame** with a scheduled disk operation,
+4. **resets the tables** to show the page is now in memory (sets the bit to **v**),
+5. **restarts the instruction** that caused the page fault.
+
+<PageFaultSteps />
+
+### Aspects of demand paging
+
+- **Extreme case**: start a process with **no pages** in memory at all.
+  - The OS sets the instruction pointer to the process's first instruction, which isn't in memory: page fault.
+  - And so on for every other page, on **first access**.
+  - This is **pure demand paging**.
+- One instruction could even touch **several new pages**, causing **several page faults**. Think of fetching and decoding an instruction that adds 2 numbers from memory and stores the result back in memory.
+- In practice the pain is small thanks to **locality of reference**: programs tend to use the same nearby pages over and over.
+
+**Hardware support** needed for demand paging:
+
+- a **page table** with a **valid-invalid bit**,
+- **secondary memory** (a swap device with **swap space**),
+- the ability to **restart any instruction** after a page fault.
+
+### Instruction restart
+
+We must be able to restart the instruction in **exactly the same place and state**, except that the needed page is now in memory and accessible.
+
+Tricky case: an instruction that touches **several different locations**, like a **block move**, or an **auto-increment/decrement** addressing mode. If the fault happens halfway through, we could **restart the whole operation**. But what if the **source and destination overlap**? Then part of the source may already have been overwritten. The hardware must check both ends first, or keep the old values to undo the partial move.
+
+## Performance of demand paging
+
+The stages of a page fault, in the **worst case**:
+
+1. trap to the operating system,
+2. save the user registers and process state,
+3. determine that the interrupt was a page fault,
+4. check that the page reference was legal, and find the page's location on disk,
+5. issue a read from the disk to a free frame:
+   - wait in a queue for this device until the read request is serviced,
+   - wait for the device seek and/or latency time,
+   - begin the transfer of the page into the free frame,
+6. while waiting, give the CPU to some other process,
+7. receive an interrupt from the disk I/O subsystem (I/O completed),
+8. save the registers and process state of the other process,
+9. determine that the interrupt was from the disk,
+10. correct the page table and other tables to show the page is now in memory,
+11. wait for the CPU to be allocated to this process again,
+12. restore the user registers, process state and new page table, then resume the interrupted instruction.
+
+There are **three major activities**:
+
+- **service the interrupt**: careful coding means just several hundred instructions,
+- **read the page**: **lots of time**,
+- **restart the process**: again a small amount of time.
+
+**Page-fault rate** $0 \le p \le 1$: if $p = 0$ there are no page faults; if $p = 1$, every reference is a fault.
+
+$$
+\text{EAT} = (1 - p) \times \text{memory access} + p \times (\text{page-fault overhead} + \text{swap page out} + \text{swap page in})
+$$
+
+### Example
+
+- memory access time = **200 nanoseconds**,
+- average page-fault service time = **8 milliseconds**.
+
+$$
+\text{EAT} = (1 - p) \times 200 + p \times 8{,}000{,}000 = 200 + p \times 7{,}999{,}800 \text{ ns}
+$$
+
+If **one access in 1,000** causes a page fault, EAT = **8.2 microseconds**. That's a slowdown by a factor of **40**!
+
+If we want the slowdown to be **under 10 percent**:
+
+$$
+220 > 200 + 7{,}999{,}800 \times p \;\Rightarrow\; 20 > 7{,}999{,}800 \times p \;\Rightarrow\; p < 0.0000025
+$$
+
+That's **fewer than one page fault in every 400,000 memory accesses**.
+
+<DemandPagingCost />
+
+### Demand-paging optimizations
+
+- **Swap-space I/O is faster than file-system I/O**, even on the same device: swap is allocated in **bigger blocks** and needs less management than the file system.
+  - Copy the **entire process image** to swap space at load time, then page in and out of swap space (used in older BSD UNIX).
+- **Demand-page program binaries straight from the file system**. They're **never modified**, so when their frames are needed, they can simply be **overwritten** instead of paged out (used in Solaris and current BSD).
+  - Swap space is still needed for pages **not backed by a file**, like the heap and stack: **anonymous memory**.
+
+## Copy-on-write
+
+**Copy-on-write (COW)** lets the parent and child processes **initially share the same pages** in memory after `fork()`.
+
+- If **either** process **writes** to a shared page, **only then** is a copy of that page created.
+- That makes process creation **more efficient**: only the pages that are actually **modified** get copied. (Remember: many children call `exec()` right away and throw their copy away anyway.)
+- The `vfork()` variation of `fork()` goes further: the child uses the parent's address space directly, with no copying at all.
+
+<CopyOnWrite />
+
+Free frames are usually given out from a **pool of zero-fill-on-demand pages**:
+
+- the pool should **always** have free frames, for fast page-fault handling. We don't want to have to free a frame as well as everything else when a fault happens,
+- zero-fill-on-demand pages are **zeroed out before being given out**, erasing their previous contents (so one process can never read another's old data).
+
+## What if there's no free frame?
+
+- Free frames get **used up** by user processes' pages.
+- They're also in demand by the **kernel**, **I/O buffers**, and so on. How much should each get?
+- **Page replacement**: find some page in memory that **isn't really in use**, and **page it out**.
+  - Which algorithm? Terminate a process? Swap one out? Replace a page?
+  - **Performance**: we want an algorithm that gives the **minimum number of page faults**.
+- The **same page** may be brought into memory **several times** over a program's life.
+
+That's the topic of the next lesson.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Opening a huge app instantly" tool="DEMAND PAGING">
+    Launching a 500 MB program doesn't read 500 MB from disk. Only the pages touched at startup are loaded; the rest arrive on demand.
+  </PracticalApplication>
+  <PracticalApplication title="A slow, clicking computer" tool="PAGE FAULTS">
+    When RAM runs out, every click needs pages from disk. At 8 ms per fault instead of 200 ns per access, the whole system crawls.
+  </PracticalApplication>
+  <PracticalApplication title="Starting processes fast" tool="COPY-ON-WRITE">
+    Linux forks with copy-on-write, so a shell can start thousands of commands a second without ever copying its memory.
+  </PracticalApplication>
+  <PracticalApplication title="Redis snapshots" tool="COPY-ON-WRITE">
+    Redis forks a child to save its data to disk. Thanks to COW, the child sees a frozen snapshot while the parent keeps serving requests.
+  </PracticalApplication>
+</ApplicationsGrid>

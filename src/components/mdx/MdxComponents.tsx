@@ -2,12 +2,14 @@ import { ReactNode, useId, useMemo, useState, useRef, useCallback, useEffect } f
 import {
   ReactFlow,
   Handle,
+  MarkerType,
   Position,
   type Edge as RFEdge,
   type Node as RFNode,
 } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import { useProgress } from "@/hooks/useProgress";
+import { recordQuizScore } from "@/lib/progressSync";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -693,6 +695,7 @@ type DiagramEdge = {
   from: string;
   to: string;
   label?: string;
+  back?: boolean;
 };
 
 type DiagramProps = {
@@ -727,6 +730,12 @@ function DiagramBaseNode({
       <Handle type="target" position={target} />
       {data.label}
       <Handle type="source" position={source} />
+      {data.direction === "TB" && (
+        <>
+          <Handle id="loop-out" type="source" position={Position.Right} />
+          <Handle id="loop-in" type="target" position={Position.Right} />
+        </>
+      )}
     </div>
   );
 }
@@ -745,7 +754,8 @@ function layoutDiagram(
   nodes.forEach((n) =>
     g.setNode(n.id, { width: DIAGRAM_NODE_W, height: DIAGRAM_NODE_H })
   );
-  edges.forEach((e) => g.setEdge(e.from, e.to));
+  // Back edges loop around the side, so they don't affect the layout.
+  edges.filter((e) => !e.back).forEach((e) => g.setEdge(e.from, e.to));
   dagre.layout(g);
 
   return nodes.map((n) => {
@@ -780,7 +790,11 @@ export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
     source: e.from,
     target: e.to,
     label: e.label,
-    type: "default",
+    type: e.back ? "smoothstep" : "default",
+    sourceHandle: e.back ? "loop-out" : undefined,
+    targetHandle: e.back ? "loop-in" : undefined,
+    ...(e.back ? { pathOptions: { offset: 60 } } : {}),
+    markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--foreground))" },
     labelBgPadding: [6, 3],
     labelBgBorderRadius: 2,
   }));
@@ -1011,6 +1025,13 @@ export function Quiz(props: QuizProps) {
   const allAnswered = answeredCount === questions.length;
   const scoreFraction = questions.length ? correctCount / questions.length : 0;
   const passed = allAnswered && scoreFraction >= passThreshold;
+
+  // Saved once per attempt; the store keeps only the best one.
+  useEffect(() => {
+    if (allAnswered && questions.length > 0) {
+      recordQuizScore(courseSlug, lessonSlug, { best: correctCount, total: questions.length });
+    }
+  }, [allAnswered, correctCount, courseSlug, lessonSlug, questions.length]);
 
   const handleRetry = useCallback(() => {
     setAnswers({});

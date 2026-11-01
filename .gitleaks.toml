@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+# The Cloudflare Web Analytics token ships in every page, so it isn't a secret.
+[[allowlists]]
+description = "Public analytics token"
+regexes = ['''a3d0e609a5ee4e1e8d517b08dcd37fec''']

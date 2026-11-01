@@ -1,0 +1,57 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { RegisterSplit, AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# The 8086's Registers
+
+Assembly programming is mostly moving numbers in and out of registers, so you need to get to know them. A [register](/courses/logic-design/registers) is a 16-bit row of flip-flops inside the chip. The 8086 has 14 of them in four groups.
+
+## General purpose: AX, BX, CX, DX
+
+These hold your working values. Each is 16 bits, and each splits into two 8-bit halves you can use separately. A value can be seen in three ways, using a high byte (H) and a low byte (L). Click some bits.
+
+<RegisterSplit />
+
+Each one also has a speciality, which its name helps you remember:
+
+| Register | Name | Special job |
+|---|---|---|
+| AX | **A**ccumulator | Arithmetic and input/output |
+| BX | **B**ase | Pointing to data in memory |
+| CX | **C**ount | Loop counter |
+| DX | **D**ata | Big multiply and divide results, I/O ports |
+
+## MOV: the instruction you'll use most
+
+`MOV destination, source` copies the source into the destination. It's a copy, despite the name. The source keeps its value. Press Step and watch the registers that light up.
+
+<AsmRunner source={`MOV AX, 1234h   ; a 16-bit value
+MOV BL, AH      ; copy just the high half of AX
+MOV BH, AL      ; and the low half
+MOV CX, BX      ; registers can copy to registers
+MOV AL, 0FFh    ; changes only part of AX`} />
+
+A leading 0 on a hex number (`0FFh`) tells the assembler it's a number, not a name. The `h` means hex, `b` means binary and no suffix means decimal.
+
+Try the editor. Write `MOV AX, BL` and see what happens: the sizes have to match.
+
+## Pointers and indexes: SP, BP, SI, DI
+
+These usually hold addresses, or more exactly, [offsets](/courses/microprocessors/segments-and-addresses).
+
+- **SP** (stack pointer): the top of the [stack](/courses/microprocessors/stack-and-procedures).
+- **BP** (base pointer): a fixed reference point inside the stack.
+- **SI** (source index) and **DI** (destination index): where you are in an array or string.
+
+## Segment registers: CS, DS, SS, ES
+
+These say where the four areas of a program start in memory. They need a lesson of their own, [coming soon](/courses/microprocessors/segments-and-addresses).
+
+## IP and FLAGS
+
+**IP** (instruction pointer) is the 8086's name for the [Program Counter](/courses/computer-organization/inside-the-cpu). It holds the offset of the next instruction, and you can't `MOV` to it directly. It only changes when instructions run or jump.
+
+**FLAGS** holds single-bit results, and it's the subject of the next lesson.
+
+<Callout tone="orange" label="Later processors">
+The 32-bit x86 chips extended these registers to EAX, EBX and so on, and the 64-bit ones to RAX, RBX and so on. AX is still the lower half of EAX, and AH and AL still work. Code you write here still makes sense on a modern PC.
+</Callout>

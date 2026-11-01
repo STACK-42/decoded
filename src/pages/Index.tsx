@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
+import { ContinueLearning } from "@/components/ContinueLearning";
 import CourseCard from "@/components/CourseCard";
 import { courses } from "@/content/registry";
 import { CourseGlyph } from "@/components/brand/Glyphs";
@@ -24,7 +25,7 @@ export default function Index() {
       {/* HERO */}
       <section className="relative z-10 border-b border-border">
         <div className="container py-20 md:py-28 max-w-6xl">
-          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills maped</div>
+          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
           <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
             <span className="block md:whitespace-nowrap">Computer science</span>
@@ -34,9 +35,11 @@ export default function Index() {
             <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
-            Every Course in a CS curriculum maps to something more practical, used daily, with application everyhwere, it was just have to map that.
-            This is the layer that connects the thoery with whats out there.
+            Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
+            This is the layer that connects the theory with what's out there.
           </p>
+
+          <ContinueLearning />
 
           <div className="mt-10 flex flex-wrap gap-3">
             <Link
@@ -75,13 +78,13 @@ export default function Index() {
           </h2>
           <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
             <p>
-              University courses hide enterprise-grade engineering tools behind layers of dense,
-              abstract proofs. complex notations and theorms, You shouldn't have to decode your own syllabus 
-              just to figure out what it talks about fundamentally or how it applies to production, 
-              we help extracting the the exact real-world utility hidden inside your current coursework.
+              University courses hide the tools engineers use every day behind dense proofs, heavy notation
+              and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
+              about or where it shows up in production. Decoded pulls out the real-world use hiding inside
+              your coursework.
             </p>
             <p className="text-neon">
-              Decoded does that. One topic at a time.
+              One topic at a time.
             </p>
           </div>
         </div>
@@ -119,14 +122,13 @@ export default function Index() {
               </h2>
               <div className="font-body text-lg text-foreground/70 space-y-4">
                 <p>
-                  Stop guessing the application.
-                  Computer Science education is good at what it supposed to do, 
-                  but the student puts so much effort on mapping a course into practical 
-                  laps and linking thoery to practice, memorizing abstract proofs without 
-                  ever seeing the enterprise tools they built based on this.
+                  Computer science education is good at what it's supposed to do. But students are left to
+                  connect each course to practice on their own, memorizing abstract proofs without ever
+                  seeing the tools built on them.
                 </p>
                 <p>
-                  you don't just learn concepts learn how computing itself works how they communicate and more.
+                  Here you don't only learn the concepts. You learn how computing itself works, and how
+                  its pieces talk to each other.
                 </p>
               </div>
             </div>
@@ -135,7 +137,7 @@ export default function Index() {
                <div className="relative z-10 text-center p-8">
                  <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-4">Core Philosophy</div>
                  <div className="font-display text-2xl italic leading-relaxed">
-                   "Theory without tools is boring. Tools without theory are fragile"
+                   "Theory without tools is boring. Tools without theory are fragile."
                  </div>
                </div>
             </div>

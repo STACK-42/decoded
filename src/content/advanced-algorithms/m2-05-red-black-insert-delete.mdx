@@ -1,0 +1,167 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { RBTreeVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Red-Black Trees: Insertion and Deletion
+
+Searching a red-black tree is just a BST search. Inserting and deleting are harder, because they can break the four properties. This lesson shows how to repair them using only **recoloring** and **rotations**, in $O(\lg n)$ time.
+
+## The problem with insertion
+
+Imagine adding keys to a red-black tree one at a time.
+
+- **Insert 8.** Where does it go? Wherever the BST rules say. What color should it be? If we make it **red**, every path keeps the same number of black nodes, so property 4 is safe.
+- **Insert 11**, below a red node. What color? It **can't be red**, because a red child of a red parent breaks property 3. It **can't be black** either: that adds a black node to only some paths, which breaks property 4. **Solution:** make it red and **recolor the tree** around it.
+- **Insert 10**, so that the path bends. Now **no coloring works**. The tree is too unbalanced. We must **change the structure** of the tree so that recoloring becomes possible, and do it in $O(\lg n)$ time. The tool for this is the **rotation** from the last lesson.
+
+## Insertion: the idea
+
+<Callout tone="violet" label="RB-INSERT">
+Insert $x$ into the tree as in an ordinary BST, and **color it red**. Only red-black property 3 might now be violated, if $x$'s parent is red. If so, **move the violation up the tree** by recoloring, until it can be fixed with rotations and recoloring.
+</Callout>
+
+```text
+RB-INSERT(T, x)
+    TREE-INSERT(T, x)
+    color[x] ← RED              ⊳ only RB property 3 can be violated
+    while x ≠ root[T] and color[p[x]] = RED
+        do if p[x] = left[p[p[x]]]
+            then y ← right[p[p[x]]]       ⊳ y = aunt/uncle of x
+                 if color[y] = RED
+                     then ⟨Case 1⟩
+                     else if x = right[p[x]]
+                              then ⟨Case 2⟩     ⊳ Case 2 falls into Case 3
+                          ⟨Case 3⟩
+            else ⟨"then" clause with "left" and "right" swapped⟩
+    color[root[T]] ← BLACK
+```
+
+In the pictures below, $\Delta$ means a subtree with a black root, and all the $\Delta$'s have the **same black-height**.
+
+### Case 1: the uncle $y$ is red
+
+**Recolor.** Make $x$'s parent and uncle black, and the grandparent red:
+
+```cpp
+x->p->color = BLACK;
+y->color = BLACK;
+x->p->p->color = RED;
+x = x->p->p;
+```
+
+This "pushes" the grandparent's black down onto its two children. Every downward path still has the same black-height, so property 4 holds. But the grandparent is now red, and *its* parent might be red too. So **recurse**: the loop continues with the grandparent as the new $x$. Case 1 does the same thing whether $x$ is a left or a right child.
+
+### Case 2: the uncle $y$ is black, and $x$ is an *inner* child
+
+Here $x$ is a right child whose parent is a left child (or the mirror image). The path from the grandparent to $x$ **bends**.
+
+```cpp
+x = x->p;
+leftRotate(x);
+// continue with the Case 3 code
+```
+
+A rotation at the parent **straightens** the bend, turning this into Case 3. It keeps property 4: every downward path still has the same number of black nodes.
+
+### Case 3: the uncle $y$ is black, and $x$ is an *outer* child
+
+```cpp
+x->p->color = BLACK;
+x->p->p->color = RED;
+rightRotate(x->p->p);
+```
+
+Recolor, then rotate at the grandparent. **Done!** The parent, now black, sits where the grandparent was, so no more violations of property 3 are possible.
+
+## Example: insert 15
+
+This is the lecture's example. Step through it and watch the case label:
+
+1. Insert $x = 15$ under 11. Both 15 and 11 are red.
+2. The uncle 8 is red, so **Case 1**: recolor, moving the violation up the tree to 10.
+3. Now 10 and its parent 18 are both red, and the uncle 3 is black. 10 is an inner child, so **Case 2**: RIGHT-ROTATE(18).
+4. **Case 3:** LEFT-ROTATE(7) and recolor. 10 becomes the new root.
+
+<RBTreeVisualizer start={[7, 3, 18, 10, 22, 8, 11, 26]} ops={[{ op: "insert", key: 15 }]} />
+
+Use the **Insert** button to add your own keys. Try inserting 1, 2, 3, 4, 5, 6, 7, 8 in order. A plain BST would turn into a chain, but the red-black tree keeps rotating to stay balanced.
+
+## Analysis of insertion
+
+- Go **up** the tree performing Case 1, which only **recolors** nodes. Each time, $x$ moves up two levels, so this happens at most $O(\lg n)$ times.
+- If Case 2 or Case 3 happens, perform **1 or 2 rotations**, and **stop**.
+
+**Running time: $O(\lg n)$, with $O(1)$ rotations.**
+
+## Another insertion example
+
+Build a tree from nothing by inserting 47, 32, 71, 65, 82, 87, 93. Watch for a Case 1 recolor when 65 arrives (its uncle 32 is red), then rotations as the right side gets too deep:
+
+<RBTreeVisualizer ops={[47, 32, 71, 65, 82, 87, 93].map((key) => ({ op: "insert", key }))} />
+
+## Deletion
+
+RB-DELETE has the **same asymptotic running time**, $O(\lg n)$, and uses a constant number of rotations too (at most 3).
+
+**Step 1: ordinary BST deletion.**
+
+- If the node to delete has **two children**, replace its data with its **predecessor's** data (the largest key in its left subtree) or its successor's. Its color stays the same. Then delete the predecessor's node instead.
+- So the node $y$ that's actually removed always has **at most one** real (non-NIL) child.
+
+**Step 2: did we break anything?**
+
+- If the removed node $y$ was **red**, no property can be violated. Just remove it.
+- If $y$ was **black**, every path that went through $y$ now has one black node too few, which breaks property 4. Let $x$ be the child that takes $y$'s place. It may be a black NIL "pretend" node. Call the **tree-fix** algorithm on $x$.
+
+```text
+RB-DELETE(T, z)
+    if z has two children
+        y ← PREDECESSOR(z)       ⊳ or successor
+        key[z] ← key[y]          ⊳ move y's data into z
+    else y ← z
+    x ← the only child of y (a pretend NIL if it has none)
+    splice y out, attaching x to y's parent
+    if color[y] = BLACK
+        RB-TREE-FIX(T, x)
+```
+
+### Fixing the tree: the black token
+
+The tree-fix algorithm treats $x$ as carrying an **extra black token**. That makes up for the black node that was removed, so property 4 holds again. But it means $x$ might now be "doubly black", which breaks property 1 (every node is *either* red or black).
+
+The token is **pushed up the tree** until:
+
+- it reaches a **red** node, which is then simply colored black, or
+- it reaches the **root**, where it can just be dropped, or
+- it can be removed by **rotating and recoloring**.
+
+Let $w$ be $x$'s **sibling**. The **nephews** are $w$'s children.
+
+| Case | Situation | What to do |
+| --- | --- | --- |
+| (1) | $x$ is **red** | Color it black. **Done!** |
+| (2) | $x$'s sibling $w$ is **red** | Swap the colors of $w$ and the parent, then rotate at the parent. Now $x$ has a black sibling, so go on to case (3) or (4). |
+| (3) | $w$ is black and **both nephews are black** | Color $w$ red. That takes one black from both sides, so pass the token **one level up** to the parent and repeat. |
+| (4) | $w$ is black and **a nephew is red** | Rotate (once or twice) and recolor, so that the red nephew becomes black and fills the gap. **Done!** |
+
+In cases (2) and (4), the second picture is the mirror image: when $x$ is a right child, swap left and right.
+
+### Deletion example
+
+Start from a tree with ten keys, then delete 25, 5, 80 and 10. Between them these four deletions hit every fix-up case. Watch the case label, and look for **Replace with predecessor** when a deleted node has two children.
+
+<RBTreeVisualizer start={[5, 25, 10, 20, 90, 80, 40, 55, 70, 95]} ops={[25, 5, 80, 10].map((key) => ({ op: "delete", key }))} />
+
+<Callout tone="sky" label="Try it yourself">
+Use **Insert** and **Delete** above on your own keys. Whatever you do, the tree stays within $2\lg(n + 1)$ height. Check the **height** counter against the **nodes** counter.
+</Callout>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 701, title: "Insert into a Binary Search Tree", slug: "insert-into-a-binary-search-tree", why: "TREE-INSERT, the first line of RB-INSERT.", difficulty: "Medium" },
+    { id: 450, title: "Delete Node in a BST", slug: "delete-node-in-a-bst", why: "Step 1 of RB-DELETE: the two-children case with a predecessor or successor.", difficulty: "Medium" },
+    { id: 110, title: "Balanced Binary Tree", slug: "balanced-binary-tree", why: "Check the AVL balance condition, the cousin of the red-black rules." },
+    { id: 1382, title: "Balance a Binary Search Tree", slug: "balance-a-binary-search-tree", why: "Rebuild a skewed BST into a balanced one, all at once instead of with rotations.", difficulty: "Medium" },
+  ]}
+/>

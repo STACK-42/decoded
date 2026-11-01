@@ -1,0 +1,31 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { BusTrip, BusWidths } from "@/components/mdx/OrganizationVisualizers";
+
+# Buses: The Computer's Roads
+
+A **bus** is a set of parallel wires shared by the parts of a computer. Wires inside the CPU form the **internal bus**, and those connecting it to everything else form the **external bus**.
+
+To talk to memory, the CPU needs to say three things, and each has its own group of wires. Think of ordering at a warehouse: which shelf, what to do, and the item itself.
+
+<BusTrip />
+
+| Bus | Question it answers | Direction |
+|---|---|---|
+| **Address** | Which location? | CPU to memory |
+| **Data** | What value? | Both ways |
+| **Control** | Read or write? And when? | Mostly from the CPU |
+
+## Width is everything
+
+A bus is like a highway, and each wire is a lane carrying one bit at a time. The number of wires sets two different limits, depending on the bus.
+
+<BusWidths />
+
+- **Address bus width sets how much memory you can reach.** With $k$ lines you can name $2^k$ locations. 32 lines reach 4 GB, which is why older 32-bit computers couldn't use more than that.
+- **Data bus width sets how much moves per trip.** A 32-bit bus moves data four times as fast as an 8-bit bus at the same clock speed, since it carries four times as many bits at once.
+
+<Callout tone="sky" label="Taking turns">
+A bus is shared, so only one device may send at a time, or the signals would collide. Deciding whose turn it is is called **arbitration**, and it's covered in [Computer Architecture](/courses/computer-architecture/buses-and-arbitration).
+</Callout>
+
+The hardware that lets many parts take turns on the same wires is the [multiplexer](/courses/logic-design/multiplexers), if you'd like to see how it's built.

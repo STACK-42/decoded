@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import rehypeSlug from "rehype-slug";
 import mdx from "@mdx-js/rollup";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
@@ -13,7 +14,7 @@ export default defineConfig({
       ...mdx({
         providerImportSource: "@mdx-js/react",
         remarkPlugins: [remarkGfm, remarkMath],
-        rehypePlugins: [rehypeKatex],
+        rehypePlugins: [rehypeSlug, rehypeKatex],
       }),
     },
     react(),

@@ -1,0 +1,249 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { GrowthTable } from "@/components/mdx/AlgoVisualizers";
+import { TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
+
+# Complexity and Asymptotic Notation
+
+This lesson has two parts. First, a quick revision of the maths every analysis uses. Then the main event: why we can throw away constants and small terms, and the three notations, $O$, $\Omega$ and $\Theta$, that make it precise.
+
+## Part 1: Math revision
+
+You'll meet five tools again and again:
+
+- **Sets.** A set is a collection of distinguishable members, or elements. $\Theta(n^2)$, for example, is a *set* of functions.
+- **Logarithms.** $\log_b n = x$ means $b^x = n$. In this course, $\lg n$ means $\log_2 n$: how many times you can halve $n$ before reaching 1.
+- **Summations.** Above all the arithmetic series $1 + 2 + \dots + n = \frac{n(n+1)}{2}$ and the geometric series $1 + r + r^2 + \dots$
+- **Recursion.** An algorithm is recursive if it calls itself to do part of its work. Classic examples are computing $n!$ and the Towers of Hanoi puzzle.
+- **Mathematical proof.** There are three templates, shown below.
+
+### Proof by induction
+
+A proof by induction has two parts:
+
+1. **Base case.** Show the statement is true for a small value.
+2. **Inductive step.** *Assume* it's true for all cases up to some $k$ (the **inductive hypothesis**). Using that assumption, show it's true for $k + 1$.
+
+**Example.** The Fibonacci numbers $F_0 = 1, F_1 = 1, F_2 = 2, \dots, F_i = F_{i-1} + F_{i-2}$ satisfy $F_i < (5/3)^i$ for $i \ge 1$.
+
+- **Base cases:** $F_1 = 1 < 5/3$, and $F_2 = 2 < 25/9 = (5/3)^2$.
+- **Hypothesis:** assume $F_i < (5/3)^i$ for $i = 1, 2, \dots, k-1$. We must prove $F_k < (5/3)^k$.
+- **Step:**
+
+$$
+\begin{aligned}
+F_k &= F_{k-1} + F_{k-2} \\
+    &< (5/3)^{k-1} + (5/3)^{k-2} && \text{by the hypothesis} \\
+    &= (5/3)^{k-2}\,(5/3 + 1) = (5/3)^{k-2} \cdot \tfrac{8}{3} \\
+    &< (5/3)^{k-2} \cdot \tfrac{25}{9} && \text{because } \tfrac{8}{3} = \tfrac{24}{9} < \tfrac{25}{9} \\
+    &= (5/3)^{k-2} \cdot (5/3)^2 = (5/3)^k
+\end{aligned}
+$$
+
+### Proof by counterexample
+
+To show a claim is **false**, one example where it fails is enough. Claim: $F_k \le k^2$. It's false, because $F_{11} = 144 > 11^2 = 121$.
+
+### Proof by contradiction
+
+Assume the theorem is false, then show that leads to something impossible.
+
+**Theorem:** there is no largest integer.
+
+1. **Assume the opposite:** there is a largest integer, $B$.
+2. **Find the contradiction:** let $C = B + 1$. $C$ is an integer, because it's the sum of two integers, and $C > B$. So $B$ isn't the largest integer after all. Contradiction! The theorem is true.
+
+## Part 2: Algorithm complexity
+
+### What is an algorithm?
+
+An **algorithm** is a finite sequence of instructions that, if followed, accomplishes a particular task. It must satisfy five criteria:
+
+1. **Input**: zero or more quantities are supplied from outside.
+2. **Output**: at least one quantity is produced.
+3. **Definiteness**: each instruction is clear and unambiguous.
+4. **Finiteness**: for every input, it stops after a finite number of steps.
+5. **Efficiency**: it uses a reasonable amount of time and resources, so it's feasible to run.
+
+### Problems and instances
+
+We use algorithms to solve **problems**: sorting a list, searching for a key, finding the shortest route between two cities. Some problems are easy, some are hard because they take a huge amount of time, and some can't be solved at all because no algorithm for them can exist.
+
+Keep two words apart:
+
+- A **problem** is the general task. *Sort a collection.*
+- An **instance** is one particular input. *Sort `[5, 2, 1, 7, 3]` in ascending order.*
+
+Likewise, *search for a key in a collection* is a problem, and *find key = 3 in `[1, 2, 6, 9, 10, 45, 78]`* is an instance.
+
+### Complexity
+
+**Complexity** is the amount of resources an algorithm needs to solve a problem instance.
+
+- **Time complexity** is the amount of time needed.
+- **Space complexity** is the amount of memory needed.
+
+## How do we measure time?
+
+An algorithm on paper can't be run with a stopwatch. There are two approaches.
+
+**Approach 1: implement it and time it.** This is expensive, and the result depends on the machine, the programming language, the compiler and the programmer's skill. It isn't practical for comparing algorithms.
+
+**Approach 2: count the fundamental operation.** Pick the most important operation and count how many times it runs for an input of size $n$. Not all operations cost the same (multiplication is slower than addition), but the operation that runs *most often* ends up dominating the total time. So "fundamental" means **dominant**.
+
+```text
+Algorithm add(x[], n)
+    Sum ← 0
+    for (i ← 0; i < n; i ← i + 1)
+        Sum ← x[i] + Sum
+    return Sum
+```
+
+If the fundamental operation is the assignment `←`, count every assignment: 1 for `Sum ← 0`, $n + 1$ for the loop variable `i` (including the start), and $n$ inside the loop. If you also count the final loop test, you get $T(n) = 2n + 3$. If instead the fundamental operation is `+`, then $T(n) = n$.
+
+So different people can choose different operations and get *different* formulas for the same algorithm. Does it matter whether someone says $3n + 2$ and someone else says $2n$? As we're about to see, **no**. Both grow the same way.
+
+## Throwing away the small stuff
+
+Since we only want a rough estimate, can we simplify $T(n) = 4n^2 + 100$ to just $n^2$? We need a reason. Look at each term's **contribution** to $T(n) = 3n^2 + 8n + 10$:
+
+<TermContribution initialN={1} />
+
+**Experiment 1:** as $n$ grows, the share of $3n^2$ climbs towards 100% while the shares of $8n$ and $10$ fall towards 0%. At $n = 100$, $3n^2$ is already 97.37% of the total. So we can drop the lower-order terms: $T(n) \approx 3n^2$.
+
+**Experiment 2:** what about the coefficient 3? Switch the toggle to drop it. $n^2$ *still* dominates as $n$ grows: 92.51% at $n = 100$. So we can drop the coefficient too: $T(n) \approx n^2$.
+
+**Experiment 3:** from what size does the approximation work? If you plot the approximate $T(n) = n^2$ divided by the exact $T(n) = 3n^2 + 8n + 10$, the ratio settles down to about $0.33$ ($= 1/3$) from around $n = 25$ onwards. Beyond that point, the two grow **at the same rate**.
+
+## Rate of growth
+
+Mathematicians group functions by their **rate of growth**. This field is called the **asymptotic growth of functions**, and it gives us three notations:
+
+- **Big-O**, $O(g(n))$: an upper bound.
+- **Omega**, $\Omega(g(n))$: a lower bound.
+- **Theta**, $\Theta(g(n))$: a tight bound, meaning both at once.
+
+### Big-O
+
+<Callout tone="violet" label="Definition">
+$f(n) \in O(g(n))$ if and only if there exist positive constants $c$ and $n_0$ such that
+
+$$
+0 \le f(n) \le c\,g(n) \quad \text{for all } n \ge n_0.
+$$
+
+We say $f(n)$ is **Big-O of $g(n)$**, or that $g(n)$ is an **asymptotic upper bound** for $f(n)$.
+</Callout>
+
+We use Big-O for the **worst-case** time. Saying "the worst-case time of algorithm A is $O(n^2)$" means: *we don't know the exact time, but we can promise that once the input size passes $n_0$, it's never more than $cn^2$.*
+
+**Example 1.** Prove $f(n) = 3n + 2 \in O(n)$. We need $c > 0$ and $n_0 > 0$ with $0 \le 3n + 2 \le cn$. Take $n_0 = 1$ and $c = 5$: for $n \ge 1$, $3n + 2 \le 3n + 2n = 5n$. ✓
+
+**Example 2.** Show $f(n) = 3n^2 + 20 \in O(n^2)$. Take $n_0 = 5$ and $c = 4$: we need $3n^2 + 20 \le 4n^2$, which means $20 \le n^2$. That's true for $n \ge 5$. ✓
+
+Try other values. Shrink $c$ until the proof breaks, then raise $n_0$ to rescue it:
+
+<BigOWitness />
+
+**Example 3.** What is the Big-O of multiplying two arrays of size $n$ element by element?
+
+```text
+Algorithm multiply(x[], y[], n)
+    sum ← 0
+    for (i = 0; i < n; i++)
+        sum ← sum + x[i] * y[i]
+    return sum
+```
+
+One multiplication per element, so it's $O(n)$.
+
+### Big-O rules
+
+**Rule 1, the sum rule.** $O(f(n)) + O(g(n)) = O(f(n) + g(n))$. When two algorithms run **one after the other**, add their costs.
+
+*Example:* reading an array is $O(n)$ and sorting it with two nested loops is $O(n^2)$. Reading *then* sorting costs $O(n + n^2) = O(n^2)$.
+
+**Rule 2, the product rule.** $O(f(n)) \times O(g(n)) = O(f(n) \cdot g(n))$. When one algorithm **calls another** (or repeats it), multiply.
+
+*Example:*
+
+```text
+Algorithm Read_sort_write(n, m)
+    for (array ← 1; array <= m; array++)
+        readArray(x, n);      // O(n)
+        sortArray(x, n);      // O(n²)
+        printArray(x, n);     // O(n)
+```
+
+One pass of the loop body costs $O(n + n^2 + n) = O(n^2)$. It runs $m$ times, so the total is $O(m \cdot n^2)$.
+
+**Quick check.** What's the time complexity of this?
+
+```cpp
+sum = 0;
+for (k = 1; k <= n; k *= 2)     // k doubles: runs log n times
+    for (j = 1; j <= n; j++)    // runs n times
+        sum++;
+```
+
+The outer loop runs $\log n$ times and the inner loop runs $n$ times for each, so it's **$O(n \log n)$**.
+
+## The functions you'll meet
+
+| Function | Name | Notes |
+| --- | --- | --- |
+| $f(n) = c$ | constant | the simplest is $g(n) = 1$ |
+| $f(n) = \log_b n$ | logarithmic | the most common is $\log_2 n$ |
+| $f(n) = n$ | linear | |
+| $f(n) = n \log n$ | n-log-n | |
+| $f(n) = n^2$ | quadratic | |
+| $f(n) = n^3$ | cubic | |
+| $f(n) = 2^n$ | exponential | |
+
+| $n$ | $1$ | $\log n$ | $n$ | $n \log n$ | $n^2$ | $n^3$ | $2^n$ |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 5 | 1 | 3 | 5 | 15 | 25 | 125 | 32 |
+| 10 | 1 | 4 | 10 | 33 | 100 | $10^3$ | $10^3$ |
+| 100 | 1 | 7 | 100 | 664 | $10^4$ | $10^6$ | $10^{30}$ |
+| 1000 | 1 | 10 | 1000 | $10^4$ | $10^6$ | $10^9$ | $10^{300}$ |
+| 10000 | 1 | 13 | 10000 | $10^5$ | $10^8$ | $10^{12}$ | $10^{3000}$ |
+
+<GrowthTable initialN={1000} />
+
+## Three ways to compute $1 + 2 + \dots + n$
+
+| Algorithm A | Algorithm B | Algorithm C |
+| --- | --- | --- |
+| `sum = 0` | `sum = 0` | `sum = n * (n + 1) / 2` |
+| `for i = 1 to n` | `for i = 1 to n` | |
+| `    sum = sum + i` | `    for j = n down to i` | |
+| | `        sum = sum + 1` | |
+
+All three give the same answer, but count the operations:
+
+- **A** does $n$ additions: $O(n)$.
+- **B** adds 1 a total of $n + (n-1) + \dots + 1 = \frac{n(n+1)}{2}$ times: $O(n^2)$.
+- **C** does a fixed handful of operations whatever $n$ is: $O(1)$.
+
+Same problem, same answer, three completely different growth rates. Choosing the algorithm matters more than any amount of code tuning.
+
+## $\Omega$ and $\Theta$
+
+Big-O gives an **upper bound**. The other two notations complete the picture.
+
+<Callout tone="sky" label="Omega: lower bound">
+$f(n) \in \Omega(g(n))$ if there are positive constants $c$ and $N$ such that $f(n) \ge c\,g(n)$ for all $n \ge N$.
+
+Equivalently, $f(n)$ is $\Omega(g(n))$ **if and only if** $g(n)$ is $O(f(n))$.
+</Callout>
+
+<Callout tone="mint" label="Theta: tight bound">
+$f(n) \in \Theta(g(n))$ if it is **both** $\Omega(g(n))$ **and** $O(g(n))$.
+
+So $f$ is squeezed between $c_1 g(n)$ and $c_2 g(n)$ for all large $n$: it grows at *exactly* the rate of $g$, up to constants.
+</Callout>
+
+The two Ω examples in the widget above show this. For instance, $5n^2 + 100n \ge 5n^2$, so it's $\Omega(n^2)$. It's also $O(n^2)$, since $5n^2 + 100n \le 105n^2$ for $n \ge 1$. So it's $\Theta(n^2)$.
+
+## Try it
+
+**Exercise.** Find the time complexity of finding the $k$-th smallest integer in an unordered array of integers, taking comparison as the basic operation. (Hint: one simple way is to find and remove the minimum $k$ times. How many comparisons is that? We'll see a much faster method in the Order Statistics lesson.)

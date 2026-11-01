@@ -1,0 +1,46 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { NandBuilds } from "@/components/mdx/CircuitVisualizers";
+
+# Universal Gates: Everything from NAND
+
+Imagine you've been told you may only ever use one type of gate. Could you still build a computer? Yes, if that gate is NAND, or NOR. These are called **universal gates**, because each can make NOT, AND and OR, and those three can make anything.
+
+Pick a build and test it.
+
+<NandBuilds />
+
+NOR works the same way with the roles swapped. Tying its inputs gives NOT, NOR followed by NOT gives OR, and inverting both inputs gives AND. Manufacturers like this because NAND is cheap to make from transistors, and a chip made of one repeated cell is simple to produce.
+
+## Two ways to read the same gate
+
+De Morgan's theorem says that the same gate has two faces:
+
+$$
+(AB)' = A' + B' \qquad\text{(a NAND is an OR with inverted inputs)}
+$$
+
+$$
+(A + B)' = A'B' \qquad\text{(a NOR is an AND with inverted inputs)}
+$$
+
+That gives you a neat trick for reading NAND circuits. Take two NANDs feeding a third:
+
+$$
+X = \big((AB)'(CD)'\big)' = (AB)'' + (CD)'' = AB + CD
+$$
+
+The first layer acts as ANDs and the output gate acts as an OR. In other words, **a NAND-NAND circuit is just an AND-OR circuit in disguise**, so any sum of products translates directly: swap every gate for a NAND.
+
+In the same way, a NOR-NOR circuit is an OR-AND circuit, which suits product of sums:
+
+$$
+X = \big((A + B)'+(C + D)'\big)' = (A + B)(C + D)
+$$
+
+<Callout tone="neon" label="Coming up">
+The [SR latch](/courses/logic-design/sr-latch), the first circuit that can remember anything, is nothing more than two of these universal gates wired in a loop.
+</Callout>
+
+## Checking your work with waveforms
+
+To predict a circuit's output over time, work one gate at a time, writing the signal after each gate. For example, $X = A'B' + AB$ has two intermediate AND outputs. Sketch $A'B'$ and $AB$ across time, then OR them. You'll see $X$ go high whenever $A$ and $B$ match, which makes the circuit an XNOR.

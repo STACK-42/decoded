@@ -1,0 +1,94 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Your First Program
+
+Assembly is the most direct language there is. Each line is usually one machine instruction, turned into binary by a program called an **assembler**. The basic form of a line is:
+
+```nasm
+label:  INSTRUCTION  destination, source   ; comment
+```
+
+Labels and comments are optional. Anything after a `;` is ignored.
+
+## Hello, world
+
+Printing text is a job for the operating system, so we ask DOS to do it using an **interrupt** instruction. Before making the call, we leave a note in the registers saying what we want.
+
+<AsmRunner source={`msg db "Hello, World$"
+LEA DX, msg      ; DX = where the text starts
+MOV AH, 09h      ; 09h means: print a string
+INT 21h          ; call DOS
+MOV AH, 4Ch      ; 4Ch means: end the program
+INT 21h          ; call DOS`} />
+
+Going through it:
+
+- `msg db "Hello, World$"` reserves one byte per character (**d**efine **b**yte). The `$` marks the end of the string for DOS.
+- `LEA DX, msg` loads the address of the string into DX.
+- `MOV AH, 09h` picks a service, since `INT 21h` is a whole menu of them.
+- `INT 21h` hands control to DOS, which looks at AH and does the job.
+
+Here are the DOS services you'll use most:
+
+| AH | Service | Takes or gives |
+|---|---|---|
+| 01h | Read a key | Gives the character in AL |
+| 02h | Print a character | Takes the character in DL |
+| 09h | Print a string | Takes its address in DX |
+| 4Ch | End the program | |
+
+## How a full program is laid out
+
+In a real file, you tell the assembler about the [segments](/courses/microprocessors/segments-and-addresses). Only the code segment is required.
+
+```nasm
+data segment
+    char db 0            ; a variable
+data ends
+
+code segment
+    assume cs:code, ds:data
+    mov ax, data         ; DS can't take a number directly,
+    mov ds, ax           ; so go through AX
+
+    mov ah, 01h          ; read a key into AL
+    int 21h
+    mov char, al         ; save its code in memory
+
+    mov ah, 4Ch          ; exit
+    int 21h
+code ends
+```
+
+The first two lines of code are a standard opening: the operating system doesn't set DS for you.
+
+There's also a shorter style, a `.COM` program, where everything shares one 64 KB segment and starts at offset 100h. You begin with `org 100h`, and no segment setup is needed. The simulators in this course work like this.
+
+```nasm
+org 100h
+mov dx, msg
+mov ah, 09h
+int 21h
+ret
+msg db "Hello, World$"
+```
+
+<Callout tone="orange" label="Instructions and data share memory">
+In that last example, the string sits right after the code. If the `ret` weren't there, the CPU would carry on and try to run "Hello" as instructions, since [memory doesn't label which is which](/courses/computer-organization/machine-cycle).
+</Callout>
+
+## Types of instruction
+
+The 8086's instructions fall into a few families. The rest of this module covers the ones you'll actually use:
+
+| Family | Examples |
+|---|---|
+| Data transfer | `MOV`, `PUSH`, `POP`, `XCHG`, `LEA`, `IN`, `OUT` |
+| Arithmetic | `ADD`, `SUB`, `INC`, `DEC`, `MUL`, `DIV`, `CMP`, `NEG` |
+| Bit manipulation | `AND`, `OR`, `XOR`, `NOT`, `SHL`, `SHR`, `ROL`, `ROR` |
+| Branch | `JMP`, `JE`, `JNE`, `CALL`, `RET` |
+| Loop | `LOOP`, `LOOPE`, `LOOPNE` |
+| String | `MOVSB`, `CMPSB`, `SCASB`, `LODSB`, `REP` |
+| Processor control | `STC`, `CLC`, `STD`, `CLD`, `STI`, `CLI` |
+| Interrupt | `INT`, `INTO`, `IRET` |

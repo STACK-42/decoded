@@ -1,0 +1,100 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ConvolutionVisualizer } from "@/components/mdx/PolynomialVisualizers";
+
+# Multiplying and Dividing Polynomials
+
+Multiply two polynomials by hand and you collect like terms. Do that on coefficient vectors and you've performed a **convolution**, an operation that also runs image filters and audio effects.
+
+## Convolution
+
+Take $a(s) = s^2 + 2s + 3$ and $b(s) = 4s^2 + 5s + 6$. The coefficient of $s^n$ in the product comes from every pair of powers adding up to $n$:
+
+$$
+c_n = \sum_{i} a_i \, b_{n-i}
+$$
+
+Picture $b$ flipped and sliding past $a$. Wherever they overlap, multiply the pairs and add:
+
+<ConvolutionVisualizer />
+
+```matlab
+a = [1 2 3];  b = [4 5 6];
+c = conv(a, b)
+
+c =
+     4    13    28    27    18
+```
+
+So the product is $4s^4 + 13s^3 + 28s^2 + 27s + 18$. If $a$ has degree $m$ and $b$ has degree $n$, the result has degree $m + n$.
+
+## Deconvolution
+
+`deconv` runs this backwards, which is polynomial long division. It returns the quotient and the remainder:
+
+```matlab
+[q, r] = deconv(c, a)
+
+q =
+     4     5     6
+r =
+     0     0     0     0     0
+```
+
+A remainder of all zeros tells you that $a$ divides $c$ exactly. This also gives a quick test for a root: $r$ is a root of $p$ exactly when `deconv(p, [1 -r])` leaves no remainder.
+
+## In Python
+
+```python
+import numpy as np
+
+c = np.convolve([1, 2, 3], [4, 5, 6])
+print(c.tolist())  # [4, 13, 28, 27, 18]
+
+q, r = np.polydiv(c, [1, 2, 3])
+print(np.round(q).astype(int).tolist())  # [4, 5, 6]
+```
+
+The plain Python version is the definition, a sum over pairs of positions:
+
+```python
+a, b = [1, 2, 3], [4, 5, 6]
+c = [0] * (len(a) + len(b) - 1)
+
+for i, x in enumerate(a):
+    for j, y in enumerate(b):
+        c[i + j] += x * y
+
+print(c)  # [4, 13, 28, 27, 18]
+```
+
+A moving average in pandas is a convolution with equal weights:
+
+```python
+import numpy as np
+import pandas as pd
+
+s = pd.Series([2.0, 4.0, 6.0, 8.0])
+
+print(s.rolling(2).mean().dropna().tolist())  # [3.0, 5.0, 7.0]
+print(np.convolve(s, [0.5, 0.5], mode="valid").tolist())  # [3.0, 5.0, 7.0]
+```
+
+## In machine learning
+
+**Convolutional networks.** A CNN layer slides small learned filters across an image, and this works because a pattern means the same thing wherever it appears. Frameworks usually skip the flip you saw above, so strictly they compute a correlation, but everyone still calls it convolution. The flip makes no practical difference, because the weights are learned.
+
+**Time series features.** Rolling means like the one above are common inputs for forecasting models. Be careful to use only past values, or the model can peek at the future during training.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Blurring an image" tool="Photoshop, OpenCV">
+A blur slides a small grid of weights across the image, which is convolution in two dimensions.
+</PracticalApplication>
+<PracticalApplication title="Recognising images" tool="Convolutional neural networks">
+The layers of a CNN are convolutions, except that the network learns the weights itself.
+</PracticalApplication>
+<PracticalApplication title="Adding reverb to sound" tool="Audio plugins">
+Convolution reverb combines a recording with the recorded echo of a real room, so it sounds as if it were played there.
+</PracticalApplication>
+</ApplicationsGrid>

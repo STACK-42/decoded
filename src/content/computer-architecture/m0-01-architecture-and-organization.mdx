@@ -1,0 +1,50 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+
+# Architecture and Organization
+
+Think about a car. "It has a steering wheel, a pedal for speed and a pedal for braking" is true of nearly every car, and it's all a driver needs to know. Whether the engine is petrol or electric is a separate question, and the driver doesn't have to care.
+
+Computers split the same way:
+
+- **Architecture** is what a programmer can see: the instructions, the registers, how many bits a number has, how memory is addressed. It's the promise a chip makes to software. It describes **what** the computer does.
+- **Organization** is how that promise is kept in hardware: the control signals, the kind of memory, the size of the cache. It describes **how** it does it.
+
+| | Architecture | Organization |
+|---|---|---|
+| Question | What can it do? | How is it built? |
+| Examples | Instruction set, word size, addressing modes | Cache size, clock speed, pipeline depth |
+| Who cares | Compiler and assembly programmers | Hardware designers |
+| Changes | Rarely, over decades | With each new chip |
+
+<Callout tone="violet" label="Why the split matters">
+All Intel x86 chips share one basic architecture, so a program written for an old one still runs on a new one. The organization inside is completely different. That's called **backward compatibility**.
+</Callout>
+
+## What this course is about
+
+Every other course in this series built the machine. This one asks a different question: **how do you make it fast?** There are really only a few big ideas, and you'll see them come up throughout:
+
+1. Do more work in each clock tick ([pipelining](/courses/computer-architecture/pipelining)).
+2. Keep what you need close by ([cache](/courses/computer-architecture/cache-mapping)).
+3. Do several things at once ([parallelism](/courses/computer-architecture/parallel-processing)).
+
+## What you should already know
+
+This course doesn't repeat earlier material. If any of these feels shaky, follow the link. They're all short and interactive.
+
+| You need | Where to get it |
+|---|---|
+| Gates, decoders and multiplexers | [Logic gates](/courses/logic-design/logic-gates), [decoders](/courses/logic-design/comparators-decoders-encoders), [multiplexers](/courses/logic-design/multiplexers) |
+| Latches, flip-flops and clocks | [The SR latch](/courses/logic-design/sr-latch), [D latch and clock](/courses/logic-design/d-latch-and-clock), [flip-flops](/courses/logic-design/flip-flops) |
+| Registers, shift registers and counters | [Registers](/courses/logic-design/registers), [counters](/courses/logic-design/counters) |
+| How a memory chip is built | [The memory unit](/courses/logic-design/memory-unit) |
+| The CPU's parts and the machine cycle | [Inside the CPU](/courses/computer-organization/inside-the-cpu), [the machine cycle](/courses/computer-organization/machine-cycle) |
+| The memory hierarchy | [Memory hierarchy and cache](/courses/computer-organization/memory-hierarchy) |
+| A real instruction set and addressing modes | [8086 registers](/courses/microprocessors/registers), [addressing modes](/courses/microprocessors/addressing-modes) |
+| Interrupts and subroutine calls | [Interrupts](/courses/microprocessors/interrupts), [the stack and procedures](/courses/microprocessors/stack-and-procedures) |
+
+## Structure and function
+
+One last pair of terms. **Structure** is how the parts are connected, and **function** is what each part does. At the top level, a computer has four structural parts (CPU, main memory, I/O and the interconnection between them), and four functions (data processing, data storage, data movement and control).
+
+The next lesson begins at the boundary between hardware and software: the instruction.

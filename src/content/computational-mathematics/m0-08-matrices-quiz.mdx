@@ -1,0 +1,109 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Matrices
+
+Eight questions on the whole module. Get 6 right to pass. Each answer locks in when you click it and shows an explanation.
+
+<Quiz
+  courseSlug="computational-mathematics"
+  lessonSlug="matrices-quiz"
+  passThreshold={6/8}
+  questions={[
+    {
+      id: "q1",
+      prompt: "A is 3-by-4 and B is 4-by-2. What is true about the products?",
+      options: [
+        { id: "a", text: "AB is 3-by-2 and BA doesn't exist" },
+        { id: "b", text: "AB is 4-by-4 and BA is 3-by-2" },
+        { id: "c", text: "Both exist, because the numbers overlap" },
+        { id: "d", text: "Neither exists, because the matrices aren't square" },
+      ],
+      correctOptionId: "a",
+      explanation: "AB needs the inner sizes to match: 4 and 4 do, and the outer sizes give 3-by-2. BA would pair 2 with 3, which fails.",
+    },
+    {
+      id: "q2",
+      prompt: "u and v are both 3-by-1 column vectors. Which expression gives a single number?",
+      options: [
+        { id: "a", text: "u * v" },
+        { id: "b", text: "u * v'" },
+        { id: "c", text: "u' * v" },
+        { id: "d", text: "u + v" },
+      ],
+      correctOptionId: "c",
+      explanation: "1-by-3 times 3-by-1 is 1-by-1, the inner product. u * v' is the 3-by-3 outer product, and u * v is an error.",
+    },
+    {
+      id: "q3",
+      prompt: "What does the transpose do to the entries on the main diagonal?",
+      options: [
+        { id: "a", text: "Changes their sign" },
+        { id: "b", text: "Leaves them where they are" },
+        { id: "c", text: "Moves them to the other diagonal" },
+        { id: "d", text: "Sets them to zero" },
+      ],
+      correctOptionId: "b",
+      explanation: "The transpose swaps i and j. On the main diagonal i equals j, so nothing moves.",
+    },
+    {
+      id: "q4",
+      prompt: "A is 2-by-3 and B is 4-by-5. What is the size of kron(A, B)?",
+      options: [
+        { id: "a", text: "6-by-20" },
+        { id: "b", text: "8-by-15" },
+        { id: "c", text: "2-by-5" },
+        { id: "d", text: "It doesn't exist, because the sizes don't fit" },
+      ],
+      correctOptionId: "b",
+      explanation: "The sizes multiply: 2 × 4 rows and 3 × 5 columns. The Kronecker product works with any two matrices.",
+    },
+    {
+      id: "q5",
+      prompt: "For A = [1 -7; -2 -3], what is the infinity-norm?",
+      options: [
+        { id: "a", text: "3" },
+        { id: "b", text: "5" },
+        { id: "c", text: "8" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "c",
+      explanation: "It's the largest absolute row sum. The rows give 1 + 7 = 8 and 2 + 3 = 5. The 1-norm of this matrix would be 10.",
+    },
+    {
+      id: "q6",
+      prompt: "A 2-by-2 matrix has determinant -3. What does it do to the unit square?",
+      options: [
+        { id: "a", text: "Shrinks its area to one third" },
+        { id: "b", text: "Makes its area 3 times bigger and flips it over" },
+        { id: "c", text: "Collapses it to a line" },
+        { id: "d", text: "Rotates it by 3 radians" },
+      ],
+      correctOptionId: "b",
+      explanation: "The size of the determinant is the area factor, and the negative sign means the orientation is flipped.",
+    },
+    {
+      id: "q7",
+      prompt: "What does triu(A, 1) keep?",
+      options: [
+        { id: "a", text: "Only the main diagonal" },
+        { id: "b", text: "The main diagonal and everything above it" },
+        { id: "c", text: "Everything strictly above the main diagonal" },
+        { id: "d", text: "Everything strictly below the main diagonal" },
+      ],
+      correctOptionId: "c",
+      explanation: "A positive k moves the boundary up and to the right. With k = 1 the main diagonal itself gets dropped.",
+    },
+    {
+      id: "q8",
+      prompt: "You need to solve Ax = b in MATLAB. What should you write?",
+      options: [
+        { id: "a", text: "x = inv(A) * b" },
+        { id: "b", text: "x = b / det(A)" },
+        { id: "c", text: "x = A \\ b" },
+        { id: "d", text: "x = A' * b" },
+      ],
+      correctOptionId: "c",
+      explanation: "The backslash solves the system directly through a factorization. Computing the inverse first is slower and usually less accurate.",
+    },
+  ]}
+/>

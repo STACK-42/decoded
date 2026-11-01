@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Polynomials
+
+Six questions on the module. Get 5 right to pass.
+
+<Quiz
+  courseSlug="computational-mathematics"
+  lessonSlug="polynomials-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "How do you enter 2x³ + 5 in MATLAB?",
+      options: [
+        { id: "a", text: "[2 5]" },
+        { id: "b", text: "[5 2]" },
+        { id: "c", text: "[2 0 0 5]" },
+        { id: "d", text: "[5 0 0 2]" },
+      ],
+      correctOptionId: "c",
+      explanation: "Coefficients go in descending powers, and missing powers need explicit zeros.",
+    },
+    {
+      id: "q2",
+      prompt: "What does polyval([1 0 -2 -5], 2) return?",
+      options: [
+        { id: "a", text: "-1" },
+        { id: "b", text: "3" },
+        { id: "c", text: "-5" },
+        { id: "d", text: "11" },
+      ],
+      correctOptionId: "a",
+      explanation: "2³ - 2(2) - 5 = 8 - 4 - 5 = -1.",
+    },
+    {
+      id: "q3",
+      prompt: "What does conv([1 1], [1 1]) return?",
+      options: [
+        { id: "a", text: "[1 1]" },
+        { id: "b", text: "[1 2 1]" },
+        { id: "c", text: "[2 2]" },
+        { id: "d", text: "[1 1 1 1]" },
+      ],
+      correctOptionId: "b",
+      explanation: "That's (x + 1)(x + 1) = x² + 2x + 1.",
+    },
+    {
+      id: "q4",
+      prompt: "How can you tell that deconv(c, a) divided exactly?",
+      options: [
+        { id: "a", text: "The quotient has all zeros" },
+        { id: "b", text: "The remainder has all zeros" },
+        { id: "c", text: "The quotient equals a" },
+        { id: "d", text: "It returns an error if not" },
+      ],
+      correctOptionId: "b",
+      explanation: "If a remainder of zeros comes back, a is a factor of c.",
+    },
+    {
+      id: "q5",
+      prompt: "You fit a degree 9 polynomial to 10 noisy points, and the error is zero. What should you suspect?",
+      options: [
+        { id: "a", text: "The data has no noise" },
+        { id: "b", text: "The model will predict new points very well" },
+        { id: "c", text: "The curve has overfitted the data" },
+        { id: "d", text: "polyfit failed" },
+      ],
+      correctOptionId: "c",
+      explanation: "Ten points can always be matched by degree 9. Zero error here says nothing about how well the curve predicts new data.",
+    },
+    {
+      id: "q6",
+      prompt: "In [r, p, k] = residue(b, a), what is p?",
+      options: [
+        { id: "a", text: "The roots of b" },
+        { id: "b", text: "The roots of a, called poles" },
+        { id: "c", text: "The numerators of each fraction" },
+        { id: "d", text: "The direct terms" },
+      ],
+      correctOptionId: "b",
+      explanation: "The poles are the roots of the denominator. r holds the numerators and k holds the direct terms.",
+    },
+  ]}
+/>

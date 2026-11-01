@@ -1,0 +1,207 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
+
+# Lab: Linux and the Command Line
+
+An operating system is software that acts as an **intermediary between the user and the hardware**: it gives programs a base to run on, and it manages the computer's hardware. Its main jobs are:
+
+- providing a **user interface**: graphical (GUI), command-line (CLI) or batch,
+- **running programs** and providing services to them,
+- **allocating and managing resources**: CPU scheduling, memory management, and so on.
+
+Each lab looks at how the OS performs one of these jobs. This first one is about the **user interface**: we'll use **Linux**, an open-source operating system, and its **terminal**, to see how it lets users do basic operations by typing commands.
+
+## Getting Linux on your machine
+
+You have three options, from heaviest to lightest.
+
+### 1. A virtual machine
+
+A **virtual machine (VM)** is a simulation of a physical machine. It has its **own operating system** and its own **virtual hardware** (RAM, CPU, disk...). Virtualization programs like **VirtualBox** or **VMware Workstation Player** let you run several VMs with different operating systems on one computer.
+
+- A VM is stored as a file on your disk (for example, with a `.vdi` extension).
+- Download VirtualBox from [virtualbox.org](https://www.virtualbox.org/) or VMware Player from [vmware.com](https://www.vmware.com/), plus a Linux image such as **Ubuntu Desktop**, then create a new VM from the image.
+
+### 2. Windows Subsystem for Linux (WSL)
+
+If you only want Linux **command-line** programs, without the overhead of a full Linux installation, use **WSL**. It runs a GNU/Linux environment, including most command-line tools, directly on Windows.
+
+Open **Command Prompt** or **PowerShell as administrator**, run this, then reboot:
+
+```bash
+wsl --install
+```
+
+### 3. A terminal in your browser
+
+To practice commands with **no installation at all**, use an online terminal such as [JSLinux](https://bellard.org/jslinux/). Or just use the practice terminal at the bottom of this page.
+
+## Reading the prompt
+
+When you open a terminal you'll see something like:
+
+```text
+user@linux:~$
+```
+
+| Part | Meaning |
+| --- | --- |
+| `user` | who you're logged in as |
+| `linux` | the machine's name |
+| `~` | the **current directory**. `~` is short for your **home directory**, `/home/user` |
+| `$` | "ready, type a command" |
+
+## Basic commands
+
+| Command | What it does | Example |
+| --- | --- | --- |
+| `clear` | clears the terminal screen | `clear` |
+| `date` | shows (or sets) the system date and time | `date` → `Sun Oct 24 22:24:06 2021` |
+| `echo` | prints its arguments on the screen | `echo Hello` → `Hello` |
+| `uname` | shows the operating system's name | `uname` → `Linux` |
+| `users` | shows the names of the users currently logged in | `users` |
+| `who` | like `users`, with more detail | `who` |
+| `man` | shows the **manual** of a command (press **q** to exit) | `man ls` |
+
+## Moving around the file system
+
+| Command | What it does |
+| --- | --- |
+| `pwd` | **p**rints the **w**orking **d**irectory, where you are now |
+| `cd` | **c**hanges **d**irectory. `cd ..` goes up one level, `cd ~` (or just `cd`) goes home |
+| `ls` | **l**i**s**ts the files and directories here, sorted alphabetically |
+
+`ls` takes **options**:
+
+- `ls -a` shows **all** entries, even hidden ones whose names start with `.`
+- `ls -r` lists in **reverse** order
+
+```text
+user@linux:~$ pwd
+/home/user
+user@linux:~$ cd ..
+user@linux:/home$ pwd
+/home
+user@linux:/home$ cd user
+user@linux:~$ ls
+dir1  dir2  file1  file2.txt
+user@linux:~$ ls -r
+file2.txt  file1  dir2  dir1
+```
+
+## Creating and removing
+
+| Command | What it does |
+| --- | --- |
+| `mkdir name...` | creates a directory with each given name |
+| `rmdir name...` | removes each directory, **only if it's empty** |
+| `touch name...` | creates an empty file with each given name |
+| `rm name...` | removes each file. It **won't remove directories** unless you add `-r` (**recursive**), which removes a directory with all its subdirectories and files |
+
+```text
+user@linux:~$ mkdir new1
+user@linux:~$ mkdir dir1/x new1/z
+user@linux:~$ rmdir dir2
+user@linux:~$ rmdir new1
+rmdir: failed to remove 'new1': Directory not empty
+user@linux:~$ touch new1/x.txt
+user@linux:~$ rm new1/z
+rm: cannot remove 'new1/z': Is a directory
+user@linux:~$ rm -r new1/z
+```
+
+<Callout tone="orange" label="Careful">
+There is **no recycle bin** in the terminal. `rm -r` deletes a whole directory tree immediately. If a file is write-protected, `rm` asks first, and only deletes it if your answer starts with **y** or **Y** (unless you force it with `-f`).
+</Callout>
+
+## Copying and moving
+
+**`cp`** copies files:
+
+- With **two names**, it copies the first **onto** the second: `cp a b`.
+- With **more than two**, the **last one must be a directory**, and everything is copied into it. Otherwise it's an error.
+- By default it **does not copy directories**.
+
+**`mv`** moves (or renames) files and directories, with the same two forms. If the destination file can't be written, `mv` asks before overwriting, unless you use `-f` (`--force`).
+
+```text
+user@linux:~$ cp file1 file2.txt new1
+user@linux:~$ cp file1 file2.txt new1/x.txt
+cp: target 'new1/x.txt' is not a directory
+user@linux:~$ mv file1 file2.txt dir1
+user@linux:~$ mv dir1 new1
+user@linux:~$ ls new1
+dir1  file1  file2.txt  x.txt
+```
+
+## Looking inside files
+
+| Command | What it does |
+| --- | --- |
+| `cat file...` | con**cat**enates the files and prints them. With **no arguments**, it reads what you type and prints it back |
+| `more file` | shows the output one page at a time, scrolling **forward only** |
+| `less file` | like `more`, but scrolls **forward and backward** with the arrow keys |
+
+```text
+user@linux:~/new1/dir1$ cat file1
+Hello, in file 1
+user@linux:~/new1/dir1$ cat file1 file2.txt
+Hello, in file 1
+Now, in file 2
+```
+
+## Redirection and pipes
+
+This is where the command line gets powerful: **connecting** commands and files.
+
+| Symbol | What it does |
+| --- | --- |
+| `>` | sends a command's **output to a file**. The file is created if it doesn't exist, and **replaced** if it does |
+| `>>` | like `>`, but **appends** to the end of the file |
+| `<` | takes a command's **input from a file** |
+| `\|` | a **pipe**: sends one command's output **as the input** of the next command |
+
+```text
+user@linux:~/new1$ echo texttexttext > file3
+user@linux:~/new1$ cat file3
+texttexttext
+user@linux:~/new1$ ls > file3
+user@linux:~/new1$ ls >> file3
+user@linux:~/new1$ sort file3 | uniq
+dir1
+file3
+x.txt
+user@linux:~/new1$ sort file3 | uniq | grep 3
+file3
+```
+
+Read the last line from left to right: **sort** the lines of `file3`, then **uniq** drops the repeated lines, then **grep 3** keeps only the lines containing "3".
+
+More examples:
+
+- `ls | more` lists a long directory one page at a time.
+- `man ls | less` reads a manual with scrolling.
+- `cat > notes.txt` takes what you type and writes it to a file (press **Ctrl + D** to finish).
+
+## Practice
+
+Your turn. This terminal runs entirely in your browser, starting from the lab's home directory: `dir1`, `dir2`, `file1` and `file2.txt`. Nothing you do here can harm your computer. Work through the missions; click one if you're stuck.
+
+<LinuxTerminal />
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Servers and the cloud" tool="SSH">
+    Almost every web server runs Linux with no screen attached. Developers manage them entirely by typing these same commands over SSH.
+  </PracticalApplication>
+  <PracticalApplication title="Developer tools" tool="GIT · NPM · DOCKER">
+    git, npm, pip and docker all live in the terminal. Knowing cd, ls and pipes is the entry ticket.
+  </PracticalApplication>
+  <PracticalApplication title="Searching logs" tool="GREP + PIPES">
+    `cat server.log | grep ERROR | sort | uniq` turns a million-line log into the handful of distinct errors you care about.
+  </PracticalApplication>
+  <PracticalApplication title="Automating chores" tool="SHELL SCRIPTS">
+    Put commands in a file and you have a script: rename 500 photos or back up a folder every night without lifting a finger.
+  </PracticalApplication>
+</ApplicationsGrid>

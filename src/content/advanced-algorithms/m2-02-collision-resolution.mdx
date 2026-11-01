@@ -1,0 +1,309 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Collisions: Chaining and Open Addressing
+
+However good the hash function is, two different keys will sometimes land in the **same slot**. That's a **collision**. There are two families of solutions:
+
+- **Separate chaining** (also called *open hashing*): each slot holds a **list** of all the keys that hash there.
+- **Open addressing** (also called *closed hashing*): every key lives **in the table itself**. On a collision, you go looking for another free slot.
+
+## Separate chaining
+
+Suppose $hash(k_1) = i = hash(k_2)$, where $k_1$ and $k_2$ are different keys for two entries $e_1$ and $e_2$ that we want to store in a table $A$ of size $m$. The simplest way to deal with the collision is to put $e_1$ and $e_2$ into a **chain** (a linked list) and store that list in $A[i]$.
+
+<HashTableVisualizer
+  mode="chaining"
+  m={7}
+  ops={[
+    { op: "insert", key: 10 }, { op: "insert", key: 20 }, { op: "insert", key: 30 }, { op: "insert", key: 17 },
+    { op: "insert", key: 24 }, { op: "insert", key: 40 }, { op: "search", key: 17 }, { op: "delete", key: 24 }, { op: "search", key: 3 },
+  ]}
+/>
+
+**Advantages:**
+
+1. Simple to implement.
+2. The table **never fills up**: you can always add another element to a chain.
+3. Less sensitive to the hash function and the load factor.
+4. Good when you don't know how many keys will be inserted or deleted, or how often.
+
+**Disadvantages:**
+
+1. Poor **cache** performance, because the keys are scattered around memory in linked-list nodes.
+2. **Wasted space**: some slots are never used.
+3. If a chain gets long, search becomes $O(n)$ in the worst case.
+4. Extra space for the **links** (pointers).
+
+### Analysis: the load factor
+
+Assume **simple uniform hashing**: each key is equally likely to hash to any of the $m$ slots. If $n$ keys are stored, the probability that a key lands in any particular slot is $\frac{1}{m}$, so the **expected length of a chain** is
+
+$$
+\alpha = \frac{n}{m} \qquad \text{the load factor of the hash table}
+$$
+
+- **Searching** for $e$: compute $hash(key(e))$, which is 1 step, then walk the chain, which is about $\alpha$ steps. Expected time $= 1 + \alpha$.
+- **Deleting** $e$: search for it first, so expected time $= 1 + \alpha$.
+- **Inserting** $e$: compute the hash and put $e$ at the front of the chain: $O(1)$.
+
+As long as we don't let the load factor get too large, so that $\alpha = O(1)$ because $n = O(m)$, **the average time is $O(1)$**.
+
+**Worst case:** all $n$ elements land in **one** chain, so the chain length is $n$. Search and delete then take $O(1 + n) = O(n)$.
+
+### Extended technique: a tree in each slot
+
+Separate chaining has two limitations:
+
+- deletion and search take $O(n)$ in the worst case,
+- an unsorted chain has to be scanned from start to end.
+
+One proposal is that **each slot holds a binary search tree (BST)** instead of a linked list, since a BST can grow with the data.
+
+**Worst case: all $n$ keys hash to the same slot.**
+
+- **Case 1:** the keys arrive in **sorted** order. The BST grows only to the left (descending order) or only to the right (ascending order). It's really a linked list, so operations cost $O(n)$.
+- **Case 2:** the keys arrive in **random** order, and the tree has close to minimum height. Operations cost $O(\log n)$.
+
+**Best case: the keys are spread evenly**, so every slot's BST has about $n/m$ keys.
+
+- **Case 1** (sorted arrivals, a skewed tree): $O(n/m)$.
+- **Case 2** (random arrivals): $O(\log(n/m))$.
+
+So BSTs improve on chains in every case **except** the skewed-tree case, where keys arrive sorted. We can fix that by using an **AVL tree**: a **self-balancing** BST where, at every node, the heights of the left and right subtrees differ by at most one.
+
+$$
+\text{BalanceFactor} = \text{height(left subtree)} - \text{height(right subtree)} \in \{-1, 0, 1\}
+$$
+
+An AVL tree rebalances itself (with rotations) after each insertion, so every operation is $O(\log n)$ in a tree of $n$ elements. You'll see another self-balancing tree, the **red-black tree**, later in this module.
+
+<Callout tone="mint" label="Where this is used">
+Java 8's `HashMap` does exactly this. When one bucket's chain gets longer than 8 entries, it turns that chain into a red-black tree, so a flood of colliding keys can't push lookups to $O(n)$.
+</Callout>
+
+### Rehashing
+
+As long as the load factor doesn't get too large, the average time stays $O(1)$. With separate chaining, $\alpha$ can rise **above 1** without hurting performance very much. With other methods (open addressing, below), performance gets worse once $\alpha$ reaches about **0.75** or **0.5**.
+
+So when the table gets too full, **double its size** and **hash every key again** into the new, bigger array, with a new hash function for the new size. This is **rehashing**.
+
+1. For every new entry, check the load factor.
+2. If the load factor is greater than the **threshold**, start rehashing.
+3. Create a new array of a larger size, typically double.
+4. Insert every element into the new array, using the new hash function, and make it the bucket array.
+
+Each rehash costs $O(n)$, but as the previous lesson's amortized analysis showed, doubling keeps the cost of $n$ inserts at $O(n)$ overall.
+
+## Open addressing
+
+Like separate chaining, **open addressing** is a way of handling collisions, but:
+
+- there's **no chaining** and **no pointers**: all items are stored in the hash table itself,
+- there's **one item per slot**, so the table size must always be $\ge$ the number of keys.
+
+### Probing
+
+On a collision, we **probe**: search through alternative slots in the array (the **probe sequence**) until we find what we're looking for. The hash function now depends on both the key **and the probe number**:
+
+$$
+h : U \times \{0, 1, \dots, m-1\} \to \{0, 1, \dots, m-1\}
+$$
+
+For every key $k$, the probe sequence $\langle h(k, 0), h(k, 1), \dots, h(k, m-1) \rangle$ should be a **permutation** of $\{0, 1, \dots, m-1\}$. That way every slot eventually gets tried.
+
+### The three operations
+
+**1. Insert.** Compute the hash value and look at that slot. Keep probing until you find an empty slot, then put $k$ there.
+
+```text
+HASH-INSERT(T, k)
+1  i = 0
+2  repeat
+3      j = h(k, i)
+4      if T[j] == NIL
+5          T[j] = k
+6          return j
+7      else i = i + 1
+8  until i == m
+9  error "hash table overflow"
+```
+
+**2. Search.** Follow the **same** probe sequence. Stop when you find $k$, or when you reach an **empty** slot. Since an insert of $k$ would have stopped at that empty slot, $k$ can't be any further along.
+
+```text
+HASH-SEARCH(T, k)
+1  i = 0
+2  repeat
+3      j = h(k, i)
+4      if T[j] == k
+5          return j
+6      i = i + 1
+7  until T[j] == NIL or i == m
+8  return NIL
+```
+
+**3. Delete.** Search for the key, then delete it. But deleting is tricky. If you simply empty the slot, a later search can **stop early** at the new hole and miss keys stored further along the probe sequence. So deleted slots are marked with a special **"deleted"** value instead:
+
+- **insert** treats a deleted slot as free and can reuse it,
+- **search** does **not** stop at a deleted slot. It keeps going.
+
+On a collision, we can pick the next slot to probe in three ways:
+
+1. linear probing,
+2. quadratic probing,
+3. double hashing.
+
+All three have the form
+
+$$
+h(k, i) = \big(h'(k) + f(i)\big) \bmod m
+$$
+
+where $h'(k)$ is the ordinary hash function, $i$ is the iteration (probe number), and $m$ is the table size.
+
+## Linear probing
+
+On a collision, try the **next** slot, then the one after that, and so on, until you find an empty one. Here $f(i) = i$:
+
+$$
+h(k, i) = \big(h'(k) + i\big) \bmod m
+$$
+
+| Probe | Slot |
+| --- | --- |
+| 0th | $h(k) \bmod m$ |
+| 1st | $(h(k) + 1) \bmod m$ |
+| 2nd | $(h(k) + 2) \bmod m$ |
+| $i$-th | $(h(k) + i) \bmod m$ |
+
+**Example:** the hash function is $k \bmod 11$. Insert 7, 36, 18 and 62, then search for 18, delete 18, search for 62, and finally insert 51:
+
+<HashTableVisualizer
+  mode="linear"
+  m={11}
+  ops={[
+    { op: "insert", key: 7 }, { op: "insert", key: 36 }, { op: "insert", key: 18 }, { op: "insert", key: 62 },
+    { op: "search", key: 18 }, { op: "delete", key: 18 }, { op: "search", key: 62 }, { op: "insert", key: 51 },
+  ]}
+/>
+
+Look at the search for 62 after 18 is deleted. Probe 0 (slot 7) holds 7, which isn't a match. Probe 1 (slot 8) is **deleted**. If it were simply *empty*, the search would stop there and wrongly report that 62 is missing. Because it's marked "deleted", the search carries on to slot 9 and **finds** 62. Then inserting 51 reuses the deleted slot 8.
+
+**Time complexity.** The worst-case search time is $O(\text{table size})$, even when there's only one element left. If every other slot holds a "deleted" marker, the search has to walk the whole table.
+
+**Advantages:**
+
+- It's easy to compute.
+- It has the **best cache performance**: the probes are next to each other in memory.
+- There's no extra memory for pointers. It uses the space inside the table.
+
+**Disadvantage: primary clustering.** The main problem is that occupied slots form long **runs** (clusters). Any key that hashes anywhere into a cluster has to walk to its end, and then makes the cluster even longer. While the table is big enough a free slot can always be found, but finding it can take a long time.
+
+## Quadratic probing
+
+On a collision, jump by **squares**: $1^2$, then $2^2$, then $3^2$ slots from the start. Here $f(i) = i^2$:
+
+$$
+h(k, i) = \big(h'(k) + i^2\big) \bmod m
+$$
+
+| Probe | Slot |
+| --- | --- |
+| 0th | $h(k) \bmod m$ |
+| 1st | $(h(k) + 1 \cdot 1) \bmod m$ |
+| 2nd | $(h(k) + 2 \cdot 2) \bmod m$ |
+| $i$-th | $(h(k) + i \cdot i) \bmod m$ |
+
+The same keys with $k \bmod 11$. Compare where 62 and 51 end up with the linear version above:
+
+<HashTableVisualizer mode="quadratic" m={11} ops={[7, 36, 18, 62, 51].map((key) => ({ op: "insert", key }))} />
+
+- It has **average** cache performance: the probes jump around a bit.
+- It suffers from **less clustering** than linear probing.
+
+**Secondary clustering.** If two keys have the same *starting* slot, their probe sequences are **identical**: $h(k_1, 0) = h(k_2, 0)$ implies $h(k_1, i) = h(k_2, i)$. That leads to a milder kind of clustering, called **secondary clustering**.
+
+Worse, quadratic probing can **fail to insert a key even though the table has room**. With $k \bmod 10$ and the keys 2, 12, 22, 32, 42, 52, 62, every key starts at slot 2, and $i^2 \bmod 10$ only ever reaches 6 of the 10 slots:
+
+<HashTableVisualizer mode="quadratic" m={10} ops={[2, 12, 22, 32, 42, 52, 62].map((key) => ({ op: "insert", key }))} title="Quadratic probing that gets stuck" />
+
+62 can't be inserted, even though 3 slots are free. So with quadratic probing:
+
+- the table should be **at most half full**, and
+- the table size must be **prime**,
+
+otherwise insertion may fail by colliding forever.
+
+## Double hashing
+
+Use a **second** hash function, $hash_2(k)$, to decide the **step size**. Probe $i$ looks $i \cdot hash_2(k)$ slots away from the start. Here $f(i) = i \cdot hash_2(k)$:
+
+$$
+h(k, i) = \big(hash_1(k) + i \cdot hash_2(k)\big) \bmod m
+$$
+
+| Probe | Slot |
+| --- | --- |
+| 0th | $hash_1(k) \bmod m$ |
+| 1st | $(hash_1(k) + 1 \cdot hash_2(k)) \bmod m$ |
+| 2nd | $(hash_1(k) + 2 \cdot hash_2(k)) \bmod m$ |
+| $i$-th | $(hash_1(k) + i \cdot hash_2(k)) \bmod m$ |
+
+Two keys that collide at the start almost always have **different step sizes**, so they follow different paths. That avoids both kinds of clustering. The price is more computation, because two hash functions have to be computed.
+
+- The first hash function is usually $hash_1(key) = key \bmod \text{TABLE\_SIZE}$.
+- A popular second hash function is $hash_2(key) = \text{PRIME} - (key \bmod \text{PRIME})$, where PRIME is a prime smaller than TABLE_SIZE.
+- A good second hash function **must never evaluate to zero** (or you'd probe the same slot forever), and must make sure **every** slot can be probed.
+
+**Example:** $hash_1(k) = k \bmod 10$ and $hash_2(k) = 7 - (k \bmod 7)$. Insert 37, 90, 45, 22, 17, 49, 55:
+
+<HashTableVisualizer mode="double" m={10} second={{ kind: "prime", R: 7 }} ops={[37, 90, 45, 22, 17, 49, 55].map((key) => ({ op: "insert", key }))} />
+
+For example, 17 collides with 37 at slot 7. Its step is $7 - (17 \bmod 7) = 7 - 3 = 4$, so it jumps to $(7 + 4) \bmod 10 = 1$.
+
+## Comparing open addressing techniques
+
+| | Linear probing | Quadratic probing | Double hashing |
+| --- | --- | --- | --- |
+| Clustering | primary (bad) | secondary (milder) | almost none |
+| Cache performance | best | average | poor |
+| Computation | cheapest | cheap | two hash functions |
+| Distinct probe sequences ($m$ = table size) | $m$ | $m$ | about $m^2$ |
+
+Linear and quadratic probing have only $m$ distinct probe sequences, because the starting slot decides the whole sequence. Double hashing has about $m^2$, one for each pair of (start, step).
+
+### Analysis of open addressing
+
+<Callout tone="violet" label="Theorem">
+Given an open-addressed hash table with load factor $\alpha = n/m < 1$, the expected number of probes in an **unsuccessful** search is at most
+
+$$
+\frac{1}{1 - \alpha}
+$$
+
+assuming uniform hashing (every probe sequence is equally likely).
+</Callout>
+
+**Why:** the first probe always happens. With probability about $\alpha$ the slot is occupied and we need a second probe. With probability about $\alpha^2$ we need a third, and so on:
+
+$$
+1 + \alpha + \alpha^2 + \alpha^3 + \dots = \frac{1}{1 - \alpha}
+$$
+
+**What it means:**
+
+- If $\alpha$ is a constant, accessing an open-addressed hash table takes **constant time**.
+- If the table is **half full**, the expected number of probes is $\frac{1}{1 - 0.5} = 2$.
+- If the table is **90% full**, the expected number of probes is $\frac{1}{1 - 0.9} = 10$.
+
+That's why open-addressed tables rehash at a load factor like 0.5 or 0.75: performance drops off sharply as $\alpha \to 1$.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Fast open-addressed maps" tool="PYTHON DICT · ABSEIL · RUST">
+    Python's `dict`, Google's `absl::flat_hash_map` and Rust's `HashMap` all use open addressing, because keeping keys inside one array is much friendlier to the CPU cache than chasing list pointers.
+  </PracticalApplication>
+  <PracticalApplication title="Hash flooding attacks" tool="SECURITY">
+    If attackers can predict your hash function, they can send thousands of keys that all collide, turning $O(1)$ into $O(n)$. That's why modern languages add a random seed to their string hash.
+  </PracticalApplication>
+</ApplicationsGrid>

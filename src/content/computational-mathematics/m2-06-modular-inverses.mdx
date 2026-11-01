@@ -1,0 +1,89 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ExtendedEuclidVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Modular Inverses
+
+Modular arithmetic has no fractions, so how do you divide? You multiply by an **inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every affine cipher and RSA key later in this course depends on finding one.
+
+## When an inverse exists
+
+If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's coprime to $n$. For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
+
+## The extended Euclidean algorithm
+
+The whole method rests on one fact: if $g = \gcd(a, b)$, there are integers $x$ and $y$ with
+
+$$
+a x + b y = g
+$$
+
+To find them, run Euclid's algorithm down, and then climb back up. On each row, replace the smaller remainder using the division on that row. The expression stays equal to $g$ the whole way:
+
+<ExtendedEuclidVisualizer />
+
+For $\gcd(130, 61)$ this gives $130 \cdot 23 + 61 \cdot (-49) = 1$. Check it: $2990 - 2989 = 1$.
+
+## From there to the inverse
+
+To solve $17x \equiv 1 \pmod{61}$, find $x$ and $y$ with $17x + 61y = 1$. The algorithm gives:
+
+$$
+17 \cdot 18 + 61 \cdot (-5) = 1
+$$
+
+Now look at this equation modulo 61. The second term is a multiple of 61, so it vanishes and leaves $17 \cdot 18 \equiv 1 \pmod{61}$. So the inverse of 17 is 18.
+
+MATLAB returns the coefficients if you ask for three outputs from `gcd`:
+
+```matlab
+[g, x, y] = gcd(17, 61)    % g = 1, x = 18, y = -5
+inverse = mod(x, 61)       % 18
+```
+
+<Callout tone="sky" label="Negative answers are fine">
+If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 18$, the same inverse is $13$.
+</Callout>
+
+## In Python
+
+Since Python 3.8, `pow` can compute inverses directly with an exponent of -1. The extended algorithm is also a neat recursive function:
+
+```python
+print(pow(17, -1, 61))  # 18
+
+def extended_gcd(a, b):
+    if b == 0:
+        return a, 1, 0
+    g, x, y = extended_gcd(b, a % b)
+    return g, y, x - (a // b) * y
+
+print(extended_gcd(130, 61))  # (1, 23, -49)
+print(extended_gcd(17, 61))  # (1, 18, -5)
+```
+
+## In machine learning
+
+Federated learning trains a model across many phones without collecting their data. Secure aggregation goes further, so that the server only learns the sum of everyone's updates.
+
+Those protocols must survive phones dropping out midway, and they use Shamir secret sharing for it. A secret is split into shares, and any large enough group of them can rebuild it. Rebuilding needs division modulo a prime, which means modular inverses:
+
+```python
+p = 97
+(x1, y1), (x2, y2) = (1, 40), (2, 57)  # points on f(x) = 23 + 17x, modulo 97
+
+secret = (y1 * x2 - y2 * x1) * pow(x2 - x1, -1, p) % p
+print(secret)  # 23
+```
+
+Here two shares recover $f(0)$, the secret, by drawing a line through the two points. A single share reveals nothing about it.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Building an RSA private key" tool="OpenSSL">
+The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes. OpenSSL finds it with this same family of algorithm.
+</PracticalApplication>
+<PracticalApplication title="Elliptic curve signatures" tool="ECDSA, Bitcoin">
+Every point addition on an elliptic curve involves a division, and in a finite field that means a modular inverse.
+</PracticalApplication>
+</ApplicationsGrid>

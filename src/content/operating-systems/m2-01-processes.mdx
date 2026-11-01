@@ -1,0 +1,213 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ProcessMemory, ProcessStateDiagram, ContextSwitch, MultiprogrammingDemo, ForkTree, LinuxProcessTree } from "@/components/mdx/OsVisualizers";
+
+# Processes: The Program in Motion
+
+Double-click an app and, a moment later, it's running. Something changed between those two moments: a file on your disk became a **process**. A process is the basis of all computation on a computer, and this lesson covers what one is made of, the states it moves through, how the OS juggles many of them, and how processes are born and die.
+
+## The process concept
+
+An OS runs many kinds of programs:
+
+- a **batch system** runs **jobs**,
+- a **time-shared system** runs **user programs** or **tasks**.
+
+The words **job** and **process** are used almost interchangeably.
+
+<Callout tone="mint" label="Program vs. process">
+A **program** is a **passive** entity stored on disk (an executable file). A **process** is an **active** entity. A program **becomes** a process when its executable file is **loaded into memory**, whether you start it with a mouse click or by typing its name.
+</Callout>
+
+- **One program can be several processes.** Think of several users running the same program, or you opening three browser windows.
+- A **process** is a **program in execution**. Its execution must progress in a **sequential** fashion.
+
+### A process in memory
+
+A process is made of several parts:
+
+| Part | Holds |
+| --- | --- |
+| **Text section** | the **program code** |
+| **Current activity** | the **program counter** and the **processor registers** |
+| **Stack** | temporary data: **function parameters**, **return addresses**, **local variables** |
+| **Data section** | **global variables** |
+| **Heap** | memory **dynamically allocated** while the process runs |
+
+<ProcessMemory />
+
+## Process state
+
+As a process runs, it **changes state**:
+
+| State | Meaning |
+| --- | --- |
+| **new** | the process is being **created** |
+| **running** | its instructions are being **executed** |
+| **waiting** | it's waiting for some **event** to occur |
+| **ready** | it's waiting to be **assigned to a processor** |
+| **terminated** | it has **finished** execution |
+
+Move a process around the diagram. Only the events that make sense from the current state are enabled:
+
+<ProcessStateDiagram />
+
+<Callout tone="orange" label="Waiting vs. ready">
+Both are "not running", but for different reasons. A **waiting** process *couldn't* use the CPU even if offered it (it needs its I/O first). A **ready** process could run *right now*, if only the CPU were free.
+</Callout>
+
+## The Process Control Block (PCB)
+
+The OS keeps all the information about each process in its **Process Control Block (PCB)**:
+
+- **Process state**: running, waiting, etc.
+- **Program counter**: the location of the next instruction to execute.
+- **CPU registers**: the contents of all the process-centric registers.
+- **CPU-scheduling information**: priorities, pointers to scheduling queues.
+- **Memory-management information**: the memory allocated to the process.
+- **Accounting information**: CPU time used, clock time since it started, time limits.
+- **I/O status information**: I/O devices allocated to the process, its list of open files.
+
+### Switching the CPU from process to process
+
+<ContextSwitch />
+
+## Process scheduling
+
+The goal: **maximize CPU use**, and quickly switch processes onto the CPU for **time sharing**.
+
+The **process scheduler** selects which available process runs next on the CPU. It keeps **scheduling queues** of processes:
+
+| Queue | Contains |
+| --- | --- |
+| **Job queue** | **all** processes in the system |
+| **Ready queue** | the processes in **main memory**, **ready** and waiting to run |
+| **Device queues** | the processes **waiting for an I/O device** (one queue per device) |
+
+Processes **migrate** among the queues. A **queuing diagram** shows this: a process sits in the ready queue until it's dispatched to the CPU. Then one of these happens:
+
+- it issues an **I/O request** and goes into an I/O queue,
+- its **time slice expires** and it goes back to the ready queue,
+- it **forks a child** and waits for it,
+- it **waits for an interrupt**.
+
+Each path eventually leads back to the ready queue, until the process terminates.
+
+### Schedulers
+
+| Scheduler | Chooses | Runs | Speed |
+| --- | --- | --- | --- |
+| **Long-term** (job scheduler) | which processes are brought **into the ready queue** | very **infrequently** (seconds, minutes) | may be slow |
+| **Short-term** (CPU scheduler) | which process **runs next** on the CPU | very **frequently** (milliseconds) | must be fast |
+
+- The short-term scheduler is sometimes the **only** scheduler in a system.
+- The **long-term** scheduler controls the **degree of multiprogramming**: how many processes are in memory.
+
+Processes can be described as either:
+
+- **I/O-bound**: spends more time doing I/O than computing. **Many short CPU bursts.**
+- **CPU-bound**: spends more time computing. **Few, very long CPU bursts.**
+
+The long-term scheduler aims for a **good mix** of the two. All I/O-bound and the CPU sits idle; all CPU-bound and the devices sit idle. You saw why in this multiprogramming demo from the first module:
+
+<MultiprogrammingDemo />
+
+### Medium-term scheduling
+
+A **medium-term scheduler** can be added when the degree of multiprogramming needs to **decrease**. It removes a process from memory, stores it on disk, then brings it back from disk later to continue running. This is **swapping**.
+
+### Context switch
+
+When the CPU switches to another process, the system must **save the state of the old process** and **load the saved state of the new one**. This is a **context switch**.
+
+- The **context** of a process is stored in its **PCB**.
+- Context-switch time is **pure overhead**: the system does no useful work while switching.
+- The more complex the OS and the PCB, the **longer** the context switch.
+- The time also depends on **hardware support** (some CPUs have several sets of registers, so a switch is just changing a pointer).
+
+## Operations on processes
+
+The OS must provide mechanisms for **creating** and **terminating** processes.
+
+### Process creation
+
+A **parent** process creates **child** processes, which can create their own, forming a **tree of processes**. Each process is identified and managed by its **process identifier (pid)**.
+
+<LinuxProcessTree />
+
+**Resource-sharing options:**
+
+- parent and children share **all** resources,
+- children share a **subset** of the parent's resources,
+- parent and child share **no** resources.
+
+**Execution options:**
+
+- parent and children run **concurrently**,
+- the parent **waits** until some or all children terminate.
+
+**Address-space options:**
+
+- the child is a **duplicate** of the parent (same program and data),
+- the child has a **new program** loaded into it.
+
+### fork() and exec() in UNIX
+
+- The **`fork()`** system call creates a new process. The child is a copy of the parent.
+- The **`exec()`** system call is used **after** `fork()` to **replace the process's memory** with a new program.
+
+```c
+#include <sys/types.h>
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    pid_t pid;
+    pid = fork();              /* fork a child process */
+
+    if (pid < 0) {             /* error occurred */
+        fprintf(stderr, "Fork Failed");
+        return 1;
+    }
+    else if (pid == 0) {       /* child process */
+        execlp("/bin/ls", "ls", NULL);
+    }
+    else {                     /* parent process */
+        wait(NULL);            /* parent waits for the child to complete */
+        printf("Child Complete");
+    }
+    return 0;
+}
+```
+
+The trick: `fork()` returns **twice**, once in each process. In the **child** it returns **0**; in the **parent** it returns the **child's pid**. That's how the same code knows which copy it's running in.
+
+Since both copies continue from the line after `fork()`, several `fork()` calls in a row multiply quickly:
+
+<ForkTree />
+
+### Process termination
+
+- A process runs its last statement, then asks the OS to delete it with **`exit()`**.
+  - The child can return a **status** to its parent (collected with **`wait()`**).
+  - The OS **deallocates** the process's resources.
+- A parent may **terminate** its children with **`abort()`**, for example when:
+  - the child has **exceeded** its allocated resources,
+  - the task given to the child is **no longer needed**,
+  - the **parent is exiting**. Some OSs don't let a child continue if its parent terminates. Then **all its children must also be terminated**: this is **cascading termination**.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Task Manager's process list" tool="PCB">
+    Every row (name, PID, CPU %, memory, status) comes straight out of a process's PCB.
+  </PracticalApplication>
+  <PracticalApplication title="Chrome's many processes" tool="ONE PROGRAM, MANY PROCESSES">
+    Chrome runs each tab as its own process. One program, dozens of processes, and a crash in one tab doesn't take down the others.
+  </PracticalApplication>
+  <PracticalApplication title="Every command in your shell" tool="FORK + EXEC">
+    When you type ls, bash forks a copy of itself, and the child execs /bin/ls. bash then waits for it, exactly like the C example.
+  </PracticalApplication>
+  <PracticalApplication title="Closing a terminal kills its jobs" tool="CASCADING TERMINATION">
+    Close the terminal window and the programs started from it usually die too, because their parent went away.
+  </PracticalApplication>
+</ApplicationsGrid>

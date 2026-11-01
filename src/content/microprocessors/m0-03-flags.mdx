@@ -1,0 +1,41 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { FlagsLab } from "@/components/mdx/MicroprocessorVisualizers";
+
+# The Flags Register
+
+After you work out a sum, you might notice things about the answer: "that's zero" or "that's negative". The CPU does the same, automatically, after each arithmetic or logic instruction. It records what it noticed in single-bit **flags**, gathered in a 16-bit register. Only 9 of those bits are used.
+
+Here's why it matters. There's no `if` statement in hardware. When you write `if (a == b)`, the CPU subtracts, checks whether the Zero flag got set, and then decides whether to jump. All decision-making comes down to flags.
+
+## Status flags: what just happened
+
+These six are set by the ALU. Try the examples below the panel.
+
+<FlagsLab />
+
+## Carry and overflow
+
+These two confuse nearly everyone at first, and the reason is that the bits `11001000` could be 200 or -56, depending on how you read them. The CPU doesn't know which you mean, so it reports on both, and you choose which flag to check:
+
+- **Treating numbers as unsigned**: check **CF**. 200 + 100 = 300 doesn't fit in 8 bits, so CF is 1.
+- **Treating numbers as signed**: check **OF**. 100 + 50 = 150, but the largest signed 8-bit value is 127. The result reads as -106, so OF is 1.
+
+An easy way to spot overflow: adding two positives gives a negative, or adding two negatives gives a positive. If you need a refresher on why, see [the two's complement circle](/courses/logic-design/binary-arithmetic).
+
+## Control flags: how to behave
+
+The other three are settings you control, and they tell the CPU how to act:
+
+| Flag | Name | Effect |
+|---|---|---|
+| **TF** | Trap | Stop after every instruction. Debuggers use it for single-stepping |
+| **IF** | Interrupt | 1 means the CPU accepts [interrupts](/courses/microprocessors/interrupts), and 0 means it ignores maskable ones |
+| **DF** | Direction | String instructions move forward (0) or backward (1) through memory |
+
+You set them with instructions like `STI`/`CLI` (set and clear IF) and `STD`/`CLD` (set and clear DF). `STC`, `CLC` and `CMC` set, clear and flip the carry flag.
+
+<Callout tone="orange" label="Bit vocabulary">
+In a byte, the **MSB** (most significant bit) is on the far left and the **LSB** (least significant bit) on the far right. The upper four bits are the upper **nibble** and the lower four are the lower nibble. The auxiliary flag watches for a carry between those nibbles.
+</Callout>
+
+You'll put these flags to work in [jumps and loops](/courses/microprocessors/jumps-and-loops).

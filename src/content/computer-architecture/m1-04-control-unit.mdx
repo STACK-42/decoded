@@ -1,0 +1,32 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { ControlUnitCompare } from "@/components/mdx/ArchitectureVisualizers";
+
+# The Control Unit
+
+So far the [control unit](/courses/computer-organization/inside-the-cpu) has been a box labelled "directs everything". What's actually inside?
+
+The rest of the CPU is a set of parts waiting for instructions. Registers have Load lines. [Multiplexers](/courses/logic-design/multiplexers) have select lines. The ALU has lines that choose an operation. The control unit's only output is a set of on/off **control signals**, and its job is to set them correctly at each clock tick.
+
+So one instruction becomes a little sequence of steps called **micro-operations**, one per tick. Think of a player piano: the roll says which keys to press at each moment, and the piano itself just follows.
+
+Here are the signals for an `ADD`. Use the toggle to see the two ways of generating them.
+
+<ControlUnitCompare />
+
+## Two ways to build it
+
+**Hardwired.** The signals come straight out of [gates](/courses/logic-design/logic-gates). Each signal has its own logic expression in terms of the opcode and the current time step. A [counter](/courses/logic-design/counters) keeps track of the steps, and a [decoder](/courses/logic-design/comparators-decoders-encoders) turns the opcode into lines.
+
+**Microprogrammed.** The signals are stored in a small, special memory called the **control store**. Each row, called a **microinstruction**, says which signals should be on for that tick. To run an instruction, the control unit reads its rows in order. In effect, it's a tiny computer inside the computer.
+
+| | Hardwired | Microprogrammed |
+|---|---|---|
+| Built from | Gates | Control memory |
+| Speed | Faster | Slower, since each step reads a memory |
+| Changing it | Redesign the chip | Rewrite the microcode |
+| Complex instructions | Very hard | Fairly easy |
+| Used in | [RISC](/courses/computer-architecture/risc-and-cisc) | CISC |
+
+<Callout tone="violet" label="Fixing chips after they ship">
+Modern x86 chips still contain microcode, and it can be updated. When a security flaw is found in a processor, the fix sometimes ships as a microcode update through your operating system. That's impossible with purely hardwired logic.
+</Callout>

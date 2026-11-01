@@ -1,0 +1,302 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PageReplacement, FaultsVsFrames, FrameAllocation, ThrashingChart, WorkingSetDemo } from "@/components/mdx/OsVisualizers";
+
+# Page Replacement and Thrashing
+
+Memory is full and a page fault arrives. Some page has to go. Pick well, and the program barely notices; pick badly, and the page you just threw out is needed again a moment later. This last lesson compares the algorithms for picking a victim, then looks at how many frames each process should get, and at **thrashing**, the state where a computer spends all its time moving pages and none doing work.
+
+## Page replacement
+
+We **prevent over-allocation** of memory by changing the page-fault service routine to include **page replacement**.
+
+- Use a **modify (dirty) bit** to reduce the overhead of page transfers: only **modified** pages are written back to disk. A clean page can just be overwritten, since an identical copy is already on disk.
+- Page replacement **completes the separation** between logical and physical memory: a **large virtual memory** can be provided on a **smaller physical memory**.
+
+### Basic page replacement
+
+1. Find the location of the desired page on disk.
+2. Find a free frame:
+   - if there's a free frame, use it,
+   - if not, use a **page-replacement algorithm** to choose a **victim frame**,
+   - write the victim to disk **if it's dirty**.
+3. Bring the desired page into the (newly) free frame; update the page and frame tables.
+4. Continue the process by **restarting the instruction** that caused the trap.
+
+Note: if no frames are free, a page fault can need **two page transfers** (one out, one in), increasing the EAT.
+
+### Page and frame replacement algorithms
+
+Two separate decisions:
+
+- a **frame-allocation algorithm** decides **how many frames** to give each process,
+- a **page-replacement algorithm** decides **which frame to replace**.
+
+We want the **lowest page-fault rate** on both first access and re-access. Getting these right matters a lot: **disk I/O is so expensive** that even small improvements give large gains in performance.
+
+We evaluate an algorithm by running it on a particular string of memory references, a **reference string**, and counting the page faults:
+
+- the string is just **page numbers**, not full addresses,
+- **repeated** access to the same page **doesn't** cause a page fault,
+- the results depend on the **number of frames** available. Generally, more frames → fewer faults.
+
+All the examples use this reference string:
+
+```text
+7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+```
+
+## First-In-First-Out (FIFO)
+
+Replace the page that has been in memory **the longest**. Track the ages with a simple **FIFO queue**.
+
+With **3 frames** (3 pages can be in memory at a time per process), the reference string causes **15 page faults**.
+
+<PageReplacement algos="fifo,opt,lru" initial="fifo" />
+
+### Belady's anomaly
+
+The results can vary with the reference string. Consider:
+
+```text
+1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5
+```
+
+- **3 frames: 9 page faults**
+- **4 frames: 10 page faults**
+
+**Adding more frames can cause more page faults!** This is **Belady's anomaly**.
+
+<FaultsVsFrames />
+
+## Optimal algorithm
+
+**Replace the page that will not be used for the longest period of time.**
+
+- **9 page faults** is optimal for the example string.
+- How do you know which page that is? You **can't read the future**.
+- So OPT is used to **measure** how well other algorithms perform: "within 12% of optimal" is a meaningful score.
+
+Switch the demo above to **Optimal** to see the 9 faults.
+
+## Least Recently Used (LRU)
+
+Use **past** knowledge instead of the future: **replace the page that hasn't been used for the longest time**.
+
+- Associate the **time of last use** with each page.
+- **12 faults**: better than FIFO but worse than OPT.
+- **Generally a good algorithm, and frequently used.** But how do we implement it?
+
+### Implementing LRU
+
+**Counter implementation:**
+
+- every page-table entry has a **time-of-use** field; whenever the page is referenced, the **clock** is copied into it,
+- replace the page with the **smallest** time value,
+- this needs a **search of the whole page table**.
+
+**Stack implementation:**
+
+- keep a **stack of page numbers**; whenever a page is referenced, it's **moved to the top**,
+- the least recently used page is always at the **bottom**,
+- use a **doubly linked list** with head and tail pointers,
+- each update is more expensive (up to **6 pointers** change), but there's **no search** to find the victim.
+
+For example, with the stack holding 2, 1, 0, 7, 4 (top first) and a reference to 7: 7 is pulled out of the middle and put on top, giving 7, 2, 1, 0, 4. The victim is always the bottom, 4.
+
+## LRU approximation algorithms
+
+True LRU needs **special hardware** and is still **slow**. Most systems approximate it.
+
+### The reference bit
+
+- Each page has a **reference bit**, initially **0**.
+- When the page is referenced, the hardware sets it to **1**.
+- Replace any page whose bit is **0** (if there is one).
+- But we **don't know the order** in which pages were used.
+
+### Second-chance (clock) algorithm
+
+Generally **FIFO plus the hardware reference bit**. Picture the pages arranged in a circle with a **clock hand** pointing at the next candidate:
+
+- if the page's reference bit is **0**, **replace it**,
+- if it's **1**:
+  - set the bit to **0**, and leave the page in memory (its **second chance**),
+  - move to the next page, and apply the same rules.
+
+If every page has its bit set, the hand goes all the way round, clearing bits, and second chance becomes plain FIFO.
+
+<PageReplacement algos="clock,fifo,lru" initial="clock" />
+
+### Enhanced second-chance algorithm
+
+Use the **reference bit** and the **modify bit** together, as an ordered pair **(reference, modify)**:
+
+| Class | (ref, modify) | Meaning |
+| --- | --- | --- |
+| 1 | **(0, 0)** | neither recently used nor modified: **best page to replace** |
+| 2 | **(0, 1)** | not recently used, but modified: not quite as good, must be **written out** before replacement |
+| 3 | **(1, 0)** | recently used but clean: **probably will be used again** soon |
+| 4 | **(1, 1)** | recently used and modified: probably used again soon, **and** must be written out before replacement |
+
+When replacement is needed, use the clock scheme, but replace a page from the **lowest non-empty class**. You might need to go round the circular queue **several times**.
+
+### Counting algorithms
+
+Keep a **counter of the number of references** made to each page. (Not common.)
+
+- **Least Frequently Used (LFU)**: replace the page with the **smallest** count. The idea: an actively used page should have a large count. Problem: a page used heavily during a process's **early phase** but **never again** keeps its big count and stays forever.
+- **Most Frequently Used (MFU)**: replace the page with the **largest** count. The idea: the page with the smallest count was **probably just brought in** and hasn't been used yet.
+
+<PageReplacement algos="lfu,mfu,lru" initial="lfu" />
+
+### Page-buffering algorithms
+
+These are used **in addition to** a replacement algorithm:
+
+- **Always keep a pool of free frames.** A frame is available when it's needed, not found at fault time: read the page into a free frame **first**, then pick a victim and add it to the free pool, writing it out later when convenient.
+- Possibly, keep a **list of modified pages**. When the backing store is otherwise idle, write them out and mark them **clean**, so they're cheap to replace later.
+- Possibly, keep the free frames' **contents intact**, and remember what's in them. If a page is referenced again **before** its frame is reused, there's no need to load it from disk. This reduces the penalty if the **wrong victim** was chosen.
+
+## Allocation of frames
+
+- Each process needs a **minimum** number of frames. For example, the IBM 370 needed **6 pages** to handle its SS MOVE instruction: the instruction is 6 bytes and might span **2 pages**, plus **2 pages** for the *from* operand and **2** for the *to* operand.
+- The **maximum** is, of course, the total frames in the system.
+
+Two major allocation schemes: **fixed allocation** and **priority allocation**, with many variations.
+
+### Fixed allocation
+
+- **Equal allocation**: with **100 frames** (after the OS's share) and **5 processes**, give each process **20 frames**. Keep some as a free-frame buffer pool.
+- **Proportional allocation**: allocate according to the **size** of each process. It's dynamic, changing as the degree of multiprogramming and process sizes change.
+
+$$
+s_i = \text{size of process } p_i, \qquad S = \sum s_i, \qquad m = \text{total frames}, \qquad a_i = \frac{s_i}{S} \times m
+$$
+
+**Example:** $m = 64$, $s_1 = 10$, $s_2 = 127$, so $S = 137$:
+
+$$
+a_1 = \frac{10}{137} \times 64 \approx 5, \qquad a_2 = \frac{127}{137} \times 64 \approx 59
+$$
+
+<FrameAllocation />
+
+### Priority allocation
+
+Use a proportional scheme where the ratio of frames depends on **priorities** instead of (or as well as) sizes.
+
+If process $P_i$ generates a page fault:
+
+- select for replacement one of **its own** frames, or
+- select a frame from a process with a **lower priority** number.
+
+### Global vs. local allocation
+
+- **Global replacement**: a process picks a replacement frame from the **set of all frames**: one process can take a frame from another.
+  - Process execution time can **vary greatly** (it depends on what others do),
+  - but it gives **greater throughput**, so it's **more common**.
+- **Local replacement**: each process picks only from **its own** allocated frames.
+  - **More consistent** per-process performance,
+  - but memory may be **underused**.
+
+## Thrashing
+
+If a process doesn't have "enough" pages, its **page-fault rate is very high**:
+
+- it page-faults to get a page,
+- replaces an existing frame,
+- but quickly needs the replaced frame back...
+
+This leads to:
+
+- **low CPU utilization** (everyone is waiting for the disk),
+- the OS thinking it needs to **increase** the degree of multiprogramming,
+- **another process** added to the system, which makes it **worse**.
+
+**Thrashing**: a process is **busy swapping pages in and out**, instead of running.
+
+<ThrashingChart />
+
+### Demand paging and thrashing
+
+To prevent thrashing, we must give a process **as many frames as it needs**. But how do we know how many it "needs"?
+
+The **locality model** of process execution looks at how many frames a process is actually **using**:
+
+- a **locality** is a set of pages that are **actively used together** (a function's code, its local variables, the data it works on),
+- a program is made of **several localities**, which may **overlap**,
+- as a process runs, it **moves from one locality to another** (calling a new function moves to a new locality).
+
+**Why does thrashing happen?** Because we don't give each process enough frames for the size of its **current locality**:
+
+$$
+\sum \text{size of localities} > \text{total memory size}
+$$
+
+We can **limit the effects** with **local** or **priority** page replacement: then a thrashing process can't steal frames from others and make them thrash too.
+
+## The working-set model
+
+Use a parameter $\Delta$ to define the **working-set window**: a fixed number of page references, say 10,000 instructions.
+
+- The **working set** is the set of pages referenced in the most recent $\Delta$ references. It's an **approximation of the program's locality**.
+- If a page is in **active use**, it's in the working set.
+- If it's **no longer used**, it drops out of the working set $\Delta$ time units after its last reference.
+
+<WorkingSetDemo />
+
+The accuracy depends on the choice of $\Delta$:
+
+- if $\Delta$ is **too small**, it won't cover the entire locality,
+- if $\Delta$ is **too large**, it will cover several localities,
+- if $\Delta = \infty$, it covers the **entire program**.
+
+The working set's most important property is its **size**. Compute the working-set size $\text{WSS}_i$ for each process, then the **total demand for frames**:
+
+$$
+D = \sum \text{WSS}_i
+$$
+
+- If $D > m$ (the total number of available frames), **thrashing will occur**.
+- **Policy:** if $D > m$, **suspend** or **swap out** one of the processes. Its frames go to the others.
+
+### Keeping track of the working set
+
+We can **approximate** the working-set model with a **fixed-interval timer interrupt** and a **reference bit**. For example:
+
+- $\Delta = 10{,}000$ references,
+- the timer interrupts after every **5,000** references,
+- keep **2 bits** in memory for each page,
+- whenever the timer interrupts, **copy** each page's reference bit into those memory bits, and **reset** all reference bits to 0,
+- if any of the bits is **1**, the page is in the working set.
+
+**Why isn't this entirely accurate?** Because we can't tell **where** within an interval of 5,000 a reference happened. **Improvement:** 10 bits and an interrupt every 1,000 references. More accurate, but more costly.
+
+## Page-fault frequency
+
+A **more direct** approach than the working set:
+
+- set an "acceptable" **page-fault frequency (PFF)** range, and use **local** replacement,
+- if a process's actual rate is **too low**, it has more frames than it needs: it **loses** a frame,
+- if the rate is **too high**, it needs more: it **gains** a frame.
+
+### Working sets and page-fault rates
+
+There's a direct relationship between a process's **working set** and its **page-fault rate**. The working set **changes over time** as references move from one locality to another, so the page-fault rate swings between **peaks** (moving into a new locality, loading its pages) and **valleys** (working comfortably inside it).
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Linux's page cache" tool="LRU APPROXIMATION">
+    Linux keeps "active" and "inactive" lists of pages and uses reference bits to move pages between them: a second-chance approximation of LRU.
+  </PracticalApplication>
+  <PracticalApplication title="Too many browser tabs" tool="THRASHING">
+    Open enough tabs and the machine starts swapping, the disk light stays on, and even the mouse lags. Closing tabs shrinks the total working set below RAM.
+  </PracticalApplication>
+  <PracticalApplication title="Web caches and CDNs" tool="LRU / LFU">
+    The same replacement policies decide which images a CDN or your browser cache keeps. LRU and LFU are everywhere caching exists.
+  </PracticalApplication>
+  <PracticalApplication title="Windows' memory compression" tool="PAGE BUFFERING">
+    Windows and macOS compress pages before writing them out, and keep recently evicted pages around in case they're needed again soon.
+  </PracticalApplication>
+</ApplicationsGrid>

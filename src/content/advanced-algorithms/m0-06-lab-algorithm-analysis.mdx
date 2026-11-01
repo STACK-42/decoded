@@ -1,0 +1,243 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { FastPowerVisualizer, MinMaxVisualizer, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+
+# Lab: Analyzing Algorithms with Recurrences
+
+This lab practises the skill from the last lesson: **write down the recurrence** for an algorithm, then **solve it**. We'll use two problems, computing a power and sorting, and then a lab task where we need the *exact* number of comparisons, not just the Big-O.
+
+## Part I: Analysis and recurrence relations
+
+### Problem 1: computing $a^b$
+
+We want $a^b$, where $a$ and $b$ are positive integers. The definition gives a recursive algorithm straight away, $a^b = a \cdot a^{b-1}$:
+
+```cpp
+long long power(long long a, int b) {
+    if (b == 1)
+        return a;
+    return a * power(a, b - 1);
+}
+```
+
+That makes $b - 1$ multiplications, which is $\Theta(b)$. Here's a better idea: $a^b = (a^2)^{b/2}$. Square the base and **halve** the exponent.
+
+Watch out when $b$ is odd. $a^{10} = (a^2)^5$ is fine, but $a^5 \ne (a^2)^2 = a^4$. Integer division loses one factor of $a$, so multiply it back in: $a^5 = a \cdot (a^2)^2$.
+
+```cpp
+long long fastPower(long long a, int b) {
+    if (b == 1)
+        return a;
+    long long c = a * a;
+    long long ans = fastPower(c, b / 2);
+    if (b % 2 == 1)
+        return a * ans;
+    return ans;
+}
+```
+
+<FastPowerVisualizer a={3} b={13} />
+
+#### Worst-case analysis by counting
+
+Say it takes $k$ halvings to bring $b$ down to 1. Dividing $b$ by 2 a total of $k$ times is the same as dividing by $2^k$:
+
+$$
+\frac{b}{2^k} = 1 \;\Longrightarrow\; b = 2^k \;\Longrightarrow\; \log_2 b = \log_2 (2^k) \;\Longrightarrow\; k = \log_2 b
+$$
+
+Each level does at most one extra multiplication (when $b$ is odd), so the running time is $f(b) = \log b + 1 = \Theta(\log b)$. That's **constant work per binary digit of $b$**.
+
+#### The same thing with a recurrence
+
+There's one recursive call on $\lfloor b/2 \rfloor$, plus zero or one extra multiplication. In the worst case, assume there's always one:
+
+$$
+T(b) = T(\lfloor b/2 \rfloor) + 1 \quad\approx\quad T(b) = T(b/2) + 1
+$$
+
+(Dropping the floor doesn't change the answer.) The master method gives $T(b) = O(\log b)$.
+
+<Callout tone="violet" label="Two ways to number the master method's cases">
+This lab writes the master method with $f(n) = O(n^d)$ and compares $a$ with $b^d$:
+
+| Lab version | Condition | Result | Same as the lecture's |
+| --- | --- | --- | --- |
+| Case 1 | $a = b^d$ | $O(n^d \log n)$ | Case 2 (a tie) |
+| Case 2 | $a < b^d$ | $O(n^d)$ | Case 3 (the root wins) |
+| Case 3 | $a > b^d$ | $O(n^{\log_b a})$ | Case 1 (the leaves win) |
+
+It's the same theorem: $a$ vs. $b^d$ is the same comparison as $\log_b a$ vs. $d$. Only the case numbers differ. For $T(b) = T(b/2) + 1$ we have $a = 1$, $b = 2$, $d = 0$, so $a = b^d = 1$: the lab's Case 1, the lecture's Case 2, and the answer is $O(\log b)$ either way.
+</Callout>
+
+### Problem 2.1: insertion sort
+
+```text
+for j = 2 to A.length
+    // ...
+    while i > 0 and A[i] > key
+        // ...
+```
+
+The inner loop is bounded by the outer loop's index. On the $j$-th pass of the outer loop, the inner loop runs at most $j$ times. Adding these up gives an arithmetic series:
+
+$$
+1 + 2 + 3 + \dots + n = \frac{n(n+1)}{2}, \qquad f(n) = \tfrac12(n^2 + n) = O(n^2)
+$$
+
+**As a recurrence:** sorting $n$ elements costs sorting the first $n - 1$, plus inserting the $n$-th element into place, which is up to $n$ steps:
+
+$$
+T(n) = T(n-1) + O(n)
+$$
+
+The master method **can't** solve this: the problem shrinks by *subtracting* 1, not by dividing. It also can't solve recurrences with different-sized pieces, like $T(n) = 2T(n/4) + T(n/2) + O(n)$.
+
+But **substitution** works well here. Start from $n$ and work backwards. It's like induction in reverse:
+
+$$
+\begin{aligned}
+t_n &= t_{n-1} + n \\
+t_{n-1} &= t_{n-2} + (n-1) \\
+t_{n-2} &= t_{n-3} + (n-2) \\
+&\;\;\vdots \\
+t_2 &= t_1 + 2 \\
+t_1 &= 1
+\end{aligned}
+$$
+
+Plug each line into the one above:
+
+$$
+\begin{aligned}
+t_n &= t_{n-1} + n \\
+    &= t_{n-2} + (n-1) + n \\
+    &= t_{n-3} + (n-2) + (n-1) + n \\
+    &= t_1 + 2 + \dots + (n-2) + (n-1) + n \\
+    &= 1 + 2 + \dots + n = \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+\end{aligned}
+$$
+
+<Callout tone="sky" label="Which method when?">
+- The recursive term is **$T(n - k)$**: use substitution or iteration.
+- The recursive term is **$T(n / k)$**: the master method is the most direct.
+- The recursive terms have different sizes: use a recursion tree.
+</Callout>
+
+### Problem 2.2: merge sort
+
+Sorting $n$ elements means sorting two halves of size $n/2$, then spending $n$ operations merging them:
+
+$$
+T(n) = 2T(n/2) + O(n)
+$$
+
+Here $a = 2$, $b = 2$, $d = 1$, so $a = b^d$. That's the tie case (the lab's Case 1, the lecture's Case 2), and the answer is **$O(n \log n)$**.
+
+With a recursion tree: there are $\log n$ levels, and each does at most $n$ operations, so $n \log n$ in total. The recursion tree is the more powerful method, because it also works on recurrences the master method can't handle.
+
+<SortVisualizer algorithm="merge" initial={[11, 3, 5, 7, 1, 9, 2, 8]} />
+
+## Part II: Extra problems
+
+### Problem 1: order by growth rate
+
+Put these in increasing order, so that $g(n)$ comes after $f(n)$ only if $f(n) = O(g(n))$:
+
+$$
+\text{a. } n^2 \log n \qquad \text{b. } 2^n \qquad \text{c. } 2^{2^n} \qquad \text{d. } n \log n \qquad \text{e. } n^2
+$$
+
+**Answer:** $n \log n \;<\; n^2 \;<\; n^2 \log n \;<\; 2^n \;<\; 2^{2^n}$.
+
+- $n \log n = O(n^2)$, because $\log n$ grows slower than $n$.
+- $n^2 = O(n^2 \log n)$, because you're multiplying by something that grows.
+- $n^2 \log n = O(2^n)$, because any polynomial is eventually beaten by an exponential.
+- $2^n = O(2^{2^n})$, because the exponent $2^n$ is itself much bigger than $n$.
+
+A useful trick is to **take logarithms** and compare those: $\log(2^n) = n$, while $\log(2^{2^n}) = 2^n$.
+
+### Problem 2: 3-way merge sort
+
+Instead of splitting into halves, split into **thirds**, sort each third, and combine them with a three-way merge. What's the running time?
+
+- The merge still takes linear time: $O(n)$ per level.
+- Dividing by 3 each time gives $\log_3 n$ levels.
+- **Total:** $O(n \log_3 n)$, which is the same as $O(n \log n)$, since logs of different bases differ only by a constant factor.
+
+As a recurrence, $T(n) = 3T(n/3) + O(n)$: $a = 3 = b^d = 3^1$, the tie case.
+
+### Problem 3: merging $k$ sorted arrays one at a time
+
+You have $k$ sorted arrays, each with $n$ elements. Merge the first two, then merge the third into the result, then the fourth, and so on. How long does this take?
+
+The merges handle $2n$ elements, then $3n$, then $4n$, …, up to $kn$:
+
+$$
+2n + 3n + \dots + kn = n\,(2 + 3 + \dots + k) = n\left(\frac{k(k+1)}{2} - 1\right) = \Theta(nk^2)
+$$
+
+*Can you do better?* Merge the arrays **in pairs**, like merge sort does. There are $\log k$ rounds, and each round touches all $kn$ elements, so it's $O(nk \log k)$.
+
+## Part III: Lab task
+
+**Task:** write an algorithm that finds **both** the smallest and the largest of $n$ numbers. The obvious way, comparing each number with the current min and the current max, uses about $2n$ comparisons. Find a method that uses at most **$1.5n$**, and show the full analysis.
+
+### Algorithm 1: pairs first
+
+```text
+for i in 0 to n/2 − 1:                 # n/2 comparisons
+    if x[2i] > x[2i+1]:
+        swap(x, 2i, 2i+1)
+global_min = min(x[0], x[2], x[4], …)  # n/2 − 1 comparisons
+global_max = max(x[1], x[3], x[5], …)  # n/2 − 1 comparisons
+```
+
+After the first loop, each pair is ordered small-then-big. The overall minimum must be one of the **small** ones and the overall maximum one of the **big** ones, so each half only has to be searched once.
+
+$$
+\frac{n}{2} + \left(\frac{n}{2} - 1\right) + \left(\frac{n}{2} - 1\right) = 1.5n - 2
+$$
+
+Step through it on the lab's 16 numbers:
+
+<MinMaxVisualizer input={[11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]} />
+
+### Algorithm 2: merge the pairs
+
+1. Make ordered pairs by comparing each two neighbours, as before.
+2. Merge neighbouring pairs, like merge sort, but compare **only the first elements** (the mins) and **only the last elements** (the maxes) of the two pieces. Swap as needed, so the min of the merged piece sits at its front and the max at its back.
+3. Keep merging until the whole array is one piece. The min is then the first element and the max is the last.
+
+**Analysis.** Unlike merge sort, the work per level isn't the same. The top level (the final merge) does 2 comparisons, the level below does 4, then 8, and so on down to $n/2$ comparisons at the bottom:
+
+$$
+2 + 4 + 8 + \dots + \frac{n}{2} = \left(1 + 2 + 4 + \dots + \frac{n}{2}\right) - 1
+$$
+
+A full binary tree with $k$ leaves has exactly $2k - 1$ nodes, which means $1 + 2 + 4 + \dots + k = 2k - 1$. With $k = n/2$, the bracket is $n - 1$, so the merging takes $n - 2$ comparisons. Add the $n/2$ from step 1:
+
+$$
+(n - 2) + \frac{n}{2} = 1.5n - 2
+$$
+
+The recurrence is $T(n) = 2T(n/2) + 2$: two halves, then 2 comparisons to combine their mins and maxes. The master method says $O(n)$, but it **can't give the exact constant** 1.5. That's why we counted by hand.
+
+<RecurrenceExplorer a={2} b={2} k={0} />
+
+## Part IV: Exercises
+
+Practice problems for home. They aren't submitted.
+
+1. A **unimodal** array of $n$ distinct numbers increases up to its maximum and then decreases. Find the maximum in $O(\log n)$ time.
+2. You're given a **sorted** array $A$ of $n$ distinct integers, which may be positive, negative or zero. Decide whether there's an index $i$ with $A[i] = i$. Make it as fast as you can.
+3. You're given an **unsorted** array of $n$ distinct numbers, where $n$ is a power of 2. Find the **second-largest** number using at most $n + \log_2 n - 2$ comparisons.
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 50, title: "Pow(x, n)", slug: "powx-n", why: "FastPower, plus handling negative exponents.", difficulty: "Medium" },
+    { id: 852, title: "Peak Index in a Mountain Array", slug: "peak-index-in-a-mountain-array", why: "Exercise 1: binary search on a unimodal array.", difficulty: "Medium" },
+    { id: 23, title: "Merge k Sorted Lists", slug: "merge-k-sorted-lists", why: "Problem 3's faster version: merge in pairs for O(nk log k).", difficulty: "Hard" },
+  ]}
+/>

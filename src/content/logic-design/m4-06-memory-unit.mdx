@@ -1,0 +1,38 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { MemoryUnit } from "@/components/mdx/LogicVisualizers";
+
+# The Memory Unit: Putting It All Together
+
+Now you can build RAM using nothing but parts from this course. Think of a wall of numbered lockers. Each locker holds one **word**, which is a group of bits that always moves together, and the number on its door is its **address**.
+
+| Part | Built from | Job |
+|---|---|---|
+| Storage cells | [Latches](/courses/logic-design/d-latch-and-clock) or [registers](/courses/logic-design/registers) | One row per word |
+| Address lines | Wires | Say which word you want |
+| [Decoder](/courses/logic-design/comparators-decoders-encoders) | AND gates | Turns the address into one active row |
+| Read/write control | AND gates | Decides whether the row loads or outputs |
+| Data lines | Wires | Carry the word in or out |
+
+Choose an address with the blue bits, and notice that the decoder selects one row. Then write something in and read it back.
+
+<MemoryUnit />
+
+## How the pieces work together
+
+To **write**, the decoder activates one row, and that row's Load line goes high. Only that row takes the data, while every other row holds its value. To **read**, the decoder activates a row and the selected cells drive the output lines through a kind of [mux](/courses/logic-design/multiplexers). Everything else stays disconnected.
+
+No matter which address you ask for, the path through the decoder is the same length. That's what "random access" means: every location takes the same time to reach.
+
+## The size formula
+
+With $k$ address lines, you can name $2^k$ words. So capacity is:
+
+$$
+\text{capacity} = 2^k \times \text{word size}
+$$
+
+This memory has 3 address lines and a 4-bit word: $2^3 \times 4 = 32$ bits. A chip with 10 address lines and 8-bit words holds 1,024 bytes (1 KB). The 8086's [20 address lines](/courses/microprocessors/segments-and-addresses) let it reach $2^{20}$ bytes, or 1 MB.
+
+<Callout tone="neon" label="You've finished the climb">
+Switches made gates, gates made adders and decoders, feedback made latches, and latches made registers and memory. An ALU, registers and memory, joined by muxes and controlled by a counter, are a CPU. The [Microprocessors course](/courses/microprocessors/inside-the-8086) shows you a real one, and [Computer Architecture](/courses/computer-architecture/architecture-and-organization) shows how to make it fast.
+</Callout>

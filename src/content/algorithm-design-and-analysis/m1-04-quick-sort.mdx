@@ -40,7 +40,7 @@ $$
 n + (n-1) + (n-2) + \dots + 1 = O(n^2)
 $$
 
-With a last-element pivot, this happens on data that's **already sorted** (or reverse sorted), because every pivot is the largest remaining element. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
+With a last-element pivot, this happens on data that's **already sorted**, because every pivot is the largest remaining element. Reverse-sorted data is just as bad, since the pivots keep landing at one end or the other. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
 
 So the input that's best for insertion sort is the worst for naive quick sort.
 

@@ -1,0 +1,50 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { HddVsSsd, OpticalDisc } from "@/components/mdx/OrganizationVisualizers";
+
+# SSDs and Optical Discs
+
+Hard disks have a mechanical weakness: to get to data, something has to physically move. The other two storage families get around this in different ways. One gets rid of moving parts altogether, and the other reads data with light.
+
+## Solid state drives
+
+An SSD stores data in [flash memory](/courses/computer-organization/ram-and-rom) chips with no moving parts. Reaching any block takes about the same tiny time, wherever it is. Drag the slider and look at the bars.
+
+<HddVsSsd />
+
+| | SSD | HDD |
+|---|---|---|
+| Random access | About 0.1 ms | 5 to 10 ms |
+| Moving parts | None, so it's silent and shock-resistant | Yes, so it's noisy and fragile |
+| Power | Lower | Higher |
+| Cost per GB | Higher | Lower |
+| Largest capacity | Smaller at the same price | Larger at the same price |
+
+The numbers explain why replacing a hard disk with an SSD makes an old computer feel new. When you start a program, it reads thousands of small scattered files, and that's the worst case for a hard disk.
+
+### The controller
+
+Flash has some awkward habits: you can't overwrite one small part in place, and each cell wears out after many erases. So an SSD has its own small processor, called a controller, running firmware that handles this:
+
+- **Wear levelling** spreads writes evenly, so that no block wears out early.
+- **Garbage collection** tidies up blocks in the background, ready for reuse.
+- **Error correction** (ECC) detects and fixes bad bits.
+
+## Optical discs
+
+CDs, DVDs and Blu-ray discs store data as microscopic pits and flat areas called lands, along one long spiral track running from the centre outward. A laser shines on the disc from below. A land reflects the beam back to a sensor, while a pit scatters it. Those changes become bits.
+
+<OpticalDisc />
+
+| Disc | Laser | Capacity |
+|---|---|---|
+| CD | 780 nm (infrared) | 700 MB |
+| DVD | 650 nm (red) | 4.7 GB, or 8.5 GB with two layers |
+| Blu-ray | 405 nm (blue-violet) | 25 GB, or 50 GB with two layers |
+
+All three discs are the same size. The extra capacity comes from a shorter wavelength, which makes a smaller spot and allows smaller pits.
+
+A few letters tell you how a disc can be used: **ROM** is read-only, **R** can be written once, and **RW** can be rewritten.
+
+<Callout tone="sky" label="A different layout from a hard disk">
+A hard disk has many concentric rings. A CD has one spiral. To read at a steady rate along a spiral, the disc has to spin faster when reading near the centre, which is called constant linear velocity.
+</Callout>

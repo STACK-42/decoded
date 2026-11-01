@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { flattenLessons, lessonKind, type Course } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 
 const accentBg: Record<Course["accent"], string> = {
@@ -29,6 +30,7 @@ export function CourseNav({
   onNavigate?: () => void;
 }) {
   const { isComplete, completed } = useProgress(course.slug);
+  const { registered } = useRegistration(course.slug);
   const currentModule = course.modules.findIndex((m) => m.lessons.some((l) => l.slug === lessonSlug));
   const [open, setOpen] = useState<Set<number>>(() => new Set([currentModule]));
 
@@ -63,14 +65,14 @@ export function CourseNav({
           <CourseGlyph slug={course.slug} className={`h-6 w-6 shrink-0 ${accentText[course.accent]}`} />
           <div className="font-display text-xl font-bold leading-tight">{course.title}</div>
         </div>
-        <div className="flex flex-col gap-1.5">
+        {registered && <div className="flex flex-col gap-1.5">
           <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
             <div className={`h-full ${accentBg[course.accent]} transition-[width]`} style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
           </div>
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             {done} / {total} lessons complete
           </span>
-        </div>
+        </div>}
       </div>
 
       <ul className="flex flex-col border-t border-border">

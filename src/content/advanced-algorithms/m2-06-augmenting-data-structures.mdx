@@ -1,0 +1,224 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { AugmentedTreeSearch } from "@/components/mdx/AdvancedVisualizers";
+
+# Augmenting Data Structures
+
+Most of the time you don't need a brand-new data structure. You take one you already have, like a red-black tree, and **store a little extra information in each node** so that it can answer new questions quickly. That's called **augmenting** a data structure.
+
+This lesson builds two augmented red-black trees:
+
+1. **Dynamic order statistics**: find the $i$-th smallest element, or an element's rank, in $O(\lg n)$, *while* insertions and deletions keep happening.
+2. **Interval trees**: find a stored interval that overlaps a query interval, in $O(\lg n)$.
+
+## Dynamic order statistics
+
+We want two new operations on a dynamic set $S$:
+
+- **OS-SELECT($i$, $S$)** returns the $i$-th smallest element of $S$.
+- **OS-RANK($x$, $S$)** returns the rank of $x \in S$ in the sorted order of $S$'s elements.
+
+The Order Statistics lesson solved SELECT in $O(n)$ for a *fixed* array. Here the set keeps changing, and we want $O(\lg n)$ per query.
+
+**Idea:** use a red-black tree for the set $S$, but **keep subtree sizes in the nodes**. Each node stores its key and, underneath it, $size[x]$: the number of nodes in the subtree rooted at $x$, including $x$ itself.
+
+$$
+size[x] = size[left[x]] + size[right[x]] + 1
+$$
+
+(NIL leaves have size 0.) Here's the lecture's example. The purple number under each key is its subtree size:
+
+<AugmentedTreeSearch kind="select" i={5} />
+
+### Selection
+
+```text
+OS-SELECT(x, i)            ⊳ i-th smallest element in the subtree rooted at x
+    k ← size[left[x]] + 1   ⊳ k = rank(x)
+    if i = k then return x
+    if i < k
+        then return OS-SELECT(left[x], i)
+        else return OS-SELECT(right[x], i − k)
+```
+
+$x$ has exactly $size[left[x]]$ smaller keys in its subtree, so its rank there is $k = size[left[x]] + 1$. It's the same idea as RAND-SELECT: if $i = k$ we're done. Otherwise go to the one side that holds the answer, and if it's the right side, subtract the $k$ keys we're skipping.
+
+**Example:** OS-SELECT(root, 5) in the tree above.
+
+- At M: $k = size(C) + 1 = 6$. $5 < 6$, so go left with $i = 5$.
+- At C: $k = size(A) + 1 = 2$. $5 > 2$, so go right with $i = 5 - 2 = 3$.
+- At F: $k = size(D) + 1 = 2$. $3 > 2$, so go right with $i = 3 - 2 = 1$.
+- At H: $k = 1 = i$. Return **H**.
+
+**Running time** $= O(h) = O(\lg n)$ for red-black trees: constant work per level on one path down.
+
+### Rank
+
+OS-RANK walks the other way, **up** from $x$ to the root, counting how many keys come before $x$:
+
+```text
+OS-RANK(T, x)
+    r ← size[left[x]] + 1        ⊳ rank of x within its own subtree
+    y ← x
+    while y ≠ root[T]
+        do if y = right[p[y]]
+            then r ← r + size[left[p[y]]] + 1   ⊳ the parent and its left subtree come first
+           y ← p[y]
+    return r
+```
+
+That's also $O(\lg n)$.
+
+### Data structure maintenance
+
+**Q.** Why not keep the **ranks** themselves in the nodes, instead of subtree sizes?
+
+**A.** Ranks are **hard to maintain** when the tree changes. Inserting the new smallest key would change the rank of *every* node: $\Theta(n)$ work. A subtree size only changes for the nodes **on the path** to the change.
+
+The modifying operations are INSERT and DELETE.
+
+**Strategy:** update the subtree sizes as you insert or delete.
+
+- **INSERT("K")**: on the way down the tree to K's position, add 1 to $size$ at every node you pass. The new node gets $size = 1$.
+- **DELETE**: on the way up from the removed node, subtract 1 at every node.
+
+Both touch $O(\lg n)$ nodes.
+
+### Handling rebalancing
+
+Don't forget that RB-INSERT and RB-DELETE may also change the tree to keep it balanced:
+
+- **Recolorings** don't affect subtree sizes at all.
+- **Rotations** only change the subtrees of the **two** nodes being rotated. Fix their sizes in $O(1)$ time, *lower node first*:
+
+```cpp
+// after leftRotate(x), where y was x's right child and is now its parent
+x->size = size(x->left) + size(x->right) + 1;
+y->size = size(y->left) + size(y->right) + 1;   // the same as x's old size
+```
+
+So RB-INSERT and RB-DELETE still run in **$O(\lg n)$** time.
+
+## The methodology
+
+That example is a recipe you can reuse:
+
+<Callout tone="violet" label="Data-structure augmentation">
+1. **Choose an underlying data structure.** (Red-black trees.)
+2. **Determine the additional information** to store in the data structure. (Subtree sizes.)
+3. **Verify that this information can be maintained** by the modifying operations. (RB-INSERT and RB-DELETE, and don't forget rotations.)
+4. **Develop new dynamic-set operations** that use the information. (OS-SELECT and OS-RANK.)
+
+These steps are **guidelines, not rigid rules**.
+</Callout>
+
+## Interval trees
+
+**Goal:** maintain a dynamic set of **intervals**, such as time intervals like meeting times.
+
+**Query:** for a given query interval $i$, find an interval in the set that **overlaps** $i$.
+
+Two intervals $[a, b]$ and $[c, d]$ **overlap** unless one ends before the other starts, that is, unless $b < c$ or $d < a$.
+
+### Following the methodology
+
+**1. Choose an underlying data structure.** A red-black tree **keyed on the low (left) endpoint** of each interval.
+
+**2. Determine the additional information.** Store in each node $x$:
+
+- the interval $int[x]$ that goes with the key, and
+- $m[x]$, the **largest high endpoint** of any interval in the subtree rooted at $x$:
+
+$$
+m[x] = \max\big\{\, high[int[x]],\; m[left[x]],\; m[right[x]] \,\big\}
+$$
+
+**3. Verify the information can be maintained.**
+
+- **INSERT:** fix the $m$'s on the way down. Each node you pass takes the max of its $m$ and the new interval's high endpoint.
+- **Rotations:** the fix-up takes $O(1)$ time per rotation. Recompute $m$ for the two rotated nodes from the formula above.
+- **DELETE** works the same way. So the total time is still $O(\lg n)$.
+
+**4. Develop new operations.**
+
+```text
+INTERVAL-SEARCH(i)
+    x ← root
+    while x ≠ NIL and (low[i] > high[int[x]] or low[int[x]] > high[i])
+        do ⊳ i and int[x] don't overlap
+            if left[x] ≠ NIL and low[i] ≤ m[left[x]]
+                then x ← left[x]
+                else x ← right[x]
+    return x
+```
+
+At every node, if it doesn't overlap, look at $m[left[x]]$, the furthest any interval in the left subtree reaches. If the query starts **after** that, nothing on the left can overlap it, so go right. Otherwise go left.
+
+### Examples
+
+This is the lecture's interval tree. The purple label under each interval is $m$:
+
+<AugmentedTreeSearch kind="interval" query={[14, 16]} />
+
+**Example 1:** INTERVAL-SEARCH([14,16]).
+
+- [14,16] and [17,19] don't overlap. $14 \le 18 = m[left]$, so go left.
+- [14,16] and [5,11] don't overlap. $14 > 8 = m[left]$, so go right.
+- [14,16] and [15,18] **overlap**. Return [15,18].
+
+**Example 2:** INTERVAL-SEARCH([12,14]). (Press **Try [12,14]** above.)
+
+- [12,14] and [17,19] don't overlap. $12 \le 18$, so go left.
+- [12,14] and [5,11] don't overlap. $12 > 8$, so go right.
+- [12,14] and [15,18] don't overlap. $12 > 10$, so go right.
+- $x = $ NIL, so no interval that overlaps [12,14] exists.
+
+### Analysis
+
+**Time $= O(h) = O(\lg n)$**, since INTERVAL-SEARCH does constant work at each level as it follows a single path down the tree.
+
+**Listing *all* overlapping intervals:** search, list the one you found, **delete** it, and repeat. At the end, insert them all back again. If there are $k$ overlapping intervals, this takes $O(k \lg n)$ time. (That's *output-sensitive*: the time depends on the size of the answer. The best algorithm known takes $O(k + \lg n)$.)
+
+### Correctness
+
+Why is it safe to look at only **one** of the two children?
+
+<Callout tone="mint" label="Theorem">
+Let $L$ be the set of intervals in the left subtree of node $x$, and $R$ the set in $x$'s right subtree.
+
+- If the search goes **right**, then $\{\, i' \in L : i' \text{ overlaps } i \,\} = \emptyset$.
+- If the search goes **left**, then $\{\, i' \in L : i' \text{ overlaps } i \,\} = \emptyset \;\Longrightarrow\; \{\, i' \in R : i' \text{ overlaps } i \,\} = \emptyset$.
+
+In other words, it's always safe to take only one of the two children. **We'll either find something, or there was nothing to find.**
+</Callout>
+
+**Proof.** Suppose first that the search goes **right**.
+
+- If $left[x] = $ NIL, we're done, because $L = \emptyset$.
+- Otherwise, the code means we must have $low[i] > m[left[x]]$. The value $m[left[x]]$ is the high endpoint of some interval $j \in L$, and no other interval in $L$ has a larger high endpoint than $high[j]$. So every interval in $L$ ends before $i$ starts.
+- Therefore $\{\, i' \in L : i' \text{ overlaps } i \,\} = \emptyset$.
+
+Now suppose the search goes **left**, and assume that $\{\, i' \in L : i' \text{ overlaps } i \,\} = \emptyset$.
+
+- Then the code means $low[i] \le m[left[x]] = high[j]$ for some $j \in L$.
+- Since $j \in L$, it **doesn't** overlap $i$. And $j$ doesn't end before $i$ starts, so it must start after $i$ ends: $high[i] < low[j]$.
+- But the binary-search-tree property means that for every $i' \in R$, we have $low[j] \le low[i']$.
+- So every $i' \in R$ starts after $i$ ends: $high[i] < low[j] \le low[i']$. That means $\{\, i' \in R : i' \text{ overlaps } i \,\} = \emptyset$. ∎
+
+<ApplicationsGrid>
+  <PracticalApplication title="Calendars and booking systems" tool="SCHEDULING">
+    "Does this new meeting clash with anything?" is exactly INTERVAL-SEARCH. Interval trees answer it in $O(\log n)$, without scanning every booking.
+  </PracticalApplication>
+  <PracticalApplication title="Genome browsers and databases" tool="BIOINFORMATICS · RANGE INDEXES">
+    Finding every gene that overlaps a region of DNA, or every row whose valid-time range covers a date, uses augmented trees like these.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 230, title: "Kth Smallest Element in a BST", slug: "kth-smallest-element-in-a-bst", why: "The follow-up asks for fast repeated queries while the BST changes: store subtree sizes and use OS-SELECT.", difficulty: "Medium" },
+    { id: 729, title: "My Calendar I", slug: "my-calendar-i", why: "Insert an interval only if nothing overlaps it: an interval tree query.", difficulty: "Medium" },
+    { id: 315, title: "Count of Smaller Numbers After Self", slug: "count-of-smaller-numbers-after-self", why: "OS-RANK while inserting from right to left.", difficulty: "Hard" },
+  ]}
+/>

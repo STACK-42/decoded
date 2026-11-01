@@ -1,0 +1,43 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { MuxCircuit, DemuxCircuit } from "@/components/mdx/CircuitVisualizers";
+
+# Multiplexers and Demultiplexers
+
+Think of a railway junction. Several tracks merge onto one, and a lever decides which track connects. A **multiplexer** (mux) does this with signals: many inputs, one output, and **select** lines that say which input gets through.
+
+Flip the data inputs, then flip S, and watch which one the output follows.
+
+<MuxCircuit />
+
+The AND gate acts as a door again. S opens exactly one door, and the OR gate collects whatever came through. Since only one door is open, the OR just passes that value along.
+
+## More inputs
+
+With 2 select bits you can choose from 4 inputs. In general, $n$ select bits choose from $2^n$ inputs. A 4-input mux has one AND per input, each recognising its select pattern:
+
+$$
+Y = D_0 S_1' S_0' + D_1 S_1' S_0 + D_2 S_1 S_0' + D_3 S_1 S_0
+$$
+
+| $S_1$ | $S_0$ | Selected |
+|---|---|---|
+| 0 | 0 | $D_0$ |
+| 0 | 1 | $D_1$ |
+| 1 | 0 | $D_2$ |
+| 1 | 1 | $D_3$ |
+
+That's four 3-input ANDs, one 4-input OR and two inverters. You might notice this looks like a [decoder](/courses/logic-design/comparators-decoders-encoders) whose outputs each gate one data line, and that's what it is.
+
+To build a larger mux, use smaller ones with an **enable** line. To get 16 inputs from two 8-input chips, make the top select bit enable one chip or the other.
+
+## The demultiplexer
+
+A **demultiplexer** (demux) is the junction in the other direction: one input, many outputs, and select lines that decide where the data goes.
+
+<DemuxCircuit />
+
+A decoder with an enable input is a demux. Feed the data into the enable line, and the selected output follows it.
+
+<Callout tone="neon" label="Where you see this">
+A shared wire is one of the most common things in a computer. A mux at one end and a demux at the other let many sources take turns on the same [bus](/courses/computer-organization/buses). The CPU uses muxes to choose which register feeds the ALU, and that choice is what [an instruction's operand field](/courses/computer-architecture/instruction-formats) controls.
+</Callout>

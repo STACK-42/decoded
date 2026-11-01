@@ -1,0 +1,206 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SearchVisualizer } from "@/components/mdx/AlgoVisualizers";
+import { RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+
+# Solving Recurrences
+
+A **recurrence** is an equation (or inequality) that describes a function in terms of its value on smaller inputs:
+
+$$
+T(n) = T(n-1) + n
+$$
+
+Recurrences appear whenever an algorithm **calls itself**. They tell us how the running time is built up, but not the running time itself. To get that, we have to **solve** the recurrence, which means either:
+
+- finding an explicit formula for it, or
+- bounding it by an expression in $n$, like $\Theta(n \lg n)$.
+
+## Recurrences you'll see over and over
+
+| Recurrence | What the algorithm does | Solution |
+| --- | --- | --- |
+| $T(n) = T(n-1) + n$ | loops through the input to remove one item, then recurses | $\Theta(n^2)$ |
+| $T(n) = T(n/2) + c$ | halves the input in one step | $\Theta(\lg n)$ |
+| $T(n) = T(n/2) + n$ | halves the input, but must look at every item first | $\Theta(n)$ |
+| $T(n) = 2T(n/2) + 1$ | splits into two halves and does constant extra work | $\Theta(n)$ |
+
+## Where a recurrence comes from: binary search
+
+```text
+BINARY-SEARCH(A, lo, hi, x)
+    if (lo > hi)                          c₁ (constant)
+        return FALSE
+    mid ← ⌊(lo + hi) / 2⌋                 c₂
+    if x = A[mid]                          c₃
+        return TRUE
+    if (x < A[mid])
+        BINARY-SEARCH(A, lo, mid − 1, x)   same problem, size n/2
+    if (x > A[mid])
+        BINARY-SEARCH(A, mid + 1, hi, x)   same problem, size n/2
+```
+
+Each call does a constant amount of work, then makes **at most one** recursive call on half the array. If $T(n)$ is the running time on an array of size $n$:
+
+$$
+T(n) = c + T(n/2)
+$$
+
+<SearchVisualizer algorithm="binary" target={21} />
+
+## Four methods for solving recurrences
+
+1. **Iteration**: unroll the recurrence into a sum.
+2. **Substitution**: guess the answer, then prove it by induction.
+3. **Recursion tree**: draw the calls as a tree and add up each level.
+4. **Master method**: a "cookbook" formula for one common shape.
+
+## 1. The iteration method
+
+Turn the recurrence into a summation, then bound it using a series you know.
+
+- **Iterate** (expand) the recurrence until you hit the initial condition.
+- **Back-substitute** to write it in terms of $n$ and the base case.
+
+**Example: $T(n) = c + T(n/2)$.** Apply the same rule to $T(n/2)$, then to $T(n/4)$, and so on:
+
+$$
+\begin{aligned}
+T(n) &= c + T(n/2) && T(n/2) = c + T(n/4) \\
+     &= c + c + T(n/4) && T(n/4) = c + T(n/8) \\
+     &= c + c + c + T(n/8) \\
+     &\;\;\vdots
+\end{aligned}
+$$
+
+Assume $n = 2^k$. After $k$ steps you reach $T(1)$:
+
+$$
+T(n) = \underbrace{c + c + \dots + c}_{k \text{ times}} + T(1) = c \lg n + T(1) = \Theta(\lg n)
+$$
+
+**Example: $T(n) = n + 2T(n/2)$.** Again assume $n = 2^k$:
+
+$$
+\begin{aligned}
+T(n) &= n + 2T(n/2) && T(n/2) = n/2 + 2T(n/4) \\
+     &= n + 2\big(n/2 + 2T(n/4)\big) = n + n + 4T(n/4) \\
+     &= n + n + 4\big(n/4 + 2T(n/8)\big) = n + n + n + 8T(n/8) \\
+     &\;\;\vdots \\
+     &= i\,n + 2^i\,T(n/2^i) \\
+     &= k\,n + 2^k\,T(1) && \text{when } i = k \\
+     &= n \lg n + n\,T(1) = \Theta(n \lg n)
+\end{aligned}
+$$
+
+## 2. The substitution method
+
+Two steps:
+
+1. **Guess** the form of the solution.
+2. **Use induction** to prove the guess is right.
+
+To prove $T(n) = O(g(n))$:
+
+- **Induction goal:** $T(n) \le d\,g(n)$ for some constant $d > 0$ and all $n \ge n_0$. That's just the definition of Big-O.
+- **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is *strong* induction: we assume it for every smaller value.)
+- **Prove the goal:** plug the hypothesis into the recurrence and find values of $d$ and $n_0$ that make it work.
+
+**Example: binary search, $T(n) = 1 + T(n/2)$.** Guess $T(n) = O(\lg n)$.
+
+- Goal: $T(n) \le c \lg n$.
+- Hypothesis: $T(n/2) \le c \lg(n/2)$.
+- Proof:
+
+$$
+T(n) = T(n/2) + 1 \le c \lg(n/2) + 1 = c \lg n - c + 1 \le c \lg n
+$$
+
+The last step needs $-c + 1 \le 0$, which means $c \ge 1$. ✓
+
+**Example: $T(n) = T(n-1) + n$.** Guess $T(n) = O(n^2)$.
+
+- Goal: $T(n) \le c\,n^2$.
+- Hypothesis: $T(n-1) \le c(n-1)^2$.
+- Proof:
+
+$$
+T(n) = T(n-1) + n \le c(n-1)^2 + n = cn^2 - (2cn - c - n) \le cn^2
+$$
+
+This needs $2cn - c - n \ge 0$, which means $c \ge \frac{n}{2n-1}$. For $n \ge 1$ the right side is at most $\frac{1}{2 \cdot 1 - 1} = 1$, so **any $c \ge 1$ works**. ✓
+
+**Example: $T(n) = 3T(n/4) + n^2$.** Guess $T(n) = O(n^2)$.
+
+$$
+T(n) = 3T(n/4) + n^2 \le 3d\left(\frac{n}{4}\right)^2 + n^2 = \frac{3}{16}\,d\,n^2 + n^2 \le d\,n^2
+$$
+
+This holds when $\frac{3}{16}d + 1 \le d$, which means $d \ge \frac{16}{13}$. ✓ So $T(n) = O(n^2)$.
+
+**Example: $T(n) = 2T(n/2) + n$.** Guess $T(n) = O(n \lg n)$.
+
+$$
+T(n) = 2T(n/2) + n \le 2c\,\frac{n}{2}\lg\frac{n}{2} + n = cn\lg n - cn + n \le cn \lg n
+$$
+
+This holds when $-cn + n \le 0$, which means $c \ge 1$. ✓
+
+<Callout tone="orange" label="Where it goes wrong">
+In the substitution method, the inequality you end with must be **exactly** the goal $T(n) \le d\,g(n)$, using the *same* constant $d$. Ending with "$\le dn^2 + n$" and calling it $O(n^2)$ is not a proof.
+</Callout>
+
+## 3. The recursion-tree method
+
+Convert the recurrence into a tree:
+
+- Each **node** is the cost of one call, *not counting* its own recursive calls.
+- **Add up each level**, then add up the levels.
+
+The tree is mainly used to **guess** a solution, which you can then prove with substitution. You saw it for merge sort in the first lesson: $\lg n$ levels that each cost $cn$, so $\Theta(n \lg n)$ in total.
+
+Pick a recurrence below and look at the level costs. Each level costs the same fixed multiple $a / b^k$ of the level above it. Three things can happen:
+
+- **The cost shrinks going down** (multiple $< 1$). The root dominates, and the total is $\Theta(f(n))$.
+- **Every level costs the same** (multiple $= 1$). The total is (cost of one level) × (number of levels), which brings in a $\log n$ factor.
+- **The cost grows going down** (multiple $> 1$). The leaves dominate, and the total is $\Theta(n^{\log_b a})$, the number of leaves.
+
+<RecurrenceExplorer />
+
+## 4. The master method
+
+The master method is a "cookbook" for recurrences of this shape:
+
+$$
+T(n) = a\,T(n/b) + f(n), \qquad a \ge 1,\; b > 1,\; f(n) > 0
+$$
+
+It means: split the problem into $a$ subproblems of size $n/b$, and spend $f(n)$ dividing and combining.
+
+**The idea:** compare $f(n)$ with $n^{\log_b a}$. Either one is bigger than the other **by a polynomial factor** $n^\varepsilon$, or they're asymptotically equal.
+
+<Callout tone="violet" label="The three cases">
+**Case 1.** If $f(n) = O(n^{\log_b a - \varepsilon})$ for some $\varepsilon > 0$, then $T(n) = \Theta(n^{\log_b a})$. *The leaves win.*
+
+**Case 2.** If $f(n) = \Theta(n^{\log_b a})$, then $T(n) = \Theta(n^{\log_b a} \lg n)$. *It's a tie: every level costs the same.*
+
+**Case 3.** If $f(n) = \Omega(n^{\log_b a + \varepsilon})$ for some $\varepsilon > 0$, **and** $a\,f(n/b) \le c\,f(n)$ for some $c < 1$ and all large enough $n$ (the **regularity condition**), then $T(n) = \Theta(f(n))$. *The root wins.*
+</Callout>
+
+### Worked examples
+
+**$T(n) = 2T(n/2) + n$.** $a = 2$, $b = 2$, $\log_2 2 = 1$. Compare $n^1$ with $f(n) = n$: equal, so **Case 2**, and $T(n) = \Theta(n \lg n)$.
+
+**$T(n) = 2T(n/2) + n^2$.** Compare $n$ with $n^2$: $f(n) = \Omega(n^{1+\varepsilon})$ with $\varepsilon = 1$, so it looks like **Case 3**. Check regularity: $a\,f(n/b) = 2 \cdot \frac{n^2}{4} = \frac{1}{2}n^2 \le c\,n^2$ with $c = \frac12 < 1$. ✓ So $T(n) = \Theta(n^2)$.
+
+**$T(n) = 2T(n/2) + \sqrt{n}$.** Compare $n$ with $n^{1/2}$: $f(n) = O(n^{1-\varepsilon})$ with $\varepsilon = \frac12$, so **Case 1**, and $T(n) = \Theta(n)$.
+
+**$T(n) = 3T(n/4) + n \lg n$.** $a = 3$, $b = 4$, $\log_4 3 \approx 0.793$. Compare $n^{0.793}$ with $n \lg n$: $f(n) = \Omega(n^{\log_4 3 + \varepsilon})$, so it looks like **Case 3**. Check regularity: $3 \cdot \frac{n}{4}\lg\frac{n}{4} \le \frac34\, n \lg n = c\,f(n)$ with $c = \frac34$. ✓ So $T(n) = \Theta(n \lg n)$.
+
+**$T(n) = 2T(n/2) + n \lg n$.** Compare $n$ with $n \lg n$. It *seems* like Case 3 should apply, but $f(n)$ must be bigger by a **polynomial** factor $n^\varepsilon$. Here it's only bigger by a factor of $\lg n$, which grows slower than any $n^\varepsilon$. So **the master method doesn't apply.** It falls into the gap between Case 2 and Case 3. (Use a recursion tree instead: you get $\Theta(n \lg^2 n)$.) Try it as the last preset in the explorer above.
+
+<Callout tone="sky" label="When the master method can't help">
+It only works for the exact shape $aT(n/b) + f(n)$. It can't solve:
+
+- $T(n) = T(n-1) + n$, where the problem shrinks by subtraction, not division. Use iteration.
+- $T(n) = 2T(n/4) + T(n/2) + n$, where the subproblems have different sizes. Use a recursion tree.
+</Callout>

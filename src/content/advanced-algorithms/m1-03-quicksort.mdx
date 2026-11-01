@@ -1,0 +1,259 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { QuicksortVisualizer, RecursionTreeDiagram } from "@/components/mdx/AdvancedVisualizers";
+
+# Quicksort and Randomized Quicksort
+
+Quicksort was proposed by C.A.R. Hoare in 1962. It's a divide-and-conquer algorithm that:
+
+- sorts **in place**, like insertion sort but unlike merge sort, so it needs no extra array,
+- is **very practical**, once it's tuned.
+
+Its worst case is bad, $\Theta(n^2)$, but it's fast "on average". This lesson explains what "on average" means, and how **randomization** makes it true for *every* input.
+
+## Divide and conquer
+
+To quicksort an $n$-element array:
+
+1. **Divide:** partition the array into two subarrays around a **pivot** $x$, so that every element in the lower subarray is $\le x$ and every element in the upper subarray is $\ge x$.
+
+   $$
+   \boxed{\;\le x\;} \;\; \boxed{\;x\;} \;\; \boxed{\;\ge x\;}
+   $$
+
+2. **Conquer:** recursively sort the two subarrays.
+3. **Combine:** trivial. The pivot is already in its final place and both sides are sorted, so the whole array is sorted.
+
+Compare merge sort: there, *divide* is trivial and *combine* (the merge) does the work. Quicksort is the other way round. **The key is a linear-time partitioning subroutine.**
+
+## Partitioning
+
+```text
+PARTITION(A, p, q)          ⊳ A[p . . q]
+    x ← A[p]                ⊳ pivot = A[p]
+    i ← p
+    for j ← p + 1 to q
+        if A[j] ≤ x
+            i ← i + 1
+            exchange A[i] ↔ A[j]
+    exchange A[p] ↔ A[i]
+    return i
+```
+
+The running time is $\Theta(n)$ for $n$ elements: one pass of `j` from left to right.
+
+<Callout tone="violet" label="The invariant">
+While the loop runs, the subarray always looks like this:
+
+$$
+\underset{p}{\boxed{x}}\;\underbrace{\boxed{\;\le x\;}}_{p+1\,..\,i}\;\underbrace{\boxed{\;\ge x\;}}_{i+1\,..\,j-1}\;\underbrace{\boxed{\;\;?\;\;}}_{j\,..\,q}
+$$
+
+`i` marks the end of the "small" part, and `j` is the next element to look at. When `A[j]` is small, swap it to the end of the small part (just after `i`). When it's big, do nothing: it's already at the end of the big part.
+</Callout>
+
+Step through the lecture's example, `6 10 13 5 8 3 2 11`. Watch the labels under the array grow: `≤x`, `≥x`, `?`.
+
+<QuicksortVisualizer initial={[6, 10, 13, 5, 8, 3, 2, 11]} />
+
+## Pseudocode for quicksort
+
+```text
+QUICKSORT(A, p, r)
+    if p < r
+        q ← PARTITION(A, p, r)
+        QUICKSORT(A, p, q − 1)
+        QUICKSORT(A, q + 1, r)
+```
+
+The first call is `QUICKSORT(A, 1, n)`.
+
+## Analysis of quicksort
+
+- Assume all the input elements are **distinct**. (When there can be duplicates, better partitioning algorithms exist in practice.)
+- Let $T(n)$ be the **worst-case** running time on an array of $n$ elements.
+
+### Worst case
+
+The worst case happens when the input is **already sorted or reverse sorted**. Then we always partition around the **min or max** element, so one side of the partition is always empty:
+
+$$
+\begin{aligned}
+T(n) &= T(0) + T(n-1) + \Theta(n) \\
+     &= \Theta(1) + T(n-1) + \Theta(n) \\
+     &= T(n-1) + \Theta(n) \\
+     &= \Theta(n^2) \qquad \text{(arithmetic series)}
+\end{aligned}
+$$
+
+**The recursion tree** for $T(n) = T(0) + T(n-1) + cn$ is a long, thin path. Its height is $h = n$, and the levels cost $cn, c(n-1), c(n-2), \dots$:
+
+$$
+T(n) = \Theta\!\left(\sum_{k=1}^{n} k\right) + \underbrace{n \cdot \Theta(1)}_{\text{the } T(0) \text{ leaves}} = \Theta(n^2) + \Theta(n) = \Theta(n^2)
+$$
+
+Press **Sorted input** in the visualizer above and watch the call stack get as deep as the array is long.
+
+### Best case (for intuition only!)
+
+If we're lucky, PARTITION splits the array **evenly**:
+
+$$
+T(n) = 2T(n/2) + \Theta(n) = \Theta(n \lg n) \qquad \text{(same as merge sort)}
+$$
+
+### The "almost-best" case
+
+What if the split is always $\frac{1}{10} : \frac{9}{10}$? That sounds terribly unbalanced:
+
+$$
+T(n) = T\!\left(\tfrac{1}{10}n\right) + T\!\left(\tfrac{9}{10}n\right) + \Theta(n)
+$$
+
+<RecursionTreeDiagram fracs={[[1, 10], [9, 10]]} k={1} depth={2} />
+
+Every full level costs $cn$, because $\frac{1}{10} + \frac{9}{10} = 1$.
+
+- The **shortest** path (always $\frac{1}{10}$) reaches the bottom after $\log_{10} n$ levels.
+- The **longest** path (always $\frac{9}{10}$) reaches the bottom after $\log_{10/9} n$ levels.
+- There are $O(n)$ leaves.
+
+So
+
+$$
+cn \log_{10} n \;\le\; T(n) \;\le\; cn \log_{10/9} n + O(n)
+$$
+
+and both sides are $\Theta(n \lg n)$. **Lucky!** Even a 1 : 9 split gives $n \lg n$. In fact, *any* split by a constant proportion does.
+
+### More intuition: alternating luck
+
+Suppose we're lucky, unlucky, lucky, unlucky, and so on:
+
+$$
+\begin{aligned}
+L(n) &= 2U(n/2) + \Theta(n) && \text{lucky: an even split} \\
+U(n) &= L(n-1) + \Theta(n) && \text{unlucky: a 0 : n−1 split}
+\end{aligned}
+$$
+
+Substitute $U$ into $L$:
+
+$$
+L(n) = 2\big(L(n/2 - 1) + \Theta(n/2)\big) + \Theta(n) = 2L(n/2 - 1) + \Theta(n) = \Theta(n \lg n)
+$$
+
+**Lucky again!** A bad split now and then only adds a constant factor. **So how can we make sure we're usually lucky?**
+
+## Randomized quicksort
+
+**Idea:** partition around a **random** element. (Swap a randomly chosen element into `A[p]`, then call the same PARTITION.)
+
+- The running time is **independent of the input order**.
+- **No assumptions** need to be made about the input distribution.
+- **No specific input** triggers the worst case.
+- The worst case is decided **only by the random-number generator**.
+
+An adversary who hands you a sorted array can no longer hurt you. They'd have to predict your coin flips. Switch the visualizer to **Random pivot**, press **Sorted input**, and compare the max depth.
+
+<QuicksortVisualizer initial={[3, 6, 9, 12, 15, 18, 21, 24, 27, 30]} randomized />
+
+## Randomized quicksort analysis
+
+Let $T(n)$ be the **random variable** for the running time of randomized quicksort on an input of size $n$, assuming the random numbers are independent.
+
+For $k = 0, 1, \dots, n-1$, define the **indicator random variable**
+
+$$
+X_k =
+\begin{cases}
+1 & \text{if PARTITION generates a } k : n-k-1 \text{ split} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+$E[X_k] = \Pr\{X_k = 1\} = \frac{1}{n}$, since all splits are equally likely (assuming the elements are distinct).
+
+Exactly one of the $X_k$ is 1, so we can write the running time as one sum:
+
+$$
+T(n) =
+\begin{cases}
+T(0) + T(n-1) + \Theta(n) & \text{if } 0 : n-1 \text{ split} \\
+T(1) + T(n-2) + \Theta(n) & \text{if } 1 : n-2 \text{ split} \\
+\quad\vdots \\
+T(n-1) + T(0) + \Theta(n) & \text{if } n-1 : 0 \text{ split}
+\end{cases}
+\;=\; \sum_{k=0}^{n-1} X_k \big(T(k) + T(n-k-1) + \Theta(n)\big)
+$$
+
+### Calculating the expectation
+
+Take expectations of both sides, one step at a time:
+
+$$
+\begin{aligned}
+E[T(n)] &= E\left[\sum_{k=0}^{n-1} X_k\big(T(k) + T(n-k-1) + \Theta(n)\big)\right] \\
+&= \sum_{k=0}^{n-1} E\Big[X_k\big(T(k) + T(n-k-1) + \Theta(n)\big)\Big] && \text{linearity of expectation} \\
+&= \sum_{k=0}^{n-1} E[X_k] \cdot E\big[T(k) + T(n-k-1) + \Theta(n)\big] && X_k \text{ is independent of the other random choices} \\
+&= \frac{1}{n}\sum_{k=0}^{n-1} E[T(k)] + \frac{1}{n}\sum_{k=0}^{n-1} E[T(n-k-1)] + \frac{1}{n}\sum_{k=0}^{n-1}\Theta(n) && \text{linearity, and } E[X_k] = 1/n \\
+&= \frac{2}{n}\sum_{k=1}^{n-1} E[T(k)] + \Theta(n) && \text{the two sums have the same terms}
+\end{aligned}
+$$
+
+(The two sums are the same numbers in opposite order: $T(0), T(1), \dots$ and $T(n-1), T(n-2), \dots$.)
+
+### The hairy recurrence
+
+$$
+E[T(n)] = \frac{2}{n}\sum_{k=2}^{n-1} E[T(k)] + \Theta(n)
+$$
+
+The $k = 0, 1$ terms can be absorbed into the $\Theta(n)$.
+
+**Prove:** $E[T(n)] \le a\,n \lg n$ for some constant $a > 0$.
+
+- Choose $a$ large enough that $a\,n \lg n$ dominates $E[T(n)]$ for small $n \ge 2$ (the base cases).
+- **Use the fact:** $\displaystyle\sum_{k=2}^{n-1} k \lg k \le \frac12 n^2 \lg n - \frac18 n^2$ (an exercise in the textbook).
+
+### Substitution method
+
+$$
+\begin{aligned}
+E[T(n)] &\le \frac{2}{n}\sum_{k=2}^{n-1} a\,k \lg k + \Theta(n) && \text{substitute the inductive hypothesis} \\
+&\le \frac{2a}{n}\left(\frac12 n^2 \lg n - \frac18 n^2\right) + \Theta(n) && \text{use the fact} \\
+&= a\,n \lg n - \left(\frac{an}{4} - \Theta(n)\right) && \text{write it as the goal minus a residual} \\
+&\le a\,n \lg n
+\end{aligned}
+$$
+
+The last step holds if $a$ is chosen large enough that $\frac{an}{4}$ dominates the $\Theta(n)$. ∎
+
+<Callout tone="mint" label="Result">
+Randomized quicksort runs in **expected time $\Theta(n \lg n)$** on **every** input. The worst case $\Theta(n^2)$ still exists, but only with extremely bad luck, never because of the input.
+</Callout>
+
+## Quicksort in practice
+
+- Quicksort is a great **general-purpose** sorting algorithm.
+- It's typically **over twice as fast** as merge sort.
+- It can benefit a lot from **code tuning**: switching to insertion sort for small subarrays, choosing the pivot as the median of three, and so on.
+- It behaves well even with **caching and virtual memory**, because it scans the array sequentially, in place.
+
+<ApplicationsGrid>
+  <PracticalApplication title="C++ std::sort" tool="INTROSORT">
+    `std::sort` is quicksort with tuning. It uses a median-of-three pivot and insertion sort for tiny pieces, and it **switches to heapsort** if the recursion gets too deep, so the worst case is $O(n \log n)$ anyway.
+  </PracticalApplication>
+  <PracticalApplication title="Defending against attack inputs" tool="RANDOMIZATION">
+    A server that sorts user data with a fixed pivot rule can be slowed to a crawl by a carefully built "sorted-looking" input. Random pivots make that attack impossible.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 912, title: "Sort an Array", slug: "sort-an-array", why: "Write randomized quicksort. A fixed first-element pivot times out on the sorted test cases, which is exactly the worst case from this lesson.", difficulty: "Medium" },
+    { id: 75, title: "Sort Colors", slug: "sort-colors", why: "A partition with three regions (< x, = x, > x) in a single pass.", difficulty: "Medium" },
+    { id: 905, title: "Sort Array By Parity", slug: "sort-array-by-parity", why: "PARTITION where the test is \"is it even?\" instead of \"is it ≤ x?\"." },
+  ]}
+/>

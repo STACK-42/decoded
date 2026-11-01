@@ -1,0 +1,266 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SearchVisualizer, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
+import { FastPowerVisualizer, FibonacciMatrix, StrassenCalculator, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+
+# Divide and Conquer
+
+**Divide and conquer** is a way of *designing* algorithms in three steps:
+
+1. **Divide** the problem (instance) into subproblems.
+2. **Conquer** the subproblems by solving them recursively.
+3. **Combine** the subproblem solutions into a solution for the whole.
+
+This lesson goes through six examples: merge sort, binary search, powering a number, Fibonacci numbers, matrix multiplication (with Strassen's trick), and laying out a circuit on a chip. Each time the pattern is the same: **write the recurrence, then solve it with the master method.**
+
+## The master theorem, again
+
+For a recurrence $T(n) = a\,T(n/b) + f(n)$:
+
+| Case | Condition on $f(n)$ | Result |
+| --- | --- | --- |
+| 1 | $f(n) = O(n^{\log_b a - \varepsilon})$ for a constant $\varepsilon > 0$ | $T(n) = \Theta(n^{\log_b a})$ |
+| 2 | $f(n) = \Theta(n^{\log_b a} \lg^k n)$ for a constant $k \ge 0$ | $T(n) = \Theta(n^{\log_b a} \lg^{k+1} n)$ |
+| 3 | $f(n) = \Omega(n^{\log_b a + \varepsilon})$ for a constant $\varepsilon > 0$, plus the regularity condition | $T(n) = \Theta(f(n))$ |
+
+Case 2 here is a bit more general than last time. It allows an extra $\lg^k n$ factor. With $k = 0$ it's exactly the version you already know.
+
+## Merge sort
+
+1. **Divide:** trivial. Just find the middle.
+2. **Conquer:** recursively sort the two subarrays.
+3. **Combine:** merge them in linear time.
+
+$$
+T(n) = \underbrace{2}_{\#\text{ subproblems}}\;T(\underbrace{n/2}_{\text{subproblem size}}) + \underbrace{\Theta(n)}_{\text{work dividing and combining}}
+$$
+
+$a = 2$, $b = 2$, so $n^{\log_b a} = n^{\log_2 2} = n$. That's Case 2 with $k = 0$, so $T(n) = \Theta(n \lg n)$.
+
+<MergeSortTree input={[38, 27, 43, 3, 9, 82, 10, 50]} />
+
+## Binary search
+
+Find an element in a **sorted** array.
+
+1. **Divide:** check the middle element.
+2. **Conquer:** recursively search **one** subarray.
+3. **Combine:** trivial. There's nothing to combine.
+
+The lecture's example is finding 9 in `3 5 7 8 9 12 15`:
+
+<SearchVisualizer algorithm="binary" array={[3, 5, 7, 8, 9, 12, 15]} target={9} />
+
+$$
+T(n) = 1\,T(n/2) + \Theta(1)
+$$
+
+$n^{\log_b a} = n^{\log_2 1} = n^0 = 1$. That's Case 2 with $k = 0$, so $T(n) = \Theta(\lg n)$.
+
+## Powering a number
+
+**Problem:** compute $a^n$, where $n$ is a natural number.
+
+The **naive** algorithm multiplies $a$ by itself $n - 1$ times: $\Theta(n)$.
+
+**Divide and conquer:**
+
+$$
+a^n =
+\begin{cases}
+a^{n/2} \cdot a^{n/2} & \text{if } n \text{ is even} \\
+a^{(n-1)/2} \cdot a^{(n-1)/2} \cdot a & \text{if } n \text{ is odd}
+\end{cases}
+$$
+
+The trick is that both halves are **the same number**, so you compute $a^{n/2}$ once and square it. That's one subproblem of half the size, plus a constant number of multiplications:
+
+$$
+T(n) = T(n/2) + \Theta(1) \quad\Longrightarrow\quad T(n) = \Theta(\lg n)
+$$
+
+You met this in the lab as `fastPower`, which squares the base first. It's the same idea, organised slightly differently:
+
+<FastPowerVisualizer a={2} b={21} />
+
+## Fibonacci numbers
+
+$$
+F_n =
+\begin{cases}
+0 & \text{if } n = 0 \\
+1 & \text{if } n = 1 \\
+F_{n-1} + F_{n-2} & \text{if } n \ge 2
+\end{cases}
+\qquad 0,\ 1,\ 1,\ 2,\ 3,\ 5,\ 8,\ 13,\ 21,\ 34,\ \dots
+$$
+
+There are four ways to compute $F_n$, from worst to best:
+
+1. **Naive recursion.** This takes $\Omega(\varphi^n)$ time, which is exponential. Here $\varphi = \frac{1 + \sqrt 5}{2} \approx 1.618$ is the **golden ratio**.
+2. **Bottom-up.** Compute $F_0, F_1, F_2, \dots, F_n$ in order, each one the sum of the previous two: $\Theta(n)$.
+3. **Naive recursive squaring.** $F_n = \varphi^n / \sqrt5$, rounded to the nearest integer. Computing $\varphi^n$ by recursive squaring takes $\Theta(\lg n)$ time. *But it's unreliable:* floating-point arithmetic has round-off errors, and for large $n$ the answer comes out wrong.
+4. **Recursive squaring with matrices.** Exact, and $\Theta(\lg n)$.
+
+<Callout tone="violet" label="Theorem">
+$$
+\begin{bmatrix} F_{n+1} & F_n \\ F_n & F_{n-1} \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^n
+$$
+</Callout>
+
+So $F_n$ is an entry of a matrix power, and we can compute matrix powers by recursive squaring, exactly like $a^n$. This takes $\Theta(\lg n)$ time and uses only integers, so there's no round-off.
+
+**Proof (induction on $n$).**
+
+- **Base case ($n = 1$):** $\begin{bmatrix} F_2 & F_1 \\ F_1 & F_0 \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix} = \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^1$. ✓
+- **Inductive step ($n \ge 2$):**
+
+$$
+\begin{bmatrix} F_{n+1} & F_n \\ F_n & F_{n-1} \end{bmatrix}
+= \begin{bmatrix} F_n & F_{n-1} \\ F_{n-1} & F_{n-2} \end{bmatrix} \cdot \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}
+= \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^{n-1} \cdot \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}
+= \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^{n}
+$$
+
+The first equals sign is just the Fibonacci rule (multiply it out: the top-left entry is $F_n + F_{n-1} = F_{n+1}$). The second uses the inductive hypothesis. ∎
+
+<FibonacciMatrix initialN={13} />
+
+## Matrix multiplication
+
+**Input:** $A = [a_{ij}]$ and $B = [b_{ij}]$, for $i, j = 1, 2, \dots, n$. **Output:** $C = [c_{ij}] = A \cdot B$, where
+
+$$
+c_{ij} = \sum_{k=1}^{n} a_{ik} \cdot b_{kj}
+$$
+
+### The standard algorithm
+
+```text
+for i ← 1 to n
+    for j ← 1 to n
+        c[i][j] ← 0
+        for k ← 1 to n
+            c[i][j] ← c[i][j] + a[i][k] · b[k][j]
+```
+
+There are three nested loops of $n$ steps each, so the running time is $\Theta(n^3)$.
+
+### Divide and conquer
+
+**Idea:** an $n \times n$ matrix is a $2 \times 2$ matrix of $(n/2) \times (n/2)$ **submatrices**.
+
+$$
+\underbrace{\begin{bmatrix} r & s \\ t & u \end{bmatrix}}_{C} = \underbrace{\begin{bmatrix} a & b \\ c & d \end{bmatrix}}_{A} \cdot \underbrace{\begin{bmatrix} e & f \\ g & h \end{bmatrix}}_{B}
+\qquad
+\begin{aligned}
+r &= ae + bg \\
+s &= af + bh \\
+t &= ce + dg \\
+u &= cf + dh
+\end{aligned}
+$$
+
+That's **8 multiplications** of $(n/2) \times (n/2)$ submatrices, done recursively, plus **4 additions** of $(n/2) \times (n/2)$ submatrices. Adding two such matrices touches each of their $n^2/4$ entries once, so the additions cost $\Theta(n^2)$.
+
+$$
+T(n) = 8\,T(n/2) + \Theta(n^2)
+$$
+
+$n^{\log_b a} = n^{\log_2 8} = n^3$, so it's Case 1, and $T(n) = \Theta(n^3)$. **No better than the ordinary algorithm.** Splitting alone doesn't help. We need fewer subproblems.
+
+### Strassen's idea
+
+Multiply the $2 \times 2$ block matrices with only **7** recursive multiplications:
+
+$$
+\begin{aligned}
+P_1 &= a \cdot (f - h) & r &= P_5 + P_4 - P_2 + P_6 \\
+P_2 &= (a + b) \cdot h & s &= P_1 + P_2 \\
+P_3 &= (c + d) \cdot e & t &= P_3 + P_4 \\
+P_4 &= d \cdot (g - e) & u &= P_5 + P_1 - P_3 - P_7 \\
+P_5 &= (a + d) \cdot (e + h) \\
+P_6 &= (b - d) \cdot (g + h) \\
+P_7 &= (a - c) \cdot (e + f)
+\end{aligned}
+$$
+
+That's **7 multiplications and 18 additions/subtractions**. Notice it never relies on multiplication being commutative ($xy = yx$), which is important because matrix multiplication isn't commutative.
+
+Let's check that $r$ really is $ae + bg$:
+
+$$
+\begin{aligned}
+r &= P_5 + P_4 - P_2 + P_6 \\
+  &= (a + d)(e + h) + d(g - e) - (a + b)h + (b - d)(g + h) \\
+  &= ae + ah + de + dh + dg - de - ah - bh + bg + bh - dg - dh \\
+  &= ae + bg \;\checkmark
+\end{aligned}
+$$
+
+Change the numbers below and the answers keep matching:
+
+<StrassenCalculator />
+
+### Strassen's algorithm
+
+1. **Divide:** partition $A$ and $B$ into $(n/2) \times (n/2)$ submatrices. Form the terms to be multiplied using $+$ and $-$.
+2. **Conquer:** perform the 7 multiplications of $(n/2) \times (n/2)$ submatrices recursively.
+3. **Combine:** form $C$ using $+$ and $-$ on $(n/2) \times (n/2)$ submatrices.
+
+$$
+T(n) = 7\,T(n/2) + \Theta(n^2)
+$$
+
+$n^{\log_b a} = n^{\log_2 7} \approx n^{2.81}$. That's Case 1, so $T(n) = \Theta(n^{\lg 7})$.
+
+2.81 might not look much smaller than 3, but the difference is in the **exponent**, so it matters a lot for large $n$. In practice Strassen beats the ordinary algorithm for $n \ge 32$ or so. The best bound known today is about $\Theta(n^{2.376})$, but that algorithm is only of theoretical interest.
+
+Compare the two recurrences with the "matrix D&C" and "Strassen" presets:
+
+<RecurrenceExplorer a={7} b={2} k={2} />
+
+## VLSI layout
+
+**Problem:** embed a **complete binary tree** with $n$ leaves in a grid, using as little area as possible. (VLSI means "very large scale integration": putting circuits onto a chip.)
+
+### The obvious layout
+
+Put the root at the top and the two subtrees side by side underneath:
+
+- **Height:** one subtree's height plus a constant, so $H(n) = H(n/2) + \Theta(1) = \Theta(\lg n)$.
+- **Width:** two subtrees' widths plus a constant, so $W(n) = 2\,W(n/2) + \Theta(1) = \Theta(n)$.
+
+$$
+\text{Area} = H(n) \cdot W(n) = \Theta(n \lg n)
+$$
+
+### The H-tree
+
+Lay the tree out in the shape of a letter **H**, recursively. Each H has a smaller H at each of its four corners. The square has side length $L(n)$, which is made of two smaller squares of side $L(n/4)$ (each holding a quarter of the leaves) plus a constant gap between them:
+
+$$
+L(n) = 2\,L(n/4) + \Theta(1) = \Theta(\sqrt n)
+$$
+
+(Master method: $n^{\log_4 2} = n^{1/2}$, Case 1.)
+
+$$
+\text{Area} = L(n)^2 = \Theta(n)
+$$
+
+That's the best possible: you need at least one grid cell per leaf anyway.
+
+## Conclusion
+
+- Divide and conquer is **one of several** powerful techniques for designing algorithms.
+- Divide-and-conquer algorithms can be analyzed with **recurrences and the master method**, so practise that maths.
+- The strategy often leads to **efficient** algorithms. The trick is usually making fewer or smaller subproblems, or combining them more cheaply.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Fast exponentiation in cryptography" tool="RSA · TLS">
+    Encrypting with RSA means computing $m^e \bmod N$ with numbers hundreds of digits long. Repeated squaring turns an impossible number of multiplications into a few thousand.
+  </PracticalApplication>
+  <PracticalApplication title="Matrix libraries and GPUs" tool="BLAS · ML">
+    Deep learning is mostly matrix multiplication. Libraries split matrices into blocks, exactly like the $2 \times 2$ split above, so each block fits in fast cache memory.
+  </PracticalApplication>
+</ApplicationsGrid>

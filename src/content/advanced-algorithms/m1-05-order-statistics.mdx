@@ -1,0 +1,238 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SelectVisualizer, MedianOfMediansGrid, RecursionTreeDiagram } from "@/components/mdx/AdvancedVisualizers";
+
+# Order Statistics: Finding the i-th Smallest
+
+**Problem:** select the $i$-th smallest of $n$ elements, which is the element with **rank** $i$.
+
+- $i = 1$: the **minimum**.
+- $i = n$: the **maximum**.
+- $i = \lfloor (n+1)/2 \rfloor$ or $\lceil (n+1)/2 \rceil$: the **median**.
+
+**Naive algorithm:** sort, then index the $i$-th element. The worst-case running time is $\Theta(n \lg n) + \Theta(1) = \Theta(n \lg n)$.
+
+Sorting does far more work than we need: it puts *every* element in order, when we only want one. This lesson finds the $i$-th smallest in **linear time**, first with randomization and then in the worst case.
+
+## Randomized divide and conquer
+
+```text
+RAND-SELECT(A, p, q, i)          ⊳ i-th smallest of A[p . . q]
+    if p = q then return A[p]
+    r ← RAND-PARTITION(A, p, q)
+    k ← r − p + 1                 ⊳ k = rank(A[r])
+    if i = k then return A[r]
+    if i < k
+        then return RAND-SELECT(A, p, r − 1, i)
+        else return RAND-SELECT(A, r + 1, q, i − k)
+```
+
+After partitioning, the pivot $A[r]$ is in its final sorted position, with the $k - 1$ smaller elements to its left:
+
+$$
+\underbrace{\boxed{\;\le A[r]\;}}_{k - 1 \text{ elements}}\;\underset{r}{\boxed{A[r]}}\;\boxed{\;\ge A[r]\;}
+$$
+
+So $A[r]$ has rank $k$ in this piece. If $k = i$, we're done. Otherwise the answer is on **one** side only, so recurse into that side and **throw the other side away**. That's the difference from quicksort, which recurses into **both** sides.
+
+When we go right, the $k$ elements we skipped are all smaller, so we look for rank $i - k$ in the upper part.
+
+### Example
+
+Select the $i = 7$th smallest of `6 10 13 5 8 3 2 11`. Partition around the pivot 6: it lands with rank $k = 4$. Since $7 > 4$, select the $7 - 4 = 3$rd smallest of the upper part recursively.
+
+<SelectVisualizer initial={[6, 10, 13, 5, 8, 3, 2, 11]} want={7} />
+
+## Intuition for the analysis
+
+All our analyses in this lesson assume the elements are **distinct**.
+
+**Lucky:** if every split is at least $\frac{1}{10} : \frac{9}{10}$, the bigger side has at most $\frac{9}{10}n$ elements:
+
+$$
+T(n) = T(9n/10) + \Theta(n)
+$$
+
+$n^{\log_{10/9} 1} = n^0 = 1$, so Case 3 applies, and $T(n) = \Theta(n)$.
+
+**Unlucky:** if the pivot is always the min or max:
+
+$$
+T(n) = T(n-1) + \Theta(n) = \Theta(n^2) \qquad \text{(arithmetic series)}
+$$
+
+That's **worse than sorting!**
+
+## Analysis of expected time
+
+The analysis follows the one for randomized quicksort, but it's a little different. Let $T(n)$ be the random variable for the running time of RAND-SELECT on an input of size $n$, assuming the random numbers are independent.
+
+For $k = 0, 1, \dots, n-1$, define the indicator random variable
+
+$$
+X_k =
+\begin{cases}
+1 & \text{if PARTITION generates a } k : n-k-1 \text{ split} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+To get an **upper bound**, assume the $i$-th element always falls on the **larger** side of the partition:
+
+$$
+T(n) =
+\begin{cases}
+T(\max\{0, n-1\}) + \Theta(n) & \text{if } 0 : n-1 \text{ split} \\
+T(\max\{1, n-2\}) + \Theta(n) & \text{if } 1 : n-2 \text{ split} \\
+\quad\vdots \\
+T(\max\{n-1, 0\}) + \Theta(n) & \text{if } n-1 : 0 \text{ split}
+\end{cases}
+\;=\; \sum_{k=0}^{n-1} X_k\big(T(\max\{k, n-k-1\}) + \Theta(n)\big)
+$$
+
+### Calculating the expectation
+
+$$
+\begin{aligned}
+E[T(n)] &= E\left[\sum_{k=0}^{n-1} X_k\big(T(\max\{k, n-k-1\}) + \Theta(n)\big)\right] \\
+&= \sum_{k=0}^{n-1} E\Big[X_k\big(T(\max\{k, n-k-1\}) + \Theta(n)\big)\Big] && \text{linearity of expectation} \\
+&= \sum_{k=0}^{n-1} E[X_k] \cdot E\big[T(\max\{k, n-k-1\}) + \Theta(n)\big] && \text{independence of } X_k \\
+&= \frac{1}{n}\sum_{k=0}^{n-1} E\big[T(\max\{k, n-k-1\})\big] + \frac{1}{n}\sum_{k=0}^{n-1}\Theta(n) \\
+&\le \frac{2}{n}\sum_{k=\lfloor n/2 \rfloor}^{n-1} E[T(k)] + \Theta(n) && \text{the upper terms appear twice}
+\end{aligned}
+$$
+
+Why do the upper terms appear twice? As $k$ goes from $0$ to $n-1$, $\max\{k, n-k-1\}$ takes the values $n-1, n-2, \dots, \lceil n/2 \rceil, \dots, n-2, n-1$. Each value in the top half shows up (at most) twice.
+
+### The hairy recurrence
+
+(Not quite as hairy as the quicksort one.)
+
+$$
+E[T(n)] = \frac{2}{n}\sum_{k=\lfloor n/2 \rfloor}^{n-1} E[T(k)] + \Theta(n)
+$$
+
+**Prove:** $E[T(n)] \le cn$ for a constant $c > 0$.
+
+- The constant $c$ can be chosen large enough that $E[T(n)] \le cn$ for the base cases.
+- **Use the fact:** $\displaystyle\sum_{k=\lfloor n/2 \rfloor}^{n-1} k \le \frac{3}{8}n^2$ (an exercise).
+
+### Substitution method
+
+$$
+\begin{aligned}
+E[T(n)] &\le \frac{2}{n}\sum_{k=\lfloor n/2 \rfloor}^{n-1} ck + \Theta(n) && \text{substitute the inductive hypothesis} \\
+&\le \frac{2c}{n}\left(\frac38 n^2\right) + \Theta(n) && \text{use the fact} \\
+&= cn - \left(\frac{cn}{4} - \Theta(n)\right) && \text{write it as the goal minus a residual} \\
+&\le cn
+\end{aligned}
+$$
+
+The last step holds if $c$ is chosen large enough that $\frac{cn}{4}$ dominates the $\Theta(n)$. ∎
+
+## Summary of randomized selection
+
+- It works **fast**: linear expected time.
+- It's an **excellent algorithm in practice**.
+- But the **worst case is very bad**: $\Theta(n^2)$.
+
+**Q.** Is there an algorithm that runs in linear time **in the worst case**?
+
+**A.** Yes, due to Blum, Floyd, Pratt, Rivest and Tarjan (1973).
+
+**Idea:** generate a **good pivot** recursively.
+
+## Worst-case linear-time order statistics
+
+```text
+SELECT(i, n)
+    1. Divide the n elements into groups of 5. Find the median
+       of each 5-element group by rote (just sort the five).
+    2. Recursively SELECT the median x of the ⌊n/5⌋ group
+       medians to be the pivot.
+    3. Partition around the pivot x. Let k = rank(x).
+    4. if i = k then return x
+       elseif i < k
+           then recursively SELECT the i-th smallest element
+                in the lower part
+           else recursively SELECT the (i − k)-th smallest
+                element in the upper part
+```
+
+Steps 3 and 4 are the same as RAND-SELECT. Only the choice of pivot is different.
+
+### Choosing the pivot
+
+<MedianOfMediansGrid />
+
+### Analysis
+
+- At least **half the group medians** are $\le x$. That's at least $\lfloor \lfloor n/5 \rfloor / 2 \rfloor = \lfloor n/10 \rfloor$ group medians.
+- Each of those medians has **2 more** elements below it in its own group, so each brings 3 elements that are $\le x$.
+- Therefore, **at least $3\lfloor n/10 \rfloor$ elements are $\le x$**.
+- Similarly, **at least $3\lfloor n/10 \rfloor$ elements are $\ge x$**.
+
+So whichever side step 4 recurses into, it throws away at least $3\lfloor n/10 \rfloor$ elements.
+
+### A small simplification
+
+- For $n \ge 50$, we have $3\lfloor n/10 \rfloor \ge n/4$.
+- So for $n \ge 50$, the recursive call in step 4 is on **at most $3n/4$** elements.
+- That means the recurrence can assume step 4 takes time $T(3n/4)$ in the worst case.
+- For $n < 50$, the worst-case time is $T(n) = \Theta(1)$.
+
+### Developing the recurrence
+
+| Step | Cost |
+| --- | --- |
+| 1. Groups of 5 and their medians | $\Theta(n)$ |
+| 2. Recursively select the median of the $n/5$ medians | $T(n/5)$ |
+| 3. Partition around $x$ | $\Theta(n)$ |
+| 4. Recurse into one side | $T(3n/4)$ |
+
+$$
+T(n) = T\!\left(\tfrac15 n\right) + T\!\left(\tfrac34 n\right) + \Theta(n)
+$$
+
+<RecursionTreeDiagram fracs={[[1, 5], [3, 4]]} k={1} depth={2} title="T(n) = T(n/5) + T(3n/4) + cn" />
+
+### Solving the recurrence
+
+By substitution, assume $T(n) \le cn$:
+
+$$
+\begin{aligned}
+T(n) &\le \frac15 cn + \frac34 cn + \Theta(n) \\
+     &= \frac{19}{20}cn + \Theta(n) \\
+     &= cn - \left(\frac{1}{20}cn - \Theta(n)\right) \\
+     &\le cn
+\end{aligned}
+$$
+
+This holds if $c$ is chosen large enough to handle both the $\Theta(n)$ and the initial conditions. ∎
+
+## Conclusions
+
+- Since the work at each level of recursion is a **constant fraction ($\frac{19}{20}$) smaller**, the work per level is a geometric series dominated by the linear work at the root.
+- In practice this algorithm runs **slowly**, because the constant in front of $n$ is large.
+- The **randomized algorithm is far more practical**.
+
+**Exercise:** why not divide into groups of 3? (*Hint:* redo the counting. How many elements are guaranteed $\le x$, what does the recurrence become, and do its fractions still add up to less than 1?)
+
+<ApplicationsGrid>
+  <PracticalApplication title="C++ std::nth_element" tool="INTROSELECT">
+    `std::nth_element(v.begin(), v.begin() + i, v.end())` puts the $i$-th smallest in place in linear time on average. It's randomized-style selection, with a fallback to median of medians if it gets unlucky.
+  </PracticalApplication>
+  <PracticalApplication title="Percentiles and medians" tool="MONITORING · STATISTICS">
+    Dashboards that show "p50 / p99 latency" and robust statistics like the median need order statistics over millions of values. Sorting them all would be wasted work.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 215, title: "Kth Largest Element in an Array", slug: "kth-largest-element-in-an-array", why: "RAND-SELECT exactly. (The k-th largest is the (n − k + 1)-th smallest.)", difficulty: "Medium" },
+    { id: 973, title: "K Closest Points to Origin", slug: "k-closest-points-to-origin", why: "Select by distance. After the partition, the first k are the answer, in any order.", difficulty: "Medium" },
+    { id: 462, title: "Minimum Moves to Equal Array Elements II", slug: "minimum-moves-to-equal-array-elements-ii", why: "The best target is the median, so find it in linear time.", difficulty: "Medium" },
+  ]}
+/>

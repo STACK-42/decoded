@@ -1,0 +1,35 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { RegisterLab, ShiftRegisterLab } from "@/components/mdx/LogicVisualizers";
+
+# Registers and Shift Registers
+
+One [flip-flop](/courses/logic-design/flip-flops) holds one bit. Line up as many as you need, connect all their clocks together, and you've got a **register**: a box that holds a whole number. An 8-bit register is eight flip-flops, and they all change at the same instant.
+
+## Loading on command
+
+A CPU doesn't want every register to overwrite itself on every clock pulse. So each flip-flop gets a [2-input mux](/courses/logic-design/multiplexers) in front of it, controlled by a line called **Load**:
+
+- With Load = 1, the mux feeds the new data into D.
+- With Load = 0, the mux feeds the flip-flop's own Q back into D, so it just re-stores what it already has.
+
+Click some data bits, try the clock with Load off and on.
+
+<RegisterLab />
+
+Moving a value from one register to another is simple then: put the first register's output on the wires and pulse Load on the second. When the next course says `MOV AX, BX`, [that's what happens physically](/courses/microprocessors/registers).
+
+## Shift registers
+
+Wire each flip-flop's output to the next one's input, and on each clock edge every bit moves along by one. It's a line of people passing buckets.
+
+<ShiftRegisterLab />
+
+Three uses come up all the time:
+
+- **Serial to parallel**: bits arrive one at a time on a single wire, and after 8 clocks you can read a full byte from the 8 outputs. Run it the other way for sending. This is how [serial links](/courses/logic-design/signals) connect to parallel buses.
+- **Multiplying and dividing by 2**: shifting a binary number left one place doubles it, just as shifting a decimal number left multiplies by 10. Shifting right halves it. The 8086's [`SHL` and `SHR`](/courses/microprocessors/arithmetic-and-logic) do exactly this.
+- **Delay**: a bit takes $n$ clocks to reach the end of an $n$-stage chain.
+
+<Callout tone="neon" label="You've reached a CPU part">
+The [Program Counter, Instruction Register and Accumulator](/courses/computer-organization/inside-the-cpu) are all registers like this one. Next, one with a bit of extra logic becomes a counter, which is what steps a CPU through a program.
+</Callout>

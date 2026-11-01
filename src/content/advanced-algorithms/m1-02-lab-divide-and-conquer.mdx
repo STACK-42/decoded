@@ -1,0 +1,255 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { RecursionTreeDiagram, GaussMultiply, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+
+# Lab: Recursion Trees and Gauss Multiplication
+
+This lab has two parts. Part I practises **recursion trees**, including recurrences the master method can't handle. Part II uses divide and conquer to multiply big numbers faster than the method from school, and the lab work is to implement it.
+
+## Part I: Analysis with recursion trees
+
+### Problem 1: $T(n) = 3T(n/4) + cn^2$
+
+Assume $n$ is an exact power of 4. Expand $T(n)$ into a tree:
+
+- The **root** costs $cn^2$ and has 3 children, each $T(n/4)$.
+- Applying the rule to $T(n/4)$ gives $T(n/4) = 3T(n/16) + c\left(\frac{n}{4}\right)^2$. So each child costs $c(n/4)^2$ and has 3 children of its own.
+- Applying it again gives $T(n/16) = 3T(n/64) + c\left(\frac{n}{16}\right)^2$, and so on, down to the leaves.
+
+<RecursionTreeDiagram fracs={[[1, 4], [1, 4], [1, 4]]} k={2} depth={2} />
+
+**Add up each level.** Level 0 is $cn^2$. Level 1 has 3 nodes of $c(n/4)^2 = \frac{c n^2}{16}$, which is $\frac{3}{16}cn^2$. Level 2 has 9 nodes, which is $\left(\frac{3}{16}\right)^2 cn^2$. The pattern is:
+
+$$
+T(n) = cn^2 + \frac{3}{16}cn^2 + \left(\frac{3}{16}\right)^2 cn^2 + \dots = cn^2 \sum_{i=0}^{\log_4 n} \left(\frac{3}{16}\right)^i
+$$
+
+That's a **geometric series**. To find a formula for $S_n = 1 + r + r^2 + \dots + r^n$, compute $rS_n - S_n$:
+
+$$
+\begin{array}{rcl}
+rS_n &=& r + r^2 + \dots + r^n + r^{n+1} \\
+S_n &=& 1 + r + r^2 + \dots + r^n \\
+\hline
+rS_n - S_n &=& r^{n+1} - 1
+\end{array}
+\qquad\Longrightarrow\qquad
+S_n = \frac{r^{n+1} - 1}{r - 1}
+$$
+
+So, exactly:
+
+$$
+T(n) = cn^2 \cdot \frac{(3/16)^{\log_4 n + 1} - 1}{3/16 - 1}
+$$
+
+To get rid of the awkward $\log_4 n$, sum to **infinity** instead. That only adds positive terms, so it gives an upper bound. An infinite geometric series with first term $a$ and ratio $|r| < 1$ adds up to $\frac{a}{1-r}$:
+
+$$
+T(n) \le cn^2 \sum_{i=0}^{\infty}\left(\frac{3}{16}\right)^i = cn^2 \cdot \frac{1}{1 - 3/16} = \frac{16}{13}\,cn^2 \le dn^2 \text{ for some constant } d
+$$
+
+So $T(n) = O(n^2)$. The root's cost dominates: the levels shrink so fast that all of them together add only $\frac{3}{13}$ more.
+
+### Problem 2: $T(n) = T(n/3) + T(2n/3) + cn$
+
+The two subproblems have **different sizes**, so the master method doesn't apply. Draw the tree:
+
+<RecursionTreeDiagram fracs={[[1, 3], [2, 3]]} k={1} depth={3} />
+
+Every full level adds up to $cn$, because $\frac13 + \frac23 = 1$. (Lower down, the short branches reach size 1 first, so those levels cost a bit less.)
+
+**How many levels?** The longest path follows the $\frac{2n}{3}$ branch every time. $\frac{2n}{3}$ can be written $\frac{n}{3/2}$, so after $k$ steps the size is $\frac{n}{(3/2)^k}$. That reaches 1 when
+
+$$
+\frac{n}{(3/2)^k} = 1 \quad\Longrightarrow\quad k = \log_{3/2} n
+$$
+
+At most $cn$ per level times $\log_{3/2} n$ levels gives $T(n) = O(n \log n)$. (Logs to different bases differ only by a constant.)
+
+### Problem 3: $T(n) = T(n/4) + T(n/2) + n^2$
+
+Evaluate its complexity using a recursion tree.
+
+<RecursionTreeDiagram fracs={[[1, 4], [1, 2]]} k={2} depth={3} />
+
+<details>
+<summary>Show the answer</summary>
+
+Level 0 costs $n^2$. Level 1 costs $\left(\frac n4\right)^2 + \left(\frac n2\right)^2 = \frac{1}{16}n^2 + \frac{4}{16}n^2 = \frac{5}{16}n^2$. Each level is $\frac{5}{16}$ of the one above it, which is a geometric series with $r < 1$:
+
+$$
+T(n) \le n^2 \sum_{i=0}^{\infty}\left(\frac{5}{16}\right)^i = \frac{16}{11}n^2 = O(n^2)
+$$
+
+The root costs $n^2$ by itself, so $T(n) = \Theta(n^2)$.
+
+</details>
+
+### Problem 4: $T(n) = 2T(n/2) + n^2$
+
+<RecursionTreeDiagram fracs={[[1, 2], [1, 2]]} k={2} depth={3} />
+
+<details>
+<summary>Show the answer</summary>
+
+Level $i$ has $2^i$ nodes of $\left(\frac{n}{2^i}\right)^2$, which adds up to $\frac{n^2}{2^i}$. That's another geometric series, with $r = \frac12$:
+
+$$
+T(n) \le n^2\left(1 + \tfrac12 + \tfrac14 + \dots\right) = 2n^2 = O(n^2)
+$$
+
+</details>
+
+<Callout tone="sky" label="The pattern">
+When each level's cost is a **fixed fraction less than 1** of the level above it, the total is a geometric series, and **the root's cost decides the answer**. When each level costs the **same**, multiply by the number of levels. That's where the $\log n$ comes from.
+</Callout>
+
+## Part II: Divide and conquer
+
+The divide-and-conquer strategy solves a problem by:
+
+1. breaking it into **subproblems** that are smaller instances of the same type of problem,
+2. **recursively** solving these subproblems,
+3. appropriately **combining** their answers.
+
+### Example: multiplying large numbers (the Gauss method)
+
+Split each $n$-digit number into two halves of $n/2$ digits. Call the numbers $a$ and $b$. The halves of $a$ are $a_L$ (the left, or upper, half) and $a_R$ (the right, or lower, half), and the same for $b$:
+
+$$
+a = a_L \cdot 10^{n/2} + a_R \qquad b = b_L \cdot 10^{n/2} + b_R
+$$
+
+For example, $1234 = 12 \cdot 10^2 + 34$. Multiply out the brackets:
+
+$$
+\begin{aligned}
+ab &= \left(a_L 10^{n/2} + a_R\right)\left(b_L 10^{n/2} + b_R\right) \\
+   &= a_L b_L\, 10^{n} + a_L b_R\, 10^{n/2} + a_R b_L\, 10^{n/2} + a_R b_R \\
+   &= a_L b_L\, 10^{n} + \left(a_L b_R + a_R b_L\right) 10^{n/2} + a_R b_R
+\end{aligned}
+$$
+
+So multiplying two $n$-digit numbers takes **four** multiplications of $n/2$-digit numbers. Everything else is $O(n)$: additions, and multiplying by $10^n$, which just means writing $n$ zeros on the end.
+
+$$
+T(n) = 4T(n/2) + O(n) \quad\Longrightarrow\quad O(n^2)
+$$
+
+That's **no better than school**, and more complicated. But we can get away with **three** multiplications. Compute:
+
+$$
+x_1 = a_L b_L \qquad x_2 = a_R b_R \qquad x_3 = (a_L + a_R)(b_L + b_R)
+$$
+
+Now $x_3$ expands to $a_L b_L + a_L b_R + a_R b_L + a_R b_R$. Subtract $x_1$ and $x_2$, and what's left is exactly the middle term we need:
+
+$$
+x_3 - x_1 - x_2 = a_L b_R + a_R b_L
+$$
+
+So:
+
+$$
+ab = x_1\, 10^n + (x_3 - x_1 - x_2)\, 10^{n/2} + x_2
+$$
+
+That's the product of $a$ and $b$, as before, but with three recursive multiplications instead of four:
+
+$$
+T(n) = 3T(n/2) + O(n) \quad\Longrightarrow\quad T(n) = O(n^{\log_2 3}) \approx O(n^{1.59})
+$$
+
+<GaussMultiply a={1234} b={5678} />
+
+<RecurrenceExplorer a={3} b={2} k={1} />
+
+## Part III: Lab work
+
+**Task 1:** implement the Gauss algorithm for multiplying two numbers.
+
+*Hint:* you can get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$), or with shift operators if you split in binary instead of decimal.
+
+```cpp
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+int digits(long long x) {
+    int d = 1;
+    while (x >= 10) { x /= 10; d++; }
+    return d;
+}
+
+long long powerOf10(int k) {
+    long long p = 1;
+    while (k--) p *= 10;
+    return p;
+}
+
+long long gauss(long long a, long long b) {
+    if (a < 10 || b < 10) return a * b;          // base case
+    int half = max(digits(a), digits(b)) / 2;
+    long long p = powerOf10(half);
+    long long aL = a / p, aR = a % p;
+    long long bL = b / p, bR = b % p;
+    long long x1 = gauss(aL, bL);
+    long long x2 = gauss(aR, bR);
+    long long x3 = gauss(aL + aR, bL + bR);
+    return x1 * p * p + (x3 - x1 - x2) * p + x2;
+}
+
+int main() {
+    cout << gauss(1234, 5678) << "\n";   // 7006652
+}
+```
+
+`long long` overflows past about 19 digits. For really big numbers, store the digits in a `string` or `vector<int>` and write your own addition and subtraction. The algorithm stays exactly the same.
+
+## Part IV: Exercises
+
+Practice problems for home. They aren't submitted.
+
+**1.** You're choosing between three algorithms:
+
+- **A** divides a problem into **five** subproblems of half the size, solves each recursively, and combines the solutions in linear time.
+- **B** solves a problem of size $n$ by recursively solving **two** subproblems of size $n - 1$, then combining in constant time.
+- **C** divides a problem into **nine** subproblems of size $n/3$, solves each recursively, and combines in $O(n^2)$ time.
+
+What are their running times, in Big-O? Which would you choose?
+
+<details>
+<summary>Show the answer</summary>
+
+- **A:** $T(n) = 5T(n/2) + O(n)$. $\log_2 5 \approx 2.32 > 1$, so the leaves win: $O(n^{2.32})$.
+- **B:** $T(n) = 2T(n-1) + O(1)$. Each level doubles the number of calls, for $n$ levels: $O(2^n)$.
+- **C:** $T(n) = 9T(n/3) + O(n^2)$. $\log_3 9 = 2$, the same as the combine cost, so it's the tie case: $O(n^2 \log n)$.
+
+**Choose C**: $n^2 \log n$ grows slower than $n^{2.32}$, and both are vastly better than $2^n$.
+
+</details>
+
+**2.** An array of $n$ elements contains some duplicates. Show how to remove all the duplicates in $O(n \log n)$ time.
+
+<details>
+<summary>Hint</summary>
+
+Sort first with merge sort, in $O(n \log n)$. Equal elements end up next to each other, so a single $O(n)$ pass that keeps an element only when it differs from the previous one removes every duplicate.
+
+</details>
+
+**3.** You're given an $n \times n$ grid of distinct numbers. A number is a **local minimum** if it's smaller than all its neighbours. (A neighbour is the number directly above, below, left or right. Most numbers have four neighbours, numbers on the edge have three, and the four corners have two.) Use divide and conquer to find a local minimum with only $O(n)$ comparisons.
+
+*Note:* there are $n^2$ numbers, so you can't even afford to look at all of them!
+
+*Hint:* think about which recurrence would give you $O(n)$. For example, $T(n) = T(n/2) + O(n)$ does.
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 43, title: "Multiply Strings", slug: "multiply-strings", why: "Big-number multiplication on strings. Do grade school first, then try Gauss's split.", difficulty: "Medium" },
+    { id: 217, title: "Contains Duplicate", slug: "contains-duplicate", why: "Exercise 2's idea: sort, then compare neighbours." },
+    { id: 162, title: "Find Peak Element", slug: "find-peak-element", why: "The 1-D version of exercise 3: a local maximum in O(log n) by halving.", difficulty: "Medium" },
+  ]}
+/>

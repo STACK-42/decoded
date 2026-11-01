@@ -1,0 +1,161 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { CoinChangeGreedy, JobScheduling, HuffmanVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Greedy Algorithms
+
+## A short list of algorithm types
+
+Most algorithms you'll meet fall into a few families:
+
+- simple recursive algorithms,
+- backtracking algorithms,
+- divide and conquer algorithms,
+- dynamic programming algorithms,
+- **greedy algorithms**,
+- branch and bound algorithms,
+- brute force algorithms,
+- randomized algorithms.
+
+## Optimization problems
+
+An **optimization problem** is one where you want to find not just *a* solution, but the **best** solution. A **greedy algorithm** sometimes works well for optimization problems.
+
+A greedy algorithm works in **phases**. At each phase:
+
+- you take **the best you can get right now**, without worrying about future consequences,
+- you **hope** that by choosing a **local optimum** at each step, you'll end up at a **global optimum**.
+
+That hope is sometimes justified and sometimes not. The examples below show both.
+
+## Example: counting money
+
+Suppose you want to count out an amount of money using the **fewest possible** bills and coins. A greedy algorithm for this is:
+
+> At each step, take the **largest** possible bill or coin that doesn't overshoot.
+
+**Example:** to make \$6.39 you choose:
+
+- a \$5 bill,
+- a \$1 bill, to make \$6,
+- a 25¢ coin, to make \$6.25,
+- a 10¢ coin, to make \$6.35,
+- four 1¢ coins, to make \$6.39.
+
+For US money, the greedy algorithm **always** gives the optimum solution.
+
+### A failure of the greedy algorithm
+
+In some (made-up) money system, **krons** come in 1-kron, 7-kron and 10-kron coins. Counting out **15 krons** greedily gives:
+
+- a 10-kron piece,
+- five 1-kron pieces, for a total of 15 krons.
+
+That's **six** coins. A better solution is two 7-kron pieces and one 1-kron piece: only **three** coins. The greedy algorithm gives *a* solution, but **not an optimal** one.
+
+<CoinChangeGreedy system="kron" />
+
+Switch between the two systems and try other amounts. With krons, try 14 or 21 too.
+
+## A scheduling problem
+
+You have to run **nine jobs**, with running times of 3, 5, 6, 10, 11, 14, 15, 18 and 20 minutes, and you have **three processors** to run them on.
+
+**Greedy idea 1: longest-running jobs first,** each on whichever processor is free. Time to completion: $18 + 11 + 6 = 35$ minutes. Not bad, but we might be able to do better.
+
+**Greedy idea 2: shortest job first.** That wasn't such a good idea: the time to completion is now $6 + 14 + 20 = 40$ minutes.
+
+Note, though, that **the greedy algorithm itself is fast**. At each stage, all we had to do was pick the minimum or the maximum.
+
+<JobScheduling />
+
+### An optimum solution
+
+Better solutions do exist. Switch to **Best possible** above: 34 minutes.
+
+- This solution is **clearly optimal**. Why? The jobs add up to $102$ minutes, and three processors can't do 102 minutes of work in less than $102 / 3 = 34$ minutes.
+- There are clearly **other** optimal solutions too. Why? You can swap jobs between processors, or swap processors, without changing the finish time.
+
+**How do we find such a solution?** One way is to try **all possible assignments** of jobs to processors. Unfortunately, that can take **exponential time**: $3^9 = 19{,}683$ assignments here, and $3^n$ in general. (It's actually an NP-hard problem. See the last module.)
+
+## Huffman encoding
+
+The **Huffman encoding** algorithm is a greedy algorithm that builds a compact binary code for a set of characters, giving shorter codes to more frequent characters. **You always pick the two smallest numbers to combine.**
+
+| Character | A | B | C | D | E | F |
+| --- | --- | --- | --- | --- | --- | --- |
+| Frequency (%) | 22 | 12 | 24 | 6 | 27 | 9 |
+
+<HuffmanVisualizer chars={["A", "B", "C", "D", "E", "F"]} freqs={[22, 12, 24, 6, 27, 9]} />
+
+The resulting codes are A = 00, B = 100, C = 01, D = 1010, E = 11 and F = 1011. The **average number of bits per character** is
+
+$$
+0.22 \cdot 2 + 0.12 \cdot 3 + 0.24 \cdot 2 + 0.06 \cdot 4 + 0.27 \cdot 2 + 0.09 \cdot 4 = 2.42
+$$
+
+That's less than the 3 bits a fixed-length code for 6 characters would need. **The Huffman algorithm finds an optimal solution.** We prove it in the Huffman lesson.
+
+## Minimum spanning tree
+
+A **minimum spanning tree** is a least-cost subset of the edges of a graph that **connects all the nodes**. A greedy way to build one:
+
+- Start by picking any node and adding it to the tree.
+- **Repeatedly:** pick any least-cost edge from a node *in* the tree to a node *not in* the tree, and add that edge and the new node to the tree.
+- Stop when all the nodes have been added.
+
+**If you think some other edge should be in the spanning tree:**
+
+- try adding that edge,
+- notice that the edge is part of a **cycle**,
+- to break the cycle you must remove the edge with the **greatest** cost, which will be the edge you just added.
+
+This is **Prim's algorithm**, covered properly in the next lesson.
+
+## Traveling salesman
+
+A salesman must visit every city, starting from city A, and wants to cover the **least possible distance**. He can revisit a city (and reuse a road) if necessary. He uses a greedy algorithm: **go to the nearest city** from wherever he is.
+
+In the lecture's map, he goes from A to B, then from B to D. That's not going to give a shortest route! The best he can do from there is ABDBCE, at a cost of **16**. But an actual least-cost route from A is ADBCE, at a cost of **14**. The nearest-neighbour choice at the start locked him into a worse route.
+
+<Callout tone="orange" label="Greedy is not always right">
+A greedy algorithm always gives *a* solution, and it's always fast. But it only gives the **best** solution for problems with special structure (the *greedy-choice property*, see the Huffman lesson). Coins in US money, MSTs and Huffman codes have it. Krons, job scheduling and the traveling salesman don't.
+</Callout>
+
+## Analysis
+
+A greedy algorithm typically makes (about) **$n$ choices** for a problem of size $n$. The first or last choice may be forced. So the expected running time is
+
+$$
+O\big(n \cdot O(\text{choice}(n))\big)
+$$
+
+where $\text{choice}(n)$ is the cost of making one choice among $n$ objects.
+
+- **Counting money:** each step finds the largest usable coin among $k$ sizes, where $k$ is a constant. That's $O(k) = O(1)$, so coin counting is $\Theta(n)$.
+- **Huffman:** must sort the $n$ values (or keep them in a heap) before making $n$ choices. That's $O(n \log n) + O(n) = O(n \log n)$.
+- **Minimum spanning tree:** at each new node, it must include the new edges and keep them sorted, which is $O(n \log n)$ overall. That's $O(n \log n) + O(n) = O(n \log n)$.
+
+## Other greedy algorithms
+
+- **Dijkstra's algorithm** for finding shortest paths in a graph: it always takes the shortest edge connecting a **known** node to an **unknown** node. It's covered in the Shortest Paths lesson.
+- **Kruskal's algorithm** for a minimum spanning tree: it always tries the **lowest-cost remaining edge**.
+- **Prim's algorithm** for a minimum spanning tree: it always takes the lowest-cost edge between nodes **in** the tree and nodes **not yet** in the tree.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Cash registers and vending machines" tool="CHANGE-MAKING">
+    Real currencies are designed so that greedy change-making is optimal. That's why a till can hand out the fewest coins without any clever computation.
+  </PracticalApplication>
+  <PracticalApplication title="ZIP, PNG, JPEG and MP3" tool="HUFFMAN CODING">
+    After the clever modelling step, nearly every compression format writes its symbols with a Huffman code, built with exactly the merge-the-two-smallest loop above.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 322, title: "Coin Change", slug: "coin-change", why: "Greedy fails here, just like with krons. Solve it with DP.", difficulty: "Medium" },
+    { id: 455, title: "Assign Cookies", slug: "assign-cookies", why: "A greedy choice that is provably optimal: sort both lists and match them up." },
+    { id: 1046, title: "Last Stone Weight", slug: "last-stone-weight", why: "Repeatedly take the two largest with a heap, the mirror image of Huffman's loop." },
+  ]}
+/>

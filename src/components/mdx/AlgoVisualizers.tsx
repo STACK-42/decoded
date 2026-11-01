@@ -38,12 +38,12 @@ import {
      sky    = the active window the algorithm is working on
    ============================================================ */
 
-const btn =
+export const btn =
   "font-mono text-[11px] uppercase tracking-widest px-3 py-2 border border-border hover:border-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-sm";
-const inputCls =
+export const inputCls =
   "font-mono text-sm px-3 py-2 border border-border bg-transparent text-foreground focus:outline-none focus:border-foreground rounded-sm";
 
-function Legend({ items }: { items: [string, string][] }) {
+export function Legend({ items }: { items: [string, string][] }) {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
       {items.map(([cls, label]) => (
@@ -89,6 +89,7 @@ export function Stepper<S>({
   render,
   legend,
   inputs,
+  startAt = 0,
 }: {
   title: string;
   frames: Frame<S>[];
@@ -98,6 +99,8 @@ export function Stepper<S>({
   render: (state: S) => ReactNode;
   legend?: [string, string][];
   inputs?: ReactNode;
+  /** frame to show when `frames` changes, e.g. the first step of a newly added operation */
+  startAt?: number;
 }) {
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -120,8 +123,10 @@ export function Stepper<S>({
   }, []);
 
   useEffect(() => {
-    setIdx(0);
+    setIdx(Math.min(startAt, Math.max(0, frames.length - 1)));
     setPlaying(false);
+    // startAt is read when frames change, not tracked on its own
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frames]);
 
   useEffect(() => {
@@ -374,7 +379,7 @@ function PointerRow({ s, count }: { s: ArrayState; count: number }) {
   );
 }
 
-function ArrayBars({ s }: { s: ArrayState }) {
+export function ArrayBars({ s }: { s: ArrayState }) {
   const max = Math.max(1, ...s.array);
   const n = s.array.length;
   const cols = { gridTemplateColumns: `repeat(${n}, minmax(26px, 1fr))` };
@@ -423,7 +428,7 @@ function ArrayBars({ s }: { s: ArrayState }) {
   );
 }
 
-function ArrayCells({ s }: { s: ArrayState }) {
+export function ArrayCells({ s }: { s: ArrayState }) {
   const n = s.array.length;
   const cols = { gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` };
   return (
@@ -926,7 +931,7 @@ const DEFAULT_EDGES: GraphEdge[] = [
 const sameEdge = (e: GraphEdge, pair?: [number, number]) =>
   !!pair && ((e.from === pair[0] && e.to === pair[1]) || (e.from === pair[1] && e.to === pair[0]));
 
-function GraphSvg({
+export function GraphSvg({
   nodes,
   edges,
   edgeClass,
@@ -974,7 +979,7 @@ function GraphSvg({
   );
 }
 
-function Chips({ label, items, tone, hint }: { label: string; items: number[]; tone: string; hint?: string }) {
+export function Chips({ label, items, tone, hint }: { label: string; items: number[]; tone: string; hint?: string }) {
   return (
     <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
       <span className="w-14 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
@@ -992,7 +997,7 @@ function Chips({ label, items, tone, hint }: { label: string; items: number[]; t
   );
 }
 
-function Toggle<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
+export function Toggle<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
     <div className="inline-flex border border-border rounded-sm overflow-hidden">
       {options.map(([v, label]) => (

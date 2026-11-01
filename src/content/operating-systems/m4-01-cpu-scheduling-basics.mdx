@@ -1,0 +1,210 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CpuScheduler, BurstPrediction } from "@/components/mdx/OsVisualizers";
+
+# CPU Scheduling: FCFS, SJF and Priority
+
+Your computer has a handful of CPU cores and hundreds of processes that want them. Every few milliseconds the OS must answer one question: **who runs next?** That choice decides whether your music stutters, whether a click feels instant, and how much work gets done. This lesson covers the ideas behind CPU scheduling and the first family of algorithms.
+
+## Basic concepts
+
+- **Maximum CPU utilization** is obtained with **multiprogramming**: keep several processes in memory so there's always one to run.
+- **The CPU–I/O burst cycle.** A process's execution is a **cycle** of **CPU execution** and **I/O wait**: a **CPU burst**, followed by an **I/O burst**, then another CPU burst, and so on.
+- The **distribution of CPU-burst lengths** matters most. Measured on real systems, the histogram shows **a large number of short CPU bursts** and **a small number of long ones**. I/O-bound programs make lots of short bursts; CPU-bound programs make a few long ones.
+
+### The CPU scheduler
+
+The **short-term scheduler** picks one of the processes in the **ready queue** and gives it the CPU. (The ready queue isn't necessarily first-in-first-out: it can be ordered in different ways.)
+
+CPU-scheduling decisions may happen when a process:
+
+1. switches from **running** to **waiting** (it asks for I/O, say),
+2. switches from **running** to **ready** (an interrupt occurs),
+3. switches from **waiting** to **ready** (its I/O finishes),
+4. **terminates**.
+
+- Scheduling under **1 and 4 only** is **non-preemptive**: once a process has the CPU, it keeps it until it waits or finishes. The OS has no choice to make; a new process must be picked.
+- All other scheduling is **preemptive**: the OS can take the CPU away from a running process.
+
+Preemption brings its own headaches: a process could be preempted **while updating shared data**, or while the kernel is in the middle of **critical OS activities** when an interrupt arrives. That's the synchronization problem again.
+
+### The dispatcher
+
+The **dispatcher** is the module that actually **gives control of the CPU** to the process the scheduler chose. That involves:
+
+- **switching context**,
+- **switching to user mode**,
+- **jumping to the right location** in the user program to restart it.
+
+**Dispatch latency** is the time it takes the dispatcher to **stop one process and start another**. It should be as short as possible, since it runs on every switch.
+
+## Scheduling criteria
+
+| Criterion | Meaning | Goal |
+| --- | --- | --- |
+| **CPU utilization** | keep the CPU as **busy** as possible | maximize |
+| **Throughput** | number of processes that **complete** per time unit | maximize |
+| **Turnaround time** | total time to **execute** a particular process, from arrival to completion | minimize |
+| **Waiting time** | total time a process has spent **waiting in the ready queue** | minimize |
+| **Response time** | time from when a request was submitted until the **first response** is produced (not the whole output). Matters for time-sharing | minimize |
+
+<Callout tone="mint" label="Two formulas you'll use in every exercise">
+**Turnaround time = completion time − arrival time.** **Waiting time = turnaround time − burst time.** The examples below all report the **average waiting time**.
+</Callout>
+
+## First-Come, First-Served (FCFS)
+
+The simplest algorithm: the process that **asks first gets the CPU first**. It's non-preemptive and easy to build with a FIFO queue.
+
+| Process | Burst time |
+| --- | --- |
+| P1 | 24 |
+| P2 | 3 |
+| P3 | 3 |
+
+If the processes arrive in the order **P1, P2, P3**, the Gantt chart is: P1 from 0 to 24, P2 from 24 to 27, P3 from 27 to 30.
+
+- Waiting times: P1 = 0, P2 = 24, P3 = 27.
+- **Average waiting time: (0 + 24 + 27) / 3 = 17.**
+
+If they arrive in the order **P2, P3, P1** instead: P2 from 0 to 3, P3 from 3 to 6, P1 from 6 to 30.
+
+- Waiting times: P1 = 6, P2 = 0, P3 = 3.
+- **Average waiting time: (6 + 0 + 3) / 3 = 3.** Much better than the first case!
+
+The difference is the **convoy effect**: **short processes stuck behind a long process**, like cars behind a slow truck. Picture one CPU-bound process and many I/O-bound ones: the I/O-bound processes all wait while the CPU-bound one hogs the CPU, and the I/O devices sit idle.
+
+<CpuScheduler presets="fcfs1,fcfs2" algos="fcfs,sjf" />
+
+## Shortest-Job-First (SJF)
+
+Associate each process with the **length of its next CPU burst**, and run the process with the **shortest** one.
+
+- **SJF is optimal**: it gives the **minimum average waiting time** for a given set of processes. Moving a short job ahead of a long one helps the short job more than it hurts the long one.
+- **The difficulty is knowing the length of the next CPU request.** You could ask the user, but usually the OS has to **estimate** it.
+
+**Example of SJF** (all four processes are ready at time 0):
+
+| Process | Burst time |
+| --- | --- |
+| P1 | 6 |
+| P2 | 8 |
+| P3 | 7 |
+| P4 | 3 |
+
+The chart: P4 from 0 to 3, P1 from 3 to 9, P3 from 9 to 16, P2 from 16 to 24.
+
+**Average waiting time = (3 + 16 + 9 + 0) / 4 = 7.**
+
+### Predicting the length of the next CPU burst
+
+We can only **estimate** the length, assuming it will be **similar to the previous ones**, and then pick the process with the shortest **predicted** next burst. This is done with an **exponential average** of the previous burst lengths:
+
+- $t_n$ = the actual length of the $n$-th CPU burst,
+- $\tau_{n+1}$ = the predicted value for the next CPU burst,
+- $\alpha$, with $0 \le \alpha \le 1$,
+
+$$
+\tau_{n+1} = \alpha \, t_n + (1 - \alpha)\, \tau_n
+$$
+
+Commonly, $\alpha$ is set to $\tfrac12$.
+
+- $\alpha = 0$: $\tau_{n+1} = \tau_n$. **Recent history doesn't count.**
+- $\alpha = 1$: $\tau_{n+1} = t_n$. **Only the last actual CPU burst counts.**
+
+Expanding the formula:
+
+$$
+\tau_{n+1} = \alpha t_n + (1-\alpha)\alpha t_{n-1} + \dots + (1-\alpha)^j \alpha t_{n-j} + \dots + (1-\alpha)^{n+1} \tau_0
+$$
+
+Since both $\alpha$ and $(1-\alpha)$ are at most 1, **each older term has less weight** than the one before it. Old history fades away.
+
+<BurstPrediction />
+
+### Non-preemptive vs. preemptive SJF
+
+SJF comes in **two schemes**:
+
+- **Non-preemptive**: once the CPU is given to a process, it **can't be taken away** until it finishes its CPU burst.
+- **Preemptive**: if a new process arrives with a CPU burst **shorter than the remaining time** of the running process, **preempt** it. This is called **Shortest-Remaining-Time-First (SRTF)**.
+
+Now let's add **different arrival times**:
+
+| Process | Arrival time | Burst time |
+| --- | --- | --- |
+| P1 | 0 | 7 |
+| P2 | 2 | 4 |
+| P3 | 4 | 1 |
+| P4 | 5 | 4 |
+
+**Non-preemptive SJF:** P1 from 0 to 7 (it's the only one there at time 0, and it can't be interrupted), then P3 from 7 to 8, P2 from 8 to 12, P4 from 12 to 16.
+
+**Average waiting time = (0 + 6 + 3 + 7) / 4 = 4.**
+
+**Preemptive SJF (SRTF):** P1 from 0 to 2, P2 from 2 to 4, P3 from 4 to 5, P2 from 5 to 7, P4 from 7 to 11, P1 from 11 to 16.
+
+**Average waiting time = (9 + 1 + 0 + 2) / 4 = 3.**
+
+At time 2, P2 arrives needing 4 units while P1 still needs 5, so P2 takes over. At time 4, P3 (1 unit) beats P2's remaining 2. Keep checking at every arrival.
+
+**Another SRTF example:**
+
+| Process | Arrival time | Burst time |
+| --- | --- | --- |
+| P1 | 0 | 8 |
+| P2 | 1 | 4 |
+| P3 | 2 | 9 |
+| P4 | 3 | 5 |
+
+SRTF chart: P1 from 0 to 1, P2 from 1 to 5, P4 from 5 to 10, P1 from 10 to 17, P3 from 17 to 26.
+
+**Average waiting time = (9 + 0 + 15 + 2) / 4 = 6.5.**
+
+<CpuScheduler presets="sjf,sjf-np,srtf1,srtf2" algos="fcfs,sjf,srtf" />
+
+## Priority scheduling
+
+- A **priority number** (an integer) is associated with each process.
+- The CPU goes to the process with the **highest priority**. Here, the **smallest integer means the highest priority**.
+  - It can be **preemptive** or **non-preemptive**.
+- **SJF is a special case** of priority scheduling, where the priority is the inverse of the predicted next CPU burst.
+- **Problem: starvation.** Low-priority processes may **never run**.
+- **Solution: aging.** As time goes by, **increase the priority** of processes that have been waiting.
+
+**Example** (all arrive at time 0):
+
+| Process | Burst time | Priority |
+| --- | --- | --- |
+| P1 | 10 | 3 |
+| P2 | 1 | 1 |
+| P3 | 2 | 4 |
+| P4 | 1 | 5 |
+| P5 | 5 | 2 |
+
+Chart: P2 from 0 to 1, P5 from 1 to 6, P1 from 6 to 16, P3 from 16 to 18, P4 from 18 to 19.
+
+**Average waiting time = (6 + 0 + 16 + 18 + 1) / 5 = 8.2.**
+
+<CpuScheduler presets="prio" algos="priority,priority-p,fcfs,sjf" />
+
+<Callout tone="orange" label="Exam tip">
+Draw the Gantt chart **first**, then read every process's completion time off it. Most mistakes come from computing waiting times in your head. And for preemptive algorithms, re-check the choice at **every arrival**, not just when a process finishes.
+</Callout>
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="The checkout line" tool="FCFS · CONVOY EFFECT">
+    One shopper with a full cart in front of five people buying one item each: everyone waits. Supermarkets fix it with an express lane, which is SJF.
+  </PracticalApplication>
+  <PracticalApplication title="Hospital triage" tool="PRIORITY SCHEDULING">
+    Emergency rooms treat the most urgent patient first. To avoid starvation, people waiting a long time get re-checked and moved up: that's aging.
+  </PracticalApplication>
+  <PracticalApplication title="nice and Task Manager priority" tool="PRIORITIES">
+    On Linux, `nice -n 10 ./backup.sh` lowers a job's priority; Windows Task Manager lets you set a process to "Below normal" or "High".
+  </PracticalApplication>
+  <PracticalApplication title="Interactive apps feel snappy" tool="BURST PREDICTION">
+    Schedulers learn that your text editor uses short CPU bursts and favour it, so a keystroke shows up instantly even while a big compile runs.
+  </PracticalApplication>
+</ApplicationsGrid>

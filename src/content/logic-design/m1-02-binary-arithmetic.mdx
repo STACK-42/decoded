@@ -1,0 +1,47 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { BinaryAddition, TwosComplementWheel } from "@/components/mdx/LogicVisualizers";
+
+# Binary Arithmetic and Negative Numbers
+
+Binary addition works like the addition you learned at school, with fewer facts to remember:
+
+- $0 + 0 = 0$
+- $0 + 1 = 1$
+- $1 + 1 = 10$: write 0, carry 1
+- $1 + 1 + 1 = 11$: write 1, carry 1
+
+<BinaryAddition />
+
+Subtraction also mirrors school: $0 - 1$ needs a borrow from the next column. For example, $101101 - 001110 = 011111$, which is $45 - 14 = 31$. Computers rarely subtract this way, though, as you're about to see.
+
+Hex and octal add the same way, carrying whenever a column reaches the base. In hex, $7 + 7 = 14 = \text{E}$, and $\text{A} + 7 = 17 = 11_{16}$, so write 1 and carry 1. That gives $\text{2A7} + 317 = \text{5BE}$.
+
+## How do you write a negative number with only 0 and 1?
+
+There's no minus sign in a wire. The obvious fix is to reserve the leftmost bit as a sign: 0 for positive, 1 for negative. This is **sign-magnitude**, and it has two problems. It has both a +0 and a -0, and the adder needs separate logic for each case of signs.
+
+**Two's complement** avoids both. Picture a car's odometer with four digits. Roll it back one click from 0000 and it reads 9999. Nobody is confused: 9999 acts like -1, because adding 1 rolls it back to 0000. Two's complement uses the same trick in binary, and it's easiest to see when you bend the numbers into a circle.
+
+<TwosComplementWheel />
+
+Adding moves you clockwise around the circle. The adder never has to know whether a number is negative, so the same circuit handles both.
+
+## The recipe
+
+To negate a number, flip every bit (that's the **1's complement**), then add 1 (that's the **2's complement**). Here it is for -39 in 8 bits:
+
+| Step | Bits |
+|---|---|
+| +39 | `00100111` |
+| Flip every bit (1's complement) | `11011000` |
+| Add 1 (2's complement) | `11011001` |
+
+The leftmost bit still tells you the sign: 1 means negative. With 8 bits you can store -128 to +127.
+
+## Subtraction is addition
+
+To work out $A - B$, a computer adds $A$ to the two's complement of $B$. That's why the [adder you'll build](/courses/logic-design/adders) can do both jobs.
+
+<Callout tone="orange" label="Overflow">
+A number can be too big for its bits. In 8 bits, 100 + 50 wraps around to -106. The 8086 [sets its overflow flag](/courses/microprocessors/flags) when this happens, so a program can check for it.
+</Callout>

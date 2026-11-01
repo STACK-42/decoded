@@ -1,0 +1,51 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { EqualityCircuit, DecoderCircuit } from "@/components/mdx/CircuitVisualizers";
+import { PriorityEncoder } from "@/components/mdx/LogicVisualizers";
+
+# Comparators, Decoders and Encoders
+
+Three small building blocks turn up all over a computer. Each one solves a simple everyday problem.
+
+## Comparators: are these the same?
+
+XNOR outputs 1 when two bits match. To compare whole numbers, put one XNOR on each pair of bits and AND the results. All the bits must match.
+
+<EqualityCircuit />
+
+To find out which number is bigger, look at it the way you'd compare 742 and 751: start from the left. If the top bits differ, whichever has the 1 is greater, and you're done. If they match, move one bit to the right. A comparator chip gives three outputs: `A>B`, `A=B` and `A<B`. For $A = 0110$ and $B = 0011$, the second bit from the left decides it, so `A>B` goes high.
+
+## Decoders: pick exactly one
+
+Think of an apartment block's panel of doorbells. You enter a flat number in binary and exactly one bell rings. A **decoder** takes an $n$-bit number and activates one of $2^n$ output lines.
+
+<DecoderCircuit />
+
+Each output is an AND gate wired to recognise a single pattern. To detect `1011`, invert the input that should be 0:
+
+$$
+X = A_3 A_2' A_1 A_0
+$$
+
+Using a NAND instead gives an **active-low** output, which sits at 1 and drops to 0 when selected. Many real chips do this, because a low signal is less easily triggered by accident.
+
+<Callout tone="neon" label="This is how memory works">
+When a CPU asks for address 5, a decoder lights up word 5 and leaves all the others alone. You'll wire this up yourself in [the memory unit lesson](/courses/logic-design/memory-unit). A CPU's [control unit](/courses/computer-architecture/control-unit) also uses decoders to turn an instruction's bits into the right control signals.
+</Callout>
+
+A common special case is the **BCD-to-7-segment decoder**, which takes one decimal digit in BCD and lights the segments of a digital display. Those are the lit bars on a microwave clock.
+
+## Encoders: the reverse
+
+An encoder does the opposite. It has many input lines, one of which is active, and it outputs that line's number in binary. A calculator keypad is the classic example: press 7 and the wires carry `0111`.
+
+Each output bit is just an OR of the inputs whose code has a 1 in that position:
+
+$$
+A_3 = 8 + 9 \qquad A_2 = 4 + 5 + 6 + 7 \qquad A_1 = 2 + 3 + 6 + 7 \qquad A_0 = 1 + 3 + 5 + 7 + 9
+$$
+
+What if somebody presses two keys at once? A plain encoder would output a mix of both codes, which is garbage. A **priority encoder** reports only the highest input and ignores the rest. Try holding a few keys.
+
+<PriorityEncoder />
+
+CPUs use the same idea to decide which device gets served first when several [interrupts](/courses/microprocessors/interrupts) arrive together.

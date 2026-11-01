@@ -1,0 +1,100 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { MatMulVisualizer, LinearMapGrid } from "@/components/mdx/MatrixVisualizers";
+
+# Multiplying Matrices
+
+Addition works entry by entry, so you might expect multiplication to do the same. It doesn't. The definition looks odd at first, and the animation at the end of this lesson shows why it has to be that way.
+
+## The rule
+
+The product $C = AB$ exists when $A$ has as many columns as $B$ has rows. If $A$ is $m$-by-$p$ and $B$ is $p$-by-$n$, then $C$ is $m$-by-$n$:
+
+$$
+c_{ij} = a_{i1}b_{1j} + a_{i2}b_{2j} + \cdots + a_{ip}b_{pj} = \sum_{k=1}^{p} a_{ik}b_{kj}
+$$
+
+In words: entry $(i, j)$ of the answer is the dot product of **row $i$ of $A$** with **column $j$ of $B$**. Step through it:
+
+<MatMulVisualizer />
+
+MATLAB uses a single asterisk, and it's far faster than the loop in the code panel:
+
+```matlab
+X = A * B              Y = B * A
+
+X =                    Y =
+    15    15    15         15    28    47
+    26    38    26         15    34    60
+    41    70    39         15    28    43
+```
+
+<Callout tone="orange" label="Order matters">
+Compare `X` and `Y`. They use the same two matrices and only one entry matches. Matrix multiplication is **not commutative**, so $AB$ and $BA$ are usually different, and one of them may not exist at all. Use `.*` when you want entry-by-entry multiplication instead.
+</Callout>
+
+## The identity matrix
+
+The **identity matrix** $I$ has ones on its main diagonal and zeros everywhere else. It's the matrix version of the number 1: $AI = A$ and $IA = A$. `eye(n)` builds the $n$-by-$n$ one, and `eye(m, n)` builds a rectangular version.
+
+## Why the rule looks like that
+
+A matrix is a function that moves points. A 2-by-2 matrix sends $(x, y)$ to $(ax + by,\ cx + dy)$. Its first column says where $(1, 0)$ lands, and its second column says where $(0, 1)$ lands. Once you know those two, the rest of the grid follows.
+
+Try the presets, or drag the sliders and read the columns as the two arrows:
+
+<LinearMapGrid />
+
+Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$, and the row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
+
+The number labelled det is the factor by which the map scales area. It gets its own lesson later in this module.
+
+## In Python
+
+`@` multiplies matrices, while `*` multiplies entry by entry, like MATLAB's `.*`. Mixing them up is a common bug, because both run without an error on square arrays.
+
+```python
+import numpy as np
+
+A = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
+B = np.array([[8, 1, 6], [3, 5, 7], [4, 9, 2]])
+
+print((A @ B)[0].tolist())  # [15, 15, 15]
+print((A * B)[0].tolist())  # [8, 1, 6]
+print(np.eye(2).tolist())  # [[1.0, 0.0], [0.0, 1.0]]
+```
+
+The plain Python version shows the row-times-column rule directly:
+
+```python
+A = [[2, -1, 3], [0, 4, 1]]
+B = [[1, 2], [3, -1], [0, 5]]
+
+C = [[sum(a * b for a, b in zip(row, col)) for col in zip(*B)] for row in A]
+print(C)  # [[-1, 20], [12, 1]]
+```
+
+## In machine learning
+
+A linear model predicts every example at once with one product, $\hat{y} = Xw$. Here, three examples with two features use two weights:
+
+```python
+import numpy as np
+
+X = np.array([[1, 2], [3, 4], [5, 6]])
+w = np.array([0.5, -1.0])
+
+print((X @ w).tolist())  # [-1.5, -2.5, -3.5]
+```
+
+A dense neural network layer computes $WX + b$, followed by a non-linear function. The grid above shows what $W$ does: it rotates, stretches and shears the data so that later layers can separate it. Stacking linear layers without a non-linearity gains nothing, because their product is just one matrix.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Moving a game camera" tool="WebGL, Unity, Unreal">
+Graphics engines chain model, view and projection matrices, then multiply them into one matrix that the GPU applies to every vertex.
+</PracticalApplication>
+<PracticalApplication title="Running a neural network" tool="PyTorch, TensorFlow">
+Most of the arithmetic in a neural network layer is one large matrix product, which is why GPUs built for this operation are so sought after.
+</PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,36 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CounterLab } from "@/components/mdx/LogicVisualizers";
+
+# Binary Counters
+
+Look at how the binary numbers go:
+
+```
+0000
+0001
+0010
+0011
+0100
+```
+
+The rightmost bit flips every step. The next bit flips every 2 steps, the next every 4, and so on. So each bit flips when all the bits to its right were 1 and roll over. It works like an odometer, where each wheel turns the next one once per revolution.
+
+A [JK flip-flop](/courses/logic-design/flip-flops) with J = K = 1 toggles on each clock edge, so a counter is just a chain of those, each toggling at the right moment.
+
+<CounterLab />
+
+## Two ways to wire it
+
+In a **ripple counter**, the first flip-flop gets the real clock and each of the others is clocked by the output of the one before it. It's cheap and simple. But each stage adds a small delay, so while the change ripples along, the outputs briefly show wrong values. For example, going from `0111` to `1000`, it passes through `0110`, `0100` and `0000`. This is the same weakness as the [ripple-carry adder](/courses/logic-design/fast-carries).
+
+In a **synchronous counter**, all flip-flops share one clock. Each stage uses an AND gate to decide whether to toggle, according to whether all the lower bits are 1. Everything changes together with no wrong in-between values, which is why CPUs use this type.
+
+## Where you'll find counters
+
+- **Dividing a frequency**: each stage runs at half the speed of the one before, so a fast crystal can produce slower clocks.
+- **Timing and counting events**: timers, digital clocks and the delay loops inside devices.
+- **Stepping through a program**: the [Program Counter](/courses/computer-organization/machine-cycle) is a counter with load. It normally counts up to the next instruction, and a jump instruction loads a new value instead.
+
+<Callout tone="neon" label="Counting past the end">
+An $n$-bit counter counts from 0 to $2^n - 1$ and then wraps to 0. You just saw it in action with [the two's complement circle](/courses/logic-design/binary-arithmetic). That wrap-around is what a program sees as overflow.
+</Callout>

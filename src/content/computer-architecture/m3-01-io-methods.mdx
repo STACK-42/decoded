@@ -1,0 +1,40 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Handshake, IoMethods } from "@/components/mdx/ArchitectureVisualizers";
+
+# Input and Output
+
+A keyboard sends a few bytes a second, while a CPU runs billions of instructions per second. Input and output are mainly about bridging that enormous gap in speed.
+
+## Devices and buffering
+
+A device connects through an **I/O module** (or controller), which has registers the CPU can read and write. Usually these are a data register, a status register ("are you ready?") and a command register.
+
+Because the two sides run at different speeds, the controller holds data in a small memory, a **buffer**. A disk delivers a whole sector in one burst, whenever it's ready. The buffer holds it until the CPU or memory can take it.
+
+## Handshaking
+
+How can two devices with different speeds and no shared clock reliably hand over data? It's like passing a heavy box: "Have you got it?" "Got it." "OK, letting go." That's a **handshake**.
+
+<Handshake />
+
+## Three ways to move data
+
+Here's the same transfer done three ways. Compare the green.
+
+<IoMethods />
+
+**Programmed I/O** is the simplest. The CPU keeps reading the status register in a loop, which is called **polling** or busy-waiting. Then it moves each byte itself.
+
+**Interrupt-driven I/O** frees the CPU between bytes. The device sends an [interrupt](/courses/microprocessors/interrupts) when it's ready, and the handler moves the byte. That's ideal for a keyboard. For a fast disk, it means an interrupt for every byte, and all the overhead that comes with it.
+
+**DMA** (direct memory access) adds a helper chip that moves data directly between the device and memory. The CPU only tells it the address, the count and the direction, and it's interrupted once when the whole block is finished. It needs the [bus](/courses/computer-organization/buses) to do this, and it takes bus cycles when the CPU isn't using them, which is known as **cycle stealing**.
+
+| Method | Who moves the data | When the CPU is involved | Best for |
+|---|---|---|---|
+| Programmed | CPU | The whole time | Very simple or very fast short waits |
+| Interrupt | CPU | Once per byte or word | Slow devices |
+| DMA | DMA controller | Start and end of each block | Disks, networks, audio |
+
+<Callout tone="violet" label="DMA and the cache">
+Because DMA writes straight to memory, the cache may be left holding an old copy of the data. The hardware or the operating system has to handle this, which is another case of the [coherence problem](/courses/computer-architecture/cache-policies).
+</Callout>

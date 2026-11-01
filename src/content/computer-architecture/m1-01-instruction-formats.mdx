@@ -1,0 +1,36 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { InstructionFormats } from "@/components/mdx/ArchitectureVisualizers";
+
+# Instruction Formats
+
+An instruction is only a number, and the CPU has to pull it apart to see what it's being asked to do. The way those bits are divided is the instruction's **format**. Most of it splits into two parts:
+
+- The **opcode**: which operation.
+- The **operands**: what to work on, usually given as addresses or register numbers.
+
+```
+| opcode |  operand 1  |  operand 2  |
+```
+
+## How many operands?
+
+Say an instruction is 16 bits long. Use 4 bits for the opcode, and you have 12 bits left. Should they name three things, or just one? Fewer addresses make for shorter instructions but also longer programs. Compare the same calculation, $X = (A + B) \times (C + D)$, on four kinds of machine.
+
+<InstructionFormats />
+
+| Format | Example | Meaning | Good | Bad |
+|---|---|---|---|---|
+| 3-address | `ADD X, Y, Z` | Z = X + Y (the order varies by machine) | Short programs | Long instructions |
+| 2-address | `ADD X, Y` | One operand is also the destination | A balance | Destroys an operand |
+| 1-address | `ADD X` | AC = AC + X | Short instructions | Lots of memory trips |
+| 0-address | `ADD` | Pops two, pushes the sum | Shortest instructions | Longest programs |
+
+The 8086 is mostly a [2-address machine](/courses/microprocessors/registers): `ADD AX, BX`. Calculators and the Java virtual machine use a 0-address stack.
+
+<Callout tone="violet" label="Each bit counts">
+With an $n$-bit opcode, a CPU can have up to $2^n$ different operations. If 5 bits name a register, it can reach 32 registers. These small budgets are why bigger instruction sets need longer instructions. For example, an instruction with an 8-bit opcode and two 5-bit register fields is 18 bits long.
+</Callout>
+
+## Addressing modes
+
+The operand field doesn't have to hold the data itself. An **addressing mode** tells the CPU how to get to the data, and it's part of the architecture. The [8086's eight modes](/courses/microprocessors/addressing-modes) are the example to work through. There's a trade-off here too: more modes make programs shorter, but complicate decoding. That trade-off is the next lesson's subject.

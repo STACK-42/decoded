@@ -1,0 +1,46 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { KMapExplorer } from "@/components/mdx/LogicVisualizers";
+
+# Karnaugh Maps
+
+Here is the key fact behind this whole lesson. Take the two terms $AB'C$ and $AB'C'$. They differ only in $C$, so factor it out: $AB'(C + C') = AB'$. Whatever $C$ is, the answer is the same, so $C$ doesn't matter and we can delete it.
+
+To simplify, then, you want pairs of terms that differ in exactly one variable. In a truth table those pairs are scattered about. A **Karnaugh map** (K-map) rearranges the table into a grid so that those pairs sit next to each other, and then your eyes can do the algebra.
+
+## Reading the map
+
+Each cell is one row of the truth table. The row and column labels run 00, 01, **11**, 10. That's [Gray code](/courses/logic-design/codes-and-floating-point), not counting order, and it's what makes the map work: any two neighbouring cells differ by exactly one bit.
+
+The map also wraps around. The left edge touches the right edge, and on a 4-variable map the top touches the bottom, as if it were drawn on a doughnut.
+
+Click cells to turn them on and off. The map finds the groups for you and shows the shrunken expression.
+
+<KMapExplorer />
+
+This starting map is $AB'C + A'BC + A'B'C + A'B'C' + AB'C'$. The answer is $B' + A'C$: from five terms to two.
+
+## Grouping rules
+
+1. Groups must contain 1, 2, 4, 8 or 16 cells: a power of 2.
+2. Groups are rectangles, and they can wrap around the edges.
+3. Make each group as big as you can. Bigger groups mean shorter terms.
+4. Every 1 must be in at least one group, and groups may overlap.
+5. Use as few groups as you can.
+
+## Reading the answer
+
+For each group, look at which variables stay the same across all its cells. Keep those and drop the rest:
+
+- A variable that's always 1 in the group appears plain.
+- A variable that's always 0 in the group appears inverted.
+- A variable that changes inside the group cancels out.
+
+On a 3-variable map, a group of 1 gives a 3-variable term, a group of 2 gives 2 variables, a group of 4 gives 1 variable and a group of all 8 gives just 1.
+
+Now try this 4-variable map. Click cells in all four corners, which count as a single group because of the wrap-around.
+
+<KMapExplorer vars={["A", "B", "C", "D"]} start={[0, 1, 4, 5, 15]} />
+
+<Callout tone="neon" label="Is this used in practice?">
+Software simplifies today's circuits, and it can handle thousands of inputs. K-maps are how you learn what that software is doing, and they're still the quickest method for a small function by hand. An exam will almost certainly ask you for one.
+</Callout>

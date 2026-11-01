@@ -1,0 +1,202 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { HashFunctions, DoublingCostChart } from "@/components/mdx/AdvancedVisualizers";
+
+# Hashing and Amortized Analysis
+
+Recall the cost of searching:
+
+- In an unsorted **list**, a search takes $O(n)$.
+- In a balanced **binary search tree**, it takes $O(\log n)$.
+
+**Is it possible to search even faster?** Yes, with **hashing**.
+
+**Hashing** stores data using a special function, the **hash function**, which maps a key straight to the place where its value is kept. Instead of searching *for* the item, you compute *where it is*. How well this works depends on how good the hash function is.
+
+| Case | Search time |
+| --- | --- |
+| Best | $O(1)$ |
+| Average | $O(1)$ |
+| Worst | $O(n)$ |
+
+This lesson covers the **hash functions** and the **amortized analysis** that explains why hash tables stay fast as they grow. The next lesson handles **collisions**: what to do when two keys want the same slot.
+
+## Direct hashing
+
+In **direct hashing**, the key *is* the address, without any calculation:
+
+$$
+h(K) = K
+$$
+
+Key 5 goes in slot 5, and key 1234 goes in slot 1234.
+
+- **Advantages:** search, insertion and deletion are all $O(1)$.
+- **Disadvantages:** it consumes a lot of memory. The array has to be as large as the largest possible key, which is very wasteful when only a few keys are actually used.
+
+## The division method
+
+$$
+h(k) = k \bmod n
+$$
+
+$h(k)$ is the remainder when the key $k$ is divided by the table size $n$. It's best when $n$ is a **prime number**, because that spreads the keys more evenly.
+
+### Why prime? Collisions
+
+When two keys get the same hash value, that's a **collision**. If the data is random, the table size doesn't matter much. But real data often has patterns, and then strange things happen.
+
+With **mod 4**:
+
+| $k$ | 10 | 20 | 30 | 40 | 50 |
+| --- | --- | --- | --- | --- | --- |
+| $k \bmod 4$ | 2 | 0 | 2 | 0 | 2 |
+
+Of the four possible values (0, 1, 2, 3), only 0 and 2 are ever used. Every key collides with another. That's bad.
+
+With the prime **7**:
+
+| $k$ | 10 | 20 | 30 | 40 | 50 |
+| --- | --- | --- | --- | --- | --- |
+| $k \bmod 7$ | 3 | 6 | 2 | 4 | 1 |
+
+No collisions at all. All the keys are multiples of 10, and 10 shares a factor with 4 but none with 7.
+
+## The multiplication method
+
+$$
+h(k) = \big\lfloor n \cdot (kA \bmod 1) \big\rfloor
+$$
+
+$A$ is a constant between 0 and 1. Multiply $k$ by $A$, keep only the **fractional part** ("$\bmod 1$"), then multiply by $n$ and round down.
+
+- **Advantage:** the value of $n$ isn't critical. It doesn't have to be prime.
+- **Disadvantage:** it's slower than the division method.
+
+**Examples** with $n = 100$ and $A = 0.618033$:
+
+$$
+\begin{aligned}
+h(123) &= \lfloor 100\,(123 \times 0.618033 \bmod 1) \rfloor = \lfloor 100\,(76.018059 \bmod 1) \rfloor = \lfloor 100 \times 0.018059 \rfloor = 1 \\
+h(150) &= \lfloor 100\,(150 \times 0.618033 \bmod 1) \rfloor = \lfloor 100\,(92.70495 \bmod 1) \rfloor = \lfloor 100 \times 0.70495 \rfloor = 70
+\end{aligned}
+$$
+
+## The mid-square method
+
+Square the key and take the **middle $r$ digits** as the hash value. Choose $r$ to match the table size $n$:
+
+| $n$ | 10 | 100 | 1000 |
+| --- | --- | --- | --- |
+| $r$ | 1 digit | 2 digits | 3 digits |
+
+- **Advantage:** far fewer collisions. The middle digits depend on *every* digit of the key.
+- **Disadvantage:** squaring very large keys is hard (they overflow).
+
+## The folding method
+
+Split the key $K$ into parts $K_1, K_2, \dots, K_n$, then **add the parts together**. The size of the parts depends on the address size:
+
+- For the key 12345678 and an address of 3 digits, split it into 123, 456, 78.
+- For an address of 4 digits, split it into 1234, 5678.
+
+There are two kinds of folding. Take the key **12345678** and a 2-digit address (0–99), so the parts are 12, 34, 56, 78:
+
+- **Fold-shifting:** add the parts as they are. $12 + 34 + 56 + 78 = 180$, and $180 \bmod 100 = 80$.
+- **Fold-boundary:** first reverse the **outer** parts: 21, 34, 56, 87. Then $21 + 34 + 56 + 87 = 198$, and $198 \bmod 100 = 98$.
+
+Try any key with every method at once:
+
+<HashFunctions initial={12345678} />
+
+## Amortized analysis
+
+**Amortized analysis** is for data structures where an *occasional* operation is very slow, but most operations are fast. Instead of looking at one operation, we analyze a whole **sequence** of operations. We then guarantee an *average worst-case cost per operation* that's lower than the cost of the single most expensive operation.
+
+The idea is that a data structure shouldn't be called "costly" just because of one rare, expensive operation.
+
+<Callout tone="sky" label="Not the same as average case">
+Average-case analysis assumes something about the *input*, such as "all orders are equally likely". Amortized analysis assumes **nothing**. It's a worst-case guarantee for the *total* cost of any sequence of $n$ operations, divided by $n$.
+</Callout>
+
+There are three common ways to argue amortized cost:
+
+1. the **aggregate** method,
+2. the **accounting** method,
+3. the **potential** method.
+
+### The running example: a growing hash table
+
+How big should a hash table be? There's a **trade-off**. A big table makes searching fast but uses lots of memory. A small table saves memory but fills up.
+
+The solution is a **dynamic array**: grow the table whenever it becomes full.
+
+1. Allocate memory for a **larger** table, typically **twice** the old size.
+2. **Copy** the contents of the old table into the new one.
+3. **Free** the old table.
+
+If there's space left, simply insert the new item into a free slot.
+
+**What is the time complexity of $n$ insertions?**
+
+A quick analysis says one insertion can cost $O(n)$, because of the copy. So $n$ insertions cost $n \cdot O(n) = O(n^2)$. **But that's far too pessimistic.** The expensive copies are rare.
+
+### The aggregate method
+
+Add up the **total cost** of all $n$ operations, then divide by $n$.
+
+Insertion $i$ costs 1 for writing the item, **plus** $i - 1$ for copying when $i - 1$ is a power of 2 (the table was full):
+
+$$
+c_i =
+\begin{cases}
+i & \text{if } i - 1 \text{ is an exact power of } 2 \\
+1 & \text{otherwise}
+\end{cases}
+$$
+
+| $i$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| table size | 1 | 2 | 4 | 4 | 8 | 8 | 8 | 8 | 16 | 16 |
+| $c_i$ | 1 | 2 | 3 | 1 | 5 | 1 | 1 | 1 | 9 | 1 |
+
+So the total cost of $n$ insertions is
+
+$$
+\sum_{i=1}^{n} c_i \;\le\; n + \sum_{j=0}^{\lfloor \lg(n-1) \rfloor} 2^j \;\le\; n + 2n = 3n
+$$
+
+The copies form a **geometric series** $1 + 2 + 4 + \dots$, which adds up to less than $2n$. So the total is $O(3n) = O(n)$, and **the cost of $n$ insertions is $O(n)$: an amortized $O(1)$ each.**
+
+<DoublingCostChart initialN={17} />
+
+### The accounting method
+
+**How much should we charge for each operation, so that all future costs can be paid for?** Imagine \$1 pays for 1 unit of work.
+
+**Charge \$3 for every append:**
+
+- \$1 pays for writing the new item right now.
+- \$2 goes into the **bank**, stored "on" the new item.
+
+When the table doubles from size $m$ to $2m$, the $m/2$ items inserted since the last doubling have each saved \$2. That's \$$m$, exactly enough to copy all $m$ items.
+
+**Key invariant:** the bank balance **never drops below 0**. So the sum of the amortized costs ($3n$) is an upper bound on the sum of the true costs. The green bars in the chart above show the balance.
+
+### The potential method
+
+Instead of storing credit on individual items, the potential method stores it in the data structure as a whole, as a **potential** $\Phi$ (like stored energy). For the doubling table, a standard choice is
+
+$$
+\Phi = 2 \cdot (\text{number of items}) - (\text{table size})
+$$
+
+Each cheap insertion raises $\Phi$ by 2, and each expensive doubling releases potential to pay for the copy. The amortized cost of an operation is its real cost plus the change in $\Phi$, and that comes out to 3 for every insertion, just like the accounting method.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Every growable array you've used" tool="std::vector · ArrayList · Python list">
+    `push_back` occasionally reallocates and copies everything, yet it's documented as "amortized constant time". This analysis is why that's true.
+  </PracticalApplication>
+  <PracticalApplication title="Hash maps that resize" tool="unordered_map · HashMap · dict">
+    Real hash maps double their bucket array when they get too full and move every key across. Inserts stay $O(1)$ amortized for exactly the same reason.
+  </PracticalApplication>
+</ApplicationsGrid>

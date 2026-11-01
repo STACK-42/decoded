@@ -1,0 +1,52 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { HalfAdderCircuit, FullAdderCircuit } from "@/components/mdx/CircuitVisualizers";
+
+# Adders: Teaching Gates to Count
+
+So far, gates have answered yes-or-no questions. Now they'll do maths. Look at how binary digits add, and at what the answer's two digits have in common with gates you already know:
+
+| A | B | Carry | Sum |
+|---|---|---|---|
+| 0 | 0 | 0 | 0 |
+| 0 | 1 | 0 | 1 |
+| 1 | 0 | 0 | 1 |
+| 1 | 1 | 1 | 0 |
+
+The **Sum** column is XOR. The **Carry** column is AND. So adding two bits takes just those two gates, and that circuit is called a **half adder**.
+
+<HalfAdderCircuit />
+
+## Why "half"?
+
+Adding the rightmost column of a number only needs two inputs. Every other column also has to take in the carry from the column beside it, so it adds three bits. The half adder can't do that.
+
+A **full adder** takes $A$, $B$ and a carry-in, and it's made from two half adders. The first adds $A$ and $B$. The second adds that result to the carry-in. If either stage produced a carry, the OR passes it on. Both can't produce a carry at once.
+
+<FullAdderCircuit />
+
+$$
+\text{Sum} = A \oplus B \oplus C_{in} \qquad\qquad C_{out} = AB + (A \oplus B)C_{in}
+$$
+
+Flip all three inputs on and work through it: $1 + 1 + 1 = 3$, which is `11` in binary.
+
+## Adding whole numbers
+
+Full adders chain together the same way school addition works: the carry out of each column goes into the next. One full adder per bit gives you a **parallel adder**. To add 4-bit numbers, you use four.
+
+Here is $1100 + 1100$ worked through the stages:
+
+| Stage | $A_n$ | $B_n$ | $C_{in}$ | Sum | $C_{out}$ |
+|---|---|---|---|---|---|
+| 1 (rightmost) | 0 | 0 | 0 | 0 | 0 |
+| 2 | 0 | 0 | 0 | 0 | 0 |
+| 3 | 1 | 1 | 0 | 0 | 1 |
+| 4 | 1 | 1 | 1 | 1 | 1 |
+
+The final carry becomes the top bit of the answer: `11000`, which is $12 + 12 = 24$.
+
+The rightmost stage has no carry coming in, so its input is tied to 0.
+
+<Callout tone="neon" label="Subtracting with the same circuit">
+[Two's complement](/courses/logic-design/binary-arithmetic) makes $A - B$ the same as $A + B' + 1$. Add an XOR on each $B$ input, as a controllable inverter, and set the first carry-in to 1 when subtracting. One circuit now does both, and it's the heart of the [CPU's ALU](/courses/computer-organization/inside-the-cpu).
+</Callout>

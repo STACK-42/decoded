@@ -1,0 +1,109 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Number Theory
+
+Eight questions on the module. Get 6 right to pass.
+
+<Quiz
+  courseSlug="computational-mathematics"
+  lessonSlug="number-theory-quiz"
+  passThreshold={6/8}
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is -11 mod 7?",
+      options: [
+        { id: "a", text: "-4" },
+        { id: "b", text: "3" },
+        { id: "c", text: "4" },
+        { id: "d", text: "-3" },
+      ],
+      correctOptionId: "b",
+      explanation: "-11 = (-2) × 7 + 3, and the remainder has to be between 0 and 6.",
+    },
+    {
+      id: "q2",
+      prompt: "Euclid's algorithm relies on which fact?",
+      options: [
+        { id: "a", text: "gcd(a, b) = gcd(b, a mod b)" },
+        { id: "b", text: "gcd(a, b) = a × b" },
+        { id: "c", text: "gcd(a, b) is always prime" },
+        { id: "d", text: "gcd(a, b) = gcd(a + b, a - b)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Replacing the pair with (b, a mod b) keeps the gcd the same while the numbers shrink.",
+    },
+    {
+      id: "q3",
+      prompt: "To list the primes up to 400 with the sieve, what's the largest prime that needs to strike out multiples?",
+      options: [
+        { id: "a", text: "19" },
+        { id: "b", text: "20" },
+        { id: "c", text: "199" },
+        { id: "d", text: "397" },
+      ],
+      correctOptionId: "a",
+      explanation: "You can stop at the square root of 400, which is 20, and the largest prime up to that is 19.",
+    },
+    {
+      id: "q4",
+      prompt: "What is φ(100)?",
+      options: [
+        { id: "a", text: "99" },
+        { id: "b", text: "50" },
+        { id: "c", text: "40" },
+        { id: "d", text: "25" },
+      ],
+      correctOptionId: "c",
+      explanation: "100 = 2² × 5², so φ(100) = 100 × (1 - 1/2) × (1 - 1/5) = 40.",
+    },
+    {
+      id: "q5",
+      prompt: "a^(n-1) mod n came out as 1. What can you conclude?",
+      options: [
+        { id: "a", text: "n is definitely prime" },
+        { id: "b", text: "n is definitely composite" },
+        { id: "c", text: "n is probably prime, but it could be a Carmichael number or another pseudoprime" },
+        { id: "d", text: "a is a primitive root of n" },
+      ],
+      correctOptionId: "c",
+      explanation: "Fermat's theorem only proves compositeness when the result isn't 1. A result of 1 is evidence, not proof.",
+    },
+    {
+      id: "q6",
+      prompt: "2 has order 3 modulo 7. Is it a primitive root of 7?",
+      options: [
+        { id: "a", text: "Yes, every number below 7 is" },
+        { id: "b", text: "Yes, since 3 divides 6" },
+        { id: "c", text: "No, its order would need to be φ(7) = 6" },
+        { id: "d", text: "No, because 2 isn't coprime to 7" },
+      ],
+      correctOptionId: "c",
+      explanation: "A primitive root has the largest possible order, which is φ(n). The order of 2 falls short.",
+    },
+    {
+      id: "q7",
+      prompt: "When does a have an inverse modulo n?",
+      options: [
+        { id: "a", text: "When n is even" },
+        { id: "b", text: "When a is prime" },
+        { id: "c", text: "When gcd(a, n) = 1" },
+        { id: "d", text: "Always" },
+      ],
+      correctOptionId: "c",
+      explanation: "If gcd(a, n) = 1, the extended Euclidean algorithm gives ax + ny = 1, and x is the inverse.",
+    },
+    {
+      id: "q8",
+      prompt: "Roughly how many multiplications does fast exponentiation need for a 1000-bit exponent?",
+      options: [
+        { id: "a", text: "About 2000 at most" },
+        { id: "b", text: "About 2^1000" },
+        { id: "c", text: "About 1000²" },
+        { id: "d", text: "About 10" },
+      ],
+      correctOptionId: "a",
+      explanation: "There's one squaring per bit and up to one extra multiplication per bit, so at most about twice the number of bits.",
+    },
+  ]}
+/>

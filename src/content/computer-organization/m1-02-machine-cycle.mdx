@@ -1,0 +1,34 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { TinyCpu } from "@/components/mdx/OrganizationVisualizers";
+
+# The Machine Cycle
+
+Here is everything a CPU does, its entire life, in one loop:
+
+1. **Fetch** the next instruction from memory.
+2. **Decode** it, to work out what it's asking for.
+3. **Execute** it.
+4. **Store** the result.
+5. Go back to step 1.
+
+That's it. A web browser and a video game are this loop, run billions of times per second.
+
+## Watch one run
+
+This is a complete working computer with a program in memory that adds 2 and 3. Cells 0 to 3 hold instructions, and cells 4 to 6 hold data. Press Step and read the caption each time. The first instruction will take a few clicks. After that, the pattern starts to feel familiar.
+
+<TinyCpu />
+
+## What to notice
+
+**Memory doesn't know what's what.** Cell 0 and cell 4 are both just values. The only reason `LOAD 4` is treated as an instruction is that the PC pointed at it. That's the stored-program idea in action.
+
+**The PC moves before the instruction runs.** By the time `ADD 5` executes, the PC already says 2. This is what makes a jump simple: a jump instruction only has to overwrite the PC, and the next fetch happens wherever it now points. Every loop and `if` statement in every program depends on this.
+
+**Most of the work is moving data around.** Count the steps that only copy a value from one place to another, against those where the ALU does arithmetic. The CPU spends most of its time on trips to memory, which is why so much of [computer architecture](/courses/computer-architecture/cache-mapping) is about making those trips shorter.
+
+<Callout tone="sky" label="The clock keeps time">
+Each small step above takes one or more ticks of the CPU's [clock](/courses/logic-design/signals). A 4 GHz processor ticks 4 billion times a second. Clock speed isn't the whole story of speed, though, as the [performance lesson](/courses/computer-architecture/measuring-performance) shows.
+</Callout>
+
+The instructions here are in a made-up language with six commands. In the [Microprocessors course](/courses/microprocessors/first-program), you'll write real ones for a real chip, and they follow this same cycle.

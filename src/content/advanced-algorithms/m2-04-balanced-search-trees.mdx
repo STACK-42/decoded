@@ -1,0 +1,143 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { RBTreeVisualizer, RotationDemo } from "@/components/mdx/AdvancedVisualizers";
+
+# Balanced Search Trees and Red-Black Trees
+
+An ordinary binary search tree (BST) is fast only when it's **bushy**. Insert keys in sorted order and it degrades into a long chain of height $n$, so every operation becomes $O(n)$. You saw this already with BST buckets in the hashing lessons.
+
+A **balanced search tree** is a search-tree data structure that *guarantees* a height of $O(\lg n)$ for a dynamic set of $n$ items, whatever order they arrive in. Examples:
+
+- AVL trees,
+- 2-3 trees,
+- 2-3-4 trees,
+- B-trees,
+- **red-black trees**: the subject of this lesson and the next.
+
+## Red-black trees
+
+A red-black tree is a BST with **one extra bit per node**: its **color**, red or black. The colors must follow four rules.
+
+<Callout tone="violet" label="Red-black properties">
+1. Every node is either **red** or **black**.
+2. The **root** and the **leaves** (the NIL pointers) are **black**.
+3. If a node is **red**, then its **parent is black**. In other words, there are never two reds in a row on a path.
+4. All simple paths from any node $x$ down to a descendant leaf contain the **same number of black nodes**. That number is the **black-height** of $x$, written $bh(x)$.
+</Callout>
+
+Some books list five properties: they split property 2 into "every leaf (NIL) is black" and "the root is black". Note that NIL leaves count as real (black) leaves, so every key-holding node has **two** children.
+
+Here's the example from the lecture. Turn on the NIL leaves to check property 4: from the root, every path down to a NIL passes through the same number of black nodes. Not counting the root itself, but counting the NIL at the end, that's 2: for example 7 → 3 → NIL, or 7 → 18 → 10 → 8 → NIL.
+
+<RBTreeVisualizer start={[7, 3, 18, 10, 22, 8, 11, 26]} />
+
+**Black-height** counts the black nodes on a path from a node down to a leaf, not counting the node itself but counting the NIL leaf. A NIL leaf itself has $bh = 0$.
+
+**What's the minimum black-height of a node with height $h$?** Red nodes can never be next to each other (property 3), so at least half the nodes on any path down are black. A node of height $h$ therefore has **black-height $\ge h/2$**.
+
+## The height of a red-black tree
+
+<Callout tone="mint" label="Theorem">
+A red-black tree with $n$ keys has height
+
+$$
+h \le 2 \lg(n + 1)
+$$
+</Callout>
+
+**Intuition: merge the red nodes into their black parents.** Each red node gets absorbed into the black node above it. What's left is a tree where:
+
+- each node has **2, 3 or 4 children** (a black node plus up to two absorbed red children), so it's a **2-3-4 tree**,
+- all the leaves are at the **same depth** $h'$, because of property 4.
+
+Now:
+
+- $h' \ge h/2$, because at most half the nodes on any path are red, and the red ones disappear.
+- The number of leaves in both trees is $n + 1$ (a binary tree with $n$ keys has $n + 1$ NIL leaves).
+- A tree where every node has at least 2 children and all leaves are at depth $h'$ has at least $2^{h'}$ leaves.
+
+$$
+n + 1 \ge 2^{h'} \;\Longrightarrow\; \lg(n + 1) \ge h' \ge h/2 \;\Longrightarrow\; h \le 2\lg(n + 1)
+$$
+
+**The induction proof** (as in the textbook). First show by induction that **the subtree rooted at any node $x$ contains at least $2^{bh(x)} - 1$ internal nodes**. Then, at the root:
+
+$$
+\begin{aligned}
+n &\ge 2^{bh(\text{root})} - 1 \\
+n &\ge 2^{h/2} - 1 && \text{since } bh(\text{root}) \ge h/2 \\
+\lg(n + 1) &\ge h/2 \\
+h &\le 2\lg(n + 1)
+\end{aligned}
+$$
+
+So $h = O(\lg n)$.
+
+## Query operations
+
+Since the height is $O(\lg n)$, the usual BST queries all run in **$O(\lg n)$** time on a red-black tree with $n$ nodes:
+
+- SEARCH,
+- MINIMUM and MAXIMUM,
+- SUCCESSOR and PREDECESSOR.
+
+## Modifying operations
+
+INSERT and DELETE also take $O(\lg n)$ time, but they need special care because they **change** the tree. The changes are:
+
+- the operation itself (an ordinary BST insert or delete),
+- **color changes**,
+- restructuring the links of the tree with **rotations**.
+
+## Rotations
+
+A rotation is a small local change of structure that keeps the BST order:
+
+<RotationDemo />
+
+Rotations **keep the in-order ordering of the keys**. If $a \in \alpha$, $b \in \beta$ and $c \in \gamma$, then before and after the rotation
+
+$$
+a \le A \le b \le B \le c
+$$
+
+Only the subtree $\beta$ changes parent: it moves from $A$'s right side to $B$'s left side (or back). $\alpha$ and $\gamma$ stay attached to the same nodes.
+
+**What does the code for a rotation actually do?** A lot of pointer manipulation! For `leftRotate(x)`, with $z$ the right child of $x$:
+
+- $x$ keeps its left child,
+- $z$ keeps its right child,
+- $z$'s left child becomes $x$'s right child,
+- the parents of $x$ and $z$ change.
+
+```cpp
+// returns the new root; requires x->right != nullptr
+Node* leftRotate(Node* root, Node* x) {
+    Node* z = x->right;
+    x->right = z->left;                    // z's left subtree (beta) moves to x
+    if (z->left != nullptr)
+        z->left->parent = x;
+    z->parent = x->parent;                 // z takes x's place
+    if (x->parent == nullptr)              // x was the root
+        root = z;
+    else if (x == x->parent->left)
+        x->parent->left = z;
+    else
+        x->parent->right = z;
+    z->left = x;                           // move x down
+    x->parent = z;
+    return root;
+}
+```
+
+`rightRotate` is the mirror image: swap every `left` and `right`.
+
+**What is the running time?** A fixed number of pointer changes, whatever the size of the tree: **$O(1)$**.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Ordered maps and sets" tool="std::map · std::set · TreeMap">
+    C++'s `std::map` and `std::set`, and Java's `TreeMap` and `TreeSet`, are red-black trees. That's why they guarantee $O(\log n)$ and iterate in sorted order.
+  </PracticalApplication>
+  <PracticalApplication title="The Linux kernel" tool="CFS SCHEDULER · MEMORY MAPS">
+    Linux's scheduler keeps runnable tasks in a red-black tree ordered by how much CPU time they've had, so "pick the task that has run the least" is just "take the leftmost node".
+  </PracticalApplication>
+</ApplicationsGrid>

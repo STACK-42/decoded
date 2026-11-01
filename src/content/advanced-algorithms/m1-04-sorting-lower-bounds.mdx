@@ -1,0 +1,228 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { DecisionTree, CountingSortVisualizer, RadixSortVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Sorting Lower Bounds and Linear-Time Sorting
+
+## How fast can we sort?
+
+Every sorting algorithm we've seen so far is a **comparison sort**: the only way it learns about the order of the elements is by **comparing** two of them. Insertion sort, merge sort, quicksort and heapsort all work this way.
+
+The best worst-case running time we've seen is $O(n \lg n)$. **Is $O(n \lg n)$ the best we can do?** This lesson answers in two parts:
+
+1. **Yes**, for comparison sorts. We'll prove that *no* comparison sort can beat $n \lg n$, using **decision trees**.
+2. **No**, if we're allowed to do more than compare. **Counting sort** and **radix sort** sort in linear time.
+
+## Decision trees
+
+A decision tree draws every comparison an algorithm *could* make.
+
+- Each **internal node** is labelled $i{:}j$ for $i, j \in \{1, 2, \dots, n\}$, meaning "compare $a_i$ with $a_j$".
+- The **left** subtree shows the comparisons that come next if $a_i \le a_j$.
+- The **right** subtree shows the comparisons that come next if $a_i \ge a_j$.
+- Each **leaf** holds a permutation $\langle \pi(1), \pi(2), \dots, \pi(n) \rangle$, meaning the ordering $a_{\pi(1)} \le a_{\pi(2)} \le \dots \le a_{\pi(n)}$ has been established.
+
+Here's the tree for sorting three numbers. The lecture's example is $\langle a_1, a_2, a_3 \rangle = \langle 9, 4, 6 \rangle$: $9 \ge 4$ (go right), $9 \ge 6$ (go right), $4 \le 6$ (go left). That reaches $\langle 2, 3, 1 \rangle$, meaning $a_2 \le a_3 \le a_1$, which is $4 \le 6 \le 9$.
+
+<DecisionTree initial={[9, 4, 6]} />
+
+### The decision-tree model
+
+A decision tree can model the execution of **any** comparison sort:
+
+- There's **one tree for each input size** $n$.
+- Think of the algorithm as **splitting** whenever it compares two elements.
+- The tree contains the comparisons along **all possible** instruction traces.
+- The running time of the algorithm on one input is the **length of the path** it takes.
+- The **worst-case running time is the height of the tree.**
+
+### The lower bound
+
+<Callout tone="violet" label="Theorem">
+Any decision tree that can sort $n$ elements must have height $\Omega(n \lg n)$.
+</Callout>
+
+**Proof.** The tree must have at least $n!$ leaves, because there are $n!$ possible orderings of the input, and each one needs its own leaf. A binary tree of height $h$ has at most $2^h$ leaves. So:
+
+$$
+\begin{aligned}
+n! &\le 2^h \\
+h &\ge \lg(n!) && \lg \text{ is monotonically increasing} \\
+  &\ge \lg\left((n/e)^n\right) && \text{Stirling's formula: } n! \ge (n/e)^n \\
+  &= n \lg n - n \lg e \\
+  &= \Omega(n \lg n)
+\end{aligned}
+$$
+
+∎
+
+<Callout tone="mint" label="Corollary">
+**Heapsort and merge sort are asymptotically optimal** comparison sorting algorithms. No comparison sort can do better than $n \lg n$ in the worst case, and they achieve it.
+</Callout>
+
+For example, sorting 3 numbers needs at least $\lceil \lg 3! \rceil = \lceil \lg 6 \rceil = 3$ comparisons in the worst case, which is exactly the height of the tree above. Sorting 10 numbers needs at least $\lceil \lg 3{,}628{,}800 \rceil = 22$.
+
+## Sorting in linear time
+
+To beat $n \lg n$, we need to stop comparing elements against each other.
+
+### Counting sort
+
+**Counting sort makes no comparisons between elements.** Instead, it uses the keys as **array indexes**.
+
+- **Input:** $A[1 \dots n]$, where every $A[j] \in \{1, 2, \dots, k\}$.
+- **Output:** $B[1 \dots n]$, sorted.
+- **Auxiliary storage:** $C[1 \dots k]$, one counter per possible key.
+
+```text
+for i ← 1 to k                        ⊳ loop 1
+    C[i] ← 0
+for j ← 1 to n                        ⊳ loop 2
+    C[A[j]] ← C[A[j]] + 1             ⊳ C[i] = |{key = i}|
+for i ← 2 to k                        ⊳ loop 3
+    C[i] ← C[i] + C[i − 1]            ⊳ C[i] = |{key ≤ i}|
+for j ← n downto 1                    ⊳ loop 4
+    B[C[A[j]]] ← A[j]
+    C[A[j]] ← C[A[j]] − 1
+```
+
+The four loops:
+
+1. Clear the counters.
+2. **Count** how many times each key appears.
+3. Turn the counts into **running totals**. Now $C[i]$ is the number of keys $\le i$, which is the position of the *last* $i$ in the sorted output.
+4. Walk $A$ **from right to left**, putting each element where $C$ says, then moving that counter one slot to the left.
+
+Step through the lecture's example, $A = \langle 4, 1, 3, 4, 3 \rangle$ with $k = 4$:
+
+<CountingSortVisualizer A={[4, 1, 3, 4, 3]} k={4} />
+
+#### Analysis
+
+| Loop | Cost |
+| --- | --- |
+| 1: clear `C` | $\Theta(k)$ |
+| 2: count | $\Theta(n)$ |
+| 3: running totals | $\Theta(k)$ |
+| 4: place into `B` | $\Theta(n)$ |
+| **Total** | $\Theta(n + k)$ |
+
+#### Running time
+
+If $k = O(n)$, counting sort takes **$\Theta(n)$** time. But sorting takes $\Omega(n \lg n)$ time! **Where's the fallacy?**
+
+**Answer:**
+
+- *Comparison* sorting takes $\Omega(n \lg n)$ time.
+- Counting sort is **not** a comparison sort.
+- In fact, not a single comparison between elements happens!
+
+The lower bound only applies to algorithms that learn about the order *by comparing*. Counting sort uses the key's **value** directly, as an array index, so the decision-tree argument doesn't apply to it.
+
+<Callout tone="orange" label="The catch">
+Counting sort needs the keys to be small integers. If $k$ is huge, say keys up to $10^9$, then the $\Theta(k)$ loops and the $C$ array of size $k$ ruin everything.
+</Callout>
+
+### Stable sorting
+
+Counting sort is a **stable** sort: it keeps the input order among equal elements. That's why loop 4 runs from right to left. The *last* 3 in $A$ goes to the *last* slot for 3s.
+
+**Exercise:** what other sorts have this property? (Think about insertion sort, merge sort and quicksort from the earlier lessons.)
+
+## Radix sort
+
+- **Origin:** Herman Hollerith's card-sorting machine for the 1890 U.S. Census. (See the appendix.)
+- It's a **digit-by-digit** sort.
+- Hollerith's original (bad) idea was to sort on the **most**-significant digit first.
+- The good idea is to sort on the **least**-significant digit first, using an auxiliary **stable** sort.
+
+Step through the lecture's example. Each pass sorts on one column, from right to left:
+
+<RadixSortVisualizer input={[329, 457, 657, 839, 436, 720, 355]} />
+
+### Correctness of radix sort
+
+**Induction on the digit position.** Assume the numbers are already sorted by their low-order $t - 1$ digits. Now sort them on digit $t$:
+
+- Two numbers that **differ in digit $t$** end up in the right order, because the sort just put them in order by that digit.
+- Two numbers that are **equal in digit $t$** are kept in the same order as the input, because the sort is *stable*. And by the hypothesis, that input order is already correct for the low $t - 1$ digits. ⇒ correct order.
+
+Stability is essential. With an unstable sort per digit, each pass would scramble the work of the passes before it.
+
+### Analysis of radix sort
+
+Use counting sort as the auxiliary stable sort. Sort $n$ computer words of $b$ bits each.
+
+Each word can be viewed as having $b/r$ digits in **base $2^r$**. For example, a 32-bit word:
+
+- $r = 8$ gives $b/r = 4$ passes of counting sort on base-$2^8$ digits, or
+- $r = 16$ gives $b/r = 2$ passes of counting sort on base-$2^{16}$ digits.
+
+**How many passes should we make?** Recall that counting sort takes $\Theta(n + k)$ to sort $n$ numbers in the range $0$ to $k - 1$. If each $b$-bit word is split into $r$-bit pieces, each pass takes $\Theta(n + 2^r)$, and there are $b/r$ passes:
+
+$$
+T(n, b) = \Theta\!\left(\frac{b}{r}\left(n + 2^r\right)\right)
+$$
+
+- Increasing $r$ means **fewer passes**.
+- But once $r \gg \lg n$, the $2^r$ term takes over and the time grows **exponentially**.
+
+### Choosing $r$
+
+You can minimise $T(n, b)$ by differentiating and setting the derivative to 0. Or just observe that we don't want $2^r \gg n$, and there's no harm asymptotically in choosing $r$ as large as possible subject to that. **Choosing $r = \lg n$** makes $2^r = n$, so
+
+$$
+T(n, b) = \Theta\!\left(\frac{b}{\lg n}(n + n)\right) = \Theta\!\left(\frac{bn}{\lg n}\right)
+$$
+
+For numbers in the range $0$ to $n^d - 1$, we have $b = d \lg n$, so **radix sort runs in $\Theta(dn)$ time**. When $d$ is a constant, that's linear.
+
+## Conclusions
+
+In practice, radix sort is **fast for large inputs**, and simple to code and maintain.
+
+- Example (32-bit numbers): it needs **at most 3 passes** when sorting 2000 or more numbers.
+- Merge sort and quicksort need at least $\lceil \lg 2000 \rceil = 11$ passes.
+
+**Downside:** unlike quicksort, radix sort has little **locality of reference** (it jumps all over memory when distributing into buckets). So a well-tuned quicksort does better on modern processors, which have steep memory hierarchies: fast caches, slow RAM.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Sorting on GPUs" tool="CUDA · CUB">
+    The standard way to sort millions of keys on a graphics card is a radix sort. Each pass is a counting step that thousands of cores can do in parallel.
+  </PracticalApplication>
+  <PracticalApplication title="Suffix arrays and string indexing" tool="SEARCH ENGINES · BIOINFORMATICS">
+    Building indexes over DNA or text sorts huge numbers of short keys drawn from a tiny alphabet, which is exactly where counting and radix sort shine.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## Appendix: punched cards
+
+**Herman Hollerith (1860–1929).**
+
+- The 1880 U.S. Census took almost **10 years** to process.
+- Hollerith built a prototype of punched-card technology.
+- His machines, including a "card sorter", let the 1890 census total be reported in **6 weeks**.
+- He founded the Tabulating Machine Company in 1911, which merged with other companies in 1924 to form **International Business Machines** (IBM).
+
+**Punched cards:** a punched card is a data record, and a hole is a value. The "algorithm" was the machine plus a human operator.
+
+**Operation of the sorter:**
+
+- An operator puts a card into the press.
+- Pins on the press reach through the punched holes and touch mercury-filled cups beneath the card, closing an electrical circuit.
+- Whenever a particular digit value is punched, the lid of the matching **sorting bin** lifts.
+- The operator drops the card into that bin and closes the lid.
+- When all the cards are processed, the front panel is opened and the cards are collected in bin order. That's **one pass of a stable sort**.
+
+**Origin of radix sort.** Hollerith's 1889 patent describes a **most**-significant-digit-first sort: sort the cards by the first item, then re-sort each group by the second item, and so on. **Least**-significant-digit-first radix sort seems to have been a folk invention by the machine operators. They found that collecting the bins in order after each pass and simply running the whole deck through again, one column at a time from the right, was far simpler than juggling lots of separate groups.
+
+**The "modern" IBM card** had one character per column and 80 columns. *That's why text windows and terminals traditionally have 80 columns!*
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 1122, title: "Relative Sort Array", slug: "relative-sort-array", why: "Values are at most 1000, so count them instead of comparing them." },
+    { id: 164, title: "Maximum Gap", slug: "maximum-gap", why: "The problem asks for linear time. Radix sort, then scan neighbours.", difficulty: "Medium" },
+    { id: 274, title: "H-Index", slug: "h-index", why: "The citation counts are bounded by n, so counting sort gives O(n).", difficulty: "Medium" },
+  ]}
+/>

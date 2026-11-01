@@ -70,8 +70,8 @@ Two more properties:
   <PracticalApplication title="Databases and big data" tool="EXTERNAL SORT">
     When a database sorts more rows than fit in RAM, it sorts chunks that do fit, writes them to disk, then merges the sorted chunks: merge sort's combine step at gigabyte scale.
   </PracticalApplication>
-  <PracticalApplication title="Git and diff tools" tool="MERGING">
-    Combining two sorted streams of changes is the same "compare the fronts, take the smaller" loop.
+  <PracticalApplication title="Storage engines" tool="COMPACTION">
+    RocksDB and Cassandra keep sorted files on disk and merge them in the background with the same "compare the fronts, take the smaller" loop.
   </PracticalApplication>
 </ApplicationsGrid>
 

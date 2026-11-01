@@ -1,0 +1,57 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { EdgeLab, MasterSlave, JkLab } from "@/components/mdx/LogicVisualizers";
+
+# Flip-Flops: Changing Only on the Edge
+
+A [latch](/courses/logic-design/d-latch-and-clock) is a window: while it's open, anything can come through. A **flip-flop** is a camera flash: it captures its input at one instant, the clock edge, and ignores what happens the rest of the time. It stores one bit, and it changes at most once per clock pulse.
+
+Here's the difference on the same clock and data. Change D by clicking the cells, especially while the clock is high, and compare the blue and green traces.
+
+<EdgeLab />
+
+## How to freeze an instant
+
+Gates can't literally detect an instant, but two latches can fake it. A **master-slave flip-flop** puts two latches in a row, with an inverter on the clock so they take turns. It works like an airlock: there are two doors, and they're never open at the same time, so nothing can pass straight through.
+
+<MasterSlave />
+
+- **Clock low**: the master is open and follows D. The slave is shut, so Q doesn't change.
+- **Clock rises**: the master shuts, freezing whatever D was right then. The slave opens and copies the master to Q.
+- **Clock high**: the master's shut, so changes in D can't get in.
+
+The only moment that matters for D is the rising edge, which gives you an **edge-triggered** D flip-flop. Falling-edge versions swap the roles of the two latches. On a diagram, a small triangle at the clock input means "edge-triggered".
+
+<Callout tone="orange" label="A note on terms">
+Some books use "flip-flop" for any 1-bit storage, including latches. Most modern usage is the one here: a latch responds to a level and a flip-flop responds to an edge. If you're ever unsure, look for the triangle on the clock pin.
+</Callout>
+
+## The JK flip-flop
+
+The SR design wasted one input combination. The JK flip-flop puts it to use: J acts like Set, K acts like Reset, and J = K = 1 means **toggle**, or switch to the opposite value.
+
+It's built from a D flip-flop plus a little feedback:
+
+$$
+D = JQ' + K'Q
+$$
+
+Read that as: "become 1 if J says set and we're currently 0, or stay 1 if we're currently 1 and K isn't resetting us". Test it out.
+
+<JkLab />
+
+| CLK | J | K | Q next |
+|---|---|---|---|
+| none | x | x | No change |
+| edge | 0 | 0 | No change |
+| edge | 0 | 1 | 0 |
+| edge | 1 | 0 | 1 |
+| edge | 1 | 1 | Toggle |
+
+Toggle is what makes counting possible: tie J and K to 1, and the output flips on each clock edge. You'll use that in [the counters lesson](/courses/logic-design/counters).
+
+## Choosing a type
+
+- **SR latch**: the basic building block, and rarely used directly.
+- **D latch**: simple and cheap storage where timing is under control.
+- **D flip-flop**: the workhorse. Nearly every [register](/courses/logic-design/registers) in a CPU uses it.
+- **JK flip-flop**: the most flexible, because it can act as any of the others.

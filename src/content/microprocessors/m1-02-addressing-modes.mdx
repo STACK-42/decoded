@@ -1,0 +1,59 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { AddressingModes, AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Addressing Modes
+
+Every instruction that uses data must say where the data is. An **addressing mode** is one way of saying it. Why have more than one? Because data shows up in different forms: a constant, a variable, an element of an array or a cell in a table. Each mode suits one of those.
+
+Think of different ways to find a house. "It's number 25" is direct. "The number's on this note" is indirect. "Three doors past the corner shop" is base plus displacement.
+
+Pick each mode, then move the sliders and watch which memory cell it reads.
+
+<AddressingModes />
+
+## The eight modes
+
+| Mode | Example | Where the data is |
+|---|---|---|
+| Immediate | `MOV AL, 25h` | In the instruction |
+| Register | `MOV AL, BL` | In a register |
+| Direct | `MOV AL, [0300h]` | At a fixed address |
+| Register indirect | `MOV AL, [BX]` | At the address in a register |
+| Based | `MOV AL, [BX+4]` | Base register + displacement |
+| Indexed | `MOV AL, [SI+4]` | Index register + displacement |
+| Based-indexed | `MOV AL, [BX+SI]` | Base + index |
+| Based-indexed with displacement | `MOV AL, [BX+SI+4]` | Base + index + displacement |
+
+The **displacement** is a constant, 8 or 16 bits, written inside the instruction. The number the CPU works out from these parts is the **effective address** (EA), and that's the offset used to form the [physical address](/courses/microprocessors/segments-and-addresses):
+
+$$
+\text{EA} = \text{base} + \text{index} + \text{displacement}
+$$
+
+## The rules
+
+The hardware has only so many ways to add these parts, so there are strict limits. All of these are real assembler errors, and the simulator will reject them too:
+
+- Only **BX, BP, SI and DI** can hold an address. `[AX]`, `[CX]` and `[DX]` aren't allowed.
+- At most one base and one index. `[BX+BP]` and `[SI+DI]` aren't allowed.
+- **No memory-to-memory moves.** To copy between locations, go through a register.
+- The destination can't be an immediate number.
+- When nothing shows the size, you must state it: `MOV BYTE PTR [BX], 5`. Otherwise, the CPU can't tell if you mean one byte or two.
+- Segment registers can't take immediate values, so load them through another register: `MOV AX, 2000h`, then `MOV DS, AX`. CS can't be a `MOV` destination at all.
+
+## See them work
+
+This program walks an array in several ways. Note that a `db` line reserves bytes in memory, and that `LEA` loads an address, not the value at it.
+
+<AsmRunner watch source={`table db 10, 20, 30, 40, 50
+LEA BX, table         ; BX = where the table starts
+MOV AL, [BX]          ; register indirect: first item
+MOV AL, [BX+2]        ; based: third item
+MOV SI, 3
+MOV AL, [BX+SI]       ; based-indexed: fourth item
+MOV AL, [BX+SI+1]     ; with displacement: fifth item
+MOV BYTE PTR [BX], 99 ; write through a pointer`} />
+
+<Callout tone="orange" label="Where you've seen this">
+When C code does `a[i]` or `rec.age`, the compiler picks these modes. `a[i]` is base plus index, `rec.age` is base plus displacement, and `grid[i].y` uses all three. Modes like these are also a key difference between [RISC and CISC](/courses/computer-architecture/risc-and-cisc).
+</Callout>

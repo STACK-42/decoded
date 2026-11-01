@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Combinational Building Blocks
+
+Six questions on adders and data routing. Get 5 right to pass.
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="building-blocks-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "A half adder's two outputs come from which two gates?",
+      options: [
+        { id: "a", text: "Sum from OR, carry from AND" },
+        { id: "b", text: "Sum from XOR, carry from AND" },
+        { id: "c", text: "Sum from AND, carry from XOR" },
+        { id: "d", text: "Sum from XNOR, carry from NAND" },
+      ],
+      correctOptionId: "b",
+      explanation: "1 + 1 gives sum 0 and carry 1. Sum is 1 only when the inputs differ (XOR), and carry only when both are 1 (AND).",
+    },
+    {
+      id: "q2",
+      prompt: "A full adder gets A=1, B=0, Cin=1. What are Sum and Cout?",
+      options: [
+        { id: "a", text: "Sum 0, Cout 1" },
+        { id: "b", text: "Sum 1, Cout 0" },
+        { id: "c", text: "Sum 1, Cout 1" },
+        { id: "d", text: "Sum 0, Cout 0" },
+      ],
+      correctOptionId: "a",
+      explanation: "1 + 0 + 1 = 2, which is 10 in binary: carry 1, sum 0.",
+    },
+    {
+      id: "q3",
+      prompt: "Why is a ripple-carry adder slow?",
+      options: [
+        { id: "a", text: "It uses too many XOR gates" },
+        { id: "b", text: "Each stage must wait for the carry from the stage below" },
+        { id: "c", text: "It can only add one bit per clock cycle" },
+        { id: "d", text: "It has to convert to decimal first" },
+      ],
+      correctOptionId: "b",
+      explanation: "Delay adds up along the carry chain, and the clock must allow for the longest possible chain.",
+    },
+    {
+      id: "q4",
+      prompt: "In look-ahead carry, a stage generates a carry when:",
+      options: [
+        { id: "a", text: "A and B are both 1" },
+        { id: "b", text: "A or B is 1" },
+        { id: "c", text: "A and B differ" },
+        { id: "d", text: "The carry-in is 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Generate is AB. If only one input is 1, the stage can only propagate a carry that arrives from below.",
+    },
+    {
+      id: "q5",
+      prompt: "A decoder has 5 inputs. How many output lines does it have?",
+      options: [
+        { id: "a", text: "5" },
+        { id: "b", text: "10" },
+        { id: "c", text: "25" },
+        { id: "d", text: "32" },
+      ],
+      correctOptionId: "d",
+      explanation: "Each of the 2⁵ possible patterns gets its own output line.",
+    },
+    {
+      id: "q6",
+      prompt: "How many select lines does a multiplexer with 16 inputs need?",
+      options: [
+        { id: "a", text: "2" },
+        { id: "b", text: "4" },
+        { id: "c", text: "8" },
+        { id: "d", text: "16" },
+      ],
+      correctOptionId: "b",
+      explanation: "2⁴ = 16, so 4 select bits can name any one of the inputs.",
+    },
+  ]}
+/>

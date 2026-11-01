@@ -1,0 +1,52 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CacheLab } from "@/components/mdx/ArchitectureVisualizers";
+
+# Cache Mapping
+
+The [cache](/courses/computer-organization/memory-hierarchy) is small and memory is large. So thousands of memory locations have to share each spot in the cache. This raises two questions: when the CPU asks for an address, where should it look? And how does it know that what it found is the right thing?
+
+## Blocks
+
+Cache doesn't store single bytes. It stores **blocks** (or lines), runs of neighbouring bytes, often 64 bytes in size. When you read one byte, its neighbours come along too. That is how a cache takes advantage of spatial locality.
+
+## Reading an address
+
+To answer those two questions, the address gets divided into three fields:
+
+```
+|     tag     |   index   |  offset  |
+```
+
+Think of a library. **Offset** is the page within a book. **Index** is the shelf that the book must go on. **Tag** is a label written on the book, saying which of the many books for that shelf this one is.
+
+- **Offset bits** = $\log_2$ (block size). 4-byte blocks need 2 bits.
+- **Index bits** = $\log_2$ (number of sets). 4 sets need 2 bits.
+- **Tag bits** = whatever is left of the address.
+
+## Three ways to map
+
+**Direct-mapped.** Each block has exactly one possible home. It's simple and fast, with just one place to check. But if a program alternates between two blocks with the same index, they keep kicking each other out, even with the rest of the cache empty.
+
+**Fully associative.** A block can go anywhere. There are no such conflicts, but the hardware has to compare the tag with every line at once, which is costly.
+
+**Set associative.** The compromise. The index picks a small set of lines, say 2 or 4, and the block can go anywhere in that set. Nearly all real caches work this way.
+
+Run "Two blocks fighting" with direct mapping and watch the hit rate. Then switch to 2-way.
+
+<CacheLab />
+
+## A worked example
+
+A byte-addressed machine has 16-bit addresses and a direct-mapped cache of 128 blocks, each 16 bytes.
+
+- Offset: $\log_2 16 = 4$ bits
+- Index: $\log_2 128 = 7$ bits
+- Tag: $16 - 7 - 4 = 5$ bits
+
+So address `0x1A2B` = `000 1101 0001 0 1011`. Grouping the fields: tag `00011`, index `0100010`, offset `1011`.
+
+If the same cache became 4-way set associative, it would have $128 / 4 = 32$ sets. Index would shrink to 5 bits, and the tag would grow to 7.
+
+<Callout tone="violet" label="How to write faster code">
+Walking a 2D array row by row visits neighbouring addresses, and so nearly every access hits. Walking it column by column jumps across memory and can miss each time. The two loops do the same work, but they can differ a great deal in speed.
+</Callout>

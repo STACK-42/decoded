@@ -1,0 +1,104 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SieveVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Primes and the Sieve
+
+Primes are the atoms of whole-number arithmetic. Every other number is built from them in exactly one way, and the fact that recovering them from their product is so hard underlies a large part of cryptography.
+
+## Prime and composite
+
+A positive integer $n > 1$ is **prime** if its only positive divisors are 1 and $n$. Otherwise it's **composite**.
+
+The **Fundamental Theorem of Arithmetic** says every integer $n > 1$ can be written as a product of primes in only one way, apart from their order:
+
+$$
+n = p_1^{a_1} p_2^{a_2} \cdots p_k^{a_k}
+$$
+
+For example, $91 = 7 \cdot 13$, $3600 = 2^4 \cdot 3^2 \cdot 5^2$, and $11011 = 7 \cdot 11^2 \cdot 13$. There are also infinitely many primes, so the list never runs out.
+
+## You only need to check up to the square root
+
+If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. The reason is simple: if $n = a \cdot b$ with both factors above $\sqrt{n}$, their product would be more than $n$. So any composite number has a factor on the small side.
+
+## The Sieve of Eratosthenes
+
+This method for listing small primes is over two thousand years old:
+
+1. List the integers from 2 to $n$.
+2. Take the first number not struck out. It's prime.
+3. Strike out all its multiples.
+4. Repeat until you pass $\sqrt{n}$. Whatever remains is prime.
+
+For $n = 100$, you can stop as soon as you reach a prime above 10. Step through it and watch how little work is left after the first few primes:
+
+<SieveVisualizer />
+
+## Quick tests for divisibility
+
+Some factors can be spotted from the digits of $n$:
+
+- **2**: the last digit is 0, 2, 4, 6 or 8.
+- **5**: the last digit is 0 or 5.
+- **3**: the sum of the digits is a multiple of 3.
+- **11**: the alternating sum of the digits is a multiple of 11.
+
+Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add up to $1+7+8+6+5+8+4+3 = 42$, a multiple of 3, so 3 divides it.
+
+For $8132619$, the alternating sum is $8-1+3-2+6-1+9 = 22 = 2 \cdot 11$, so 11 divides it.
+
+In MATLAB, `isprime(3457)` returns true and `isprime(3453)` returns false.
+
+## In Python
+
+NumPy's boolean indexing mirrors the MATLAB code in the panel:
+
+```python
+import numpy as np
+
+n = 30
+is_prime = np.ones(n + 1, dtype=bool)
+is_prime[:2] = False
+
+for p in range(2, int(n ** 0.5) + 1):
+    if is_prime[p]:
+        is_prime[p * p :: p] = False
+
+print(np.flatnonzero(is_prime).tolist())  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+```
+
+Trial division up to the square root is also a short job in pure Python:
+
+```python
+def is_prime(n):
+    return n > 1 and all(n % d for d in range(2, int(n ** 0.5) + 1))
+
+print(is_prime(3457), is_prime(3453))  # True False
+```
+
+## In machine learning
+
+Primes show up in ML through hashing. Universal hash functions have the form $h(x) = ((ax + b) \bmod p) \bmod m$, with $p$ a large prime and $a, b$ random:
+
+```python
+p = 2_147_483_647  # a large prime
+a, b, m = 1_000_003, 12_345, 1000
+
+def h(x):
+    return ((a * x + b) % p) % m
+
+print(h(42))  # 471
+```
+
+MinHash uses a family of such functions to spot near-duplicate documents without comparing every pair. This is a standard way to clean up large text training sets, since duplicates waste compute and can leak test examples into the training data.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Finding primes fast" tool="Competitive programming, OpenSSL">
+Key generators first rule out candidates with small prime factors, since that's far cheaper than running a full primality test on each one.
+</PracticalApplication>
+<PracticalApplication title="Sizing hash tables" tool="Standard libraries">
+Some hash table implementations pick a prime number of buckets, so patterns in the keys don't all collide in the same few buckets.
+</PracticalApplication>
+</ApplicationsGrid>

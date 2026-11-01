@@ -1,0 +1,160 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SystemCallFlow, CopyFileCalls, ParameterPassing } from "@/components/mdx/OsVisualizers";
+
+# OS Services, Interfaces and System Calls
+
+An operating system provides an **environment for running programs**, and offers **services** to programs and to users. This lesson lists those services, looks at the two main ways people talk to an OS (typing commands or clicking), and then follows the one doorway every program must go through to get anything done: the **system call**.
+
+## Operating-system services
+
+### Services that help the user
+
+| Service | What it means |
+| --- | --- |
+| **User interface (UI)** | almost every OS has one. It can be a **command-line interface (CLI)**, a **batch** interface (commands put in files, then run), or a **graphical user interface (GUI)** |
+| **Program execution** | load a program into memory, run it, and end it, either **normally** or **abnormally** (with an error) |
+| **I/O operations** | a running program may need I/O, from a file or an I/O device |
+| **File-system manipulation** | read and write files and directories, create and delete them, search them, list file information, manage permissions |
+| **Communications** | processes exchange information, on the same computer or across a network, through **shared memory** or **message passing** (packets moved by the OS) |
+| **Error detection** | the OS must always watch for errors in the CPU and memory hardware, in I/O devices, or in a user program, and take the right action for each to keep computing correct and consistent. **Debugging facilities** make this much easier for users and programmers |
+
+### Services that keep the system itself efficient
+
+These are about **sharing resources** well:
+
+- **Resource allocation.** When several users or jobs run at the same time, each must get resources. Some resources, like **CPU cycles**, **main memory** and **file storage**, have special allocation code. Others, like **I/O devices**, use general **request and release** code.
+- **Accounting.** Keep track of **which users use how much**, and **what kinds**, of resources.
+- **Protection and security.** Owners of information on a multiuser or networked system want to control who uses it, and concurrent processes must not interfere with each other.
+  - **Protection** means making sure **all access** to system resources is **controlled**.
+  - **Security** from outsiders needs **user authentication**, and extends to defending external I/O devices from invalid access attempts.
+  - A chain is only as strong as its weakest link: for a system to be protected and secure, precautions must be taken **throughout** it.
+
+## User interfaces
+
+### Command-line interface (CLI)
+
+A **CLI**, or **command interpreter**, lets users type commands that the OS carries out.
+
+- It is sometimes built into the kernel, sometimes a **system program**.
+- There may be several flavors, called **shells** (on Linux: `bash`, `sh`, `zsh`...).
+- Its main job is simple: **get a command from the user and execute it**.
+- Either the shell **contains the code** for each command, or the commands are just **names of programs** to run.
+  - With the second approach, **adding a new command doesn't require changing the shell**. You just add a new program.
+
+### Graphical user interface (GUI)
+
+A **GUI** is a user-friendly **desktop metaphor**:
+
+- usually a **mouse, keyboard and monitor**,
+- **icons** represent files, programs and actions,
+- different mouse buttons over objects cause different actions: show information, give options, run a function, open a directory (known as a **folder**).
+
+The GUI was invented at the **Xerox PARC** research facility in the 1970s.
+
+Many systems now include **both** CLI and GUI:
+
+- **Microsoft Windows** is a GUI with a CLI "command" shell.
+- **Apple macOS** is the "Aqua" GUI with a **UNIX kernel** underneath, and shells available.
+- **Unix and Linux** have a CLI with optional GUIs (like KDE and GNOME).
+
+### Touchscreen interfaces
+
+Touchscreen devices need new interfaces:
+
+- a mouse isn't possible, or isn't wanted,
+- actions and selections are based on **gestures**,
+- a **virtual keyboard** is used to type text.
+
+## System calls
+
+A **system call** is the **programming interface to the services the OS provides**.
+
+- System calls are usually written in a **high-level language** (C or C++).
+- Programs mostly reach them through a high-level **Application Programming Interface (API)**, not by using system calls directly.
+
+The three most common APIs:
+
+| API | Used on |
+| --- | --- |
+| **Win32 API** | Windows |
+| **POSIX API** | POSIX-based systems: virtually all versions of UNIX, Linux and macOS |
+| **Java API** | the Java virtual machine (JVM) |
+
+<Callout tone="mint" label="Why use an API instead of system calls directly?">
+**Portability**: a program written for the POSIX API compiles and runs on any POSIX system, even though the actual system calls underneath differ. **Simplicity**: real system calls are often more detailed and harder to use than the API functions that wrap them.
+</Callout>
+
+### An example: copying a file
+
+How many system calls does it take to copy one file to another? More than you'd think:
+
+<CopyFileCalls />
+
+### How a system call is implemented
+
+- Each system call has a **number**.
+- The **system-call interface** keeps a **table indexed by these numbers**.
+- It invokes the requested system call in the kernel and returns its **status** and any **return values**.
+- The **caller needs to know nothing** about how the system call is implemented. It just follows the API and understands what the OS will do as a result.
+- Most details of the OS interface are **hidden by the API**, and managed by the **run-time support library**: functions built into libraries included with the compiler.
+
+Follow `open()` from a program all the way into the kernel. Then switch to `printf()`, a C library call that ends up calling the `write()` system call:
+
+<SystemCallFlow />
+
+### Passing parameters to the OS
+
+Often a system call needs **more information** than just its number. The exact type and amount varies with the OS and the call. There are **three general methods** to pass parameters:
+
+1. **In registers.** The simplest. But sometimes there are **more parameters than registers**.
+2. **In a block (table) in memory**, and pass the **block's address** in a register. Linux and Solaris use this.
+3. **On the stack**: the program **pushes** the parameters and the OS **pops** them off.
+
+The **block** and **stack** methods **don't limit** the number or length of the parameters.
+
+<ParameterPassing />
+
+## Types of system calls
+
+| Category | Examples |
+| --- | --- |
+| **Process control** | end, abort · load, execute · create process, terminate process · get/set process attributes · wait for time · wait event, signal event · allocate and free memory · dump memory on error · debugger support, single-step execution · **locks** for managing access to data shared between processes |
+| **File management** | create file, delete file · open, close · read, write, reposition · get/set file attributes |
+| **Device management** | request device, release device · read, write, reposition · get/set device attributes · logically attach or detach devices |
+| **Information maintenance** | get/set time or date · get/set system data · get/set process, file or device attributes |
+| **Communications** | create, delete a communication connection · **message-passing model**: send and receive messages to a host name or process name, from client to server · **shared-memory model**: create and gain access to memory regions · transfer status information · attach and detach remote devices |
+| **Protection** | control access to resources · get and set permissions · allow and deny user access |
+
+### Windows and UNIX side by side
+
+The same jobs have different names on each system:
+
+| Job | Windows | UNIX / Linux |
+| --- | --- | --- |
+| Process control | `CreateProcess()` · `ExitProcess()` · `WaitForSingleObject()` | `fork()` · `exit()` · `wait()` |
+| File management | `CreateFile()` · `ReadFile()` · `WriteFile()` · `CloseHandle()` | `open()` · `read()` · `write()` · `close()` |
+| Device management | `SetConsoleMode()` · `ReadConsole()` · `WriteConsole()` | `ioctl()` · `read()` · `write()` |
+| Information maintenance | `GetCurrentProcessID()` · `SetTimer()` · `Sleep()` | `getpid()` · `alarm()` · `sleep()` |
+| Communications | `CreatePipe()` · `CreateFileMapping()` · `MapViewOfFile()` | `pipe()` · `shm_open()` · `mmap()` |
+| Protection | `SetFileSecurity()` · `InitializeSecurityDescriptor()` · `SetSecurityDescriptorGroup()` | `chmod()` · `umask()` · `chown()` |
+
+### The standard C library
+
+When a C program calls `printf()`, that's a **library call**. The C library then calls the **`write()` system call** to actually put the text on the screen. You saw this path in the animation above.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Seeing system calls live" tool="STRACE · PROCESS MONITOR">
+    On Linux, `strace ls` prints every system call `ls` makes. On Windows, Process Monitor shows the same. Even a tiny command makes dozens.
+  </PracticalApplication>
+  <PracticalApplication title="Code that runs everywhere" tool="POSIX">
+    A C program that only uses POSIX functions compiles on Linux and macOS without changes, because both implement the same API.
+  </PracticalApplication>
+  <PracticalApplication title="Python's open()" tool="API WRAPPERS">
+    Python's open() and Java's FileInputStream are APIs too. Under the hood they make the same open and read system calls.
+  </PracticalApplication>
+  <PracticalApplication title="Permission denied" tool="PROTECTION CALLS">
+    That error comes back from a system call: the kernel checked your user ID against the file's permissions and refused.
+  </PracticalApplication>
+</ApplicationsGrid>

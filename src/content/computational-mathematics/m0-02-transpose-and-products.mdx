@@ -1,0 +1,113 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TransposeVisualizer, VectorProductVisualizer } from "@/components/mdx/MatrixVisualizers";
+
+# Transpose and Vector Products
+
+Flipping a matrix over its diagonal looks like a small trick, but it's what lets you multiply two vectors in both possible orders, and those two orders give very different answers.
+
+## The transpose
+
+The **transpose** of an $m$-by-$n$ matrix $A$ is the $n$-by-$m$ matrix $A'$ whose rows are the columns of $A$:
+
+$$
+(A')_{ij} = a_{ji}
+$$
+
+Press the button and watch where each number goes. Entries on the main diagonal have $i = j$, so they stay where they are. Everything else swaps with its mirror image:
+
+<TransposeVisualizer />
+
+MATLAB writes the transpose with an apostrophe:
+
+```matlab
+B = magic(3);
+B'
+
+ans =
+     8     3     4
+     1     5     9
+     6     7     2
+```
+
+A matrix is **symmetric** when $A' = A$. `pascal(3)` is symmetric and `magic(3)` isn't. Transposing also turns a row vector into a column vector, which is the move you need next.
+
+<Callout tone="sky" label="For complex numbers">
+In MATLAB, `'` also conjugates complex entries. Use `.'` when you want the transpose alone. For real matrices the two are identical.
+</Callout>
+
+## The dot product
+
+For two vectors of the same length, the **dot product** (or inner product) multiplies matching entries and adds the results:
+
+$$
+a \cdot b = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n = \sum_{i=1}^{n} a_i b_i
+$$
+
+For example, with $u = (1, -2, 3, 4)$ and $v = (2, 3, -2, 1)$:
+
+$$
+u \cdot v = (1)(2) + (-2)(3) + (3)(-2) + (4)(1) = -6
+$$
+
+## One pair of vectors, two products
+
+Take a column vector $u$ and a row vector $v$ of the same length. Both orders are legal matrix products, because the inner sizes match either way, yet the results have nothing in common:
+
+- `v * u` is 1-by-3 times 3-by-1, so the result is 1-by-1. This is the **inner product**.
+- `u * v` is 3-by-1 times 1-by-3, so the result is 3-by-3. This is the **outer product**.
+
+Switch between the two and compare:
+
+<VectorProductVisualizer />
+
+If `x` and `y` are both column vectors, then `x * y` is an error because the inner sizes are n and 1. Transpose one of them and it works: `x' * y` is the inner product and `x * y'` is the outer product.
+
+## In Python
+
+`.T` is the transpose, `@` is matrix multiplication, and `np.outer` builds the outer product:
+
+```python
+import numpy as np
+
+u = np.array([3, 1, 4])
+v = np.array([2, 0, -1])
+
+print(u @ v)  # 2
+print(np.outer(u, v).tolist())  # [[6, 0, -3], [2, 0, -1], [8, 0, -4]]
+print(np.array([[1, 2, 3], [4, 5, 6]]).T.tolist())  # [[1, 4], [2, 5], [3, 6]]
+```
+
+NumPy's one-dimensional arrays have no row or column orientation, so `u @ v` needs no transpose, unlike MATLAB. In plain Python, `zip` does the flipping:
+
+```python
+A = [[1, 2, 3], [4, 5, 6]]
+
+print([list(col) for col in zip(*A)])  # [[1, 4], [2, 5], [3, 6]]
+print(sum(a * b for a, b in zip([3, 1, 4], [2, 0, -1])))  # 2
+```
+
+## In machine learning
+
+The dot product measures how much two vectors point the same way, which is how models compare things. Cosine similarity divides it by both lengths:
+
+```python
+import numpy as np
+
+a = np.array([1.0, 2.0, 0.0])
+b = np.array([2.0, 4.0, 0.0])
+
+print(round(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)), 4))  # 1.0
+```
+
+The product $X^T X$ also appears all over ML. For centred data, it's the covariance matrix up to a scaling factor, and PCA starts from it. Attention in transformers scores tokens using dot products between query and key vectors.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Finding similar documents" tool="Search, embeddings">
+Text embeddings are long vectors. A vector database ranks results using dot products, usually of normalised vectors, which gives cosine similarity.
+</PracticalApplication>
+<PracticalApplication title="Recommending films" tool="Matrix factorization">
+Classic recommender models predict a rating as the dot product of a user vector and a film vector. The whole table of predictions for one user-film factor is an outer product.
+</PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,97 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Arithmetic and Logic Instructions
+
+These are the instructions that send work to the [ALU](/courses/computer-organization/inside-the-cpu). Most take two operands and put the result in the first: `ADD AX, BX` means "AX = AX + BX".
+
+## Add and subtract
+
+| Instruction | Effect |
+|---|---|
+| `ADD a, b` | a = a + b |
+| `ADC a, b` | a = a + b + carry flag |
+| `SUB a, b` | a = a - b |
+| `SBB a, b` | a = a - b - carry flag |
+| `INC a` | a = a + 1 |
+| `DEC a` | a = a - 1 |
+| `NEG a` | a = -a (the [two's complement](/courses/logic-design/binary-arithmetic)) |
+| `CMP a, b` | Works out a - b, sets the flags, and discards the answer |
+
+Watch the [flags](/courses/microprocessors/flags) as you step through this one.
+
+<AsmRunner source={`MOV AL, 250
+ADD AL, 10      ; 260 doesn't fit in 8 bits: CF = 1
+MOV AH, 0
+ADC AH, 0       ; pick up the carry, so AX = 260
+MOV BX, 5
+SUB BX, 5       ; zero: ZF = 1
+DEC BX          ; 0 - 1 wraps to FFFFh: SF = 1
+NEG BX          ; back to 1`} />
+
+`ADC` is how an 8-bit CPU adds bigger numbers, one piece at a time, like carrying between columns.
+
+## Multiply and divide
+
+These work differently: they use AX implicitly, because the results can be larger than a single register.
+
+| Instruction | Operand size | Result |
+|---|---|---|
+| `MUL BL` | 8-bit | AX = AL × BL |
+| `MUL BX` | 16-bit | DX:AX = AX × BX |
+| `DIV BL` | 8-bit | AL = AX ÷ BL, AH = remainder |
+| `DIV BX` | 16-bit | AX = DX:AX ÷ BX, DX = remainder |
+
+`DX:AX` means the two registers act as one 32-bit number. The signed versions are `IMUL` and `IDIV`. To prepare a signed value for dividing, `CBW` stretches AL into AX, and `CWD` stretches AX into DX:AX, by copying the sign bit.
+
+<AsmRunner source={`MOV AL, 20
+MOV BL, 30
+MUL BL          ; AX = 600
+MOV AX, 17
+MOV BL, 5
+DIV BL          ; AL = 3, AH = 2`} />
+
+## Logic: working on individual bits
+
+These apply a [gate](/courses/logic-design/logic-gates) to every pair of bits at once. Each has a classic use:
+
+| Instruction | Common use | Example |
+|---|---|---|
+| `AND` | **Clear** chosen bits | `AND AL, 0Fh` keeps only the low nibble |
+| `OR` | **Set** chosen bits | `OR AL, 80h` turns on the top bit |
+| `XOR` | **Flip** chosen bits | `XOR AL, 01h`, and `XOR AX, AX` is a quick way to zero AX |
+| `NOT` | Flip all bits | `NOT AL` |
+| `TEST` | **Check** bits without changing them | `TEST AL, 1` sets ZF if AL is even |
+
+<AsmRunner source={`MOV AL, 'a'       ; 61h = 01100001
+AND AL, 11011111b ; clear bit 5: now 'A'
+OR  AL, 00100000b ; set bit 5: 'a' again
+XOR AL, 00100000b ; flip bit 5: 'A' again
+TEST AL, 1        ; odd or even? ZF = 0 means odd`} />
+
+The ASCII table was designed so that upper and lower case differ by one bit.
+
+## Shifts and rotates
+
+These slide bits along, like a [shift register](/courses/logic-design/registers). The count is either 1 or the value in CL on the original 8086 (`SHL AL, 3` is allowed from the 80186 on, and this simulator accepts it).
+
+| Instruction | What it does | Good for |
+|---|---|---|
+| `SHL` | Left, 0 enters on the right | Multiply by 2 |
+| `SHR` | Right, 0 enters on the left | Divide an unsigned number by 2 |
+| `SAR` | Right, the sign bit is copied | Divide a signed number by 2 |
+| `ROL`, `ROR` | Bits falling off one end come back at the other | Encryption, checksums |
+
+The bit that falls off always lands in CF, so you can test it.
+
+<AsmRunner source={`MOV AL, 3
+SHL AL, 1       ; 6
+SHL AL, 1       ; 12
+SHR AL, 1       ; 6
+MOV BL, 11110000b
+SAR BL, 1       ; -16 becomes -8: the sign is kept
+ROL BL, 1       ; the top bit comes round`} />
+
+<Callout tone="orange" label="Why shifting matters">
+A shift takes a few clock cycles, while the 8086's `MUL` takes over 70. Compilers still often swap a multiply by a power of 2 for a shift.
+</Callout>

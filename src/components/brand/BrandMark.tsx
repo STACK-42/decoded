@@ -30,11 +30,11 @@ export function BrandMark({
 }
 
 /** Mark + "Decoded." wordmark, as used in the header and footer. */
-export function BrandLockup({ tagline = true }: { tagline?: boolean }) {
+export function BrandLockup({ tagline = true, collapse = false }: { tagline?: boolean; collapse?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <BrandMark compact className="h-[26px] w-[26px] shrink-0" />
-      <span className="font-display text-xl font-extrabold tracking-tight leading-none">
+      <span className={`font-display text-xl font-extrabold tracking-tight leading-none ${collapse ? "hidden min-[480px]:inline" : ""}`}>
         Decoded<span className="text-neon">.</span>
       </span>
       {tagline && (

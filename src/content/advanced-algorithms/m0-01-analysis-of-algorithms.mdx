@@ -1,0 +1,181 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SortVisualizer, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
+
+# What Is Analysis of Algorithms?
+
+**Analysis of algorithms** is the theoretical study of how fast a program runs and how much memory it uses. "Theoretical" means we work it out on paper, before running anything.
+
+Speed isn't the only thing that matters in software. A program also has to be:
+
+- **correct**, **reliable** and **robust**: it gives the right answer and doesn't crash on strange input,
+- **simple**, **modular** and **maintainable**: other people can read it and change it,
+- **user-friendly** and **functional**: it does what people need.
+
+So why spend a whole course on performance?
+
+## Why study performance?
+
+- **It tells you whether a program will scale.** Code that's fine on 100 items can be useless on 10 million.
+- **It's often the line between possible and impossible.** Some problems can only be solved at all because someone found a fast algorithm.
+- **It gives us a language.** "This is $\Theta(n^2)$" says a lot in a few characters.
+- **Performance is the currency of computing.** You can "spend" speed to buy other things, like nicer features or simpler code. You can only spend what you have.
+- **The ideas carry over** to other resources: memory, network traffic, battery.
+
+## The running example: sorting
+
+**Input:** a sequence of $n$ numbers $\langle a_1, a_2, \dots, a_n \rangle$.
+
+**Output:** the same numbers rearranged into $\langle a'_1, a'_2, \dots, a'_n \rangle$ so that $a'_1 \le a'_2 \le \dots \le a'_n$.
+
+For example, `8 2 4 9 3 6` becomes `2 3 4 6 8 9`.
+
+## Insertion sort
+
+Insertion sort works the way most people sort playing cards in their hand. The left part of the array is already sorted. Take the next number (the **key**), slide every bigger number one place to the right, and drop the key into the gap.
+
+In the textbook's pseudocode (arrays start at index 1):
+
+```text
+INSERTION-SORT(A, n)        ⊳ sorts A[1 . . n]
+  for j ← 2 to n
+      key ← A[j]
+      i ← j − 1
+      while i > 0 and A[i] > key
+          A[i + 1] ← A[i]
+          i ← i − 1
+      A[i + 1] ← key
+```
+
+Step through it on the lecture's example. Watch the sky-coloured "sorted" part on the left grow by one each round:
+
+<SortVisualizer algorithm="insertion" initial={[8, 2, 4, 9, 3, 6]} />
+
+## How do we measure running time?
+
+The running time **depends on the input**:
+
+- An array that's already sorted is easier: the key never has to move.
+- A longer array takes longer than a short one. So we describe the running time as a function of the **input size** $n$, written $T(n)$.
+
+We usually want an **upper bound**, because everyone likes a guarantee: "this will never take longer than…".
+
+### Three kinds of analysis
+
+| Kind | What $T(n)$ means | How often we use it |
+| --- | --- | --- |
+| **Worst case** | the maximum time on *any* input of size $n$ | usually |
+| **Average case** | the expected time over *all* inputs of size $n$ | sometimes; needs an assumption about how inputs are distributed |
+| **Best case** | the minimum time on some input | almost never (it's "bogus") |
+
+Why is best case bogus? You can cheat with it. Take a terribly slow algorithm, add a check that answers instantly on one special input, and its best case looks amazing. That tells you nothing about how it behaves in real use.
+
+## Machine-independent time
+
+What is insertion sort's worst-case time? In seconds, it depends on the computer: a fast laptop beats a ten-year-old one. That's useless for comparing *algorithms*.
+
+<Callout tone="violet" label="The big idea">
+**Ignore machine-dependent constants**, and look at how $T(n)$ **grows** as $n \to \infty$.
+
+This is called **asymptotic analysis**: studying behaviour as the input gets very large.
+</Callout>
+
+The tool for this is **$\Theta$-notation** (theta). The full definition is in the next lessons. For now, the engineering version is enough:
+
+> **Drop the low-order terms and ignore the leading constant.**
+
+$$
+3n^3 + 90n^2 - 5n + 6046 = \Theta(n^3)
+$$
+
+When $n$ is big enough, the $n^3$ term is so much bigger than the others that they stop mattering. That's why, once $n$ is large enough, a $\Theta(n^2)$ algorithm **always** beats a $\Theta(n^3)$ algorithm, whatever the constants are.
+
+That doesn't mean we throw slower algorithms away. In real projects, a "slower" algorithm can still be the right choice for small inputs or simpler code. Asymptotic analysis is a tool to **organise your thinking**, not a rule that replaces it.
+
+## Insertion sort analysis
+
+**Worst case: the input is in reverse order.** Then every key has to travel all the way to the front. Inserting the $j$-th element costs about $j$ steps:
+
+$$
+T(n) = \sum_{j=2}^{n} \Theta(j) = \Theta(n^2) \qquad \text{(an arithmetic series)}
+$$
+
+**Average case: every order is equally likely.** On average a key only travels halfway, so each insertion costs about $j/2$:
+
+$$
+T(n) = \sum_{j=2}^{n} \Theta(j/2) = \Theta(n^2)
+$$
+
+Half the work is still $n^2$, because constants don't change the growth.
+
+So is insertion sort fast? **Moderately, for small $n$. Not at all for large $n$.**
+
+## Merge sort: recursion first
+
+```text
+MERGE-SORT(A[1 . . n])
+  1. If n = 1, done.
+  2. Recursively sort A[1 . . ⌈n/2⌉] and A[⌈n/2⌉ + 1 . . n].
+  3. "Merge" the two sorted lists.
+```
+
+The key subroutine is **MERGE**. Picture two sorted piles of cards, smallest on top. Compare the two top cards, take the smaller one, and repeat. In the lecture's example the piles are `2 7 13 20` and `1 9 11 12`, and the output comes out as `1 2 7 9 11 12 13 20`.
+
+Each comparison places exactly one element, so merging $n$ elements in total takes $\Theta(n)$ time: **linear time**.
+
+<MergeSortTree input={[8, 2, 4, 9, 3, 6, 1, 7]} />
+
+Now watch the real thing. The orange lane under the bars is the merge buffer:
+
+<SortVisualizer algorithm="merge" initial={[8, 2, 4, 9, 3, 6]} />
+
+## Analyzing merge sort
+
+Let $T(n)$ be the time to merge sort $n$ elements, and price each line:
+
+| Step | Cost |
+| --- | --- |
+| 1. If $n = 1$, done. | $\Theta(1)$ |
+| 2. Sort the two halves recursively. | $2T(n/2)$ |
+| 3. Merge the two sorted halves. | $\Theta(n)$ |
+
+Strictly, step 2 costs $T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor)$, but rounding up or down turns out not to matter for the growth rate. That gives a **recurrence**, an equation that defines $T$ in terms of itself on smaller inputs:
+
+$$
+T(n) =
+\begin{cases}
+\Theta(1) & \text{if } n = 1 \\
+2T(n/2) + \Theta(n) & \text{if } n > 1
+\end{cases}
+$$
+
+We'll usually leave out the base case $T(n) = \Theta(1)$ for small $n$, since it doesn't change the answer.
+
+### Solving it with a recursion tree
+
+Write the recurrence as $T(n) = 2T(n/2) + cn$, with $c$ a positive constant, and draw what each call costs:
+
+- The **root** does $cn$ work (the final merge) and makes two calls of size $n/2$.
+- Each of those does $cn/2$ work. Two of them: $cn$ in total for that level.
+- The next level has four calls of size $n/4$, each doing $cn/4$: again $cn$ in total.
+
+**Every level costs $cn$.** How many levels are there? You halve $n$ until you reach 1, which takes $\lg n$ halvings ($\lg$ means $\log_2$). So the height is $h = \lg n$, and at the bottom there are $n$ leaves costing $\Theta(n)$ altogether.
+
+$$
+\text{Total} = \underbrace{cn}_{\text{per level}} \times \underbrace{\lg n}_{\text{levels}} + \Theta(n) = \Theta(n \lg n)
+$$
+
+## Conclusions
+
+- $\Theta(n \lg n)$ grows more slowly than $\Theta(n^2)$.
+- So merge sort **asymptotically beats** insertion sort in the worst case.
+- In practice, merge sort beats insertion sort for $n > 30$ or so. Below that, insertion sort's simplicity wins.
+- Go test it out for yourself!
+
+<ApplicationsGrid>
+  <PracticalApplication title="Hybrid sorts in real libraries" tool="STD::SORT · TIMSORT">
+    Because insertion sort wins on tiny inputs, real sorting functions switch to it once a piece is small (around 16–32 items). C++'s `std::sort` and Python's TimSort both do this.
+  </PracticalApplication>
+  <PracticalApplication title="Capacity planning" tool="BACK-OF-ENVELOPE">
+    Engineers estimate "will this still work with 100× more users?" from the growth rate alone, long before any benchmark exists.
+  </PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,232 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { HuffmanVisualizer, ActivitySelector } from "@/components/mdx/AdvancedVisualizers";
+
+# Greedy Choice: Huffman Codes and Activity Selection
+
+*Greed is good (some of the time).* A greedy algorithm makes the choice that looks best **right now**. This lesson asks *when* that's safe, and proves it for two famous problems.
+
+Greedy algorithms **do not always** give optimal solutions. When they do, it's because the problem has two properties.
+
+## The elements of a greedy algorithm
+
+<Callout tone="violet" label="1. Greedy-choice property">
+A globally optimal solution can be reached by making a **locally optimal (greedy) choice**. When choices are considered, the one that looks best in the *current* problem is chosen, **without** considering the results of subproblems.
+</Callout>
+
+<Callout tone="sky" label="2. Optimal substructure">
+A problem has optimal substructure if an optimal solution to the problem **contains optimal solutions to its subproblems**. This property matters for both greedy algorithms and dynamic programming.
+</Callout>
+
+## Greedy algorithms vs. dynamic programming
+
+| Greedy algorithm | Dynamic programming |
+| --- | --- |
+| The best choice is made at each step, **and then** the remaining subproblem is solved. | A choice is made at each step, but it usually **depends on the solutions to subproblems**. |
+| The choice may depend on the choices so far, but **never** on future choices or on solutions to subproblems. | Every subproblem is solved before the choice that uses it. |
+| Usually works **top-down**, making one greedy choice after another and shrinking the problem each time. | Usually solved **bottom-up**, from the smallest subproblems up. |
+
+## Steps in designing a greedy algorithm
+
+1. Determine the **optimal substructure** of the problem.
+2. Develop a **recursive** solution.
+3. Prove that at any stage of the recursion, **one of the optimal choices is the greedy choice**. So it's always safe to make the greedy choice.
+4. Show that all but one of the subproblems left by the greedy choice are **empty**.
+5. Develop a **recursive algorithm** that implements the greedy strategy.
+6. Convert it to an **iterative** algorithm.
+
+### The shortcut
+
+1. Set up the optimization problem so that after one choice is made, there's **only one subproblem** left to solve.
+2. Prove there's always an optimal solution to the original problem that **makes the greedy choice**, so the greedy choice is always safe.
+3. Show that once the greedy choice is made, what's left is a subproblem with this property: combining an optimal solution to it with the greedy choice gives an **optimal solution** to the original problem.
+
+MSTs were the first example (previous lesson). Here are two more.
+
+## Huffman codes
+
+**Problem:** find an **optimal prefix code** for a set of characters in a file, where each character has a **frequency** of occurrence.
+
+### Prefix codes
+
+A **prefix code** is a code where **no codeword is a prefix of another codeword**. That makes decoding easy: read bits until they spell a codeword, output it, and start again. There's never any doubt where one character ends.
+
+- $\{0, 110, 101, 111, 1000, 1001\}$ **is** a prefix code.
+- $\{0, 110, 101, 111, 1010, 0111\}$ is **not** a prefix code: $0$ is a prefix of $0111$, and $101$ is a prefix of $1010$.
+
+**Optimality:** an optimal code yields a file with the **minimum number of bits**. If $d_T(c)$ is the depth of character $c$ in the code's tree (which equals the length of its codeword), the cost of the tree $T$ is
+
+$$
+B(T) = \sum_{c \in C} f(c)\, d_T(c)
+$$
+
+### Optimal codes are full binary trees
+
+An optimal code for a file is always represented by a **full binary tree**, in which every non-leaf node has **two children**. (If a node had only one child, you could remove it and shorten every codeword below it.)
+
+<Callout tone="mint" label="Claim">
+If $C$ is the alphabet and all the frequencies are positive, the tree for an optimal prefix code has exactly $|C|$ leaves, one for each letter, and exactly $|C| - 1$ internal nodes.
+</Callout>
+
+**Proof by induction.**
+
+- **$|C| = 1$:** one letter needs 1 leaf node and 0 internal nodes. ✓
+- **Hypothesis:** for $|C| < n$, the full binary tree for an optimal prefix code has $|C|$ leaves and $|C| - 1$ internal nodes.
+- **Step:** take a full binary tree $T$ for $|C|$ letters and add another leaf $L$ in one of two ways: either add a **new root** $R$ with $L$ and the old root as its children, or replace a leaf $N$ by an **internal node** with $L$ and $N$ as its children. Either way the tree now has $|C| + 1$ leaves and $|C|$ internal nodes. ✓
+
+### Creating a Huffman code
+
+```text
+HUFFMAN(C)
+    n = |C|
+    Q = C                        ⊳ min-heap keyed on frequency: O(n) to build
+    for i = 1 to n − 1           ⊳ n − 1 merges, O(lg n) each: O(n lg n)
+        allocate a new node z
+        z.left  = x = EXTRACT-MIN(Q)
+        z.right = y = EXTRACT-MIN(Q)
+        z.f = x.f + y.f
+        INSERT(Q, z)
+    return EXTRACT-MIN(Q)        ⊳ the root of the tree
+```
+
+Here's an example with six characters. Step through it and watch the forest shrink by one tree at every merge:
+
+<HuffmanVisualizer chars={["A", "B", "C", "D", "E", "F"]} freqs={[45, 13, 12, 16, 9, 5]} />
+
+**Running time:** $O(n)$ to build the heap, plus $n - 1$ iterations of $O(\lg n)$ each, so $O(n \lg n)$.
+
+### The greedy-choice property of Huffman codes
+
+<Callout tone="violet" label="Lemma">
+Let $x$ and $y$ be the two characters in $C$ with the **lowest frequencies**. Then there's an optimal prefix code for $C$ in which the codewords for $x$ and $y$ have the **same length** and differ only in the **last bit**.
+</Callout>
+
+**Idea of the proof:** take a tree $T$ for any optimal prefix code, and change it into another optimal tree where $x$ and $y$ are **sibling leaves of maximum depth**. Then their codewords have the same length and differ only in the last bit.
+
+Let $a$ and $b$ be two characters that are sibling leaves of maximum depth in $T$. Assume $f[a] \le f[b]$ and $f[x] \le f[y]$. Since $x$ and $y$ have the two lowest frequencies, $f[x] \le f[a]$ and $f[y] \le f[b]$.
+
+**Swap $a$ and $x$** in $T$ to get $T'$. Only those two leaves moved, so
+
+$$
+\begin{aligned}
+B(T) - B(T') &= \sum_{c \in C} f(c)\, d_T(c) - \sum_{c \in C} f(c)\, d_{T'}(c) \\
+&= f[x]\, d_T(x) + f[a]\, d_T(a) - f[x]\, d_{T'}(x) - f[a]\, d_{T'}(a) \\
+&= f[x]\, d_T(x) + f[a]\, d_T(a) - f[x]\, d_T(a) - f[a]\, d_T(x) \\
+&= \big(f[a] - f[x]\big)\big(d_T(a) - d_T(x)\big) \;\ge\; 0
+\end{aligned}
+$$
+
+Both brackets are $\ge 0$: $x$ has the lower frequency, and $a$ is at maximum depth.
+
+**Swap $b$ and $y$** in $T'$ to get $T''$. In the same way, $B(T') - B(T'') \ge 0$. So $B(T'') \le B(T)$. But $T$ is optimal, so $B(T) \le B(T'')$, and therefore $B(T'') = B(T)$. **$T''$ is an optimal tree in which $x$ and $y$ are sibling leaves of maximum depth.** ∎
+
+So merging the two smallest first is **safe**.
+
+### The optimal-substructure property of Huffman codes
+
+<Callout tone="sky" label="Lemma">
+Let $x$ and $y$ be two characters in $C$ with minimum frequency. Let $C' = C - \{x, y\} \cup \{z\}$, where $z$ is a new character with $f[z] = f[x] + f[y]$. Let $T'$ be any tree for an optimal prefix code for $C'$. Then the tree $T$, obtained from $T'$ by replacing the leaf $z$ with an internal node whose children are $x$ and $y$, is an optimal prefix code for $C$.
+</Callout>
+
+**Proof.** First, write $B(T)$ in terms of $B(T')$. For every $c \in C - \{x, y\}$, $d_T(c) = d_{T'}(c)$, so those terms are the same. And $d_T(x) = d_T(y) = d_{T'}(z) + 1$, so
+
+$$
+f[x]\, d_T(x) + f[y]\, d_T(y) = \big(f[x] + f[y]\big)\big(d_{T'}(z) + 1\big) = f[z]\, d_{T'}(z) + f[x] + f[y]
+$$
+
+Thus $B(T) = B(T') + f[x] + f[y]$, or equivalently $B(T') = B(T) - f[x] - f[y]$.
+
+**Now by contradiction.** Suppose $T$ is *not* optimal for $C$. Then there's a tree $T''$ with $B(T'') < B(T)$. By the previous lemma, we can assume without loss of generality that $x$ and $y$ are siblings in $T''$. Let $T'''$ be $T''$ with the common parent of $x$ and $y$ replaced by a leaf $z$ with $f[z] = f[x] + f[y]$. Then
+
+$$
+B(T''') = B(T'') - f[x] - f[y] < B(T) - f[x] - f[y] = B(T')
+$$
+
+That contradicts $T'$ being optimal for $C'$. So $T$ must be optimal for $C$. ∎
+
+Together, the two lemmas prove that **HUFFMAN produces an optimal prefix code**.
+
+## Activity selection (interval scheduling)
+
+**Problem.** Let $S = \{a_1, a_2, \dots, a_n\}$ be a set of $n$ proposed **activities** that want to use the same resource, such as a lecture hall. Only one activity can use the resource at a time. Activity $a_i$ has a **start time** $s_i$ and a **finish time** $f_i$, where $0 \le s_i < f_i < \infty$, and it uses the resource during $[s_i, f_i)$.
+
+Activities $a_i$ and $a_j$ are **compatible** if their intervals $[s_i, f_i)$ and $[s_j, f_j)$ don't overlap. The **activity-selection problem** is to select a **largest** subset of mutually compatible activities.
+
+### The DP view
+
+Let $S_{ij} = \{\, a_k \in S : f_i \le s_k < f_k \le s_j \,\}$ be the activities that can start after $a_i$ finishes and finish before $a_j$ starts. Add fake activities $a_0$ and $a_{n+1}$ with $f_0 = 0$ and $s_{n+1} = \infty$. Then $S = S_{0, n+1}$.
+
+Let $c[i, j]$ be the size of a largest set of mutually compatible activities in $S_{ij}$. If some activity $a_k$ is in such a set, then $c[i, j] = c[i, k] + c[k, j] + 1$, so
+
+$$
+c[i, j] =
+\begin{cases}
+0 & \text{if } S_{ij} = \emptyset \\
+\max\limits_{a_k \in S_{ij}} \{\, c[i, k] + c[k, j] + 1 \,\} & \text{if } S_{ij} \ne \emptyset
+\end{cases}
+$$
+
+That works, but it's $\Theta(n^3)$. The greedy choice does much better.
+
+### The greedy choice
+
+<Callout tone="violet" label="Theorem">
+Consider any nonempty subproblem $S_{ij}$, and let $a_m$ be the activity in $S_{ij}$ with the **earliest finish time**: $f_m = \min\{\, f_k : a_k \in S_{ij} \,\}$. Then:
+
+1. $a_m$ is used in **some** maximum-size subset of mutually compatible activities of $S_{ij}$.
+2. The subproblem $S_{im}$ is **empty**, so choosing $a_m$ leaves only $S_{mj}$ to solve.
+</Callout>
+
+**Proof of the first part.** Let $A_{ij}$ be a maximum-size subset of compatible activities of $S_{ij}$, sorted by finish time, and let $a_k$ be its first activity. If $a_k = a_m$, we're done. Otherwise, build $A'_{ij} = A_{ij} - \{a_k\} \cup \{a_m\}$. The activities in $A'_{ij}$ are disjoint, because those in $A_{ij}$ are, $a_k$ is the first one in $A_{ij}$ to finish, and $f_m \le f_k$. $A'_{ij}$ has the same number of activities as $A_{ij}$, so it's also maximum-size, and it contains $a_m$.
+
+**Proof of the second part.** Suppose $S_{im}$ is nonempty. Then there's an activity $a_k$ with $f_i \le s_k < f_k \le s_m < f_m$. But then $a_k$ is also in $S_{ij}$, and it finishes earlier than $a_m$, which contradicts our choice of $a_m$. So $S_{im}$ is empty. ∎
+
+So the **greedy solution** is: take the activity that **finishes first**, throw away everything that clashes with it, and repeat on what's left.
+
+### Recursive and iterative algorithms
+
+```text
+RECURSIVE-ACTIVITY-SELECTOR(s, f, i, n)
+    m = i + 1
+    while m ≤ n and s[m] < f[i]        ⊳ find the first activity in S(i, n+1)
+        do m = m + 1
+    if m ≤ n
+        then return {a_m} ∪ RECURSIVE-ACTIVITY-SELECTOR(s, f, m, n)
+        else return ∅
+```
+
+```text
+GREEDY-ACTIVITY-SELECTOR(s, f)      ⊳ activities already sorted by finish time
+    n = length[s]
+    A = {a_1}
+    i = 1
+    for m = 2 to n
+        do if s[m] ≥ f[i]
+            then A = A ∪ {a_m}
+                 i = m
+    return A
+```
+
+Both run in $\Theta(n)$ time, once the activities are sorted by finish time, which takes $O(n \lg n)$.
+
+Step through the textbook's 11 activities:
+
+<ActivitySelector />
+
+<ApplicationsGrid>
+  <PracticalApplication title="Booking rooms and machines" tool="SCHEDULING">
+    "Fit in as many meetings as possible" in one room is activity selection. "Use as few rooms as possible for all of them" is its cousin, interval partitioning, which is also solved greedily.
+  </PracticalApplication>
+  <PracticalApplication title="Compression everywhere" tool="DEFLATE · JPEG · MP3">
+    DEFLATE (used in ZIP, gzip and PNG) builds a fresh Huffman tree for each block of data. The proofs above are why it never wastes bits on the coding itself.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 435, title: "Non-overlapping Intervals", slug: "non-overlapping-intervals", why: "Activity selection: keep the most, remove the rest. Sort by end time.", difficulty: "Medium" },
+    { id: 452, title: "Minimum Number of Arrows to Burst Balloons", slug: "minimum-number-of-arrows-to-burst-balloons", why: "The same earliest-finish greedy choice, in disguise.", difficulty: "Medium" },
+    { id: 1167, title: "Minimum Cost to Connect Sticks", slug: "minimum-cost-to-connect-sticks", why: "Huffman's merge-the-two-smallest loop, where the cost is B(T).", difficulty: "Medium" },
+  ]}
+/>

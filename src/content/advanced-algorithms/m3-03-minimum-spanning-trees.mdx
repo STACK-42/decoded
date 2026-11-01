@@ -1,0 +1,219 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Minimum Spanning Trees: Prim and Kruskal
+
+This lesson proves that greedy algorithms **really do** find a minimum spanning tree, and builds the two classic ones: **Prim's** and **Kruskal's**.
+
+## Graphs (review)
+
+A **graph** $G = (V, E)$ is
+
+- a set $V$ of **vertices** (singular: vertex), and
+- a set $E \subseteq V \times V$ of **edges**.
+
+In an **undirected** graph, $(u, v)$ and $(v, u)$ are the same edge. In a **directed** graph (digraph), they're different.
+
+In either case, $|E| = O(V^2)$. Moreover, if $G$ is connected, then $|E| \ge |V| - 1$, which implies that $\lg |E| = \Theta(\lg V)$. (We often write $V$ and $E$ for $|V|$ and $|E|$.)
+
+### Adjacency-matrix representation
+
+The **adjacency matrix** of $G = (V, E)$, where $V = \{1, 2, \dots, n\}$, is the matrix $A[1 \dots n, 1 \dots n]$ given by
+
+$$
+A[i, j] =
+\begin{cases}
+1 & \text{if } (i, j) \in E \\
+0 & \text{if } (i, j) \notin E
+\end{cases}
+$$
+
+For the directed graph with edges $1 \to 2$, $1 \to 3$, $2 \to 3$ and $4 \to 3$:
+
+| A | 1 | 2 | 3 | 4 |
+| --- | --- | --- | --- | --- |
+| **1** | 0 | 1 | 1 | 0 |
+| **2** | 0 | 0 | 1 | 0 |
+| **3** | 0 | 0 | 0 | 0 |
+| **4** | 0 | 0 | 1 | 0 |
+
+It takes $\Theta(V^2)$ storage, so it's a **dense** representation.
+
+### Adjacency-list representation
+
+An **adjacency list** of a vertex $v \in V$ is the list $Adj[v]$ of the vertices adjacent to $v$. For the same graph:
+
+$$
+Adj[1] = \{2, 3\} \qquad Adj[2] = \{3\} \qquad Adj[3] = \{\} \qquad Adj[4] = \{3\}
+$$
+
+For undirected graphs, $|Adj[v]| = degree(v)$. For digraphs, $|Adj[v]| = \text{out-degree}(v)$.
+
+**Handshaking lemma:** $\sum_{v \in V} degree(v) = 2|E|$ for undirected graphs, since every edge is counted once from each end. So adjacency lists use $\Theta(V + E)$ storage, which makes them a **sparse** representation (good for most graphs in practice).
+
+## Minimum spanning trees
+
+**Input:** a connected, undirected graph $G = (V, E)$ with a weight function $w : E \to \mathbb{R}$. For simplicity, assume all edge weights are **distinct**. (The textbook covers the general case.)
+
+**Output:** a **spanning tree** $T$, a tree that connects all the vertices, of **minimum weight**:
+
+$$
+w(T) = \sum_{(u, v) \in T} w(u, v)
+$$
+
+## Optimal substructure
+
+Take an MST $T$ (the other edges of $G$ aren't shown). **Remove any edge $(u, v) \in T$.** Then $T$ splits into two subtrees, $T_1$ and $T_2$.
+
+<Callout tone="violet" label="Theorem (optimal substructure)">
+The subtree $T_1$ is an MST of $G_1 = (V_1, E_1)$, the subgraph of $G$ **induced** by the vertices of $T_1$:
+
+$$
+V_1 = \text{vertices of } T_1, \qquad E_1 = \{\, (x, y) \in E : x, y \in V_1 \,\}
+$$
+
+Similarly for $T_2$.
+</Callout>
+
+**Proof (cut and paste):** $w(T) = w(u, v) + w(T_1) + w(T_2)$. If $T_1'$ were a lower-weight spanning tree than $T_1$ for $G_1$, then $T' = \{(u, v)\} \cup T_1' \cup T_2$ would be a lower-weight spanning tree than $T$ for $G$, which is impossible. ∎
+
+**Do we also have overlapping subproblems?** Yes. Great, then dynamic programming may work! But MSTs have **another powerful property** that leads to an even more efficient algorithm.
+
+## The hallmark of greedy algorithms
+
+<Callout tone="mint" label="Greedy-choice property">
+A **locally optimal** choice is **globally optimal**.
+</Callout>
+
+<Callout tone="violet" label="Theorem">
+Let $T$ be the MST of $G = (V, E)$, and let $A \subseteq V$. Suppose that $(u, v) \in E$ is the **least-weight edge connecting $A$ to $V - A$**. Then $(u, v) \in T$.
+</Callout>
+
+**Proof.** Suppose $(u, v) \notin T$. **Cut and paste.**
+
+- $T$ is a spanning tree, so it contains a unique simple path from $u$ to $v$.
+- $u \in A$ and $v \in V - A$, so somewhere along that path an edge crosses from $A$ to $V - A$.
+- **Swap** $(u, v)$ with the first such edge on the path. The result $T'$ is still a spanning tree, and since $(u, v)$ is the *least-weight* edge crossing, $T'$ weighs **less** than $T$.
+- That contradicts $T$ being minimum. ∎
+
+### The same idea, in terms of cuts and safe edges
+
+The textbook says it slightly more generally:
+
+- A **cut** $(S, V - S)$ of $G$ is a partition of $V$ into two parts.
+- An edge $(u, v)$ **crosses** the cut if one endpoint is in $S$ and the other is in $V - S$.
+- A cut **respects** a set $A$ of edges if no edge in $A$ crosses it.
+- An edge is a **light edge** crossing a cut if its weight is the minimum of all the edges crossing the cut.
+- If $A$ is a subset of some MST, an edge $(u, v)$ is **safe** for $A$ if $A \cup \{(u, v)\}$ is still a subset of some MST.
+
+<Callout tone="sky" label="Theorem (safe edges)">
+Let $A$ be a subset of $E$ that's included in some MST of $G$, and let $(S, V - S)$ be any cut of $G$ that respects $A$. If $(u, v)$ is a **light edge** crossing $(S, V - S)$, then $(u, v)$ is **safe** for $A$.
+</Callout>
+
+**Proof.** Let $T$ be an MST that includes $A$.
+
+- If $(u, v) \in T$, then it's safe for $A$.
+- If not, then $T$'s path from $u$ to $v$ contains an edge $(x, y)$ that crosses the cut, and $T \cup \{(u, v)\}$ has a cycle.
+- Build $T' = T - \{(x, y)\} \cup \{(u, v)\}$. It's a spanning tree that includes $A$.
+- $w(T') = w(T) - w(x, y) + w(u, v)$. Since $(u, v)$ is a light edge, $w(u, v) \le w(x, y)$, so $w(T') \le w(T)$.
+- $T$ is minimum, so $w(T') = w(T)$, and $T'$ is also an MST. So $(u, v)$ is safe for $A$. ∎
+
+**Corollary.** If $C$ is one connected component (tree) of the forest $G_A = (V, A)$, and $(u, v)$ is a light edge connecting $C$ to another tree of $G_A$, then $(u, v)$ is safe for $A$. (Use the cut $(V_C, V - V_C)$: it respects $A$, and $(u, v)$ is a light edge for it.)
+
+Both algorithms below are just two ways of picking light edges.
+
+## Prim's algorithm
+
+Prim's algorithm keeps the edges in $A$ as **one single tree**. The tree starts from an arbitrary root and grows until it spans all the vertices. At each step it adds a **light edge** connecting the tree to a vertex not yet in it.
+
+**Idea:** maintain $V - A$ as a **priority queue** $Q$. Key each vertex in $Q$ with the weight of the least-weight edge connecting it to a vertex in $A$.
+
+```text
+Q ← V
+key[v] ← ∞ for all v ∈ V
+key[s] ← 0 for some arbitrary s ∈ V
+while Q ≠ ∅
+    do u ← EXTRACT-MIN(Q)
+       for each v ∈ Adj[u]
+           do if v ∈ Q and w(u, v) < key[v]
+               then key[v] ← w(u, v)        ⊳ DECREASE-KEY
+                    π[v] ← u
+```
+
+At the end, $\{(v, \pi[v])\}$ forms the MST.
+
+<MstVisualizer algorithm="prim" />
+
+### Analysis of Prim
+
+- Building $Q$ and setting the keys: $\Theta(V)$.
+- The `while` loop runs $|V|$ times, and each time does one EXTRACT-MIN.
+- The `for` loop runs $degree(u)$ times for each $u$. By the handshaking lemma, that's $\Theta(E)$ implicit DECREASE-KEYs in total.
+
+$$
+\text{Time} = \Theta(V) \cdot T_{\text{EXTRACT-MIN}} + \Theta(E) \cdot T_{\text{DECREASE-KEY}}
+$$
+
+| $Q$ | $T_{\text{EXTRACT-MIN}}$ | $T_{\text{DECREASE-KEY}}$ | Total |
+| --- | --- | --- | --- |
+| array | $O(V)$ | $O(1)$ | $O(V^2)$ |
+| binary heap | $O(\lg V)$ | $O(\lg V)$ | $O(E \lg V)$ |
+| Fibonacci heap | $O(\lg V)$ amortized | $O(1)$ amortized | $O(E + V \lg V)$ worst case |
+
+## Kruskal's algorithm
+
+Kruskal's algorithm builds a **forest** of trees and keeps joining them:
+
+- Start with every vertex as its own tiny tree.
+- Repeatedly **connect two trees**, always choosing the **least-weight** edge that does so, until all the nodes are covered.
+
+If $C_1$ and $C_2$ are the two trees joined by $(u, v)$, then $(u, v)$ is a light edge connecting $C_1$ to some other tree, so by the corollary it's **safe**. Kruskal's is a greedy algorithm because at each step it adds the edge of **least possible weight**.
+
+```text
+MST-KRUSKAL(G, w)
+    A = ∅
+    for each vertex v in V[G]
+        do MAKE-SET(v)
+    sort the edges of E in nondecreasing order by weight w
+    for each edge (u, v) in E, taken in nondecreasing order by weight
+        do if FIND-SET(u) ≠ FIND-SET(v)     ⊳ u and v are in different trees
+            then A = A ∪ {(u, v)}
+                 UNION(u, v)
+    return A
+```
+
+It uses the **disjoint-set** (union-find) data structure to tell whether two vertices are already in the same tree.
+
+<MstVisualizer algorithm="kruskal" />
+
+### Analysis of Kruskal
+
+$$
+T(n) = \underbrace{O(1)}_{A = \emptyset} + \underbrace{O(V)}_{\text{MAKE-SET}} + \underbrace{O(E \lg E)}_{\text{sorting}} + \underbrace{O(E \lg V)}_{\text{FIND / UNION}}
+$$
+
+So Kruskal is $O(E \lg E)$. You could also say $O(E \lg V)$, because $E \le V^2$, so $\lg E \le 2 \lg V$.
+
+## MST algorithms, summed up
+
+- **Prim's:** $O(E \lg V)$ with a binary heap.
+- **Kruskal's:** uses the disjoint-set data structure, and runs in $O(E \lg V)$.
+- **Best to date:** a randomized algorithm (Karger, Klein and Tarjan, 1993) runs in $O(V + E)$ **expected** time.
+
+<ApplicationsGrid>
+  <PracticalApplication title="Designing networks" tool="CABLES · PIPES · ROADS">
+    Connecting every building with the least total cable, pipe or road is an MST problem. That's where Borůvka first studied it, for Moravia's electricity network in 1926.
+  </PracticalApplication>
+  <PracticalApplication title="Clustering" tool="MACHINE LEARNING · IMAGES">
+    Run Kruskal but stop before the last $k - 1$ edges, and you get $k$ clusters with the biggest possible gaps between them. This is single-linkage clustering, used in image segmentation.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 1584, title: "Min Cost to Connect All Points", slug: "min-cost-to-connect-all-points", why: "An MST on a complete graph: try both Prim (array version) and Kruskal.", difficulty: "Medium" },
+    { id: 1135, title: "Connecting Cities With Minimum Cost", slug: "connecting-cities-with-minimum-cost", why: "Kruskal with union-find, plus checking that the graph is connected.", difficulty: "Medium" },
+    { id: 684, title: "Redundant Connection", slug: "redundant-connection", why: "The union-find test Kruskal uses: the first edge whose ends are already in the same tree.", difficulty: "Medium" },
+  ]}
+/>

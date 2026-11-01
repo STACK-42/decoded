@@ -1,0 +1,93 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SecretKeyFlow } from "@/components/mdx/CipherVisualizers";
+
+# What Is Cryptography?
+
+Everything from the last module was preparation for this one. Number theory gives us operations that are easy to do and hard to undo without a secret, and cryptography puts them to work.
+
+## The vocabulary
+
+- **Cryptography** (from the Greek for "hidden writing") is the study of how to conceal information in a ciphertext, so that only the legitimate users holding the key can recover it.
+- **Cryptanalysis** is the science of recovering information from ciphertext without knowing the key.
+- **Cryptology** is the broader field that covers both.
+
+Modern cryptography solves two main security problems:
+
+1. **Privacy** stops unauthorised parties from reading messages sent over a public channel. The sender can be sure that only the intended receiver can read it.
+2. **Authentication** stops unauthorised parties from injecting messages. The receiver can be sure who sent it.
+
+Cryptanalysis also helped create the modern computer. At Bletchley Park in the Second World War, Alan Turing helped design the Bombe, an electromechanical machine for breaking Enigma, and Tommy Flowers built Colossus, one of the first programmable electronic computers, to attack another German cipher.
+
+## Two kinds of system
+
+Cryptosystems split into two families:
+
+- **Secret-key** (or symmetric) systems use the same key to encrypt and decrypt.
+- **Public-key** (or asymmetric) systems use a public key to encrypt and a different private key to decrypt.
+
+## The notation
+
+A cryptosystem has these parts:
+
+- $M$, the **message space**: the plaintext strings to be encrypted.
+- $C$, the **ciphertext space**: the encrypted strings.
+- $K$, the **key space**: the possible keys, including an encryption key $e_k$ and a decryption key $d_k$.
+- $E$, the encryption algorithm: $E_{e_k}(m) = c$.
+- $D$, the decryption algorithm: $D_{d_k}(c) = m$.
+
+The two algorithms have to undo each other, for every message:
+
+$$
+D_{d_k}(E_{e_k}(m)) = m
+$$
+
+## Secret-key systems
+
+In a secret-key system, $e_k = d_k = k$. Anyone who can encrypt can also decrypt, so the key must travel to the receiver over a separate secure channel. Follow one message through:
+
+<SecretKeyFlow />
+
+The ciphertext crosses the insecure channel in full view, so all the security rests on the key.
+
+## In Python
+
+The notation translates directly into two functions that undo each other:
+
+```python
+def E(k, m):
+    return "".join(chr((ord(ch) - 65 + k) % 26 + 65) for ch in m)
+
+def D(k, c):
+    return E(-k, c)
+
+print(E(3, "HELLO"))  # KHOOR
+print(D(3, E(3, "HELLO")))  # HELLO
+```
+
+Python's standard library warns you about randomness here. Use `secrets` for keys, and never `random`, because `random` is designed to be reproducible, which is exactly what a key must not be:
+
+```python
+import secrets
+
+print(len(secrets.token_bytes(16)))  # 16
+```
+
+## In machine learning
+
+Training data and model weights are both valuable, and often sensitive, so ML systems rely on these same guarantees:
+
+- **Privacy.** Medical or financial training data is encrypted at rest and in transit. Calls to a hosted model travel over TLS.
+- **Authentication.** Signed model files show that weights came from the claimed source.
+
+Researchers have also pointed ML at the problem itself. In 2016, Abadi and Andersen at Google trained neural networks to invent their own encryption so that a third network couldn't read it. It's an interesting result, though nobody uses learned ciphers to protect real data, because they come with no security proof.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Loading any HTTPS page" tool="TLS">
+TLS uses both families: public-key methods agree on a shared secret, and a fast secret-key cipher then encrypts the actual traffic.
+</PracticalApplication>
+<PracticalApplication title="Locking your disk" tool="FileVault, BitLocker">
+Full-disk encryption is secret-key cryptography, where the same key both writes and reads your data.
+</PracticalApplication>
+</ApplicationsGrid>

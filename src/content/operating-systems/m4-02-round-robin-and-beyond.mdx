@@ -1,0 +1,234 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CpuScheduler, QuantumSwitches, MlfqDemo, LittlesLaw } from "@/components/mdx/OsVisualizers";
+
+# Round Robin, Multilevel Queues and Choosing a Scheduler
+
+SJF gives the best average waiting time, but on a time-shared computer people care about something else: does the system **respond** quickly? This lesson covers round robin, the algorithm built for that, then combines algorithms into multilevel queues, looks at scheduling with many CPUs, and asks how you'd pick the right algorithm at all.
+
+## Round Robin (RR)
+
+- Each process gets a small unit of CPU time, a **time quantum** $q$, usually **10–100 milliseconds**.
+- When the quantum runs out, the process is **preempted** and added to the **end of the ready queue**.
+- With $n$ processes in the ready queue and quantum $q$:
+  - each process gets $1/n$ of the CPU time, in chunks of at most $q$ time units,
+  - **no process waits more than $(n - 1)\,q$ time units** for its next turn.
+- A **timer interrupts** every $q$ to schedule the next process.
+
+**Performance:**
+
+- **$q$ large** → RR behaves like **FIFO** (FCFS).
+- **$q$ small** → lots of switching. $q$ must be **large compared to the context-switch time**, or the overhead is too high.
+
+### Example: q = 4
+
+| Process | Burst time |
+| --- | --- |
+| P1 | 24 |
+| P2 | 3 |
+| P3 | 3 |
+
+Chart: P1 0–4, P2 4–7, P3 7–10, then P1 runs alone in slices 10–14, 14–18, 18–22, 22–26, 26–30.
+
+**Average waiting time = (6 + 4 + 7) / 3 = 5.66.**
+
+Typically RR has a **higher average turnaround** than SJF, but **better response**: every process gets the CPU quickly.
+
+### Example: q = 20
+
+| Process | Burst time |
+| --- | --- |
+| P1 | 53 |
+| P2 | 17 |
+| P3 | 68 |
+| P4 | 24 |
+
+Chart: P1 0–20, P2 20–37, P3 37–57, P4 57–77, P1 77–97, P3 97–117, P4 117–121, P1 121–134, P3 134–154, P3 154–162.
+
+**Average waiting time = (81 + 20 + 94 + 97) / 4 = 73.**
+
+<CpuScheduler presets="rr4,rr20" algos="rr,fcfs,sjf" />
+
+Try the q = 4 example and drag the quantum up past 24: RR turns into FCFS, and the average waiting time jumps to 17.
+
+### Time quantum and context-switch time
+
+<QuantumSwitches />
+
+**Turnaround time varies with the time quantum**, and not in a simple way. A rule of thumb: **80% of CPU bursts should be shorter than $q$**.
+
+## Multilevel queue
+
+The **ready queue is partitioned into separate queues**, for example:
+
+- **foreground** (interactive) processes,
+- **background** (batch) processes.
+
+- A process stays **permanently** in its queue.
+- **Each queue has its own scheduling algorithm**: for example, foreground uses **RR** and background uses **FCFS**.
+- Scheduling must also be done **between** the queues:
+  - **Fixed-priority** scheduling: serve everything in the foreground queue, then the background. There's a **possibility of starvation**.
+  - **Time slice**: each queue gets a share of the CPU time to schedule among its processes, e.g. **80%** to foreground in RR and **20%** to background in FCFS.
+
+A typical layout, from highest to lowest priority: **system processes**, **interactive processes**, **interactive editing processes**, **batch processes**, **student processes**.
+
+## Multilevel feedback queue
+
+In a **multilevel feedback queue**, a process **can move** between the queues. **Aging** can be implemented this way: a process that has waited too long in a low queue moves up.
+
+A multilevel-feedback-queue scheduler is defined by:
+
+- the **number of queues**,
+- the **scheduling algorithm** for each queue,
+- the method for deciding when to **upgrade** a process,
+- the method for deciding when to **demote** a process,
+- the method for deciding **which queue a process enters** when it needs service.
+
+### Example
+
+Three queues:
+
+- **Q0**: RR with a time quantum of **8 ms**,
+- **Q1**: RR with a time quantum of **16 ms**,
+- **Q2**: **FCFS**.
+
+Scheduling:
+
+- A **new job** enters **Q0**, which is served FCFS. When it gets the CPU, it gets **8 ms**. If it doesn't finish in 8 ms, it's **moved to Q1**.
+- In **Q1** the job is again served FCFS and gets **16 more ms**. If it still doesn't finish, it's preempted and **moved to Q2**.
+
+So short, interactive jobs get fast service at the top, and long CPU-bound jobs drift to the bottom.
+
+<MlfqDemo />
+
+## Multiple-processor scheduling
+
+With **multiple CPUs**, **load sharing** becomes possible, but CPU scheduling gets more complex.
+
+- **Homogeneous processors**: any processor can run any process from the ready queue.
+- **Asymmetric multiprocessing**: only **one master** processor accesses the system data structures; the others run only user code. Simple, since only one CPU touches the shared data.
+- **Symmetric multiprocessing (SMP)**: **each processor schedules itself**. All processes are either in a **common** ready queue, or each processor has its **own private** ready queue. This is **currently the most common**.
+
+### Processor affinity
+
+A process has **affinity** for the processor it's currently running on: that processor's **cache** is full of the process's data. Moving it to another CPU means refilling a cold cache.
+
+- **Soft affinity**: the OS **tries** to keep a process on the same processor, but doesn't promise.
+- **Hard affinity**: the process can say it **must** stay on a given set of processors.
+- Variations include **processor sets**.
+
+On **NUMA** systems, where some memory is closer to some CPUs, the **memory-placement** algorithms can consider affinity too: put a process's memory near the CPU it runs on.
+
+### Load balancing
+
+On SMP, the workload must be kept **balanced** across all CPUs to get the full benefit of having several.
+
+- **Load balancing** tries to keep the workload **evenly distributed** across all processors.
+- It's only **necessary** when each processor has its **own private** ready queue. (With one common queue, an idle CPU simply takes the next process.)
+- **Push migration**: a task **periodically checks** the load on each processor and, if it finds an imbalance, **pushes** tasks from overloaded CPUs to others.
+- **Pull migration**: an **idle** processor **pulls** a waiting task from a busy processor.
+
+Load balancing and affinity **pull in opposite directions**: moving a process to balance load loses the warm cache.
+
+## Algorithm evaluation
+
+How do you choose a CPU-scheduling algorithm for a particular OS? There are many algorithms, each with its own parameters, so **choosing is hard**. First decide the **criteria** (for example: "maximize CPU utilization, with a maximum response time of 1 second"), then **evaluate** the algorithms against them.
+
+Evaluation methods:
+
+1. **Deterministic modeling**
+2. **Queueing models**
+3. **Simulations**
+4. **Implementation**
+
+### Deterministic modeling
+
+A type of **analytic evaluation**: take a **particular, predetermined workload** and compute the performance of each algorithm on it. Consider 5 processes arriving at time 0:
+
+| Process | Burst time |
+| --- | --- |
+| P1 | 10 |
+| P2 | 29 |
+| P3 | 3 |
+| P4 | 7 |
+| P5 | 12 |
+
+For each algorithm, calculate the average waiting time:
+
+- **FCFS: 28 ms**
+- **Non-preemptive SJF: 13 ms**
+- **RR with quantum = 10: 23 ms**
+
+Check them yourself: switch between the three algorithms on this workload (set the quantum to 10 for RR):
+
+<CpuScheduler presets="eval" algos="fcfs,sjf,rr" />
+
+Deterministic modeling is **simple and fast**, but it needs **exact numbers** as input, and its answers apply **only to those cases**.
+
+### Queueing models
+
+Usually there's **no fixed set of processes** to model. But the **distribution** of CPU and I/O bursts can be **measured** and then estimated.
+
+- It describes the **arrival of processes**, and the CPU and I/O bursts, **probabilistically**: commonly as an **exponential** distribution described by its **mean**.
+- From that, compute **average throughput, utilization, waiting time**, and so on.
+- The computer system is described as a **network of servers**, each with a **queue** of waiting processes. Knowing the **arrival rates** and **service rates**, we can compute utilization, average queue length, average wait time, etc.
+
+**Little's formula:**
+
+- $n$ = average queue length,
+- $W$ = average waiting time in the queue,
+- $\lambda$ = average arrival rate into the queue.
+
+In **steady state**, processes leaving the queue must equal processes arriving, so:
+
+$$
+n = \lambda \times W
+$$
+
+It's valid for **any** scheduling algorithm and **any** arrival distribution. For example, if on average **7 processes arrive per second**, and there are normally **14 processes in the queue**, then the average wait per process is $W = n / \lambda = 14 / 7 = $ **2 seconds**.
+
+<LittlesLaw />
+
+### Simulations
+
+Queueing analysis is useful but **limited**: the math of complex algorithms and distributions is hard, so arrival and service distributions are often simplified until the math works, which makes the results less accurate.
+
+**Simulations are more accurate:**
+
+- a **programmed model** of the computer system,
+- **data structures** represent the system's components,
+- the **clock is a variable**,
+- the simulation gathers **statistics** about algorithm performance.
+
+The data to drive a simulation comes from:
+
+- a **random-number generator**, following probabilities,
+- distributions defined **mathematically** or **empirically**,
+- **trace tapes**: recordings of sequences of **real events** on real systems, replayed through each algorithm.
+
+### Implementation
+
+Even simulations are **expensive** and of **limited accuracy**: a more detailed simulation gives more accurate results, but takes more computer time.
+
+The **only completely accurate** way is to **implement** the new scheduler and test it on **real systems**. But:
+
+- there's the **cost** of coding the algorithm and the **risk** of how users react,
+- **the environment changes**: users adapt to the scheduler (for example, splitting work into small jobs if small jobs get priority).
+
+The **most flexible** schedulers can be **altered by system managers** and tuned for a specific set of applications, using **APIs** that change the priority of a process or thread. But again, environments vary.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="Everything feels simultaneous" tool="ROUND ROBIN">
+    Your browser, music and chat all get a slice every few milliseconds. With a small enough quantum, nobody notices the turns.
+  </PracticalApplication>
+  <PracticalApplication title="Linux's scheduler" tool="FEEDBACK + FAIRNESS">
+    Linux tracks how much CPU each task has had and favours the ones that got the least, so interactive tasks rise to the top just like in a feedback queue.
+  </PracticalApplication>
+  <PracticalApplication title="Pinning a game to cores" tool="PROCESSOR AFFINITY">
+    Windows Task Manager's "Set affinity" and Linux's `taskset` set hard affinity: the process may only run on the CPUs you choose.
+  </PracticalApplication>
+  <PracticalApplication title="Sizing a server" tool="LITTLE'S LAW">
+    If a website gets 200 requests a second and each takes 0.05 s, about 10 are in flight at any moment. That tells you how many workers you need.
+  </PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,97 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Gates and Boolean Algebra
+
+Seven questions on gates, simplification and K-maps. Get 5 right to pass.
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="gates-quiz"
+  passThreshold={5/7}
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which gate outputs 1 only when its two inputs are different?",
+      options: [
+        { id: "a", text: "XOR" },
+        { id: "b", text: "XNOR" },
+        { id: "c", text: "NAND" },
+        { id: "d", text: "OR" },
+      ],
+      correctOptionId: "a",
+      explanation: "XOR is 1 for 01 and 10. XNOR is its opposite, and NAND and OR both also give 1 on inputs that aren't different.",
+    },
+    {
+      id: "q2",
+      prompt: "Simplify A + A'B.",
+      options: [
+        { id: "a", text: "A" },
+        { id: "b", text: "B" },
+        { id: "c", text: "A + B" },
+        { id: "d", text: "AB" },
+      ],
+      correctOptionId: "c",
+      explanation: "If A is 1 the output is 1. If A is 0, the A' is automatically true and only B matters. That is A + B.",
+    },
+    {
+      id: "q3",
+      prompt: "By De Morgan, (A + B)' equals:",
+      options: [
+        { id: "a", text: "A' + B'" },
+        { id: "b", text: "A'B'" },
+        { id: "c", text: "AB" },
+        { id: "d", text: "(AB)'" },
+      ],
+      correctOptionId: "b",
+      explanation: "Break the bar, change OR to AND, and invert each variable.",
+    },
+    {
+      id: "q4",
+      prompt: "How do you write row A=1, B=0, C=0 as a product term in SOP?",
+      options: [
+        { id: "a", text: "A'BC" },
+        { id: "b", text: "AB'C'" },
+        { id: "c", text: "A + B' + C'" },
+        { id: "d", text: "A' + B + C" },
+      ],
+      correctOptionId: "b",
+      explanation: "In SOP, a 1 stays plain and a 0 is inverted, which makes the term true only on that row.",
+    },
+    {
+      id: "q5",
+      prompt: "Why do K-map labels run 00, 01, 11, 10?",
+      options: [
+        { id: "a", text: "To make the map look balanced" },
+        { id: "b", text: "So that neighbouring cells differ by exactly one variable" },
+        { id: "c", text: "Because 3 is written before 2 in binary" },
+        { id: "d", text: "So that the map can hold more cells" },
+      ],
+      correctOptionId: "b",
+      explanation: "That's Gray code. It means each adjacent pair can merge and cancel a variable.",
+    },
+    {
+      id: "q6",
+      prompt: "On a 4-variable K-map, a group of 4 cells produces a term with how many variables?",
+      options: [
+        { id: "a", text: "1" },
+        { id: "b", text: "2" },
+        { id: "c", text: "3" },
+        { id: "d", text: "4" },
+      ],
+      correctOptionId: "b",
+      explanation: "Each doubling of the group removes one variable. 4 cells removes 2 of the 4 variables, leaving 2.",
+    },
+    {
+      id: "q7",
+      prompt: "What does a circuit of NAND gates feeding one NAND gate implement?",
+      options: [
+        { id: "a", text: "Sum of products" },
+        { id: "b", text: "Product of sums" },
+        { id: "c", text: "XOR only" },
+        { id: "d", text: "A latch" },
+      ],
+      correctOptionId: "a",
+      explanation: "By De Morgan, the two inversions cancel and leave AND terms ORed together. It only becomes a latch when outputs feed back into inputs.",
+    },
+  ]}
+/>

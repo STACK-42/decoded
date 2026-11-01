@@ -1,0 +1,193 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Skip Lists
+
+Red-black trees guarantee $O(\lg n)$, but they're fiddly to code: four delete cases, rotations, colors. **Skip lists** get the same expected performance from a much simpler idea, a sorted linked list with **express lanes**, plus some coin flips.
+
+## Linked lists: benefits and drawbacks
+
+**Benefits:**
+
+- Easy to insert and delete in $O(1)$ time, once you're at the right place.
+- You don't need to estimate the total memory needed in advance.
+
+**Drawbacks:**
+
+- Hard to search in less than $O(n)$ time. Binary search doesn't work, because there's no way to jump straight to the middle.
+
+**Skip lists fix these drawbacks**, and they make a good data structure for a **dictionary**.
+
+- Invented around 1990 by Bill Pugh.
+- A generalization of sorted linked lists, so they're **simple to implement**.
+- The **expected** search time is $O(\log n)$.
+- They're a **randomized** data structure: random coin flips are used to build them.
+
+## Perfect skip lists
+
+- Keys are in **sorted order** on the bottom level.
+- There are $O(\log n)$ levels.
+- Each higher level contains **half** the elements of the level below it.
+- A **header** node and a **sentinel** node ($\infty$) are on every level.
+
+Nodes have **variable size**: each holds between 1 and $O(\log n)$ pointers, one per level it reaches. (The pictures draw the pointers horizontally for clarity, but each one points to the start of the next node.) They're called *skip* lists because the higher levels let you **skip over many items** at once.
+
+### Searching
+
+When you search for $k$, compare it with the **next** key on your current level:
+
+- If $k$ = the key, **done!**
+- If $k$ < the next key, **go down** a level.
+- If $k$ ≥ the next key, **go right**.
+
+In other words, scan along the shortest list until you would "pass" the item you want. At that point, drop down to a slightly more complete list one level lower. It's like searching a sorted array sequentially, but with shortcuts:
+
+```cpp
+for (i = 0; i < n; i++)
+    if (X[i] >= K) break;
+if (X[i] != K) return FAIL;
+```
+
+Switch to **Perfect** and step through the lecture's two searches, for **71** and for **96**:
+
+<SkipListVisualizer layout="perfect" ops={[{ op: "search", key: 71 }, { op: "search", key: 96 }]} />
+
+### Search time
+
+- There are $O(\log n)$ levels, because each level halves the number of items.
+- You visit **at most 2 nodes per level**. If you visited more, you could have done that stretch one level higher up.
+- Therefore the search time is $O(\log n)$.
+
+## Insert and delete
+
+In a perfect skip list, an insert or delete might have to **rearrange the entire list**. Like perfect binary search trees, perfect skip lists are **too structured** to support efficient updates.
+
+**Idea:** relax the rule that each level has *exactly* half the items of the level below. Instead, design the structure so that we **expect** half the items to be carried up to the next level.
+
+Skip lists are a **randomized** data structure: the same sequence of inserts and deletes can produce different structures, depending on the outcome of random coin flips.
+
+### Randomization
+
+- It allows for **some imbalance**, like the $+1$/$-1$ allowed in AVL trees.
+- The **expected** behaviour, over the random choices, stays the same as for perfect skip lists.
+- **Idea:** each node is **promoted** to the next higher level with probability $\frac12$.
+  - Expect $\frac12$ of the nodes at level 1.
+  - Expect $\frac14$ of the nodes at level 2.
+  - … and so on.
+- So the expected number of nodes on each level is the same as in a perfect skip list.
+- Also, we expect the promoted nodes to be **well spread out** across the list.
+
+### Insertion
+
+```text
+Find k
+Insert the node in level 0        ⊳ just insertion into a linked list, after the last node visited
+let i = 1
+while FLIP() == "heads":
+    insert the node into level i  ⊳ after the last node visited on level i
+    i++
+```
+
+### Deletion
+
+Find $k$, then remove its node from every level it's on. On each level that's just deleting from a linked list.
+
+Step through **insert 87** (watch the coin flips) and then **delete 87** on a randomized skip list. Then try your own keys, and press **New coin flips** to see a different tower for the same key:
+
+<SkipListVisualizer layout="random" />
+
+## There are no "bad" sequences
+
+- We expect a randomized skip list to perform about as well as a perfect skip list.
+- With some very small probability, the skip list ends up as just a linked list, or with every node on every level. These degenerate skip lists are **very unlikely**!
+- The level structure of a skip list is **independent of the keys** you insert.
+- Therefore there are **no "bad" key sequences** that lead to degenerate skip lists.
+
+Compare: inserting sorted keys into a plain BST *always* builds a chain. With a skip list, only bad luck with the coin can hurt you, never the input. That's the same advantage randomized quicksort has over plain quicksort.
+
+## Skip list analysis
+
+**Expected number of levels $= O(\log n)$:**
+
+$$
+E[\#\text{ nodes at level } 1] = \frac{n}{2}, \quad E[\#\text{ nodes at level } 2] = \frac{n}{4}, \quad \dots, \quad E[\#\text{ nodes at level } \log n] = 1
+$$
+
+We still need to prove that the **number of steps on each level** is small.
+
+### Backwards analysis
+
+Look at the search path **in reverse**, from the node you found back up to the header at the top. Going backwards, you **always move up if you can**, because a search always enters a node at that node's *topmost* level.
+
+**What's the probability that you can move up at a given step of the reverse walk?** The node you're on was promoted with probability $\frac12$, so: $\frac12$.
+
+Let $C(j)$ be the expected number of steps to climb $j$ levels. Make one step, then either:
+
+- with probability $0.5$ the step went **up**, and $C(j - 1)$ more steps are needed, or
+- with probability $0.5$ the step went **left**, and $C(j)$ more steps are needed.
+
+$$
+\begin{aligned}
+C(j) &= 1 + 0.5\,C(j - 1) + 0.5\,C(j) \\
+2C(j) &= 2 + C(j - 1) + C(j) \\
+C(j) &= 2 + C(j - 1)
+\end{aligned}
+$$
+
+- So the expected number of steps on **each level is 2**.
+- Expanding $C(j)$ gives $C(j) = 2j$.
+- Since there are $O(\log n)$ levels, a search takes **$O(\log n)$ expected steps**.
+
+<Callout tone="mint" label="Result">
+Search, insert and delete in a skip list all take **$O(\log n)$ expected time**, and the expected space is $O(n)$: about $n + \frac n2 + \frac n4 + \dots = 2n$ pointers.
+</Callout>
+
+## Implementation notes
+
+- Node structures have **variable size**.
+- But once a node is created, its size never changes.
+- It's often convenient to know the **maximum number of levels** in advance (for example 32), but that's not required.
+
+```cpp
+const int MAX_LEVEL = 16;
+
+struct Node {
+    int key;
+    vector<Node*> next;                  // next[i] = the next node on level i
+    Node(int k, int levels) : key(k), next(levels, nullptr) {}
+};
+
+int randomLevel() {
+    int lvl = 1;
+    while (rand() % 2 == 0 && lvl < MAX_LEVEL) lvl++;   // flip coins
+    return lvl;
+}
+
+bool search(Node* head, int k) {
+    Node* x = head;
+    for (int i = MAX_LEVEL - 1; i >= 0; i--)
+        while (x->next[i] && x->next[i]->key < k)       // go right
+            x = x->next[i];
+                                                         // then go down
+    x = x->next[0];
+    return x && x->key == k;
+}
+```
+
+<ApplicationsGrid>
+  <PracticalApplication title="Redis sorted sets" tool="REDIS ZSET">
+    Redis keeps sorted sets (leaderboards, rate limiters, priority queues) in a skip list, because range queries like "players ranked 100–200" are easy to walk.
+  </PracticalApplication>
+  <PracticalApplication title="Database memtables" tool="LEVELDB · ROCKSDB">
+    LevelDB and RocksDB buffer recent writes in an in-memory skip list before writing them to disk. Concurrent skip lists are much easier to make lock-free than balanced trees.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 1206, title: "Design Skiplist", slug: "design-skiplist", why: "Build exactly this lesson's structure: search, add (with coin flips) and erase, with duplicates allowed.", difficulty: "Hard" },
+    { id: 21, title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", why: "Warm up on the level-0 linked list operations every skip list is built from." },
+  ]}
+/>

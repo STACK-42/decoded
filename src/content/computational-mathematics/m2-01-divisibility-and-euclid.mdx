@@ -1,0 +1,110 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { EuclidTilesVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Divisibility and the Euclidean Algorithm
+
+Every secure connection your browser opens rests on arithmetic with whole numbers. This module builds that arithmetic from the ground up, starting with what it means for one number to divide another.
+
+## Divisibility
+
+A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, which means division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** of $a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
+
+```matlab
+divisors(100)    % needs the Symbolic Math Toolbox
+
+ans =
+     1  2  4  5  10  20  25  50  100
+```
+
+## The division algorithm
+
+Divide any integer $a$ by a positive integer $n$ and you get one quotient and one remainder:
+
+$$
+a = q \cdot n + r, \qquad 0 \le r < n, \qquad q = \left\lfloor \frac{a}{n} \right\rfloor
+$$
+
+Here $\lfloor x \rfloor$ means the largest integer not greater than $x$. The remainder is never negative, and that matters for negative numbers:
+
+- $11 = 1 \cdot 7 + 4$, so $r = 4$
+- $-11 = (-2) \cdot 7 + 3$, so $r = 3$
+
+## Greatest common divisor
+
+$\gcd(a, b)$ is the largest integer dividing both $a$ and $b$. For example, $\gcd(60, 24) = 12$. Signs don't matter, so $\gcd(60, -24) = 12$ too, and by convention $\gcd(0, 0) = 0$.
+
+Two numbers are **coprime** (or relatively prime) when their gcd is 1. Neither has to be prime: $\gcd(8, 15) = 1$.
+
+## The Euclidean algorithm
+
+Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Keep replacing the pair until the remainder hits zero, and the last non-zero remainder is the answer.
+
+It has a nice picture. Cut as many squares of side $b$ as you can from an $a$-by-$b$ rectangle. Then repeat on the leftover piece. The final square tiles everything before it, and its side is the gcd:
+
+<EuclidTilesVisualizer />
+
+Written out for $\gcd(1281, 243)$:
+
+$$
+\begin{aligned}
+1281 &= 5 \cdot 243 + 66 \\
+243 &= 3 \cdot 66 + 45 \\
+66 &= 1 \cdot 45 + 21 \\
+45 &= 2 \cdot 21 + 3 \\
+21 &= 7 \cdot 3 + 0
+\end{aligned}
+$$
+
+So $\gcd(1281, 243) = 3$. MATLAB's `gcd` does this for you, and it also works entry by entry on vectors:
+
+```matlab
+gcd(65, 70)                                % 5
+gcd([250 1050 6022], [180 1150 5622])      % 10  50  2
+```
+
+## In Python
+
+```python
+import math
+import numpy as np
+
+print(math.gcd(1281, 243))  # 3
+print(np.gcd([250, 1050, 6022], [180, 1150, 5622]).tolist())  # [10, 50, 2]
+print(divmod(-11, 7))  # (-2, 3)
+```
+
+The whole algorithm fits in three lines of pure Python:
+
+```python
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+print(gcd(1281, 243))  # 3
+```
+
+## In machine learning
+
+Number theory touches ML less directly than matrices do, but division with remainder comes up in everyday training code.
+
+**Batches.** Dividing a dataset into batches gives a quotient and a remainder. The quotient is the number of full batches, and the remainder is the short final batch, which PyTorch's `drop_last` option throws away:
+
+```python
+n_examples, batch_size = 1000, 32
+
+print(divmod(n_examples, batch_size))  # (31, 8)
+```
+
+**Image patches.** A vision transformer cuts images into square patches, so the image size has to be divisible by the patch size. A 224-pixel image with 16-pixel patches gives $14 \times 14$ patches.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Generating RSA keys" tool="OpenSSL, SSH">
+The public exponent has to be coprime to a value computed from the key's two primes, and that's checked with a gcd.
+</PracticalApplication>
+<PracticalApplication title="Simplifying fractions" tool="Python fractions, spreadsheets">
+Exact fraction types reduce every result by dividing the top and bottom by their gcd, which stops the numbers growing out of control.
+</PracticalApplication>
+</ApplicationsGrid>

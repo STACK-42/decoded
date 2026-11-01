@@ -1,0 +1,65 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SegmentCalculator } from "@/components/mdx/MicroprocessorVisualizers";
+
+# Segments and Physical Addresses
+
+The 8086 has a puzzle to solve. It has 20 address lines, to reach 1 MB of memory. But all of its registers are 16 bits, and a 16-bit number can only count up to 64 KB. How can it make a 20-bit address from 16-bit parts?
+
+It uses two registers together. Think of giving directions: "Go to the building on 5th Street, then walk 30 steps." The street is the **segment**, the steps are the **offset**.
+
+## The formula
+
+Multiply the segment by 10h, which shifts it one hex digit left and adds a 0 at the end. Then add the offset:
+
+$$
+\text{Physical address} = \text{Segment} \times 10_h + \text{Offset}
+$$
+
+A worked example with DS = 24F6h and SI = 634Ah:
+
+```
+  24F60    segment × 10h
++  634A    offset
+-------
+  2B2AA    physical address
+```
+
+Try the three examples. Then enter some numbers of your own.
+
+<SegmentCalculator />
+
+## Three kinds of address
+
+For the same location, there are three names to learn:
+
+- **Physical address**: the real 20-bit number on the address pins, like `2B2AA`.
+- **Offset**: the distance from the start of the segment, like `634A`.
+- **Logical address**: how a program writes it, as Segment:Offset, like `24F6:634A`.
+
+## The size of a segment
+
+Since an offset is 16 bits, it runs from 0000h to FFFFh, and each segment can span up to 64 KB. To find a segment's range, use the lowest and highest offsets:
+
+| | Calculation | Result |
+|---|---|---|
+| Lower limit | 24F60 + 0000 | 24F60h |
+| Upper limit | 24F60 + FFFF | 34F5Fh |
+
+## Four segments for four purposes
+
+A program's memory is divided up by what it holds, and each kind has a register to point to it:
+
+| Segment | Register | Holds | Offset register used with it |
+|---|---|---|---|
+| Code | **CS** | The program's instructions | IP |
+| Data | **DS** | Variables and arrays | BX, SI, DI |
+| Stack | **SS** | The [stack](/courses/microprocessors/stack-and-procedures) | SP, BP |
+| Extra | **ES** | Extra data, often string destinations | DI |
+
+When you write `MOV AL, [SI]`, you don't mention a segment, because the CPU knows that SI goes with DS. The next instruction always comes from CS:IP.
+
+<Callout tone="orange" label="Different addresses can reach the same place">
+1000:0020 and 1002:0000 are both physical address 10020h. Segments can overlap, because they can start every 16 bytes. So don't assume two different logical addresses mean two different locations.
+</Callout>
+
+Modern 64-bit systems no longer use segments this way. They use [virtual memory](/courses/computer-architecture/virtual-memory), a much more powerful idea with the same goal of mapping a program's addresses to real locations.

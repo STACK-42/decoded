@@ -1,0 +1,186 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SystemLayers, InterruptTimeline, StorageHierarchy, MigrationOfA, DmaCounter } from "@/components/mdx/OsVisualizers";
+
+# What an Operating System Does
+
+You've used an operating system every day of your life: Windows, macOS, Android, iOS, Linux. You've probably never *seen* it, though. That's the point. This lesson opens the box: what an OS is, what it's for, and how the hardware underneath it actually works.
+
+## What is an operating system?
+
+An **operating system (OS)** is a program that sits **between the user and the computer hardware**. It has three goals:
+
+1. **Run user programs** and make solving the user's problems easier.
+2. Make the computer **convenient to use**.
+3. Use the hardware **efficiently**.
+
+### The four components of a computer system
+
+A computer system can be split into four parts, stacked like layers:
+
+| Component | What it does | Examples |
+| --- | --- | --- |
+| **Users** | want problems solved | people, machines, other computers |
+| **Application programs** | decide *how* the system's resources are used to solve those problems | word processors, compilers, web browsers, databases, video games |
+| **Operating system** | **controls and coordinates** the hardware among the many programs and users | Windows, Linux, Android |
+| **Hardware** | provides the basic computing resources | CPU, memory, I/O devices |
+
+<SystemLayers />
+
+## What operating systems do
+
+What the OS should do depends on who you ask.
+
+### The user view
+
+- Users want **convenience and ease of use**. They don't care how well the hardware is shared.
+- A **shared** computer like a mainframe must keep *all* its users happy at once.
+- Users of **dedicated** systems like workstations have their own resources, but often use shared resources from servers.
+- **Handheld** computers (phones, tablets) are short on resources, so they're tuned for usability and **battery life**.
+- Some computers have **little or no user interface** at all: the **embedded** computers in washing machines, cars and routers.
+
+### The system view
+
+From the computer's own point of view, the OS is two things:
+
+- A **resource allocator.** It manages every resource (CPU time, memory space, file-storage space, I/O devices) and decides between conflicting requests so that use is **efficient and fair**.
+- A **control program.** It controls how programs run, to **prevent errors** and **improper use** of the computer.
+
+### So what exactly counts as "the OS"?
+
+There is **no universally accepted definition**.
+
+- "Everything a vendor ships when you order an operating system" is a good approximation, but it varies wildly. Is the calculator app part of the OS?
+- A tighter definition: the **kernel** is "the one program running at all times on the computer."
+
+Everything else is either a **system program** (it ships with the OS, like a file manager) or an **application program** (everything you install yourself).
+
+<Callout tone="mint" label="Remember">
+**Kernel** = the core of the OS, always running. **System programs** ship with the OS. **Application programs** are everything else.
+</Callout>
+
+## Computer startup
+
+When you power on or reboot a computer, the very first thing that runs is the **bootstrap program**.
+
+- It's stored in **ROM** or **EPROM**, which is why it's called **firmware**: software that lives in hardware chips.
+- It **initializes** every part of the system: CPU registers, device controllers and memory contents.
+- Then it **loads the OS kernel** into memory and starts running it.
+
+From then on, the kernel is in charge.
+
+## Computer-system organization
+
+A computer has **one or more CPUs** and several **device controllers**, all connected by a **common bus** that gives them access to **shared memory**.
+
+- The CPUs and the device controllers can run **in parallel**, competing for memory cycles.
+- **Each device controller is in charge of one type of device**: one for the disk, one for USB, one for the screen...
+- Each device controller has a **local buffer**, a small memory of its own.
+
+### How I/O works
+
+1. The CPU moves data **between main memory and the controllers' local buffers**.
+2. The actual I/O happens **between the device and its controller's local buffer**.
+3. When the controller is finished, it tells the CPU by causing an **interrupt**.
+
+So the I/O devices and the CPU can work **at the same time**.
+
+## Interrupts
+
+An **interrupt** is a signal that makes the CPU stop what it's doing and handle something urgent.
+
+- The interrupt transfers control to the right **interrupt service routine (ISR)** through the **interrupt vector**: a table holding the addresses of all the service routines.
+- The hardware must **save the address of the interrupted instruction**, so the program can continue afterwards.
+- A **trap** (or **exception**) is a **software-generated interrupt**, caused either by an **error** (like dividing by zero) or by a **user request** (asking the OS for a service).
+
+<Callout tone="orange" label="Key idea">
+An operating system is **interrupt driven**. When nothing is happening, it waits. Interrupts from hardware and traps from software are what make it act.
+</Callout>
+
+### Interrupt handling
+
+1. The OS **preserves the state of the CPU** by storing the registers and the program counter.
+2. It figures out **which type of interrupt** happened, either by **polling** (asking each device "was it you?") or with a **vectored interrupt system** (the interrupt carries a number that points straight to its handler).
+3. **Separate pieces of code** decide what to do for each type of interrupt.
+
+Step through the timeline to watch the CPU and an I/O device work side by side:
+
+<InterruptTimeline />
+
+## Storage structure
+
+- **Main memory** is the **only large storage** the CPU can access **directly**.
+  - It's **random access**: any byte can be read in about the same time.
+  - It's usually **volatile**: everything is lost when the power goes off.
+- **Secondary storage** extends main memory with **large, nonvolatile** capacity.
+  - **Magnetic disks** are rigid metal or glass platters covered with magnetic material. The surface is divided into **tracks**, and each track into **sectors**. The **disk controller** handles how the device talks to the computer.
+  - **Solid-state disks (SSDs)** are faster than magnetic disks, use several technologies, and are becoming more and more popular.
+
+### The storage hierarchy
+
+Storage systems are organized in a hierarchy by **speed**, **cost** and **volatility**. The higher up, the faster and more expensive per byte, and the smaller.
+
+<StorageHierarchy />
+
+- **Caching** means copying information into a faster storage system. You can think of main memory as a **cache for secondary storage**.
+- Each device controller has a **device driver** that manages its I/O. The driver gives the kernel one uniform interface to that controller.
+
+## Caching
+
+Caching is an important principle, used at **many levels** of a computer: in hardware, in the OS and in software.
+
+1. Information in use is **copied from slower to faster storage** temporarily.
+2. The faster storage (the **cache**) is **checked first**.
+   - If the data is there (a hit), it's used directly from the cache: **fast**.
+   - If not (a miss), the data is copied into the cache and used there.
+3. A cache is **smaller** than the storage it caches, so **cache management** is an important design problem: how big should the cache be, and which item should we throw out when it's full (the **replacement policy**)?
+
+Watch an integer climb the hierarchy. Notice it ends up with a copy at *every* level:
+
+<MigrationOfA />
+
+## I/O structure
+
+There are two ways to handle an I/O request:
+
+**Synchronous I/O.** After I/O starts, control returns to the user program **only when the I/O is finished**.
+
+- A **wait instruction** idles the CPU until the next interrupt, or a **wait loop** spins (and competes for memory access).
+- At most **one I/O request** is outstanding at a time. No simultaneous I/O.
+
+**Asynchronous I/O.** After I/O starts, control returns to the user program **without waiting** for the I/O to finish.
+
+- A **system call** lets the program ask the OS to wait for the I/O to complete when it's ready to.
+- The OS keeps a **device-status table** with an entry for each I/O device: its **type**, **address** and **state** (idle or busy, plus any requests waiting for it).
+- The OS looks up the device in this table to check its status, and updates the entry when an interrupt arrives.
+
+## Direct Memory Access (DMA)
+
+Fast devices, like disks and network cards, can send data at nearly memory speed. Interrupting the CPU for every single byte would drown it.
+
+**Direct Memory Access (DMA)** solves this:
+
+- The device controller transfers **whole blocks** of data from its buffer **directly to main memory**, **without the CPU** stepping in.
+- Only **one interrupt is generated per block**, instead of one per byte.
+
+<DmaCounter />
+
+### How a modern computer works
+
+Put it all together and you get the **von Neumann architecture**: the CPU runs a cycle of **fetching instructions** and **data** from memory, while device controllers move data in and out of memory, using DMA for the big transfers and interrupts to say when they're done.
+
+## Where you meet this every day
+
+<ApplicationsGrid>
+  <PracticalApplication title="An app that freezes" tool="SYNCHRONOUS I/O">
+    The spinning wheel often means a program is stuck waiting on I/O it started synchronously, like a slow disk or a dead network connection.
+  </PracticalApplication>
+  <PracticalApplication title="Force Quit still works" tool="INTERRUPTS">
+    Even when an app hangs, your key press raises an interrupt. The OS, not the app, handles it, so it can still kill the frozen program.
+  </PracticalApplication>
+  <PracticalApplication title="Faster game loading" tool="STORAGE HIERARCHY">
+    Moving a game from a magnetic disk to an SSD moves its files one level up the hierarchy: microseconds per access instead of milliseconds.
+  </PracticalApplication>
+  <PracticalApplication title="Copying a big file" tool="DMA">
+    Your CPU stays free while gigabytes move between drives, because the controllers copy blocks with DMA and interrupt only when each block is done.
+  </PracticalApplication>
+</ApplicationsGrid>

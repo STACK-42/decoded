@@ -1,0 +1,227 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { GraphTraversal, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { DijkstraVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Shortest Paths: Dijkstra's Algorithm
+
+Every map app answers the same question millions of times a second: **what's the cheapest way from here to there?** This lesson defines shortest paths properly, then solves the problem with **Dijkstra's algorithm**, a greedy algorithm, and proves that it's correct.
+
+## Paths in graphs
+
+Consider a **directed** graph $G = (V, E)$ with an edge-weight function $w : E \to \mathbb{R}$. The **weight** of a path $p = v_1 \to v_2 \to \dots \to v_k$ is the sum of its edge weights:
+
+$$
+w(p) = \sum_{i=1}^{k-1} w(v_i, v_{i+1})
+$$
+
+**Example:** a path $v_1 \xrightarrow{4} v_2 \xrightarrow{-2} v_3 \xrightarrow{-5} v_4 \xrightarrow{1} v_5$ has weight $w(p) = 4 - 2 - 5 + 1 = -2$. Weights can be negative, like a toll you're *paid* to drive.
+
+## Shortest paths
+
+A **shortest path** from $u$ to $v$ is a path of minimum weight from $u$ to $v$. The **shortest-path weight** from $u$ to $v$ is
+
+$$
+\delta(u, v) = \min\{\, w(p) : p \text{ is a path from } u \text{ to } v \,\}
+$$
+
+**Note:** $\delta(u, v) = \infty$ if no path from $u$ to $v$ exists.
+
+### Optimal substructure
+
+<Callout tone="violet" label="Theorem">
+A subpath of a shortest path is a shortest path.
+</Callout>
+
+**Proof (cut and paste).** If some piece of a shortest path could be replaced by a shorter path between the same two vertices, then the whole path would get shorter. That's impossible, because it was already shortest. ∎
+
+### Triangle inequality
+
+<Callout tone="violet" label="Theorem">
+For all $u, v, x \in V$:
+
+$$
+\delta(u, v) \le \delta(u, x) + \delta(x, v)
+$$
+</Callout>
+
+**Proof.** Going from $u$ to $x$ by a shortest path, then from $x$ to $v$ by a shortest path, is *one* way to get from $u$ to $v$. The shortest way can't be longer than that. ∎
+
+### Well-definedness of shortest paths
+
+If a graph $G$ contains a **negative-weight cycle**, some shortest paths may not exist. Going round the cycle once more always makes the path cheaper, so there's no minimum.
+
+## Single-source shortest paths
+
+**Problem.** From a given source vertex $s \in V$, find the shortest-path weights $\delta(s, v)$ for **all** $v \in V$.
+
+If all the edge weights $w(u, v)$ are **non-negative**, all the shortest-path weights must exist.
+
+**Idea: greedy.**
+
+1. Maintain a set $S$ of vertices whose shortest-path distances from $s$ are **known**.
+2. At each step, add to $S$ the vertex $v \in V - S$ whose **distance estimate** from $s$ is minimal.
+3. Update the distance estimates of the vertices adjacent to $v$.
+
+## Dijkstra's algorithm
+
+```text
+d[s] ← 0
+for each v ∈ V − {s}
+    do d[v] ← ∞
+S ← ∅
+Q ← V                       ⊳ Q is a priority queue maintaining V − S
+while Q ≠ ∅
+    do u ← EXTRACT-MIN(Q)
+       S ← S ∪ {u}
+       for each v ∈ Adj[u]
+           do if d[v] > d[u] + w(u, v)
+               then d[v] ← d[u] + w(u, v)     ⊳ relaxation step
+                    π[v] ← u                  ⊳ (implicit DECREASE-KEY)
+```
+
+The `if` test is called **relaxing** the edge $(u, v)$: *is going through $u$ a shortcut to $v$?* If yes, lower $v$'s estimate, and remember $u$ as $v$'s **predecessor** $\pi[v]$.
+
+### Example
+
+The lecture's graph has non-negative edge weights. Step through it:
+
+1. **Initialize:** $d[A] = 0$, everything else $\infty$.
+2. **"A" ← EXTRACT-MIN(Q).** $S = \{A\}$. Relax all edges leaving A: $d[B] = 10$, $d[C] = 3$.
+3. **"C" ← EXTRACT-MIN(Q).** $S = \{A, C\}$. Relax all edges leaving C: $d[B] = 7$, $d[D] = 11$, $d[E] = 5$.
+4. **"E" ← EXTRACT-MIN(Q).** $S = \{A, C, E\}$. Relax all edges leaving E: D stays 11.
+5. **"B" ← EXTRACT-MIN(Q).** $S = \{A, C, E, B\}$. Relax all edges leaving B: $d[D] = 9$.
+6. **"D" ← EXTRACT-MIN(Q).** $S = \{A, C, E, B, D\}$.
+
+<DijkstraVisualizer graph="lecture" />
+
+The number above each vertex is its current estimate $d[v]$. The purple edges are the **shortest-path tree**: each vertex's edge from $\pi[v]$. The table underneath records the estimates after each round.
+
+### A worked table
+
+Here's another example, an undirected graph on vertices A to G. Writing out a table like this, one row per extraction and one column per vertex, with a blank once a vertex is finished, is the standard way to run Dijkstra on paper:
+
+<DijkstraVisualizer graph="table" />
+
+The final answer is the shortest-path tree, read from the $\pi$ row (the parent of each vertex):
+
+| path | A→C | A→B | A→B→G | A→B→G→E | A→B→G→E→F | A→B→G→E→D |
+| --- | --- | --- | --- | --- | --- | --- |
+| weight | 3 | 5 | 6 | 7 | 8 | 9 |
+
+## Correctness
+
+### Part I
+
+<Callout tone="sky" label="Lemma">
+Initializing $d[s] \leftarrow 0$ and $d[v] \leftarrow \infty$ for all $v \in V - \{s\}$ establishes $d[v] \ge \delta(s, v)$ for all $v \in V$, and this invariant is maintained over **any** sequence of relaxation steps.
+</Callout>
+
+The estimates are always **too high or exactly right**, never too low.
+
+**Proof.** Suppose not. Let $v$ be the first vertex for which $d[v] < \delta(s, v)$, and let $u$ be the vertex that caused $d[v]$ to change: $d[v] = d[u] + w(u, v)$. Then
+
+$$
+\begin{aligned}
+d[v] &< \delta(s, v) && \text{supposition} \\
+&\le \delta(s, u) + \delta(u, v) && \text{triangle inequality} \\
+&\le \delta(s, u) + w(u, v) && \text{a shortest path} \le \text{this specific path} \\
+&\le d[u] + w(u, v) && v \text{ is the first violation}
+\end{aligned}
+$$
+
+So $d[v] < d[u] + w(u, v)$, which contradicts $d[v] = d[u] + w(u, v)$. ∎
+
+### Part II
+
+<Callout tone="sky" label="Lemma">
+Let $u$ be $v$'s predecessor on a shortest path from $s$ to $v$. If $d[u] = \delta(s, u)$ and the edge $(u, v)$ is relaxed, then $d[v] = \delta(s, v)$ after the relaxation.
+</Callout>
+
+**Proof.** Observe that $\delta(s, v) = \delta(s, u) + w(u, v)$, by optimal substructure. Suppose $d[v] > \delta(s, v)$ before the relaxation (otherwise we're done). Then the test $d[v] > d[u] + w(u, v)$ succeeds, because
+
+$$
+d[v] > \delta(s, v) = \delta(s, u) + w(u, v) = d[u] + w(u, v)
+$$
+
+and the algorithm sets $d[v] = d[u] + w(u, v) = \delta(s, v)$. ∎
+
+### Part III
+
+<Callout tone="mint" label="Theorem">
+Dijkstra's algorithm terminates with $d[v] = \delta(s, v)$ for all $v \in V$.
+</Callout>
+
+**Proof.** It's enough to show that $d[v] = \delta(s, v)$ for every $v \in V$ **at the moment $v$ is added to $S$**, because by Part I, estimates never go below the true distance afterwards.
+
+Suppose $u$ is the **first** vertex added to $S$ with $d[u] > \delta(s, u)$. Let $y$ be the first vertex in $V - S$ along a shortest path from $s$ to $u$, and let $x$ be its predecessor on that path, which is in $S$. Look at the moment just before $u$ is added to $S$.
+
+- Since $u$ is the first violation, $d[x] = \delta(s, x)$.
+- When $x$ was added to $S$, the edge $(x, y)$ was relaxed, so by Part II, $d[y] = \delta(s, y)$.
+- Edge weights are non-negative and $y$ comes before $u$ on a shortest path to $u$, so $\delta(s, y) \le \delta(s, u)$.
+
+$$
+d[y] = \delta(s, y) \le \delta(s, u) < d[u]
+$$
+
+But $u$ was chosen by EXTRACT-MIN, so $d[u] \le d[y]$. **Contradiction.** ∎
+
+This is exactly where **non-negative weights** are needed. With a negative edge further along the path, $\delta(s, y)$ could be *bigger* than $\delta(s, u)$, and the argument breaks.
+
+## Analysis of Dijkstra
+
+- The `while` loop runs $|V|$ times, each with one EXTRACT-MIN.
+- The `for` loop runs $degree(u)$ times for each $u$. By the handshaking lemma that's $\Theta(E)$ implicit DECREASE-KEYs.
+
+$$
+\text{Time} = \Theta(V) \cdot T_{\text{EXTRACT-MIN}} + \Theta(E) \cdot T_{\text{DECREASE-KEY}}
+$$
+
+**Note:** it's the same formula as in the analysis of Prim's MST algorithm, because the two algorithms have the same shape. Only the key is different: the *edge weight* for Prim, and the *path length so far* for Dijkstra.
+
+| $Q$ | $T_{\text{EXTRACT-MIN}}$ | $T_{\text{DECREASE-KEY}}$ | Total |
+| --- | --- | --- | --- |
+| array | $O(V)$ | $O(1)$ | $O(V^2)$ |
+| binary heap | $O(\lg V)$ | $O(\lg V)$ | $O(E \lg V)$ |
+| Fibonacci heap | $O(\lg V)$ amortized | $O(1)$ amortized | $O(E + V \lg V)$ worst case |
+
+## Unweighted graphs
+
+Suppose $w(u, v) = 1$ for all $(u, v) \in E$. **Can Dijkstra's algorithm be improved?**
+
+Yes:
+
+- Use a simple **FIFO queue** instead of a priority queue. Vertices come out in order of distance automatically, because every edge adds exactly 1.
+- That's **breadth-first search**:
+
+```text
+while Q ≠ ∅
+    do u ← DEQUEUE(Q)
+       for each v ∈ Adj[u]
+           do if d[v] = ∞
+               then d[v] ← d[u] + 1
+                    ENQUEUE(Q, v)
+```
+
+**Analysis:** time $= O(V + E)$.
+
+You met BFS in the first algorithms course. Here it is again. Its level-by-level order is Dijkstra's order, when every edge weighs 1:
+
+<GraphTraversal algorithm="bfs" />
+
+<ApplicationsGrid>
+  <PracticalApplication title="Navigation and maps" tool="GOOGLE MAPS · OSRM">
+    Route planners run Dijkstra (with speed-ups like A* and contraction hierarchies) on road graphs with millions of junctions, where the edge weights are travel times.
+  </PracticalApplication>
+  <PracticalApplication title="Internet routing" tool="OSPF · IS-IS">
+    Inside a network, every router runs Dijkstra on the map of links to compute its forwarding table. Change a link's cost and every router recomputes.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 743, title: "Network Delay Time", slug: "network-delay-time", why: "Single-source shortest paths with Dijkstra and a priority_queue.", difficulty: "Medium" },
+    { id: 1514, title: "Path with Maximum Probability", slug: "path-with-maximum-probability", why: "Dijkstra where you multiply probabilities and take the maximum.", difficulty: "Medium" },
+    { id: 1091, title: "Shortest Path in Binary Matrix", slug: "shortest-path-in-binary-matrix", why: "Every step costs 1, so BFS is enough.", difficulty: "Medium" },
+  ]}
+/>

@@ -1,0 +1,302 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { BitPlayground, CountOnes } from "@/components/mdx/AdvancedVisualizers";
+
+# Lab: Bit Manipulation and Binary Files
+
+Most of the time we think in bytes, or in types built from bytes like `int`, `float` and `double`. Sometimes we have to go one level deeper, to the individual **bits**.
+
+Bit operations are used in:
+
+- **data compression**: storing data in a smaller representation,
+- **XOR encryption**: a simple way to scramble data,
+- **encoding and decoding files**, which means reading data bit by bit.
+
+They're fast and close to the hardware, and they can make some algorithms noticeably quicker.
+
+## Part I: Bitwise operations
+
+One byte is 8 bits, and every integer or character can be written in **binary** (base 2), using only 0s and 1s:
+
+$$
+14 = (1110)_2 = 1 \cdot 2^3 + 1 \cdot 2^2 + 1 \cdot 2^1 + 0 \cdot 2^0
+$$
+
+$$
+20 = (10100)_2 = 1 \cdot 2^4 + 0 \cdot 2^3 + 1 \cdot 2^2 + 0 \cdot 2^1 + 0 \cdot 2^0
+$$
+
+Characters are stored as their ASCII codes, which are integers too, so they're bits as well.
+
+### The operators
+
+| Operator | Name | Rule for each bit position |
+| --- | --- | --- |
+| `~` | NOT | flips the bit: 0 becomes 1 and 1 becomes 0 (one's complement) |
+| `&` | AND | 1 only if **both** bits are 1 |
+| `\|` | OR | 0 only if **both** bits are 0 |
+| `^` | XOR | 1 if the bits are **different**, 0 if they're the same |
+| `<<` | left shift | moves every bit left by $k$ and fills with 0s on the right, which is the same as multiplying by $2^k$ |
+| `>>` | right shift | moves every bit right by $k$, dropping the bits that fall off, which is the same as dividing by $2^k$ (rounding down) |
+
+The truth table for one pair of bits:
+
+| X | Y | X & Y | X \| Y | X ^ Y | ~X |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0 | 0 | 0 | 0 | 1 |
+| 0 | 1 | 0 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 1 | 1 | 0 |
+| 1 | 1 | 1 | 1 | 0 | 0 |
+
+The lab's examples use $A = 5 = (101)_2$ and $B = 3 = (011)_2$:
+
+- $A \,\&\, B = (001)_2 = 1$
+- $A \mid B = (111)_2 = 7$
+- $A \oplus B = (110)_2 = 6$
+- $\sim 5 = \sim(101)_2 = (010)_2 = 2$, looking at 3 bits only. In a real `int` all 32 bits flip.
+
+Shifts:
+
+- $1 \ll 1 = 2$, $1 \ll 2 = 4$, $1 \ll 3 = 8$, … in general $1 \ll n = 2^n$.
+- $4 \gg 1 = 2$, $6 \gg 1 = 3$, $5 \gg 1 = 2$ (the 1 that falls off is lost).
+
+Try them all:
+
+<BitPlayground a={5} b={3} width={8} />
+
+### Circular shifts (rotations)
+
+A normal shift **loses** the bits that fall off the end. A **circular** shift wraps them around to the other side.
+
+**Circular right shift by $d$:** shift right by $d$, shift the original left by (number of bits − $d$), and OR the two results.
+
+With the 6-bit number $N = (101001)_2$ and $d = 2$:
+
+- $N \gg 2 = 001010$
+- $N \ll (6 - 2) = N \ll 4 = 010000$ (keeping 6 bits)
+- $001010 \mid 010000 = (011010)_2$
+
+**Circular left shift by $d$:** it's the mirror image.
+
+- $N \ll 2 = 100100$
+- $N \gg (6 - 2) = N \gg 4 = 000010$
+- $100100 \mid 000010 = (100110)_2$
+
+<BitPlayground a={41} b={2} width={6} op="rotr" />
+
+In C or C++, an `int` has 32 bits, so the "number of bits" is 32. Use `unsigned`, so that `>>` fills with zeros instead of copying the sign bit:
+
+```cpp
+unsigned rightRotate(unsigned n, unsigned d) {
+    return (n >> d) | (n << (32 - d));
+}
+
+unsigned leftRotate(unsigned n, unsigned d) {
+    return (n << d) | (n >> (32 - d));
+}
+```
+
+## Exercises
+
+### 1. Is $x$ a power of 2?
+
+The obvious way is to keep dividing by 2:
+
+```cpp
+bool isPowerOfTwo(int x) {
+    if (x == 0)
+        return false;
+    while (x % 2 == 0)
+        x /= 2;
+    return x == 1;
+}
+```
+
+That takes $O(\log N)$ time. Bit manipulation does it in **one step**.
+
+Look at $x - 1$ in binary. It has the same bits as $x$, except that the **rightmost 1** and every bit to its right are flipped:
+
+- $x = 4 = (100)_2$, so $x - 1 = 3 = (011)_2$
+- $x = 6 = (110)_2$, so $x - 1 = 5 = (101)_2$
+
+So $x \,\&\, (x - 1)$ is $x$ with its **rightmost 1 removed**:
+
+- $4 \,\&\, 3 = (100)_2 \,\&\, (011)_2 = (000)_2$
+- $6 \,\&\, 5 = (110)_2 \,\&\, (101)_2 = (100)_2$
+
+A power of 2 has **exactly one** 1-bit. Remove it and you get 0. Any other positive number has more than one 1-bit, so something is left over.
+
+```cpp
+bool isPowerOfTwo(int x) {
+    // x != 0 rules out zero; !(x & (x - 1)) checks there is exactly one 1-bit
+    return x && !(x & (x - 1));
+}
+```
+
+The playground above shows this check for whatever $A$ you type in.
+
+### 2. Count the 1-bits
+
+Use the same trick in a loop: every `n & (n - 1)` clears one 1-bit, so count how many times you can do it before reaching 0.
+
+```cpp
+int count_one(int n) {
+    int count = 0;
+    while (n) {
+        n = n & (n - 1);
+        count++;
+    }
+    return count;
+}
+```
+
+The loop runs once **per 1-bit**, not once per bit. For a number with only a few 1-bits, it's much faster than checking all 32 positions.
+
+<CountOnes n={13} />
+
+### 3. Is the $i$-th bit set?
+
+`1 << i` is a number with a single 1 at position $i$ (a **mask**). AND it with $N$: the result is non-zero exactly when $N$ has a 1 there.
+
+```cpp
+bool check(int N, int i) {
+    return (N & (1 << i)) != 0;
+}
+```
+
+<Callout tone="sky" label="Handy identities">
+- `x & 1` is the same as `x % 2` (it's 1 for odd numbers).
+- `x | (1 << i)` sets bit $i$.
+- `x & ~(1 << i)` clears bit $i$.
+- `x ^ (1 << i)` toggles bit $i$.
+- `x ^ x == 0` and `x ^ 0 == x`, which is the basis of XOR encryption: XOR with a key to scramble, then XOR with the same key to unscramble.
+</Callout>
+
+## Part II: Binary files
+
+A **binary file** is like an array of structures, except it lives on disk instead of in memory. Because it's on disk:
+
+- it can be huge, limited only by your disk space,
+- it's **permanent** and always available,
+- the downside is that disk access is slow.
+
+Binary files have two features that text files don't:
+
+- **Random access.** You can jump straight to any record, just like indexing an array.
+- **In-place updates.** You can change any record, anywhere in the file, at any time.
+
+They're also usually faster to read and write than text files. A record's bytes are copied straight from memory to disk (and back), with no converting numbers to and from text.
+
+### Reading a file bit by bit
+
+You can't read a single bit from a file. The smallest unit is one byte (a `char`). So read bytes, and pull the bits out with shifts:
+
+```cpp
+ifstream f(inFile, ios::binary | ios::in);
+char c;
+while (f.get(c)) {
+    for (int i = 7; i >= 0; i--)
+        cout << ((c >> i) & 1);     // bit i of this byte
+}
+```
+
+For `c = 'A' = 65`, this prints `01000001`.
+
+### Records: `fwrite`, `fread` and `fseek`
+
+C thinks of a file as a long row of bytes. A **file pointer** marks the current position:
+
+- When you open the file, the pointer is at record 0.
+- A **read** reads the record the pointer is on, then moves the pointer to the next one.
+- A **write** writes to the record the pointer is on, then moves the pointer to the next one.
+- A **seek** moves the pointer to any byte you ask for.
+
+```c
+#include <stdio.h>
+
+struct rec { int x, y, z; };     /* any record layout works */
+
+int main() {
+    FILE *f;
+    struct rec r;
+    int i;
+
+    /* create a file of 10 records */
+    f = fopen("junk", "wb");
+    if (!f) return 1;
+    for (i = 1; i <= 10; i++) {
+        r.x = i;
+        fwrite(&r, sizeof(struct rec), 1, f);
+    }
+    fclose(f);
+
+    /* read them back in order */
+    f = fopen("junk", "rb");
+    if (!f) return 1;
+    for (i = 1; i <= 10; i++) {
+        fread(&r, sizeof(struct rec), 1, f);
+        printf("%d\n", r.x);
+    }
+    fclose(f);
+
+    /* read them in reverse order: jump straight to record i */
+    f = fopen("junk", "rb");
+    if (!f) return 1;
+    for (i = 9; i >= 0; i--) {
+        fseek(f, sizeof(struct rec) * i, SEEK_SET);
+        fread(&r, sizeof(struct rec), 1, f);
+        printf("%d\n", r.x);
+    }
+    fclose(f);
+
+    /* read every other record: skip one record after each read */
+    f = fopen("junk", "rb");
+    if (!f) return 1;
+    fseek(f, 0, SEEK_SET);
+    for (i = 0; i < 5; i++) {
+        fread(&r, sizeof(struct rec), 1, f);
+        printf("%d\n", r.x);
+        fseek(f, sizeof(struct rec), SEEK_CUR);
+    }
+    fclose(f);
+
+    /* read the 4th record, change it, and write it back in place */
+    f = fopen("junk", "r+b");
+    if (!f) return 1;
+    fseek(f, sizeof(struct rec) * 3, SEEK_SET);
+    fread(&r, sizeof(struct rec), 1, f);
+    r.x = 100;
+    fseek(f, sizeof(struct rec) * 3, SEEK_SET);
+    fwrite(&r, sizeof(struct rec), 1, f);
+    fclose(f);
+    return 0;
+}
+```
+
+The three new functions:
+
+- **`fread(&r, sizeof(struct rec), 1, f)`** reads **1** block of `sizeof(struct rec)` bytes (12 here: three 4-byte ints) from `f` into the memory at `&r`. Change the 1 to 100 and it reads 100 records into an array in one call.
+- **`fwrite`** does the same in the other direction, from memory to the file.
+- **`fseek(f, offset, whence)`** moves the file pointer. Move it in steps of `sizeof(struct rec)` to stay on record boundaries. `whence` is one of:
+  - `SEEK_SET`: count `offset` bytes from the **start** of the file,
+  - `SEEK_CUR`: count from the **current** position,
+  - `SEEK_END`: count from the **end** (so use a negative offset).
+
+<ApplicationsGrid>
+  <PracticalApplication title="Permissions and flags" tool="LINUX · CHMOD">
+    `chmod 755` is three groups of 3 bits (read, write, execute). Checking "can the owner write?" is just `mode & 0200`.
+  </PracticalApplication>
+  <PracticalApplication title="File formats" tool="PNG · ZIP · MP3">
+    Every binary format has a fixed header you `fread` into a struct, followed by records you `fseek` between. Compression formats read their data a few bits at a time with exactly the shift-and-mask loop above.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 231, title: "Power of Two", slug: "power-of-two", why: "Exercise 1 exactly: one line with x & (x − 1)." },
+    { id: 191, title: "Number of 1 Bits", slug: "number-of-1-bits", why: "Exercise 2: the n & (n − 1) loop." },
+    { id: 136, title: "Single Number", slug: "single-number", why: "x ^ x = 0, so XOR everything together and the pairs cancel out." },
+    { id: 190, title: "Reverse Bits", slug: "reverse-bits", why: "Pull bits off one end with & 1 and >>, and push them onto the other end with <<." },
+  ]}
+/>

@@ -1,0 +1,199 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { GrowthTable } from "@/components/mdx/AlgoVisualizers";
+import { SatExplorer, SatToClique } from "@/components/mdx/AdvancedVisualizers";
+
+# P, NP, NP-Hard and NP-Complete
+
+Every algorithm in this course runs in **polynomial time**: $n \log n$, $n^2$, $V + E$. But some problems seem to have **no** fast algorithm at all, only a search through an astronomically large number of possibilities. This last lesson explains how computer scientists sort problems into **easy** and (probably) **hard**, and why that's one of the biggest open questions in mathematics.
+
+## Some definitions
+
+- **Problem:** something that can be described as *input → processing → output*.
+- **Search space:** all the possible outputs, over all valid inputs.
+- **Time complexity:** the time needed to compute a correct output for a given input.
+- **Brute force:** visiting the **whole** search space.
+
+## Complexity, reviewed
+
+- **Big-O:** $f(n) = O(g(n))$ if there are positive constants $c$ and $n_0$ such that $f(n) \le c\,g(n)$ for all $n \ge n_0$. It gives an **upper bound**.
+- **Big-Omega** gives an asymptotic **lower bound**.
+- **Theta** is used when $f$ can be bounded both above and below by the same function $g$.
+
+### Complexity vs. input length
+
+| Complexity | Description |
+| --- | --- |
+| $c$ | **constant** time: doesn't depend on the input |
+| $\log N$ | logarithmic time |
+| $N$ | linear time |
+| $N \log N$ | $N \log N$ |
+| $N^2$ | quadratic |
+| $a N^x + b N^{x-1} + \dots + c$ | **polynomial** |
+| $a^N$ | **exponential**: the most dangerous! |
+| $N!$ | factorial, even worse than exponential: also the most dangerous! |
+
+<GrowthTable initialN={50} />
+
+## The class P
+
+A problem is **polynomial-time solvable** if there's an algorithm that correctly solves it in $O(n^k)$ time, for some constant $k$, where $n$ is the input length.
+
+<Callout tone="mint" label="Definition">
+**P** is the set of polynomial-time solvable problems.
+</Callout>
+
+**Examples of problems in P:**
+
+- searching,
+- sorting,
+- replacing,
+- finding a path between two points in a graph,
+- testing whether a number is **prime**: IsPrime(12) → No, IsPrime(1009) → Yes. (A polynomial algorithm for this was only found in 2002, in terms of the number of *digits*.)
+
+## The class NP
+
+- **NP** stands for **non-deterministic polynomial**.
+- For these problems, the size of the **search space grows exponentially** with the input size $N$.
+- No way is known to find the global optimum **other than searching through the search space** one candidate at a time.
+- But a *proposed* answer can be **checked** quickly, in polynomial time. That's the precise meaning of NP: a "yes" answer comes with a certificate (a proof) that can be **verified** in polynomial time.
+
+**Examples of NP problems:**
+
+- the Boolean satisfiability problem (SAT),
+- the traveling salesman problem (TSP),
+- the Hamiltonian path problem.
+
+Every problem in P is also in NP: if you can *solve* it quickly, you can certainly *check* an answer quickly.
+
+### The traveling salesman problem (TSP)
+
+- **Input:** an undirected graph with non-negative edge costs.
+- **Output:** a minimum-cost **tour**, a cycle that visits every vertex exactly once.
+
+Trying every order of the cities means $N!$ tours:
+
+| Number of cities | Search space size |
+| ---: | ---: |
+| 3 | 6 |
+| 6 | 720 |
+| 12 | 479,001,600 |
+| 18 | 6,402,373,705,728,000 |
+| 25 | 15,511,210,043,330,985,984,000,000 |
+| 50 | about $3 \times 10^{64}$ |
+| 100 | about $9.3 \times 10^{157}$ |
+
+Even checking a billion tours per second, 25 cities would take hundreds of millions of years.
+
+### The clique problem
+
+A **clique** is a set of vertices that are **all connected to each other**: a complete subgraph. The clique problem is to find cliques in a graph.
+
+- What's the complexity of **checking** whether some specific vertices form a clique? **Polynomial.** Just check every pair.
+- What's the complexity of deciding whether a graph **has** a clique of size $k$? Trying all $\binom{n}{k}$ subsets is exponential when $k$ grows with $n$. This is the **NP** version.
+- What's the complexity of **finding the maximum** clique size for a graph? **(NP-hard.)**
+
+## P vs. NP
+
+There are **two possibilities**:
+
+- **P ≠ NP:** P is a smaller set inside NP. Some problems are easy to *check* but truly hard to *solve*.
+- **P = NP:** the two classes are the same. Every problem whose answer can be checked quickly can also be solved quickly.
+
+<Callout tone="violet" label="The big open question">
+**No one knows whether P = NP.** It's one of the seven Millennium Prize Problems, and solving it is worth **a million dollars**. Most computer scientists believe P ≠ NP.
+</Callout>
+
+## NP-hard
+
+A problem is **NP-hard** if **every** problem in NP can be reduced to it in polynomial time. An NP-hard problem is at least as hard as anything in NP. It doesn't even have to be in NP itself.
+
+## NP-complete
+
+<Callout tone="mint" label="Definition">
+A problem is **NP-complete** if it is **both in NP and NP-hard**.
+</Callout>
+
+NP-complete problems have a powerful property:
+
+- They're the **representatives** of the entire class NP: the hardest problems in it.
+- **If one NP-complete problem can be solved in polynomial time, then every problem in NP can be.** That would prove P = NP.
+- Examples: **satisfiability (SAT)** and the decision version of the **traveling salesman problem (TSP)**.
+
+So when you meet a new problem and prove it's NP-complete, you've learned something useful: don't spend weeks looking for a fast exact algorithm. Thousands of researchers have failed to find one for problems just like it. Look for an approximation, a heuristic, or a special case instead.
+
+## Reduction
+
+A problem $R$ can be **reduced** to another problem $Q$ if any instance of $R$ can be **rephrased** as an instance of $Q$, and the solution to that instance gives a solution to the instance of $R$. The rephrasing is called a **transformation**.
+
+**Intuitively:** if $R$ reduces to $Q$ in polynomial time, then $R$ is **"no harder to solve" than $Q$**. A fast algorithm for $Q$ gives you a fast algorithm for $R$.
+
+**Example:** $\text{LCM}(m, n) = \dfrac{m \cdot n}{\text{GCD}(m, n)}$. So the LCM problem reduces to the GCD problem: compute the GCD with Euclid's algorithm, then do one multiplication and one division.
+
+**Another example:** is a linear equation reducible to a quadratic equation? Sure! Set the coefficient of the square term to 0. $bx + c = 0$ is just $0x^2 + bx + c = 0$.
+
+## The SAT problem
+
+**SAT was the first problem proved NP-complete** (the Cook–Levin theorem, 1971).
+
+The **Boolean satisfiability problem** asks: can the variables of a given Boolean formula be assigned TRUE/FALSE values so that the whole formula is TRUE?
+
+We use **CNF** (conjunctive normal form): an AND ($\wedge$) of **clauses**, where each clause is an OR ($\vee$) of variables or their negations ($\neg$). For example, SAT with 11 clauses and 6 variables looks like:
+
+$$
+(a \vee b) \wedge (b \vee \neg c) \wedge (\neg a \vee \neg d) \wedge (c \vee e) \wedge (b \vee \neg c) \wedge (\neg a \vee \neg d) \wedge (e \vee a) \wedge (f \vee \neg b) \wedge (\neg f \vee \neg e) \wedge (b \vee e) \wedge (b \vee \neg d)
+$$
+
+**SAT with 2 clauses and 2 variables:** $(a \vee b) \wedge (a \vee \neg b)$. Does it have a valid solution? If yes, what is it?
+
+<SatExplorer formula="(a ∨ b) ∧ (a ∨ ¬b)" />
+
+Yes: any assignment with $a = $ TRUE works, whatever $b$ is.
+
+**SAT with 2 clauses and 3 variables:** $(a \vee b) \wedge (b \vee \neg c)$. Click the second preset above to fill in its table, and find all the satisfying assignments.
+
+Checking one row is quick. The problem is that $n$ variables give $2^n$ rows: the 6-variable formula above already has 64, 100 variables give about $10^{30}$, and 300 variables would give more rows than there are atoms in the universe.
+
+## A reduction example: 3-CNF SAT to CLIQUE
+
+Remember the clique problem: a clique in an undirected graph is a subset of vertices where **each pair is connected by an edge**.
+
+We'll take a problem instance in **3-CNF SAT** (every clause has at most 3 literals) and convert it into a **CLIQUE** problem.
+
+- **Given:** a Boolean formula in 3-CNF.
+- **Goal:** produce a graph, in polynomial time, so that **satisfying the formula with $k$ clauses is equivalent to finding a $k$-vertex clique**.
+
+### Decision problems vs. optimization problems
+
+An instance of the clique problem gives you two things as input:
+
+- a graph,
+- a positive integer $k$.
+
+The question asked is: **is there a clique of size $k$ in this graph?** (Why can't we just go through all the $k$-subsets? Because there are $\binom{n}{k}$ of them, which is exponential.)
+
+**Finding the maximum** clique is an *optimization* problem. But we can turn it into a series of *decision* problems: is there a clique of size 3? Of size 4? And so on. (Why start at 3? Any single edge is already a clique of size 2.) In the study of NP, we focus on **decision problems**.
+
+### The construction
+
+- For each **clause**, create a **vertex for each literal**.
+- **Connect** two vertices if they come from **different** clauses.
+- But even when they come from different clauses, **don't** connect them if they're **incompatible**: no variable is ever connected to its own negation ($x$ and $\neg x$ can't both be true).
+
+**Why it works.** A clique of size $k$ (the number of clauses) must take **exactly one vertex from each clause**, because vertices in the same clause aren't connected. All those literals are pairwise compatible, so you can make them all TRUE at once, and that satisfies every clause. In the other direction, a satisfying assignment makes at least one literal TRUE in each clause, and picking one such literal per clause gives a $k$-clique.
+
+So **3-CNF SAT reduces to CLIQUE**. Since 3-CNF SAT is NP-complete, CLIQUE is NP-hard too (and, being checkable quickly, NP-complete).
+
+The lecture's example is $(x_1 \vee \neg x_2 \vee x_3) \wedge (\neg x_1 \vee x_2) \wedge (\neg x_2 \vee x_3)$, with 3 clauses. What if the graph has a clique of size 3?
+
+<SatToClique formula="(x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2) ∧ (¬x2 ∨ x3)" />
+
+Edit the formula to try your own. Add a clause like $(\neg x_3)$ and see whether a clique of the new size still exists.
+
+<ApplicationsGrid>
+  <PracticalApplication title="SAT solvers in industry" tool="CHIP VERIFICATION · PACKAGE MANAGERS">
+    Even though SAT is NP-complete, modern solvers handle real formulas with millions of variables. They check that CPU designs are correct, and resolve dependency versions in tools like `apt` and `conda`.
+  </PracticalApplication>
+  <PracticalApplication title="Cryptography relies on hardness" tool="RSA · ELLIPTIC CURVES">
+    Internet security depends on problems believed to have no fast algorithm, such as factoring huge numbers. If P = NP, much of today's cryptography would break.
+  </PracticalApplication>
+</ApplicationsGrid>

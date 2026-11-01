@@ -1,0 +1,44 @@
+import { HardDisk, DiskCalculator } from "@/components/mdx/OrganizationVisualizers";
+
+# Hard Disks
+
+A hard disk drive (HDD) is like a record player, with data in place of music. Metal or glass discs called **platters** spin at thousands of turns a minute, coated in a magnetic layer. A tiny **head** on a moving arm flies just above the surface.
+
+Each tiny spot on the surface is magnetised in one of two directions, and those directions are the 0s and 1s. To write, the head changes the magnetism of the spot beneath it. To read, it senses that magnetism. A drive keeps its data with no power because magnetism doesn't need electricity to stay put.
+
+## Finding a sector
+
+Click any sector and watch what the drive has to do.
+
+<HardDisk />
+
+Reading takes two physical movements:
+
+1. **Seek**: the arm moves to the correct track.
+2. **Rotational wait**: the platter turns until the sector arrives.
+
+Compared with electronics, both take an eternity: milliseconds against nanoseconds. That's why a disk is by far the slowest part of the [memory hierarchy](/courses/computer-organization/memory-hierarchy).
+
+## How the surface is organised
+
+**Low-level formatting** marks out the tracks and sectors on the platter. **High-level formatting** then writes the file system's tables, so the drive can hold files.
+
+Since the outer tracks of a disk are longer than the inner ones, sector numbering is hidden from the rest of the computer these days. **Logical block addressing** (LBA) simply numbers all sectors in sequence, starting from 0, and the drive works out where each one really is.
+
+A file takes up one or more clusters, and they can end up scattered all over the disk. That's **fragmentation**. It makes the head jump around, and it's why defragmenting used to speed up a hard disk.
+
+## Capacity
+
+Multiply the geometry together:
+
+$$
+\text{capacity} = \text{cylinders} \times \text{heads} \times \text{sectors per track} \times \text{bytes per sector}
+$$
+
+<DiskCalculator />
+
+Faster spinning cuts the wait. A 5,400 rpm drive waits about 5.6 ms on average, and a 15,000 rpm drive about 2 ms.
+
+## Connecting a drive
+
+The drive connects to the computer through an interface. **SATA** is the common serial one for PCs, replacing the older parallel **PATA/IDE**. **SCSI** and its successor SAS are used in servers.

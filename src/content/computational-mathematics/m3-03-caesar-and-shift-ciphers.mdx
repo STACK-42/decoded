@@ -1,0 +1,95 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CipherWheel, ShiftBruteForce } from "@/components/mdx/CipherVisualizers";
+
+# Caesar and Shift Ciphers
+
+Earlier ciphers transformed each letter of the plaintext into a different letter. These are called **character**, **substitution** or **monographic** ciphers. They're easy to break today, but they're a clear place to see modular arithmetic doing real work.
+
+## Letters as numbers
+
+First, give each letter a number, with $A = 0, B = 1, \dots, Z = 25$. All the operations happen on these numbers, modulo 26.
+
+## The Caesar cipher
+
+A Caesar cipher moves each letter three places forward:
+
+$$
+E_3(m) = m + 3 \pmod{26}, \qquad D_3(c) = c - 3 \pmod{26}
+$$
+
+The key for both directions is 3. Z wraps around to C, and that wrapping is the mod at work.
+
+## Shift ciphers
+
+There's no reason to stick with 3. A **shift cipher** allows any key $k$:
+
+$$
+E_k(m) = m + k \pmod{26}, \qquad D_k(c) = c - k \pmod{26}
+$$
+
+Turn the wheel to change the key. The inner ring gives the ciphertext letter under each plaintext letter:
+
+<CipherWheel />
+
+For example, with $k = 3$, IBM becomes LEP. With $k = 4$, NIST becomes RMWX. With $k = 7$, ENCRYPTION becomes LUJYFWAPVU.
+
+## How to break it
+
+A shift cipher has only 25 useful keys, so an attacker can try them all. This is a **brute-force attack**. Try it on this ciphertext:
+
+<ShiftBruteForce />
+
+<Callout tone="sky" label="Another weakness">
+Even without trying keys, letter frequencies give a shift cipher away. E is the most common letter in English, so the most common ciphertext letter is probably E shifted by $k$.
+</Callout>
+
+## In Python
+
+`str.translate` applies a whole substitution in one call, and pandas can count letters for a frequency attack:
+
+```python
+import string
+import pandas as pd
+
+def shift(text, k):
+    letters = string.ascii_uppercase
+    return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
+
+print(shift("IBM", 3))  # LEP
+print(shift("ENCRYPTION", 7))  # LUJYFWAPVU
+
+counts = pd.Series(list(shift("EEEEATTN", 3))).value_counts()
+print(counts.idxmax())  # H
+```
+
+The most common ciphertext letter is H, and H is E shifted by 3, so the frequency count has given away the key.
+
+## In machine learning
+
+**Letters as numbers.** Mapping A to 0 is what a character-level tokenizer does. Models can only process numbers, so each symbol gets an index first.
+
+**Picking the right key is classification.** You spotted the readable line in the brute-force list because you know English. To automate that, score each candidate against a statistical model of the language, then keep the best one. This is the same idea as an n-gram language model, the ancestor of today's large language models:
+
+```python
+import math
+
+freq = {"E": 0.127, "T": 0.091, "A": 0.082, "O": 0.075, "H": 0.061, "L": 0.040, "R": 0.060, "K": 0.008}
+
+def score(text):
+    return sum(math.log(freq.get(ch, 0.001)) for ch in text)
+
+print(score("HELLO") > score("KHOOR"))  # True
+```
+
+The logs turn a product of probabilities into a sum, which avoids numbers too small to store. Training a language model maximises this same kind of score.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hiding spoilers" tool="ROT13">
+ROT13 is a shift cipher with $k = 13$, which forums use to hide spoilers. Since 13 + 13 = 26, applying it twice gives the original text.
+</PracticalApplication>
+<PracticalApplication title="Choosing key sizes" tool="AES, RSA">
+This attack is why key space matters. AES-128 has $2^{128}$ possible keys, so brute force is out of the question.
+</PracticalApplication>
+</ApplicationsGrid>

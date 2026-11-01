@@ -1,0 +1,120 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ModClock } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Modular Arithmetic
+
+You already do modular arithmetic when you work out that 5 hours after 10 o'clock is 3 o'clock. Numbers wrap around once they reach a limit, and that wrapping is what makes cryptography possible.
+
+## The mod operation
+
+$a \bmod n$ is the remainder when $a$ is divided by $n$, and the positive integer $n$ is called the **modulus**:
+
+$$
+a = \left\lfloor \frac{a}{n} \right\rfloor \cdot n + (a \bmod n)
+$$
+
+So $11 \bmod 7 = 4$ and $-11 \bmod 7 = 3$. Picture a clock with $n$ positions: positive numbers walk clockwise and negative numbers walk the other way.
+
+<ModClock />
+
+```matlab
+mod(-28, 81)              % 53
+mod(7653, 915)            % 333
+mod([-4 -1 7 9], 3)       % 2  2  1  0
+mod(1:10, 5)              % 1 2 3 4 0 1 2 3 4 0
+```
+
+<Callout tone="orange" label="A trap in other languages">
+In C, Java and JavaScript, the `%` operator keeps the sign of the first number, so `-11 % 7` gives `-4`. MATLAB's `mod` and Python's `%` give `3`. This difference is a common source of bugs.
+</Callout>
+
+## Congruence
+
+Two integers are **congruent modulo $n$** if they leave the same remainder, written $a \equiv b \pmod{n}$. They land on the same spot on the clock. For example, $73 \equiv 4 \pmod{23}$ and $21 \equiv -9 \pmod{10}$.
+
+Congruence behaves much like equality:
+
+1. $a \equiv b \pmod n$ exactly when $n \mid (a - b)$.
+2. $a \equiv a$, for any $n$.
+3. If $a \equiv b$ then $b \equiv a$.
+4. If $a \equiv b$ and $b \equiv c$, then $a \equiv c$.
+
+## You can reduce at any time
+
+Addition, subtraction and multiplication all respect the modulus:
+
+$$
+\begin{aligned}
+[(a \bmod n) + (b \bmod n)] \bmod n &= (a + b) \bmod n \\
+[(a \bmod n) - (b \bmod n)] \bmod n &= (a - b) \bmod n \\
+[(a \bmod n) \cdot (b \bmod n)] \bmod n &= (a \cdot b) \bmod n
+\end{aligned}
+$$
+
+So you can shrink the numbers partway through and still get the right answer. Check it with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$. Then $(3 \cdot 7) \bmod 8 = 21 \bmod 8 = 5$, and directly $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
+
+That also makes big powers easy. To find $10^7 \bmod 17$:
+
+$$
+\begin{aligned}
+10^2 &= 100 \equiv 15 \\
+10^4 &= 15^2 \equiv 4 \\
+10^7 &= 10 \cdot 10^2 \cdot 10^4 \equiv 10 \cdot 15 \cdot 4 = 600 \equiv 5
+\end{aligned}
+$$
+
+## Be careful when cancelling
+
+If $(a + b) \equiv (a + c) \pmod n$, you can always cancel to get $b \equiv c$. For multiplication, you can only cancel when $a$ is coprime to $n$. For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both are 6, yet $3 \not\equiv 7 \pmod 8$.
+
+## In Python
+
+Python's `%` matches MATLAB's `mod`, including for negative numbers, and NumPy and pandas work the same way:
+
+```python
+import numpy as np
+import pandas as pd
+
+print(-11 % 7)  # 3
+print(np.mod([-4, -1, 7, 9], 3).tolist())  # [2, 2, 1, 0]
+print((pd.Series([23, 24, 25]) % 24).tolist())  # [23, 0, 1]
+```
+
+## In machine learning
+
+**The hashing trick.** A model can't have a separate column for every possible user ID or word. Feature hashing maps each one to a fixed number of buckets, using a hash modulo the number of buckets:
+
+```python
+import zlib
+
+bucket = zlib.crc32(b"user_42") % 1000
+
+print(0 <= bucket < 1000)  # True
+```
+
+Use a stable hash like this one. Python's built-in `hash` gives strings different values each time the program runs, so a model trained with it would break on the next run.
+
+**Cyclic features.** Hour 23 and hour 0 are neighbours on a clock, yet they look far apart as plain numbers. The usual fix places them on a circle, which is the picture from the clock above:
+
+```python
+import numpy as np
+
+hours = np.array([23, 0])
+angle = 2 * np.pi * hours / 24
+points = np.column_stack([np.sin(angle), np.cos(angle)])
+
+print(round(np.linalg.norm(points[0] - points[1]), 2))  # 0.26
+```
+
+Transformer position encodings use a similar set of sine and cosine waves.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hash tables" tool="Every language's dictionary">
+A hash table often picks a bucket with `hash mod size`, which turns any hash into a valid index.
+</PracticalApplication>
+<PracticalApplication title="Checksums" tool="ISBN, card numbers">
+Check digits are chosen so a sum comes out to a fixed value modulo 10 or 11, which catches most typing mistakes.
+</PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,57 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { PlaceValueBits, BaseConverter, FractionConverter } from "@/components/mdx/LogicVisualizers";
+
+# Number Systems
+
+You already know how place value works. In 345, the 3 means 300 because of where it sits: $3 \times 10^2 + 4 \times 10^1 + 5 \times 10^0$. Other number systems use the same idea with a different base. The base is how many digits you have before you run out and start a new column.
+
+| System | Base | Digits | Column weights |
+|---|---|---|---|
+| Decimal | 10 | 0 to 9 | 1000, 100, 10, 1 |
+| Binary | 2 | 0, 1 | 8, 4, 2, 1 |
+| Octal | 8 | 0 to 7 | 512, 64, 8, 1 |
+| Hexadecimal | 16 | 0 to 9, A to F | 4096, 256, 16, 1 |
+
+## Binary to decimal
+
+Think of a row of switches, where each switch is worth double the one to its right. To read a binary number, add up the values of the switches that are on. Flip these and watch the total change.
+
+<PlaceValueBits />
+
+So $1101101_2 = 64 + 32 + 8 + 4 + 1 = 109$. The same recipe works in any base. Multiply each digit by its column weight and add:
+
+$$
+2374_8 = 2(512) + 3(64) + 7(8) + 4(1) = 1276
+$$
+
+$$
+\text{E5}_{16} = 14(16) + 5(1) = 229
+$$
+
+## Decimal to another base
+
+To go the other way, keep dividing by the base. Each remainder is one digit, starting from the right. Step through it, then try your own number or switch to hex.
+
+<BaseConverter />
+
+## Why programmers love hex
+
+A long binary number is hard to read. Because $16 = 2^4$, one hex digit covers exactly 4 bits, so you can convert by grouping, with no arithmetic. Octal works the same way with groups of 3, because $8 = 2^3$.
+
+$$
+\underbrace{1100}_{\text{C}}\ \underbrace{1010}_{\text{A}}\ \underbrace{0101}_{5}\ \underbrace{0111}_{7} = \text{CA57}_{16}
+$$
+
+Start grouping at the right-hand end and pad the left with zeros if a group comes up short. For example, $110101_2$ groups into 110 and 101, which is $65_8$.
+
+<Callout tone="sky" label="Where you see this">
+Colour codes like `#FF8800` are three bytes in hex. Memory addresses in a debugger are in hex too, and you'll work them by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
+</Callout>
+
+## Fractions
+
+After the point, the column weights keep halving: 0.5, 0.25, 0.125, and so on. To convert a decimal fraction, keep multiplying by 2. Whatever pops out in front of the point is the next bit.
+
+<FractionConverter />
+
+Try 0.1. It never terminates in binary, for the same reason 1/3 never terminates in decimal. This is why `0.1 + 0.2` isn't exactly `0.3` in most programming languages.

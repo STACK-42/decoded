@@ -1,0 +1,97 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Numbers and Codes
+
+Seven questions on signals, number systems and codes. Get 5 right to pass.
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="numbers-quiz"
+  passThreshold={5/7}
+  questions={[
+    {
+      id: "q1",
+      prompt: "A clock has a period of 4 ns. What is its frequency?",
+      options: [
+        { id: "a", text: "4 MHz" },
+        { id: "b", text: "250 MHz" },
+        { id: "c", text: "400 MHz" },
+        { id: "d", text: "2.5 GHz" },
+      ],
+      correctOptionId: "b",
+      explanation: "f = 1/T = 1 / (4 × 10⁻⁹ s) = 250 × 10⁶ Hz.",
+    },
+    {
+      id: "q2",
+      prompt: "What is 1011010 in binary, written in decimal?",
+      options: [
+        { id: "a", text: "45" },
+        { id: "b", text: "90" },
+        { id: "c", text: "98" },
+        { id: "d", text: "180" },
+      ],
+      correctOptionId: "b",
+      explanation: "64 + 16 + 8 + 2 = 90.",
+    },
+    {
+      id: "q3",
+      prompt: "What is the binary number 1100 1010 in hexadecimal?",
+      options: [
+        { id: "a", text: "CA" },
+        { id: "b", text: "AC" },
+        { id: "c", text: "312" },
+        { id: "d", text: "C5" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each group of 4 bits is one hex digit: 1100 is C and 1010 is A.",
+    },
+    {
+      id: "q4",
+      prompt: "In 8-bit two's complement, what does 11111111 stand for?",
+      options: [
+        { id: "a", text: "255" },
+        { id: "b", text: "-127" },
+        { id: "c", text: "-1" },
+        { id: "d", text: "-0" },
+      ],
+      correctOptionId: "c",
+      explanation: "Adding 1 rolls it over to all zeros, so it acts as -1. Flipping and adding 1 confirms it: 00000000 + 1 = 1.",
+    },
+    {
+      id: "q5",
+      prompt: "Why does a position sensor use Gray code?",
+      options: [
+        { id: "a", text: "It uses fewer wires" },
+        { id: "b", text: "Only one bit changes between neighbours, so no false reading appears mid-change" },
+        { id: "c", text: "It stores more positions in the same number of bits" },
+        { id: "d", text: "It can represent negative positions" },
+      ],
+      correctOptionId: "b",
+      explanation: "Several bits never change at the same instant. With one bit changing there's no in-between pattern to misread.",
+    },
+    {
+      id: "q6",
+      prompt: "A float's stored exponent field is 130. What power of 2 does it mean?",
+      options: [
+        { id: "a", text: "2^130" },
+        { id: "b", text: "2^3" },
+        { id: "c", text: "2^-3" },
+        { id: "d", text: "2^257" },
+      ],
+      correctOptionId: "b",
+      explanation: "The stored value has 127 added to it, so the real exponent is 130 - 127 = 3.",
+    },
+    {
+      id: "q7",
+      prompt: "Decimal 59 in BCD is:",
+      options: [
+        { id: "a", text: "111011" },
+        { id: "b", text: "0101 1001" },
+        { id: "c", text: "0011 1011" },
+        { id: "d", text: "1000 1100" },
+      ],
+      correctOptionId: "b",
+      explanation: "BCD codes each decimal digit on its own: 5 is 0101 and 9 is 1001. 111011 is plain binary, and 1000 1100 is Excess-3.",
+    },
+  ]}
+/>

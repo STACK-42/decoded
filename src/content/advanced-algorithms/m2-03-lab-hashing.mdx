@@ -1,0 +1,202 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
+
+# Lab: Hash Tables in Practice
+
+A **hash table** is an effective data structure for implementing **dictionaries**. Its purpose is to support **extremely fast lookups**.
+
+It has three operations, all done using a key:
+
+- **Insert:** add a new record.
+- **Delete:** delete an existing record.
+- **Lookup:** check for a particular record.
+
+Under reasonable assumptions, the **average** time of each operation is $O(1)$.
+
+## Direct-address tables
+
+**Direct addressing** is a simple technique that works well when the **universe** $U$ of possible keys is reasonably small. Examples of universes are all IP addresses, all names, or all chess board positions.
+
+- Use an array $T[0 \dots m-1]$ indexed by $U$, where each position (**slot**) corresponds to one key in the universe.
+- Operations are $O(1)$, but it needs $\Theta(|U|)$ **space**.
+
+The downside: if the universe $U$ is large, storing a table of size $|U|$ may be impractical, or even impossible, given the memory on a typical computer. Also, the set $K$ of keys *actually* stored may be so small compared with $U$ that most of the table is wasted.
+
+## The solution: hash tables
+
+1. Pick $m$, the number of slots, with $m \approx |K|$.
+2. Choose a **hash function** $h : U \to \{0, 1, 2, \dots, m-1\}$.
+3. Use an array $T$ of length $m$, and store each key $k$ in $T[h(k)]$.
+
+### Example 1: hashing names
+
+Store the names Mia, Ada and Ted in a hash table of size 11, using
+
+$$
+h(\text{name}) = (\text{sum of the ASCII codes of its letters}) \bmod 11
+$$
+
+$$
+\begin{aligned}
+h(\text{Mia}) &= (77 + 105 + 97) \bmod 11 = 279 \bmod 11 = 4 \\
+h(\text{Ada}) &= (65 + 100 + 97) \bmod 11 = 262 \bmod 11 = 9 \\
+h(\text{Ted}) &= (84 + 101 + 100) \bmod 11 = 285 \bmod 11 = 10
+\end{aligned}
+$$
+
+| slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| name | | | | | Mia | | | | | Ada | Ted |
+
+```cpp
+int hashName(const string& name, int m) {
+    int sum = 0;
+    for (char c : name) sum += c;     // a char is its ASCII code
+    return sum % m;
+}
+```
+
+## Collisions
+
+A **collision** happens when two keys $x \ne y$ hash to the same slot: $h(x) = h(y)$. There are two ways to resolve collisions:
+
+1. **Chaining:** each slot points to a linked list. Given a key $x$, insert, delete or look it up in the list $A[h(x)]$.
+2. **Open addressing:** all keys live in the table itself, one key per slot. To insert, we **probe** (examine) slots one after another until we find an empty one. So the hash function takes the probe number as well:
+
+$$
+h : U \times \{0, 1, \dots, m-1\} \to \{0, 1, \dots, m-1\}
+$$
+
+and each key gets a probe sequence $\langle h(k, 0), h(k, 1), \dots, h(k, m-1) \rangle$.
+
+**Linear probing.** Given an ordinary hash function $h' : U \to \{0, 1, \dots, m-1\}$, called the **auxiliary hash function**, linear probing uses
+
+$$
+h(k, i) = \big(h'(k) + i\big) \bmod m
+$$
+
+First probe $T[h'(k)]$. If that slot is taken, probe $T[h'(k) + 1]$, and so on, until you find an empty slot for $k$.
+
+**Double hashing** uses two auxiliary hash functions $h_1$ and $h_2$:
+
+$$
+h(k, i) = \big(h_1(k) + i \cdot h_2(k)\big) \bmod m
+$$
+
+The first probe goes to $T[h_1(k)]$. Each following probe is offset from the previous one by $h_2(k)$, modulo $m$.
+
+### Example 2: double hashing
+
+Insert $k = 14$ into the table below (size $m = 13$) using double hashing, with $h_1(k) = k \bmod m$, $h_2(k) = 1 + (k \bmod m')$ and $m' = 11$.
+
+**Solution:**
+
+$$
+h_1(14) = 14 \bmod 13 = 1 \qquad h_2(14) = 1 + (14 \bmod 11) = 1 + 3 = 4
+$$
+
+The probe sequence follows $h(k, i) = (h_1(k) + i \cdot h_2(k)) \bmod m$:
+
+- $h(14, 0) = 1$: already occupied.
+- $h(14, 1) = 1 + 1 \cdot 4 = 5$: already occupied.
+- $h(14, 2) = 1 + 2 \cdot 4 = 9$: empty slot, so insert the key.
+
+<HashTableVisualizer
+  mode="double"
+  m={13}
+  second={{ kind: "mod", mp: 11 }}
+  initial={{ 1: 79, 4: 69, 5: 98, 7: 72, 11: 50 }}
+  ops={[{ op: "insert", key: 14 }]}
+  title="Example 2: inserting 14"
+/>
+
+**Task:** insert the two keys **22** and **27** into the same table (after 14) using double hashing, and show the probes for each key. Work it out on paper first, then check below.
+
+<details>
+<summary>Check your answer</summary>
+
+<HashTableVisualizer
+  mode="double"
+  m={13}
+  second={{ kind: "mod", mp: 11 }}
+  initial={{ 1: 79, 4: 69, 5: 98, 7: 72, 9: 14, 11: 50 }}
+  ops={[{ op: "insert", key: 22 }, { op: "insert", key: 27 }]}
+  title="Task: inserting 22 and 27"
+/>
+
+- **22:** $h_1 = 22 \bmod 13 = 9$ (taken by 14), $h_2 = 1 + (22 \bmod 11) = 1$, so try $9 + 1 = 10$: empty. **22 goes in slot 10.**
+- **27:** $h_1 = 27 \bmod 13 = 1$ (taken), $h_2 = 1 + (27 \bmod 11) = 6$, so try $1 + 6 = 7$ (taken), then $1 + 12 = 13 \bmod 13 = 0$: empty. **27 goes in slot 0.**
+
+</details>
+
+## Good hash functions
+
+A good hash function (approximately) satisfies **simple uniform hashing**: each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.
+
+Properties of a good hash function:
+
+1. It gives good performance: it **spreads the data out**.
+2. It's easy to store and **very fast to evaluate**.
+
+**Example:** the **division method** maps a key $k$ to one of $m$ slots by taking the remainder of $k$ divided by $m$: $h(k) = k \bmod m$. If the table has $m = 12$ slots and the key is $k = 100$, then $h(k) = 4$. It needs only a single division, so it's quite fast.
+
+### How do we choose $m$?
+
+**Choose $m$ to be a prime number**, so that it doesn't share common factors with the data being hashed.
+
+**Example of a bad hash function.** Say the keys are memory addresses, which are all multiples of a power of 2. A bad choice would be $h(x) = x \bmod 1000$. An even number mod an even number is even, so every output of the hash function is even, and **all the odd slots stay empty forever**. Half the table is wasted, and collisions double.
+
+## Extra exercises: open addressing
+
+Insert the keys **10, 22, 31, 4, 15, 28, 17, 88, 59** into a table of length $m = 11$ using open addressing, with $h'(k) = k$. Do it three ways and compare where the keys end up.
+
+### 1. Linear probing
+
+$$
+h(k, i) = \big(h'(k) + i\big) \bmod m
+$$
+
+<HashTableVisualizer mode="linear" m={11} ops={[10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert", key }))} />
+
+Notice 59. It starts at slot 4 and walks through slots 5, 6 and 7, which are all taken, before landing in slot 8. That's primary clustering: one long run of full slots.
+
+### 2. Quadratic probing with $c_1 = 1$, $c_2 = 3$
+
+$$
+h(k, i) = \big(h'(k) + i + 3i^2\big) \bmod m
+$$
+
+<HashTableVisualizer mode="quadratic" m={11} c1={1} c2={3} ops={[10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert", key }))} />
+
+88 needs **9** probes. It collides at slots 0, 4, 3, 8, 8, 3, 4 and 0 before finally finding slot 2. The same few slots keep coming back, because $i + 3i^2 \bmod 11$ doesn't visit them all evenly.
+
+### 3. Double hashing with $h_1(k) = k$ and $h_2(k) = 1 + (k \bmod (m - 1))$
+
+$$
+h(k, i) = \big(h_1(k) + i \cdot h_2(k)\big) \bmod m, \qquad m' = m - 1 = 10
+$$
+
+<HashTableVisualizer mode="double" m={11} second={{ kind: "mod", mp: 10 }} ops={[10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert", key }))} />
+
+The final tables:
+
+| slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| linear | 22 | 88 | | | 4 | 15 | 28 | 17 | 59 | 31 | 10 |
+| quadratic | 22 | | 88 | 17 | 4 | | 28 | 59 | 15 | 31 | 10 |
+| double | 22 | | 59 | 17 | 4 | 15 | 28 | 88 | | 31 | 10 |
+
+<Callout tone="sky" label="Compare the probe counts">
+Look at the **probes** counter at the end of each run. Linear probing piles keys into one long run around slots 4–8. Double hashing scatters them, so on average each key needs fewer probes.
+</Callout>
+
+<LeetCodeProblems
+  note="solve them in C++"
+  problems={[
+    { id: 706, title: "Design HashMap", slug: "design-hashmap", why: "Build a hash table yourself, with either chaining or linear probing. No unordered_map allowed!" },
+    { id: 705, title: "Design HashSet", slug: "design-hashset", why: "The same, for keys only. Try deleting with \"deleted\" markers if you use open addressing." },
+    { id: 1, title: "Two Sum", slug: "two-sum", why: "The classic hash table problem: one pass, and look up target − x as you go." },
+    { id: 49, title: "Group Anagrams", slug: "group-anagrams", why: "Choose a hash key so that all anagrams collide on purpose.", difficulty: "Medium" },
+  ]}
+/>
