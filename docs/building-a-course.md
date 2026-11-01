@@ -38,7 +38,9 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 - **If no lesson teaches it,** explain it in a sentence where it's used, or say plainly that it's outside this course. Never promise a lesson that doesn't exist yet, such as "later in this course" for something no lesson covers.
 - **Link back when you add a lesson.** Search the other courses for places that use your new lesson's ideas without explaining them, and link them to it.
 
-Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)`. The lesson page follows them without reloading the site. `src/test/lesson-links.test.ts` checks that every link on the site points at a real lesson and a real heading, so a renamed lesson or heading fails the tests instead of leaving a dead link.
+Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)`. The lesson page follows them without reloading the site.
+
+**Hovering a link shows a preview** of how the linked lesson defines the idea, like a dictionary entry, so readers can check a term without leaving the page. The preview is read from the lesson itself: within the linked section (or the whole lesson, if the link has no section) it picks the paragraph where the link's words appear in **bold**, then one that mentions them, then the first paragraph. So **bold a term where you define it**, as in "the **dot product** multiplies matching entries", and the preview will find that sentence. A paragraph ending in a colon brings along the formula or list after it. `src/test/lesson-preview.test.ts` checks that every link on the site produces one. `src/test/lesson-links.test.ts` checks that every link on the site points at a real lesson and a real heading, so a renamed lesson or heading fails the tests instead of leaving a dead link.
 
 ## Registration checklist
 

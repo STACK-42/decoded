@@ -7,6 +7,7 @@ import { useProgress } from "@/hooks/useProgress";
 import { CodeBlock } from "@/components/mdx/MdxComponents";
 import { CourseNav } from "@/components/lesson/CourseNav";
 import { LessonToc } from "@/components/lesson/LessonToc";
+import { LessonLink } from "@/components/lesson/LessonLink";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Flag, PanelLeft } from "lucide-react";
@@ -24,7 +25,8 @@ function readSidebarPref() {
   }
 }
 
-const mdxComponents = { pre: CodeBlock };
+// links to other lessons get a hover preview of the definition they point at
+const mdxComponents = { pre: CodeBlock, a: LessonLink };
 
 function LessonSkeleton() {
   return (
