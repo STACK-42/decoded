@@ -85,6 +85,8 @@ Halving every two steps means the number of steps is at most about $2 \log_2 n$.
 What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 = 45$, so the pair becomes $(210, 45)$. Euclid swaps them for you, for the price of one division.
 </Callout>
 
+Run the same divisions backwards and they also give you the numbers $x$ and $y$ with $mx + ny = \gcd(m, n)$. That's the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm), which ciphers use to undo multiplication modulo a number.
+
 ## Where this shows up today
 
 <ApplicationsGrid>

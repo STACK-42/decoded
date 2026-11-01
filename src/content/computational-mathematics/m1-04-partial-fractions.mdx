@@ -13,7 +13,7 @@ $$
 \frac{b(s)}{a(s)} = \frac{r_1}{s - p_1} + \frac{r_2}{s - p_2} + \cdots + \frac{r_n}{s - p_n} + k(s)
 $$
 
-Here $p_i$ are the **poles** (the roots of $a$), $r_i$ are the **residues**, and $k(s)$ holds any direct terms. $k$ is empty when $b$ has a lower degree than $a$.
+Here $p_i$ are the **poles** (the [roots](/courses/computational-mathematics/polynomials-and-roots#roots) of $a$), $r_i$ are the **residues**, and $k(s)$ holds any direct terms. $k$ is empty when $b$ has a lower degree than $a$.
 
 ## An example
 
@@ -61,7 +61,7 @@ a2 =
 
 ## In Python
 
-NumPy has no `residue`, but SciPy does (`scipy.signal.residue`). For distinct poles, the rule is short enough to write yourself: a residue is $b(p) / a'(p)$, which is the cover-up method in one line.
+NumPy has no `residue`, but SciPy does (`scipy.signal.residue`). For distinct poles, the rule is short enough to write yourself: a residue is $b(p) / a'(p)$, where $a'$ is the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) of $a$. That's the cover-up method in one line.
 
 ```python
 import numpy as np

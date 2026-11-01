@@ -21,7 +21,7 @@ q =
 
 `polyder` also accepts two polynomials, and the number of outputs you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
 
-With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. The product is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
+With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. The product, worked out by [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution), is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
 
 ```matlab
 a = [1 3 5];  b = [2 4 6];
@@ -82,7 +82,7 @@ print(np.round(np.polyfit(x, y, 3), 4).tolist())  # [-0.1917, 31.5821, -60.3262,
 
 ## In machine learning
 
-This lesson is the core of ML in miniature. `polyfit` is linear regression on polynomial features, the sum of squared errors is the mean squared error loss without the division, and the degree is the model's complexity.
+This lesson is the core of ML in miniature. `polyfit` is [linear regression](/courses/computational-mathematics/determinants-and-inverses#in-machine-learning) on [polynomial features](/courses/computational-mathematics/polynomials-and-roots#in-machine-learning), the sum of squared errors is the mean squared error loss without the division, and the degree is the model's complexity.
 
 **Overfitting.** Hold some points back, and error on the training points keeps falling as the degree rises, while error on the held-out points eventually climbs. That's why ML practice splits data into training and test sets, and you can try it in NumPy:
 

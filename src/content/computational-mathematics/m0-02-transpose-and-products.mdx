@@ -51,7 +51,7 @@ $$
 
 ## One pair of vectors, two products
 
-Take a column vector $u$ and a row vector $v$ of the same length. Both orders are legal matrix products, because the inner sizes match either way, yet the results have nothing in common:
+Take a column vector $u$ and a row vector $v$ of the same length. Both orders are legal [matrix products](/courses/computational-mathematics/multiplying-matrices#the-rule), because the inner sizes match either way, yet the results have nothing in common:
 
 - `v * u` is 1-by-3 times 3-by-1, so the result is 1-by-1. This is the **inner product**.
 - `u * v` is 3-by-1 times 1-by-3, so the result is 3-by-3. This is the **outer product**.
@@ -88,7 +88,7 @@ print(sum(a * b for a, b in zip([3, 1, 4], [2, 0, -1])))  # 2
 
 ## In machine learning
 
-The dot product measures how much two vectors point the same way, which is how models compare things. Cosine similarity divides it by both lengths:
+The dot product measures how much two vectors point the same way, which is how models compare things. Cosine similarity divides it by both lengths, which are [Euclidean norms](/courses/computational-mathematics/norms-and-trace#three-norms-to-know):
 
 ```python
 import numpy as np

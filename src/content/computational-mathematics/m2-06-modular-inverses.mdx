@@ -3,11 +3,11 @@ import { ExtendedEuclidVisualizer } from "@/components/mdx/NumberTheoryVisualize
 
 # Modular Inverses
 
-Modular arithmetic has no fractions, so how do you divide? You multiply by an **inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every affine cipher and RSA key later in this course depends on finding one.
+Modular arithmetic has no fractions, so how do you divide? You multiply by an **inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every [affine cipher](/courses/computational-mathematics/affine-ciphers) later in this course depends on finding one, and so does every RSA key.
 
 ## When an inverse exists
 
-If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's coprime to $n$. For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
+If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$. For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
 
 ## The extended Euclidean algorithm
 
@@ -17,7 +17,7 @@ $$
 a x + b y = g
 $$
 
-To find them, run Euclid's algorithm down, and then climb back up. On each row, replace the smaller remainder using the division on that row. The expression stays equal to $g$ the whole way:
+To find them, run [Euclid's algorithm](/courses/computational-mathematics/divisibility-and-euclid#the-euclidean-algorithm) down, and then climb back up. On each row, replace the smaller remainder using the division on that row. The expression stays equal to $g$ the whole way:
 
 <ExtendedEuclidVisualizer />
 

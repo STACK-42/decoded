@@ -3,7 +3,7 @@ import { WilsonVisualizer, TotientGrid } from "@/components/mdx/NumberTheoryVisu
 
 # Primality Tests and Euler's Totient
 
-Trial division stops working when numbers have hundreds of digits. This lesson covers three classic theorems that say something about primes without searching for factors, and the third one is the engine inside RSA.
+[Trial division](/courses/computational-mathematics/primes-and-the-sieve#you-only-need-to-check-up-to-the-square-root) stops working when numbers have hundreds of digits. This lesson covers three classic theorems that say something about primes without searching for factors, and the third one is the engine inside RSA.
 
 ## Wilson's theorem
 
@@ -13,7 +13,7 @@ $$
 (n - 1)! \equiv -1 \pmod{n}
 $$
 
-The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1. These pairs all cancel, except for 1 and $n - 1$, which are their own partners:
+The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1, its [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs all cancel, except for 1 and $n - 1$, which are their own partners:
 
 <WilsonVisualizer />
 
@@ -33,7 +33,7 @@ $$
 a^{n-1} \equiv 1 \pmod{n}
 $$
 
-For $a = 7$ and $n = 19$: $7^2 \equiv 11$, $7^4 \equiv 7$, $7^8 \equiv 11$, $7^{16} \equiv 7$, and so $7^{18} = 7^{16} \cdot 7^2 \equiv 7 \cdot 11 \equiv 1 \pmod{19}$.
+For $a = 7$ and $n = 19$: $7^2 \equiv 11$, $7^4 \equiv 7$, $7^8 \equiv 11$, $7^{16} \equiv 7$, and so $7^{18} = 7^{16} \cdot 7^2 \equiv 7 \cdot 11 \equiv 1 \pmod{19}$. Squaring repeatedly like this is the idea behind [fast exponentiation](/courses/computational-mathematics/fast-exponentiation).
 
 It's also a shortcut for big powers. To show $5^{38} \equiv 4 \pmod{11}$, use $5^{10} \equiv 1$:
 
@@ -47,7 +47,7 @@ So if $a^{n-1} \not\equiv 1$, then $n$ is definitely composite. The reverse does
 
 ## Euler's totient function
 
-$\phi(n)$ counts the positive integers less than $n$ that are coprime to $n$. Some values follow directly:
+$\phi(n)$ counts the positive integers less than $n$ that are [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$. Some values follow directly:
 
 - If $p$ is prime, $\phi(p) = p - 1$. An integer $n > 1$ is prime exactly when $\phi(n) = n - 1$.
 - For a prime power, $\phi(p^k) = p^k - p^{k-1}$.

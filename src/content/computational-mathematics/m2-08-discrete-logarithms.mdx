@@ -3,7 +3,7 @@ import { DiscreteLogSearch } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Discrete Logarithms
 
-The last lesson showed that $a^k \bmod p$ is fast to compute. This lesson is about going backwards, finding $k$ when you know the result. Nobody knows a fast way to do that in general, and public-key cryptography is built on that gap.
+The [last lesson](/courses/computational-mathematics/fast-exponentiation) showed that $a^k \bmod p$ is fast to compute. This lesson is about going backwards, finding $k$ when you know the result. Nobody knows a fast way to do that in general, and public-key cryptography is built on that gap.
 
 ## Logarithms, modulo a prime
 
@@ -13,13 +13,13 @@ $$
 \log_x 1 = 0, \qquad \log_x (yz) = \log_x y + \log_x z, \qquad \log_x (y^r) = r \log_x y
 $$
 
-Now take a primitive root $a$ of a prime $p$. Its powers hit every value from 1 to $p - 1$ exactly once, so for any $b$ in that range there's a unique exponent $k$ with
+Now take a [primitive root](/courses/computational-mathematics/order-and-primitive-roots#primitive-roots) $a$ of a prime $p$. Its powers hit every value from 1 to $p - 1$ exactly once, so for any $b$ in that range there's a unique exponent $k$ with
 
 $$
 b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
 $$
 
-This $k$ is the **discrete logarithm** of $b$ to the base $a$. The same rules hold, with the exponents worked out modulo $\phi(p)$.
+This $k$ is the **discrete logarithm** of $b$ to the base $a$. The same rules hold, with the exponents worked out modulo $\phi(p)$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$.
 
 ## A small example
 
@@ -52,7 +52,7 @@ Modulo 19 you can finish by hand. With a prime of hundreds of digits, this searc
 
 ## Integer factorization
 
-There's a second problem of this kind. Given a composite number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
+There's a second problem of this kind. Given a [composite](/courses/computational-mathematics/primes-and-the-sieve#prime-and-composite) number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
 
 ## In Python
 

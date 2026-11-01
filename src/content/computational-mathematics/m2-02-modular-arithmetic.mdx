@@ -63,9 +63,11 @@ $$
 \end{aligned}
 $$
 
+[Fast Exponentiation](/courses/computational-mathematics/fast-exponentiation) turns this trick into an algorithm that handles exponents hundreds of digits long.
+
 ## Be careful when cancelling
 
-If $(a + b) \equiv (a + c) \pmod n$, you can always cancel to get $b \equiv c$. For multiplication, you can only cancel when $a$ is coprime to $n$. For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both are 6, yet $3 \not\equiv 7 \pmod 8$.
+If $(a + b) \equiv (a + c) \pmod n$, you can always cancel to get $b \equiv c$. For multiplication, you can only cancel when $a$ is [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$. For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both are 6, yet $3 \not\equiv 7 \pmod 8$.
 
 ## In Python
 

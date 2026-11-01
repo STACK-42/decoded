@@ -37,7 +37,7 @@ Two numbers are **coprime** (or relatively prime) when their gcd is 1. Neither h
 
 ## The Euclidean algorithm
 
-Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Keep replacing the pair until the remainder hits zero, and the last non-zero remainder is the answer.
+Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Keep replacing the pair until the remainder hits zero, and the last non-zero remainder is the answer.
 
 It has a nice picture. Cut as many squares of side $b$ as you can from an $a$-by-$b$ rectangle. Then repeat on the leftover piece. The final square tiles everything before it, and its side is the gcd:
 
@@ -61,6 +61,8 @@ So $\gcd(1281, 243) = 3$. MATLAB's `gcd` does this for you, and it also works en
 gcd(65, 70)                                % 5
 gcd([250 1050 6022], [180 1150 5622])      % 10  50  2
 ```
+
+The Algorithm Design course writes the same algorithm in Java and [steps through it](/courses/algorithm-design-and-analysis/euclid-gcd), if you'd like to see it run as code.
 
 ## In Python
 

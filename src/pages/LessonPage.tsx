@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState, useMemo, useRef } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { MDXProvider } from "@mdx-js/react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
@@ -58,6 +58,8 @@ export default function LessonPage() {
   const { isComplete, setComplete } = useProgress(courseSlug);
   const [scroll, setScroll] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   // Desktop: sidebar shown inline (remembered). Mobile: it opens as a drawer.
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarPref);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -105,6 +107,22 @@ export default function LessonPage() {
   const { prev, next } = lessonNeighbors(courseSlug, lessonSlug);
   const done = isComplete(lessonSlug);
   const kind = lessonKind(lesson);
+
+  // Lessons link to each other with plain markdown links, which MDX renders as <a>.
+  // Route those through the router so following one doesn't reload the whole site.
+  const followInternalLink = (e: React.MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as HTMLElement).closest("a");
+    const href = a?.getAttribute("href");
+    if (!a || !href || !href.startsWith("/") || href.startsWith("//") || a.target) return;
+    e.preventDefault();
+    const url = new URL(href, window.location.origin);
+    navigate(url.pathname + url.search + url.hash);
+    // Same lesson, new section: nothing remounts, so scroll here
+    if (url.pathname === location.pathname && url.hash && contentRef.current) {
+      scrollToSection(decodeURIComponent(url.hash.slice(1)), contentRef.current);
+    }
+  };
 
   const onLessonLoaded = () => {
     setLoadedSlug(lessonSlug);
@@ -169,8 +187,10 @@ export default function LessonPage() {
           </div>
 
           <MDXProvider components={mdxComponents}>
-            <div className="prose-reading" ref={contentRef}>
-              <ChunkErrorBoundary key={lessonSlug}>
+            {/* delegates clicks on the links inside; they stay ordinary, keyboard-reachable <a>s */}
+            <div className="prose-reading" ref={contentRef} onClick={followInternalLink}>
+              {/* keyed by course too: two courses can share a lesson slug */}
+              <ChunkErrorBoundary key={`${courseSlug}/${lessonSlug}`}>
                 <Suspense fallback={<LessonSkeleton />}>
                   <Lesson />
                   <LessonLoaded onLoaded={onLessonLoaded} />

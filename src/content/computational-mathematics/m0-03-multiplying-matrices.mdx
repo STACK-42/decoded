@@ -13,7 +13,7 @@ $$
 c_{ij} = a_{i1}b_{1j} + a_{i2}b_{2j} + \cdots + a_{ip}b_{pj} = \sum_{k=1}^{p} a_{ik}b_{kj}
 $$
 
-In words: entry $(i, j)$ of the answer is the dot product of **row $i$ of $A$** with **column $j$ of $B$**. Step through it:
+In words: entry $(i, j)$ of the answer is the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of **row $i$ of $A$** with **column $j$ of $B$**. Step through it:
 
 <MatMulVisualizer />
 
@@ -46,7 +46,7 @@ Try the presets, or drag the sliders and read the columns as the two arrows:
 
 Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$, and the row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
 
-The number labelled det is the factor by which the map scales area. It gets its own lesson later in this module.
+The number labelled det is the factor by which the map scales area. It gets [its own lesson](/courses/computational-mathematics/determinants-and-inverses) later in this module.
 
 ## In Python
 

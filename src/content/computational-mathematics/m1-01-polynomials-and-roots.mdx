@@ -3,7 +3,7 @@ import { PolynomialExplorer } from "@/components/mdx/PolynomialVisualizers";
 
 # Polynomials and Their Roots
 
-MATLAB has no special polynomial type. A polynomial is just a row vector of its coefficients, in descending powers. So everything from the matrix module applies: a polynomial is data you can store, pass around and do arithmetic on.
+MATLAB has no special polynomial type. A polynomial is just a row vector of its coefficients, in descending powers. So everything from the [matrix module](/courses/computational-mathematics/matrices-and-matlab) applies: a polynomial is data you can store, pass around and do arithmetic on.
 
 ## Writing one down
 
@@ -45,7 +45,7 @@ A polynomial of degree $n$ always has exactly $n$ roots if you count repeats and
 
 ## Evaluating at a matrix
 
-`polyvalm` puts a square matrix where $x$ was. The constant term has to become a matrix as well, so it's multiplied by the identity:
+`polyvalm` puts a square matrix where $x$ was. Its powers are [matrix products](/courses/computational-mathematics/multiplying-matrices#the-rule), so $X^3$ means $X \cdot X \cdot X$, not each entry cubed. The constant term has to become a matrix as well, so it's multiplied by the [identity](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix):
 
 $$
 p(x) = x^3 - 2x - 5 \quad\text{becomes}\quad p(X) = X^3 - 2X - 5I
@@ -108,7 +108,7 @@ print(np.round(np.sort(np.roots(char_poly)), 6).tolist())  # [1.0, 3.0]
 
 Real libraries don't compute eigenvalues this way, because finding polynomial roots is numerically touchy. In fact, `np.roots` works the other way round: it builds a matrix and computes its eigenvalues.
 
-**Minimising a loss.** A minimum of a smooth loss is a place where the derivative is zero, so training looks for a root of the gradient.
+**Minimising a loss.** A minimum of a smooth loss is a place where the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) is zero, so training looks for a root of the gradient.
 
 ## Where you'll meet this
 

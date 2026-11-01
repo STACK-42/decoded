@@ -13,7 +13,7 @@ $$
 c_n = \sum_{i} a_i \, b_{n-i}
 $$
 
-Picture $b$ flipped and sliding past $a$. Wherever they overlap, multiply the pairs and add:
+Picture $b$ flipped and sliding past $a$. Wherever they overlap, multiply the pairs and add. That's a [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of the overlapping parts, so each coefficient of the answer is one dot product:
 
 <ConvolutionVisualizer />
 
@@ -40,7 +40,7 @@ r =
      0     0     0     0     0
 ```
 
-A remainder of all zeros tells you that $a$ divides $c$ exactly. This also gives a quick test for a root: $r$ is a root of $p$ exactly when `deconv(p, [1 -r])` leaves no remainder.
+A remainder of all zeros tells you that $a$ divides $c$ exactly. This also gives a quick test for a [root](/courses/computational-mathematics/polynomials-and-roots#roots): $r$ is a root of $p$ exactly when `deconv(p, [1 -r])` leaves no remainder.
 
 ## In Python
 

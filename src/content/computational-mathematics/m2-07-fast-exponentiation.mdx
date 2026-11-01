@@ -3,11 +3,11 @@ import { FastModPowVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Fast Exponentiation
 
-RSA has to compute things like $a^m \bmod n$ where $m$ has hundreds of digits. Multiplying $m - 1$ times would take longer than the age of the universe, and yet your browser does it in milliseconds. The trick is a tiny algorithm that reads $m$ in binary.
+RSA has to compute things like $a^m \bmod n$ where $m$ has hundreds of digits. Multiplying $m - 1$ times would take longer than the age of the universe, and yet your browser does it in milliseconds. The trick is a tiny algorithm that reads $m$ in [binary](/courses/logic-design/number-systems).
 
 ## Why the naive way fails
 
-The obvious method is to multiply by $a$ over and over, reducing modulo $n$ after each step. Reducing keeps the numbers small, but it still takes $m - 1$ multiplications.
+The obvious method is to multiply by $a$ over and over, [reducing modulo $n$](/courses/computational-mathematics/modular-arithmetic#you-can-reduce-at-any-time) after each step. Reducing keeps the numbers small, but it still takes $m - 1$ multiplications.
 
 ## Square and multiply
 
@@ -34,7 +34,7 @@ Squaring doubles the exponent, which shifts its binary form left, and multiplyin
 
 ## How much it saves
 
-The count of multiplications grows with the number of binary digits in $m$, which is about $\log_2 m$, rather than with $m$ itself. For a 2048-bit exponent, that's at most about 4096 multiplications, instead of a number with more than 600 digits.
+The count of multiplications grows with the number of binary digits in $m$, which is about $\log_2 m$, rather than with $m$ itself. For a 2048-bit exponent, that's at most about 4096 multiplications, instead of a number with more than 600 digits. Advanced Algorithms analyses the same idea as [divide and conquer](/courses/advanced-algorithms/divide-and-conquer), and uses it on matrices to compute Fibonacci numbers.
 
 <Callout tone="orange" label="Don't write mod(a^m, n)">
 In MATLAB, `mod(25^193, 469)` is wrong. `25^193` is too big for a double to store exactly, so its low digits are gone before `mod` sees them. Use `powermod(25, 193, 469)` from the Symbolic Math Toolbox, or reduce after each step as in the code panel. The same goes for Python's `pow(a, m, n)` versus `a**m % n`, where the slow form gives the right answer but can take forever.

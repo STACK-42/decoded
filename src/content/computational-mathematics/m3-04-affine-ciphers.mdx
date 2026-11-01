@@ -3,7 +3,7 @@ import { AffineMapVisualizer } from "@/components/mdx/CipherVisualizers";
 
 # Affine Ciphers
 
-A shift cipher only adds. If we multiply as well, we get a larger key space, and the lesson on modular inverses suddenly matters: multiplying only works as a cipher when you can undo it.
+A shift cipher only adds. If we multiply as well, we get a larger key space, and the lesson on [modular inverses](/courses/computational-mathematics/modular-inverses) suddenly matters: multiplying only works as a cipher when you can undo it.
 
 ## The cipher
 
@@ -19,7 +19,7 @@ $$
 D_{(k_1, k_2)}(c) = k_1^{-1}(c - k_2) \pmod{26}
 $$
 
-The inverse only exists when $\gcd(k_1, 26) = 1$, and this is a hard requirement. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
+The inverse only exists when $\gcd(k_1, 26) = 1$ ([here's why](/courses/computational-mathematics/modular-inverses#when-an-inverse-exists)), and this is a hard requirement. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
 
 <AffineMapVisualizer />
 
@@ -42,7 +42,7 @@ So SECURITY becomes RXJFKZYH.
 
 ## Worked example: decrypting
 
-To decrypt VLXIJH, first find the inverse of 7 modulo 26. It's 15, since $7 \cdot 15 = 105 = 4 \cdot 26 + 1$:
+To decrypt VLXIJH, first find the inverse of 7 modulo 26 with the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm). It's 15, since $7 \cdot 15 = 105 = 4 \cdot 26 + 1$:
 
 | Letter | $c$ | $15(c - 21)$ | mod 26 | Result |
 | --- | --- | --- | --- | --- |
@@ -57,7 +57,7 @@ The message is AGENCY.
 
 ## How strong is it?
 
-There are 12 valid values for $k_1$, because $\phi(26) = 12$, and 26 for $k_2$. That makes $12 \times 26 = 312$ keys, which a computer tries instantly. It also maps each letter to one fixed letter, so letter frequencies still give it away.
+There are 12 valid values for $k_1$, because [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = 12$, and 26 for $k_2$. That makes $12 \times 26 = 312$ keys, which a computer tries instantly. It also maps each letter to one fixed letter, so letter frequencies still give it away.
 
 <Callout tone="sky" label="Try it yourself">
 Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inverse of 11 modulo 26 is 19, so you can check your answer by decrypting with $19(c - 23)$.

@@ -78,7 +78,7 @@ $$
 T(n) = T(n/2) + \Theta(1) \quad\Longrightarrow\quad T(n) = \Theta(\lg n)
 $$
 
-You met this in the lab as `fastPower`, which squares the base first. It's the same idea, organised slightly differently:
+You met this in the lab as `fastPower`, which squares the base first. It's the same idea, organised slightly differently. Cryptography does it modulo a number, reading the exponent's bits one by one, which is [square and multiply](/courses/computational-mathematics/fast-exponentiation#square-and-multiply):
 
 <FastPowerVisualizer a={2} b={21} />
 
@@ -127,7 +127,7 @@ The first equals sign is just the Fibonacci rule (multiply it out: the top-left 
 
 ## Matrix multiplication
 
-**Input:** $A = [a_{ij}]$ and $B = [b_{ij}]$, for $i, j = 1, 2, \dots, n$. **Output:** $C = [c_{ij}] = A \cdot B$, where
+**Input:** $A = [a_{ij}]$ and $B = [b_{ij}]$, for $i, j = 1, 2, \dots, n$. **Output:** $C = [c_{ij}] = A \cdot B$ (the [rule for multiplying matrices](/courses/computational-mathematics/multiplying-matrices#the-rule), stepped through), where
 
 $$
 c_{ij} = \sum_{k=1}^{n} a_{ik} \cdot b_{kj}

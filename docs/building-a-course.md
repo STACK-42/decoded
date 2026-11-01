@@ -18,13 +18,26 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 1. **Read all the source material.** Note what it teaches, and where it only lists a topic without explaining it.
 2. **Set the scope.** Decide how many courses the material makes, and compare the topics with a recognized curriculum such as [ACM/IEEE CS2023](https://csed.acm.org/). Fill the gaps the curriculum expects.
 3. **Cut what doesn't help someone learn.** History, product model numbers, prices and long reference lists usually go.
-4. **Connect it to the rest of the site.** If another course already teaches a topic, link to that lesson instead of teaching it again. Put a topic in the course where it fits best, even if your class taught it elsewhere.
+4. **Connect it to the rest of the site.** If another course already teaches a topic, link to that lesson instead of teaching it again. Put a topic in the course where it fits best, even if your class taught it elsewhere. Then follow [Linking between lessons](#linking-between-lessons) as you write.
 5. **Plan the modules and lessons.** For each idea that is hard to picture, decide what the reader will click, step through or change to understand it.
 6. **Build the simulations.** Put the logic in `src/lib/` with its own tests, then the interface in `src/components/mdx/<Topic>Visualizers.tsx`. Reuse `Stepper` and `Panel` where they fit.
 7. **Write the lessons.** Use plain language, start from something the reader already knows, and name the real tools each idea powers. End each module or the course with a `Quiz`.
 8. **Check the facts.** Class notes contain mistakes. Work every example again and run every code sample instead of copying it.
 9. **Register the course.** See the checklist below.
 10. **Verify it and open a pull request.** Say what you tested, and list any source errors you corrected.
+
+## Linking between lessons
+
+**Whenever a lesson uses an idea it doesn't explain, link to the lesson that does.** A reader who meets "dot product" in the middle of convolution should be one click from the lesson that teaches it, not left to search.
+
+- **Link the first use in each lesson.** One link per idea per lesson is enough. Link the words themselves, inside the sentence: "multiply the pairs and add, which is a [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product)". Avoid "see also" lists and bare "click here".
+- **Link to the section, not just the lesson,** when the idea has its own heading. Headings get ids automatically: lowercase, spaces become hyphens and punctuation is dropped, so `## The dot product` becomes `#the-dot-product`.
+- **Link across courses as well as within one.** XOR lives in Logic Design, Big-O in Algorithm Design and Analysis. Look in `src/content/` before you assume something isn't covered.
+- **Link forward too.** If a lesson uses an idea before the lesson that teaches it, link ahead ("the [next lesson](...) is all about it") rather than leaving it unexplained.
+- **If no lesson teaches it,** explain it in a sentence where it's used, or say plainly that it's outside this course. Never promise a lesson that doesn't exist yet, such as "later in this course" for something no lesson covers.
+- **Link back when you add a lesson.** Search the other courses for places that use your new lesson's ideas without explaining them, and link them to it.
+
+Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)`. The lesson page follows them without reloading the site. `src/test/lesson-links.test.ts` checks that every link on the site points at a real lesson and a real heading, so a renamed lesson or heading fails the tests instead of leaving a dead link.
 
 ## Registration checklist
 
@@ -35,7 +48,7 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 - [ ] A course icon in `src/components/brand/Glyphs.tsx`
 - [ ] Learning paths and prerequisites in `src/content/paths.ts`, and any real tools in `src/content/tools.ts`
 - [ ] A row in the README's course table
-- [ ] A test that renders every lesson and checks its links, modeled on `src/test/hardware-courses.test.tsx`
+- [ ] A test that renders every lesson, modeled on `src/test/hardware-courses.test.tsx`. Links are checked site-wide by `src/test/lesson-links.test.ts`.
 
 ## Before you open the pull request
 
@@ -43,6 +56,7 @@ How Decoded courses get made, what you need before you start, and a prompt you c
 - [ ] You opened every lesson in a browser at phone width and nothing overflows or crashes
 - [ ] You used every simulation by hand, in light and dark themes
 - [ ] You worked through the quizzes and agree with the answers
+- [ ] Every idea a lesson uses but doesn't explain links to the lesson that does, and older lessons that use your new ideas link to them
 - [ ] No source files, teacher names or institution names are in the diff
 
 ## The prompt
@@ -69,7 +83,11 @@ Follow the steps in docs/building-a-course.md, and:
 2. Remove anything that doesn't help someone learn the subject, such as history
    and product trivia. Tell me what you cut.
 3. Search src/content/ for topics the site already covers. Link to those lessons
-   instead of teaching them again.
+   instead of teaching them again. Whenever a lesson uses an idea it doesn't
+   explain, link its first use to the lesson (and #section) that does, in this
+   course or another, following "Linking between lessons" in
+   docs/building-a-course.md. Also link older lessons to the new ones where
+   they use these ideas.
 4. Make visualizations the center of the course. Wherever a static slide would
    leave someone unable to picture what's happening, build something they can
    step through or change. Keep the logic in src/lib/ with tests.
