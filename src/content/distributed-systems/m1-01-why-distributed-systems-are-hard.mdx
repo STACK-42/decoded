@@ -1,0 +1,104 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PartialFailureDemo } from "@/components/mdx/DistributedVisualizers";
+
+# Why Distributed Systems Are Hard
+
+Leslie Lamport, who wrote several of the ideas in this course, once described a distributed system as "one in which the failure of a computer you didn't even know existed can render your own computer unusable." It's a joke, and it's also the most accurate definition there is.
+
+## What counts as distributed
+
+A **distributed system** is a set of computers that work together on one job and can only coordinate by sending each other messages over a network. There's no shared memory and no shared clock. Your bank's payment service, a multiplayer game, a database replicated across three data centres and the dozen services behind one web page are all distributed systems.
+
+People build them for three reasons, and you can usually name which one applies:
+
+- **Scale.** One machine can't hold all the data or serve all the requests.
+- **Fault tolerance.** If one machine dies, the others keep the service running.
+- **Latency.** A server near the user answers faster than one on another continent, because the signal's travel time across that distance doesn't shrink with faster hardware ([propagation delay](/courses/computer-networks/delay-and-throughput#four-kinds-of-delay)).
+
+The price is that every hard problem in this course comes from two facts: **parts fail independently**, and **there is no global clock**. This lesson is about the first. The next two are about the second.
+
+## Partial failure
+
+On one computer, failure is mostly all or nothing: either the program runs or the machine is off. In a distributed system, some parts work while others don't, and nobody has a full view of which. That's called **partial failure**.
+
+The network underneath is the internet's [packet switching](/courses/computer-networks/layers-and-packets#packets-not-phone-lines): any message can be **lost**, **delayed** by an unpredictable amount, **duplicated** or **reordered**. TCP hides loss and reordering inside one connection by [retransmitting](/courses/computer-networks/tcp-reliable-delivery#retransmission), but it can't help when the machine on the other end has crashed, or when the connection itself breaks.
+
+So when you call another machine (a [remote procedure call](/courses/operating-systems/interprocess-communication#remote-procedure-calls-rpc)) and no reply comes, any of these may have happened:
+
+1. Your request was lost on the way.
+2. The server crashed before doing the work.
+3. The server did the work, then crashed before replying.
+4. The server did the work and replied, and the reply was lost.
+5. The server is just slow, and the reply is still coming.
+
+From where you sit, all five look the same: **silence**. The only tool you have is a **timeout**, and a timeout tells you that you stopped waiting, not what happened. Try each case, and see what a retry does:
+
+<PartialFailureDemo />
+
+Pick "Reply lost" and "Retry": the card is charged twice. Then pick "Retry + key". The fix is to make the operation **idempotent**, meaning that doing it twice has the same effect as doing it once. The client invents a unique **idempotency key** for the order and sends the same key with every retry. The server remembers which keys it has already handled and, on a repeat, returns the stored result instead of charging again:
+
+```python
+charges = []
+seen = {}
+
+def charge(amount, key=None):
+    if key is not None and key in seen:
+        return seen[key]          # a repeat: send back the stored result, do nothing
+    charges.append(amount)
+    result = f"charged {amount}"
+    if key is not None:
+        seen[key] = result
+    return result
+
+charge(10)
+charge(10)                        # a blind retry
+print(len(charges))  # 2
+
+charges.clear()
+charge(10, key="order-7f3a")
+charge(10, key="order-7f3a")      # a retry with the same key
+print(len(charges))  # 1
+```
+
+Some operations are idempotent by nature, like "set the price to 10". Others, like "add 10 to the balance" or "charge $10", have to be made idempotent with a key. "Retry until it works, and make retries safe" is the basic recipe for talking to anything over a network.
+
+## What can fail, formally
+
+To reason about an algorithm you have to say what it's up against. A **system model** fixes two things.
+
+How machines fail:
+
+- **Crash-stop:** a machine works correctly until it stops, and never comes back.
+- **Crash-recovery:** a machine can stop and later restart, losing whatever was only in memory. This is the realistic one for servers.
+- **Byzantine:** a machine can do anything, including lie. This matters when machines don't trust each other, as in blockchains, and is much harder to handle.
+
+How much you can assume about timing:
+
+- **Synchronous:** messages and computation finish within a known time limit. Then a timeout really does mean a crash. Real networks don't promise this.
+- **Asynchronous:** no limits at all. A slow machine can't ever be told apart from a dead one.
+- **Partially synchronous:** the system behaves well most of the time but can have periods of arbitrary delay. This is the model most real algorithms, including the consensus algorithms that keep replicated databases in agreement, are designed for.
+
+<Callout tone="orange" label="The fallacies of distributed computing">
+Engineers at Sun Microsystems in the 1990s wrote down eight assumptions that newcomers make and that eventually break their systems: the network is reliable, latency is zero, bandwidth is infinite, the network is secure, topology doesn't change, there is one administrator, transport cost is zero, and the network is homogeneous. Every one of them is false, and every one has caused real outages.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Payment APIs" tool="Stripe Idempotency-Key">
+Stripe's API takes an `Idempotency-Key` header on requests that create things, so a client can retry a payment after a timeout without charging twice.
+</PracticalApplication>
+<PracticalApplication title="Retries with backoff" tool="AWS SDKs, gRPC">
+Cloud SDKs retry failed calls automatically, waiting longer after each failure and adding randomness (jitter) so thousands of clients don't all retry at the same instant.
+</PracticalApplication>
+<PracticalApplication title="Health checks" tool="Kubernetes probes, load balancers">
+A load balancer decides a server is dead when it misses a few health checks in a row. That's a timeout, with the same uncertainty: a slow server gets marked dead too.
+</PracticalApplication>
+<PracticalApplication title="Deadlines" tool="gRPC deadlines, HTTP timeouts">
+Every call between services carries a deadline, so one stuck service makes its callers fail fast instead of hanging forever.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+What a distributed system is, why a timeout can't tell you what happened, and how idempotency makes retries safe. The [next lesson](/courses/distributed-systems/lamport-clocks) takes on the second hard fact: there's no clock everyone agrees on.
+</Callout>

@@ -226,6 +226,8 @@ Java has three types of socket:
   - The **client-side stub** locates the server and **marshals** the parameters (packs them into a message).
   - The **server-side stub** receives the message, **unpacks** the marshalled parameters, and runs the procedure on the server.
 
+The resemblance to a local call stops at failure. A local call always returns; a remote one can get no reply at all, and the caller can't tell whether the procedure ran. That's [partial failure](/courses/distributed-systems/why-distributed-systems-are-hard#partial-failure), the first problem of distributed systems.
+
 ### Pipes
 
 A **pipe** acts as a **channel** that lets two processes communicate. Pipes are one of the simpler ways to communicate, but have some limits. Questions to ask about any pipe:

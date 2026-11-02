@@ -28,7 +28,13 @@ describe("course authors", () => {
   });
 
   it("leaves the section out when a course has no authors", () => {
-    renderCourse("distributed-systems");
-    expect(screen.queryByText("Authored by")).toBeNull();
+    // Every real course is credited, so add an uncredited teaser for the length of this test.
+    courses.push({ slug: "uncredited-teaser", title: "Uncredited", tagline: "", description: "", accent: "mint", status: "coming-soon", modules: [] });
+    try {
+      renderCourse("uncredited-teaser");
+      expect(screen.queryByText("Authored by")).toBeNull();
+    } finally {
+      courses.pop();
+    }
   });
 });

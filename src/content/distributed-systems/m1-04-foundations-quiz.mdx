@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Failure and Time
+
+Six questions on partial failure, Lamport clocks and vector clocks. Get 5 right to pass.
+
+<Quiz
+  courseSlug="distributed-systems"
+  lessonSlug="foundations-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "A client sends a request and its timeout expires with no reply. What can it safely conclude?",
+      options: [
+        { id: "a", text: "The server crashed" },
+        { id: "b", text: "The request was lost, so the work wasn't done" },
+        { id: "c", text: "Nothing about whether the work was done; it only knows it stopped waiting" },
+        { id: "d", text: "The work was done, and only the reply was lost" },
+      ],
+      correctOptionId: "c",
+      explanation: "A lost request, a crash before or after the work, a lost reply and a slow server all look like silence. A timeout only means the client gave up waiting.",
+    },
+    {
+      id: "q2",
+      prompt: "Why does sending an idempotency key with a payment request make retries safe?",
+      options: [
+        { id: "a", text: "It makes the network stop losing messages" },
+        { id: "b", text: "The server remembers keys it has handled and returns the stored result for a repeat, instead of charging again" },
+        { id: "c", text: "It encrypts the request" },
+        { id: "d", text: "It makes the server reply faster, so the timeout never fires" },
+      ],
+      correctOptionId: "b",
+      explanation: "Messages can still be lost. The key makes doing the request twice have the same effect as doing it once.",
+    },
+    {
+      id: "q3",
+      prompt: "A process's Lamport clock reads 4. It receives a message stamped 9. What is its clock after the receive?",
+      options: [
+        { id: "a", text: "5" },
+        { id: "b", text: "9" },
+        { id: "c", text: "13" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "d",
+      explanation: "C = max(C, t) + 1 = max(4, 9) + 1 = 10.",
+    },
+    {
+      id: "q4",
+      prompt: "Events a and b have Lamport timestamps L(a) = 3 and L(b) = 8. What do you know for sure?",
+      options: [
+        { id: "a", text: "a happened before b" },
+        { id: "b", text: "a and b are concurrent" },
+        { id: "c", text: "b did not happen before a" },
+        { id: "d", text: "a happened 5 time units before b" },
+      ],
+      correctOptionId: "c",
+      explanation: "The clock condition only says a → b implies L(a) < L(b). So if b had happened before a, L(b) would be smaller. a may have happened before b, or they may be concurrent.",
+    },
+    {
+      id: "q5",
+      prompt: "Two versions of a key carry vector clocks [2, 1, 0] and [1, 2, 0]. What should a Dynamo-style store do?",
+      options: [
+        { id: "a", text: "Keep both as siblings: the writes are concurrent, so it's a conflict to merge" },
+        { id: "b", text: "Keep [2, 1, 0], because its first entry is bigger" },
+        { id: "c", text: "Keep [1, 2, 0], because its second entry is bigger" },
+        { id: "d", text: "Keep whichever arrived last" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each vector is bigger in one entry, so neither write saw the other. Picking one would silently lose the other's change.",
+    },
+    {
+      id: "q6",
+      prompt: "Why is last-write-wins by wall-clock timestamp risky across servers?",
+      options: [
+        { id: "a", text: "Timestamps take too much space" },
+        { id: "b", text: "Clock skew can give a later write a smaller timestamp, so the newer value is thrown away" },
+        { id: "c", text: "Servers can't read their own clocks" },
+        { id: "d", text: "It's not risky as long as NTP is running" },
+      ],
+      correctOptionId: "b",
+      explanation: "NTP keeps clocks close, not identical. If one server runs 30 ms ahead, its older write can outrank a newer write from another server.",
+    },
+  ]}
+/>

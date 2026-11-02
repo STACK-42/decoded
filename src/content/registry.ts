@@ -213,6 +213,10 @@ const DsUnionFind = lesson(() => import("@/content/data-structures/m4-01-union-f
 const DsChoosing = lesson(() => import("@/content/data-structures/m4-02-choosing-a-data-structure.mdx"));
 const DsFinalQuiz = lesson(() => import("@/content/data-structures/m4-03-final-quiz.mdx"));
 
+const DsHard = lesson(() => import("@/content/distributed-systems/m1-01-why-distributed-systems-are-hard.mdx"));
+const DsLamport = lesson(() => import("@/content/distributed-systems/m1-02-lamport-clocks.mdx"));
+const DsVector = lesson(() => import("@/content/distributed-systems/m1-03-vector-clocks.mdx"));
+const DsQuiz1 = lesson(() => import("@/content/distributed-systems/m1-04-foundations-quiz.mdx"));
 const NetLayers = lesson(() => import("@/content/computer-networks/m1-01-layers-and-packets.mdx"));
 const NetDelay = lesson(() => import("@/content/computer-networks/m1-02-delay-and-throughput.mdx"));
 const NetQuiz1 = lesson(() => import("@/content/computer-networks/m1-03-foundations-quiz.mdx"));
@@ -816,8 +820,20 @@ export const courses: Course[] = [
     description:
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
-    status: "coming-soon",
-    modules: [],
+    status: "available",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Failure and Time",
+        blurb: "Why a timeout can't tell you what happened, why clocks disagree, and how Lamport and vector clocks order events anyway.",
+        lessons: [
+          { slug: "why-distributed-systems-are-hard", title: "Why Distributed Systems Are Hard", duration: "14 min", Component: DsHard },
+          { slug: "lamport-clocks", title: "Time, Order and Lamport Clocks", duration: "15 min", Component: DsLamport },
+          { slug: "vector-clocks", title: "Vector Clocks", duration: "14 min", Component: DsVector },
+          { slug: "foundations-quiz", title: "Quiz: Failure and Time", duration: "8 min", kind: "quiz", Component: DsQuiz1 },
+        ],
+      },
+    ],
   },
   {
     slug: "the-exam-mind",

@@ -1,0 +1,98 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { VectorClockDemo, VectorCompare } from "@/components/mdx/DistributedVisualizers";
+
+# Vector Clocks
+
+A [Lamport clock](/courses/distributed-systems/lamport-clocks#lamport-clocks) can say "this didn't happen before that", but never "these two are concurrent". For many jobs that's the question that matters most. If two users edited the same shopping cart and neither saw the other's edit, the system must notice the conflict and keep both changes, not quietly pick one.
+
+## One counter per process
+
+The fix is to keep more information. A **vector clock** is a list of counters, one for every process. In a system with processes A, B and C, process B's vector $[2, 3, 0]$ means: "I've seen 2 events from A, 3 of my own and none from C, counting everything that could have reached me."
+
+Each process $i$ starts with all zeros, and:
+
+1. Before each local event or send, add 1 to its own entry: $V[i] = V[i] + 1$.
+2. Every message carries a copy of the sender's whole vector.
+3. On receiving a message with vector $m$: take the larger of each pair of entries, $V[k] = \max(V[k], m[k])$ for every $k$, then add 1 to its own entry.
+
+It's the Lamport rule applied to every entry separately. Step through the same run as the last lesson:
+
+<VectorClockDemo />
+
+## Comparing two vectors
+
+Vectors are compared entry by entry. $V(a) \le V(b)$ when every entry of $V(a)$ is at most the matching entry of $V(b)$, and $V(a) < V(b)$ when, in addition, they're not equal. Then:
+
+- $V(a) < V(b)$ means $a \to b$: $a$ happened before $b$.
+- $V(b) < V(a)$ means $b \to a$.
+- Otherwise, each vector is bigger somewhere, and $a \parallel b$: they're concurrent.
+
+Unlike Lamport clocks, this works in **both directions**: $a \to b$ if and only if $V(a) < V(b)$. Vector clocks capture happened-before exactly. Compare any two events from the run:
+
+<VectorCompare />
+
+The pair that fooled the Lamport clock is now clear. $b_3 = [2,3,0]$ and $c_2 = [2,2,2]$: B is ahead in B's entry, C is ahead in C's entry, so neither saw the other. $c_1 = [0,0,1]$ and $b_1 = [2,1,0]$ are concurrent too, even though their Lamport timestamps were 1 and 3.
+
+Here's the whole thing in a few lines of Python, replaying the start of that run:
+
+```python
+def tick(v, me):
+    v = list(v)
+    v[me] += 1
+    return v
+
+def receive(v, msg, me):
+    return tick([max(a, b) for a, b in zip(v, msg)], me)
+
+def compare(a, b):
+    if a == b:
+        return "equal"
+    if all(x <= y for x, y in zip(a, b)):
+        return "before"
+    if all(x >= y for x, y in zip(a, b)):
+        return "after"
+    return "concurrent"
+
+A, B, C = 0, 1, 2
+a1 = tick([0, 0, 0], A)
+a2 = tick(a1, A)                  # A sends m1, carrying a2's vector
+c1 = tick([0, 0, 0], C)
+b1 = receive([0, 0, 0], a2, B)
+print(b1)  # [2, 1, 0]
+print(compare(a1, b1))  # before
+print(compare(c1, b1))  # concurrent
+```
+
+## Detecting conflicts
+
+This is where vector clocks earn their keep. In a replicated key-value store, each stored value carries a vector (called a **version vector** when the entries count writes per replica rather than events per process). When two versions of the same key meet:
+
+- If one vector is less than the other, the bigger one is newer and already includes the older change. Keep it and drop the old one.
+- If they're concurrent, two writes happened without either seeing the other. That's a genuine **conflict**. The store keeps both versions, called **siblings**, and someone has to merge them: the application, the user, or a merge rule.
+
+Amazon's Dynamo, the internal store described in a 2007 paper and the inspiration for many databases since, worked this way. Its example was a shopping cart: when two versions conflicted, the cart merged them by taking the union of the items, so an added item was never lost. The price of that rule was that a deleted item could occasionally reappear.
+
+<Callout tone="orange" label="The cost">
+A vector has one entry per process, so it grows with the size of the system, and every message carries it. With thousands of clients writing directly, vectors get too big. Real systems keep one entry per **server replica** instead of per client, trim old entries, or use refinements like dotted version vectors. Lamport clocks stay a single number, which is why both are still in use: Lamport clocks when a consistent order is enough, vector clocks when you must detect concurrency.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Conflict detection" tool="Riak, Dynamo-style stores">
+Riak tags every value with a version vector and returns siblings to the application when two writes were concurrent.
+</PracticalApplication>
+<PracticalApplication title="Version control" tool="Git">
+Git answers the same question with its commit graph: if neither commit is an ancestor of the other, the branches are concurrent and need a merge.
+</PracticalApplication>
+<PracticalApplication title="Collaborative editing" tool="CRDTs, Automerge, Yjs">
+Libraries for real-time collaboration track which edits each replica has seen, so concurrent edits can be merged automatically instead of overwritten.
+</PracticalApplication>
+<PracticalApplication title="Race detectors" tool="ThreadSanitizer, Go race detector">
+Dynamic race detectors keep vector clocks per thread: two accesses to the same memory with concurrent clocks, at least one a write, is a data race.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Vector clocks, how to compare them, and how they turn "which write wins?" into "were these writes concurrent?". The [quiz](/courses/distributed-systems/foundations-quiz) checks the whole module.
+</Callout>

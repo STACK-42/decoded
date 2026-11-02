@@ -42,7 +42,12 @@ If the job's queue is empty, take the top item in the other queue. If both are e
 
 Adding courses is the top priority. Build one course at a time, **one module per run**, on one branch with one draft pull request. The first run on a new course writes its module and lesson plan into this file (under the course) before writing lessons, then builds module 1. Credit new courses to Ahmed Alghali (`ahmedAlghali` in `src/content/authors.ts`) unless this file says otherwise.
 
-1. **Distributed Systems** (`distributed-systems`). Already in the registry as "coming soon" with no modules. Make it available. Scope from its description: time and clocks, replication, consistency, CAP, consensus (Paxos, Raft), and how microservices trade these off. Visualizers are the center: a step-through Raft election, and a network partition you can cut and heal.
+1. **Distributed Systems** (`distributed-systems`), on branch `autopilot/course-distributed-systems`, draft PR #49. Logic in `src/lib/distributed.ts`, visualizers in `src/components/mdx/DistributedVisualizers.tsx`. Plan:
+   - [x] **M1 Failure and Time:** `why-distributed-systems-are-hard` (partial failure, timeouts, idempotency keys, system models), `lamport-clocks` (clock skew, happened-before, Lamport clocks, total order), `vector-clocks` (vector clocks, comparison, conflict detection), `foundations-quiz`.
+   - [ ] **M2 Replication and Consistency:** replication (leader/follower, sync vs async, replication lag), quorums (N, R, W and R + W > N; read repair), consistency models (linearizable, sequential, causal, eventual; read-your-writes), CAP and PACELC with a network partition you can cut and heal, quiz.
+   - [ ] **M3 Consensus:** the consensus problem (agreement, majorities, FLP in plain words), Raft leader election (step-through election with terms and votes), Raft log replication (commit index, a follower catching up), Paxos in brief (how it maps to Raft), quiz.
+   - [ ] **M4 Systems in Practice:** partitioning and consistent hashing (a hash ring you add nodes to), distributed transactions (two-phase commit and its blocking problem, sagas), microservices trade-offs (timeouts, retries with backoff, circuit breakers, linking back to idempotency in M1), final quiz.
+   - When M4 is done: change the README row from "In progress" to "Available" with the final lesson count, add the course to a learning path in `src/content/paths.ts` and any tools to `src/content/tools.ts`, then mark the PR ready and merge per the merge policy.
 2. **Compilers.** Lexing, parsing, ASTs, semantic analysis, intermediate code, optimization, code generation. Builds directly on Theory of Computation (regex → lexers, CFGs and PDAs → parsers), so link heavily.
 3. **Databases.** Relational model, SQL, normalization, indexing (B-trees, hashing), transactions and isolation, query planning.
 4. **Computer Security.** Threat models, memory safety, web security, authentication, applied cryptography. Link to the cryptography module in Computational Mathematics instead of re-teaching it.
@@ -69,4 +74,5 @@ Nothing yet.
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
+- 2026-11-02 10:40 (run B): Distributed Systems plan + M1 "Failure and Time" (3 lessons, 1 quiz, 4 visualizers, 14 logic tests; backlink from OS RPC section). Draft PR #49, open (course PRs merge when the course is complete). Run A at 06:10 did nothing: the scheduled sessions had no push access; rescheduled to run in the owner's session.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).

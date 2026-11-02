@@ -1,0 +1,96 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LamportClockDemo } from "@/components/mdx/DistributedVisualizers";
+
+# Time, Order and Lamport Clocks
+
+Two users edit the same document at nearly the same moment, on servers in two countries. Which edit came first? On one machine you'd compare timestamps. Across machines, that question turns out to be the wrong one.
+
+## Why wall clocks don't work
+
+Every computer has a clock driven by a quartz crystal, and no two crystals tick at exactly the same rate. A crystal that's off by 20 parts per million gains or loses about 1.7 seconds a day. That difference is called **clock drift**, and the gap between two clocks at any moment is **clock skew**.
+
+Machines correct their clocks with **NTP** (the Network Time Protocol), which asks a time server and adjusts for the round trip. Over the internet that typically gets clocks within a few to tens of milliseconds of each other, but not exactly, and a correction can make a clock jump **backwards**.
+
+Milliseconds sound small, but a server handles thousands of events per second. Suppose server X's clock is 30 ms ahead of server Y's. A user writes a value on X at real time 0 ms, stamped 30 ms. Ten milliseconds later another user overwrites it on Y, stamped 10 ms. A database that keeps the write with the highest timestamp, a rule called **last-write-wins**, keeps the older write and silently throws away the newer one.
+
+## Happened-before
+
+Lamport's 1978 paper "Time, Clocks, and the Ordering of Events in a Distributed System" made a different move: forget what time it is, and ask only which events **could have affected** which. Event $a$ **happened before** event $b$, written $a \to b$, when:
+
+1. $a$ and $b$ are on the same process, and $a$ came first; or
+2. $a$ is sending a message and $b$ is receiving that same message; or
+3. there's some $c$ with $a \to c$ and $c \to b$ (it's transitive).
+
+If neither $a \to b$ nor $b \to a$, the two events are **concurrent**, written $a \parallel b$. Concurrent doesn't mean "at the same instant". It means no message chain connects them, so neither could have known about the other. Which one happened first by a wall clock simply doesn't matter to anything in the system.
+
+Mathematically, happened-before is the strict form of a [partial order](/courses/discrete-mathematics/relations#partial-orders): drop the "or the same as" part. Concurrent events are exactly the pairs that are **incomparable**. This is the core idea of the whole course: in a distributed system, events are only partially ordered.
+
+## Lamport clocks
+
+A **Lamport clock** gives every event a number that respects happened-before. Each process keeps one counter $C$, starting at 0:
+
+1. Before each local event or send, add 1: $C = C + 1$.
+2. Every message carries the sender's $C$.
+3. On receiving a message with time $t$: $C = \max(C, t) + 1$.
+
+The receive rule is what makes it work: a message can never arrive "before" it was sent, because the receiver jumps past the sender's number. Step through three processes:
+
+<LamportClockDemo />
+
+The guarantee, called the **clock condition**, is one-directional:
+
+$$
+a \to b \;\Longrightarrow\; L(a) < L(b)
+$$
+
+The converse is false. In the run above, $c_1$ has timestamp 1 and $b_1$ has 3, yet they're concurrent: nothing from C reached B. And $b_3$ and $c_2$ both have 5. So a smaller Lamport timestamp doesn't tell you an event came first. What it does tell you is the contrapositive: if $L(a) < L(b)$, then $b$ **did not** happen before $a$.
+
+Here are the same rules in Python, run on that example:
+
+```python
+def lamport(events):
+    clock, stamp = {}, {}
+    for e, proc, kind, src in events:
+        c = clock.get(proc, 0)
+        clock[proc] = max(c, stamp[src]) + 1 if kind == "recv" else c + 1
+        stamp[e] = clock[proc]
+    return stamp
+
+run = [("a1", "A", "local", None), ("c1", "C", "local", None),
+       ("a2", "A", "send", None),  ("b1", "B", "recv", "a2"),
+       ("b2", "B", "send", None),  ("b3", "B", "local", None),
+       ("c2", "C", "recv", "b2"),  ("c3", "C", "send", None),
+       ("a3", "A", "recv", "c3")]
+L = lamport(run)
+print(L["b1"], L["c2"], L["a3"])  # 3 5 7
+print(L["b3"] == L["c2"])  # True
+```
+
+## A total order, when you need one
+
+Some algorithms need every process to agree on **one** order of all events, even concurrent ones. Lamport's trick: order by timestamp, and break ties by process name. Compare pairs $(L(e), \text{process})$, so $(5, B)$ comes before $(5, C)$. Every process computes the same order without asking anyone, and it never contradicts happened-before. The order between concurrent events is arbitrary, but it's **consistently** arbitrary, which is often all you need: for example, to decide which of two simultaneous lock requests wins.
+
+<Callout tone="violet" label="Logical time, not real time">
+A Lamport clock counts causal steps, not seconds. It can't tell you that an event happened at 14:03, or that two events were a minute apart. If you need real time with bounds, you need special hardware: Google's Spanner database uses GPS receivers and atomic clocks in every data centre so it can know how uncertain its clock is, and waits out that uncertainty before committing.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Distributed tracing" tool="OpenTelemetry, Jaeger">
+A trace orders the spans of one request across services by who called whom, a happened-before relation, because the services' wall clocks disagree.
+</PracticalApplication>
+<PracticalApplication title="Log ordering" tool="Kafka offsets">
+Kafka gives every message in a partition an offset: a counter that orders events without trusting any machine's clock.
+</PracticalApplication>
+<PracticalApplication title="Hybrid logical clocks" tool="CockroachDB, MongoDB">
+Several databases combine a physical timestamp with a Lamport-style counter, so timestamps stay close to real time but still respect causality.
+</PracticalApplication>
+<PracticalApplication title="Last-write-wins" tool="Cassandra">
+Cassandra resolves conflicting writes by timestamp by default, which is why its documentation insists that you keep server clocks synchronised.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Why wall clocks can't order events, the happened-before relation, and Lamport clocks with their one-way guarantee. The [next lesson](/courses/distributed-systems/vector-clocks) fixes the missing direction: a clock that can tell "before" from "concurrent".
+</Callout>
