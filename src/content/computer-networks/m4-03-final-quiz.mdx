@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-networks/questions";
 
 # Quiz: Loading a Page, End to End
 
@@ -8,102 +10,5 @@ Eight questions that follow one page load through every layer. Get 6 right to pa
   courseSlug="computer-networks"
   lessonSlug="final-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "You type a URL for a site you've never visited. What happens first, before any connection to the site?",
-      options: [
-        { id: "a", text: "A TCP handshake with the site" },
-        { id: "b", text: "A DNS lookup to turn the name into an IP address" },
-        { id: "c", text: "A TLS handshake" },
-        { id: "d", text: "An HTTP GET request" },
-      ],
-      correctOptionId: "b",
-      explanation: "Connections are made to addresses, not names, so the browser needs the IP address first.",
-    },
-    {
-      id: "q2",
-      prompt: "Your resolver has no cache. How does it find the address for www.decoded-demo.com?",
-      options: [
-        { id: "a", text: "It asks one central server that knows every name" },
-        { id: "b", text: "It follows referrals: root → .com servers → the domain's authoritative servers" },
-        { id: "c", text: "It broadcasts the question to the whole internet" },
-        { id: "d", text: "It guesses from the name" },
-      ],
-      correctOptionId: "b",
-      explanation: "Each level only knows who handles the next one down. The resolver caches every reply for its TTL.",
-    },
-    {
-      id: "q3",
-      prompt: "You change your website's A record, but some users still reach the old server an hour later. Why?",
-      options: [
-        { id: "a", text: "DNS changes need a server restart" },
-        { id: "b", text: "Resolvers are still serving the old record from their cache until its TTL expires" },
-        { id: "c", text: "The new record was rejected" },
-        { id: "d", text: "Browsers never re-check DNS" },
-      ],
-      correctOptionId: "b",
-      explanation: "That's what the TTL allows. Lowering it before a move shortens the window.",
-    },
-    {
-      id: "q4",
-      prompt: "Over TCP with TLS 1.3, how many round trips pass before the first byte of the HTTP request can be sent (ignoring DNS)?",
-      options: [
-        { id: "a", text: "0" },
-        { id: "b", text: "1" },
-        { id: "c", text: "2: one for the TCP handshake, one for TLS" },
-        { id: "d", text: "4" },
-      ],
-      correctOptionId: "c",
-      explanation: "TCP's three-way handshake takes one round trip and TLS 1.3 another. HTTP/3 over QUIC combines them into one.",
-    },
-    {
-      id: "q5",
-      prompt: "Your laptop (192.168.1.23/24) sends a packet to 203.0.113.10. Where does it send the packet first?",
-      options: [
-        { id: "a", text: "Directly to 203.0.113.10 over Wi-Fi" },
-        { id: "b", text: "To its default gateway, because the destination isn't on its own subnet" },
-        { id: "c", text: "To the DNS server" },
-        { id: "d", text: "To every device on the network" },
-      ],
-      correctOptionId: "b",
-      explanation: "Only addresses in 192.168.1.0/24 are reached directly. Everything else goes to the router.",
-    },
-    {
-      id: "q6",
-      prompt: "A router in the middle of the internet forwards the packet. What does it look at?",
-      options: [
-        { id: "a", text: "The HTTP request, to see what's being fetched" },
-        { id: "b", text: "The destination IP address, matched against its table by longest prefix" },
-        { id: "c", text: "The TCP sequence number" },
-        { id: "d", text: "The TLS certificate" },
-      ],
-      correctOptionId: "b",
-      explanation: "Routers work at the network layer. With HTTPS they couldn't read the request anyway: it's encrypted.",
-    },
-    {
-      id: "q7",
-      prompt: "One segment of the page is lost on the way back. What does the browser's application code see?",
-      options: [
-        { id: "a", text: "A gap in the page" },
-        { id: "b", text: "Nothing unusual: TCP resends the segment and delivers every byte in order, just a little later" },
-        { id: "c", text: "An HTTP 500 error" },
-        { id: "d", text: "A DNS error" },
-      ],
-      correctOptionId: "b",
-      explanation: "Duplicate ACKs or a timeout trigger a retransmission, and TCP only hands bytes up once the stream is complete and in order.",
-    },
-    {
-      id: "q8",
-      prompt: "The server responds with status 304. What should the browser do?",
-      options: [
-        { id: "a", text: "Show an error page" },
-        { id: "b", text: "Use the copy it already has in its cache" },
-        { id: "c", text: "Follow a redirect to a new URL" },
-        { id: "d", text: "Retry the request" },
-      ],
-      correctOptionId: "b",
-      explanation: "304 Not Modified means the cached version is still current, so no body is sent. Redirects are 301, 302, 307 and 308.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "final-quiz")}
 />

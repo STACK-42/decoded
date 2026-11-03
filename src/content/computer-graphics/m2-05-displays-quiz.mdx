@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-graphics/questions";
 
 # Quiz: Displays and Image Types
 
@@ -8,102 +10,5 @@ Eight questions on displays and raster and vector images. Get 6 right to pass.
   courseSlug="computer-graphics"
   lessonSlug="displays-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "Why must a CRT keep redrawing the same picture?",
-      options: [
-        { id: "a", text: "The frame buffer forgets its contents" },
-        { id: "b", text: "The phosphor stops glowing shortly after the beam leaves" },
-        { id: "c", text: "The electron gun overheats" },
-        { id: "d", text: "To change the resolution" },
-      ],
-      correctOptionId: "b",
-      explanation: "Phosphor persistence is short, so the picture fades unless it's refreshed many times a second.",
-    },
-    {
-      id: "q2",
-      prompt: "What is the horizontal retrace?",
-      options: [
-        { id: "a", text: "The beam drawing a horizontal line" },
-        { id: "b", text: "The beam returning to the top-left corner after a frame" },
-        { id: "c", text: "The beam, switched off, returning to the left edge for the next row" },
-        { id: "d", text: "Copying a row into the frame buffer" },
-      ],
-      correctOptionId: "c",
-      explanation: "Returning to the top-left after the whole frame is the vertical retrace.",
-    },
-    {
-      id: "q3",
-      prompt: "What does the frame buffer hold?",
-      options: [
-        { id: "a", text: "A list of line commands" },
-        { id: "b", text: "One color value for every pixel on the screen" },
-        { id: "c", text: "The previous frame only" },
-        { id: "d", text: "The refresh rate" },
-      ],
-      correctOptionId: "b",
-      explanation: "A list of line commands is a random-scan display file.",
-    },
-    {
-      id: "q4",
-      prompt: "Which is a disadvantage of random-scan displays?",
-      options: [
-        { id: "a", text: "Diagonal lines look jagged" },
-        { id: "b", text: "They can't show realistic shaded scenes" },
-        { id: "c", text: "They need a huge frame buffer" },
-        { id: "d", text: "The beam visits every pixel" },
-      ],
-      correctOptionId: "b",
-      explanation: "They only trace lines, so they can't fill areas with shading. Their lines are smooth, not jagged.",
-    },
-    {
-      id: "q5",
-      prompt: "Why do blacks on an edge-lit LCD look gray?",
-      options: [
-        { id: "a", text: "The liquid crystals glow" },
-        { id: "b", text: "The backlight is on behind the whole panel, and the crystals can't block all of it" },
-        { id: "c", text: "The color filters are gray" },
-        { id: "d", text: "The refresh rate is too low" },
-      ],
-      correctOptionId: "b",
-      explanation: "An LCD only blocks light. Direct LED backlights can dim zones behind dark areas to fix this.",
-    },
-    {
-      id: "q6",
-      prompt: "Which of these makes its own light at each pixel?",
-      options: [
-        { id: "a", text: "LCD" },
-        { id: "b", text: "Edge-lit LED TV" },
-        { id: "c", text: "Plasma" },
-        { id: "d", text: "Direct-lit LED TV" },
-      ],
-      correctOptionId: "c",
-      explanation: "Plasma cells glow on their own. All the others are LCDs that need a backlight.",
-    },
-    {
-      id: "q7",
-      prompt: "A company logo has to print on both a pen and a billboard. Which format suits it?",
-      options: [
-        { id: "a", text: "A large JPEG" },
-        { id: "b", text: "A vector file such as SVG" },
-        { id: "c", text: "A 1-bit BMP" },
-        { id: "d", text: "A GIF with 256 colors" },
-      ],
-      correctOptionId: "b",
-      explanation: "Vectors are redrawn from their math at any size, so edges stay sharp on the billboard.",
-    },
-    {
-      id: "q8",
-      prompt: "Which conversion is hard to do well?",
-      options: [
-        { id: "a", text: "Vector to raster" },
-        { id: "b", text: "Raster to vector" },
-        { id: "c", text: "Both are equally easy" },
-        { id: "d", text: "Neither is possible" },
-      ],
-      correctOptionId: "b",
-      explanation: "Rasterizing happens every time a vector is shown. Tracing a raster into shapes means guessing where the shapes are.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "displays-quiz")}
 />

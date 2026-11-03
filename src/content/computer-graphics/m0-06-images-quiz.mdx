@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-graphics/questions";
 
 # Quiz: Pixels and Color
 
@@ -8,102 +10,5 @@ Eight questions on pixels, bit depth and image size. Get 6 right to pass.
   courseSlug="computer-graphics"
   lessonSlug="images-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "A program reads an image with the wrong row width. What do you see?",
-      options: [
-        { id: "a", text: "A blank image" },
-        { id: "b", text: "The right pixels in the wrong places, so the picture leans sideways" },
-        { id: "c", text: "The image in the wrong colors" },
-        { id: "d", text: "A smaller copy of the image" },
-      ],
-      correctOptionId: "b",
-      explanation: "The pixel values are all there, but each row starts in the wrong place, so the picture shears sideways.",
-    },
-    {
-      id: "q2",
-      prompt: "How many colors can a 4-bit pixel show?",
-      options: [
-        { id: "a", text: "4" },
-        { id: "b", text: "8" },
-        { id: "c", text: "16" },
-        { id: "d", text: "256" },
-      ],
-      correctOptionId: "c",
-      explanation: "2⁴ = 16.",
-    },
-    {
-      id: "q3",
-      prompt: "In an 8-bit grayscale image, what does the pixel value 0 mean?",
-      options: [
-        { id: "a", text: "White" },
-        { id: "b", text: "Black" },
-        { id: "c", text: "Transparent" },
-        { id: "d", text: "The first color in the palette" },
-      ],
-      correctOptionId: "b",
-      explanation: "0 is no brightness, so black. 255 is white. (In an indexed image, 0 would be the first palette entry.)",
-    },
-    {
-      id: "q4",
-      prompt: "Why does 16-bit high color give green 6 bits and red and blue 5?",
-      options: [
-        { id: "a", text: "Green needs more memory" },
-        { id: "b", text: "Eyes are most sensitive to green, and 16 bits don't split evenly into three" },
-        { id: "c", text: "Green is the brightest LED" },
-        { id: "d", text: "It's a mistake kept for compatibility" },
-      ],
-      correctOptionId: "b",
-      explanation: "5 + 6 + 5 = 16, and the spare bit goes where it's most visible.",
-    },
-    {
-      id: "q5",
-      prompt: "A pixel has alpha 255. How does it look when drawn over a background?",
-      options: [
-        { id: "a", text: "Invisible" },
-        { id: "b", text: "Half see-through" },
-        { id: "c", text: "Fully opaque: the background doesn't show through" },
-        { id: "d", text: "It depends on the red channel" },
-      ],
-      correctOptionId: "c",
-      explanation: "255 is fully opaque and 0 is fully transparent.",
-    },
-    {
-      id: "q6",
-      prompt: "How big is an uncompressed 800 × 600 true color (24-bit) image?",
-      options: [
-        { id: "a", text: "468.75 KB" },
-        { id: "b", text: "1406.25 KB" },
-        { id: "c", text: "1875 KB" },
-        { id: "d", text: "480,000 KB" },
-      ],
-      correctOptionId: "b",
-      explanation: "800 × 600 = 480,000 pixels × 3 bytes = 1,440,000 bytes ÷ 1024 = 1406.25 KB.",
-    },
-    {
-      id: "q7",
-      prompt: "The same image is stored at 8 bits per pixel and at 1 bit per pixel. How do the sizes compare?",
-      options: [
-        { id: "a", text: "The 8-bit file is 8 times bigger" },
-        { id: "b", text: "The 8-bit file is 256 times bigger" },
-        { id: "c", text: "They're the same size" },
-        { id: "d", text: "The 8-bit file is 2 times bigger" },
-      ],
-      correctOptionId: "a",
-      explanation: "Size is proportional to bits per pixel, not to the number of colors. 8 bits is 8 times 1 bit.",
-    },
-    {
-      id: "q8",
-      prompt: "An 8-bit indexed image and an 8-bit grayscale image both have a pixel with value 200. What's true?",
-      options: [
-        { id: "a", text: "Both pixels are the same gray" },
-        { id: "b", text: "The indexed pixel's color depends on its palette" },
-        { id: "c", text: "The indexed pixel is brighter" },
-        { id: "d", text: "Indexed images can't store 200" },
-      ],
-      correctOptionId: "b",
-      explanation: "In indexed color the value is a position in the palette, which can hold any color.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "images-quiz")}
 />

@@ -26,12 +26,13 @@ The design rests on four findings from learning research. The Exam Mind course a
 
 ### Questions are data, not lesson text
 
-Questions move out of the quiz `.mdx` files into one typed bank per course, `src/content/<course>/questions.ts`:
+Questions live in one typed bank per course, `src/content/<course>/questions.ts`, with the type in `src/lib/questions.ts`:
 
 ```ts
 export type Question = {
-  id: string;            // stable and unique site-wide: "<course>/<lesson>/<short-name>"; never reuse or rename one, review history is keyed by it
-  lesson: string;        // slug of the lesson that teaches it, for "re-read this"
+  id: string;            // stable and unique site-wide: "<course>/<lesson-or-quiz>/<short-name>"; never reuse or rename one, review history is keyed by it
+  quiz?: string;         // slug of the module quiz it appears in, if any
+  lesson?: string;       // slug of the lesson that teaches it, for "re-read this"
   section?: string;      // heading id in that lesson, when one section teaches it
   prompt: string;        // markdown, with $math$ allowed
   options: { id: string; text: string }[];
@@ -41,7 +42,9 @@ export type Question = {
 };
 ```
 
-A module quiz then shows the questions whose `lesson` is in that module (or an explicit list of ids), so a quiz file shrinks to one line. Tests check that ids are unique site-wide, that every `lesson` and `section` exists, and that every course with lessons has questions.
+A module quiz shows the questions whose `quiz` is its slug (`questionsForQuiz(questions, "<slug>")`), so a quiz file no longer holds questions.
+
+The 259 questions that existed before the bank keep their wording and have ids `<course>/<quiz-slug>/q<n>` (for example `computer-networks/foundations-quiz/q1`). For them only the quiz is known, not the lesson that teaches each one, so their `lesson` is empty until it's filled in by hand (phase 4). New questions should always set `lesson`, and `section` where one heading teaches the idea. Tests check that ids are unique site-wide, that every `lesson` and `section` exists, and that every course with lessons has questions.
 
 Generated questions implement the same shape from a function and a seed:
 

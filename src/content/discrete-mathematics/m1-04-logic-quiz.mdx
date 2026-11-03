@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Logic
 
@@ -8,90 +10,5 @@ Seven questions on connectives, equivalence and quantifiers. Get 5 right to pass
   courseSlug="discrete-mathematics"
   lessonSlug="logic-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "When is p → q false?",
-      options: [
-        { id: "a", text: "When p is false and q is true" },
-        { id: "b", text: "When p is true and q is false" },
-        { id: "c", text: "When both are false" },
-        { id: "d", text: "Whenever p and q differ" },
-      ],
-      correctOptionId: "b",
-      explanation: "An implication only breaks its promise when the hypothesis holds and the conclusion doesn't. With a false hypothesis it is vacuously true.",
-    },
-    {
-      id: "q2",
-      prompt: "Which statement is equivalent to p → q?",
-      options: [
-        { id: "a", text: "q → p" },
-        { id: "b", text: "¬p → ¬q" },
-        { id: "c", text: "¬q → ¬p" },
-        { id: "d", text: "p ∧ ¬q" },
-      ],
-      correctOptionId: "c",
-      explanation: "That's the contrapositive. q → p is the converse and ¬p → ¬q the inverse; both differ from p → q on two rows. p ∧ ¬q is the negation.",
-    },
-    {
-      id: "q3",
-      prompt: "By De Morgan, ¬(a ∨ b) is equivalent to:",
-      options: [
-        { id: "a", text: "¬a ∨ ¬b" },
-        { id: "b", text: "¬a ∧ ¬b" },
-        { id: "c", text: "a ∧ b" },
-        { id: "d", text: "¬a ∨ b" },
-      ],
-      correctOptionId: "b",
-      explanation: "The negation moves inside and ∨ becomes ∧: neither a nor b.",
-    },
-    {
-      id: "q4",
-      prompt: "How many rows does a truth table with 5 variables have?",
-      options: [
-        { id: "a", text: "10" },
-        { id: "b", text: "25" },
-        { id: "c", text: "32" },
-        { id: "d", text: "120" },
-      ],
-      correctOptionId: "c",
-      explanation: "Each variable doubles the number of cases: 2⁵ = 32.",
-    },
-    {
-      id: "q5",
-      prompt: "Which formula is a tautology?",
-      options: [
-        { id: "a", text: "p → ¬p" },
-        { id: "b", text: "(p ∧ q) → p" },
-        { id: "c", text: "p ∧ ¬p" },
-        { id: "d", text: "p ∨ q" },
-      ],
-      correctOptionId: "b",
-      explanation: "If p ∧ q is true then p is true, so the implication never fails. p ∧ ¬p is a contradiction; the other two are false on some row.",
-    },
-    {
-      id: "q6",
-      prompt: "The negation of \"every test passed\" is:",
-      options: [
-        { id: "a", text: "Every test failed" },
-        { id: "b", text: "No test passed" },
-        { id: "c", text: "Some test failed" },
-        { id: "d", text: "Some test passed" },
-      ],
-      correctOptionId: "c",
-      explanation: "¬∀x P(x) ≡ ∃x ¬P(x). One failing test is enough to make \"every test passed\" false.",
-    },
-    {
-      id: "q7",
-      prompt: "On the domain of all people, which is stronger than ∀x ∃y Knows(x, y)?",
-      options: [
-        { id: "a", text: "∃y ∀x Knows(x, y)" },
-        { id: "b", text: "∃x ∃y Knows(x, y)" },
-        { id: "c", text: "∀y ∃x Knows(x, y)" },
-        { id: "d", text: "They are all equivalent" },
-      ],
-      correctOptionId: "a",
-      explanation: "∃y ∀x says one single person is known by everybody. That implies everybody knows somebody, but not the other way round.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "logic-quiz")}
 />

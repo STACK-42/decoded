@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Counting
 
@@ -8,90 +10,5 @@ Seven questions on the counting rules, permutations, combinations and pigeonhole
   courseSlug="discrete-mathematics"
   lessonSlug="counting-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "How many different 3-character codes can be made from the 26 lowercase letters, repeats allowed?",
-      options: [
-        { id: "a", text: "78" },
-        { id: "b", text: "2,600" },
-        { id: "c", text: "15,600" },
-        { id: "d", text: "17,576" },
-      ],
-      correctOptionId: "d",
-      explanation: "Product rule with repetition: 26³ = 17,576. 15,600 = 26 × 25 × 24 would forbid repeats.",
-    },
-    {
-      id: "q2",
-      prompt: "How many 4-digit PINs (0000 to 9999) contain at least one 0?",
-      options: [
-        { id: "a", text: "1,000" },
-        { id: "b", text: "3,439" },
-        { id: "c", text: "4,000" },
-        { id: "d", text: "6,561" },
-      ],
-      correctOptionId: "b",
-      explanation: "Count the complement: PINs with no 0 have 9 choices per digit, 9⁴ = 6,561. So 10,000 − 6,561 = 3,439.",
-    },
-    {
-      id: "q3",
-      prompt: "In how many ways can 8 runners finish first, second and third?",
-      options: [
-        { id: "a", text: "24" },
-        { id: "b", text: "56" },
-        { id: "c", text: "336" },
-        { id: "d", text: "512" },
-      ],
-      correctOptionId: "c",
-      explanation: "Order matters, no repeats: P(8, 3) = 8 × 7 × 6 = 336. 56 = C(8, 3) would ignore who won which medal.",
-    },
-    {
-      id: "q4",
-      prompt: "How many ways are there to choose 2 toppings from 6?",
-      options: [
-        { id: "a", text: "12" },
-        { id: "b", text: "15" },
-        { id: "c", text: "30" },
-        { id: "d", text: "36" },
-      ],
-      correctOptionId: "b",
-      explanation: "Order doesn't matter: C(6, 2) = 6 × 5 / 2 = 15. The 30 ordered pairs count each choice twice.",
-    },
-    {
-      id: "q5",
-      prompt: "Which equals C(10, 7)?",
-      options: [
-        { id: "a", text: "C(10, 3)" },
-        { id: "b", text: "C(7, 3)" },
-        { id: "c", text: "P(10, 7)" },
-        { id: "d", text: "10! / 7!" },
-      ],
-      correctOptionId: "a",
-      explanation: "Choosing the 7 who are in is the same as choosing the 3 who are out: both are 120.",
-    },
-    {
-      id: "q6",
-      prompt: "A hash table has 1,000 buckets and holds 2,500 keys. What does the pigeonhole principle guarantee?",
-      options: [
-        { id: "a", text: "Every bucket has at least 2 keys" },
-        { id: "b", text: "Some bucket has at least 3 keys" },
-        { id: "c", text: "Some bucket has exactly 2 keys" },
-        { id: "d", text: "No bucket is empty" },
-      ],
-      correctOptionId: "b",
-      explanation: "⌈2500 / 1000⌉ = 3. It says nothing about every bucket: a bad hash could put all 2,500 keys in one.",
-    },
-    {
-      id: "q7",
-      prompt: "Why can't a lossless compressor make every 1,000-bit file shorter?",
-      options: [
-        { id: "a", text: "Compression is too slow on long files" },
-        { id: "b", text: "There are fewer shorter files than 1,000-bit files, so two would share a compressed form" },
-        { id: "c", text: "Random files have no patterns" },
-        { id: "d", text: "It can, with a large enough dictionary" },
-      ],
-      correctOptionId: "b",
-      explanation: "There are 2¹⁰⁰⁰ files of 1,000 bits but only 2¹⁰⁰⁰ − 1 shorter ones. Two inputs would map to the same output, and decompression couldn't tell them apart.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "counting-quiz")}
 />

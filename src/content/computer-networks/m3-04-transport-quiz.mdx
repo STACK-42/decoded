@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-networks/questions";
 
 # Quiz: The Transport Layer
 
@@ -8,90 +10,5 @@ Seven questions on ports, UDP, TCP and congestion control. Get 5 right to pass.
   courseSlug="computer-networks"
   lessonSlug="transport-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "One web server on port 443 is talking to 5,000 browsers at once. How does it tell their connections apart?",
-      options: [
-        { id: "a", text: "Each browser uses a different server port" },
-        { id: "b", text: "By the full endpoint pair: each connection has a different client IP address or client port" },
-        { id: "c", text: "By the order packets arrive in" },
-        { id: "d", text: "It can't; it serves one at a time" },
-      ],
-      correctOptionId: "b",
-      explanation: "A connection is identified by source IP, source port, destination IP and destination port. Only the server side is the same for all of them.",
-    },
-    {
-      id: "q2",
-      prompt: "Which is a good reason to choose UDP over TCP?",
-      options: [
-        { id: "a", text: "You need every byte delivered in order" },
-        { id: "b", text: "Late data is useless, as in a live video call, so retransmitting it would only add delay" },
-        { id: "c", text: "UDP encrypts data" },
-        { id: "d", text: "UDP guarantees delivery faster" },
-      ],
-      correctOptionId: "b",
-      explanation: "UDP guarantees nothing beyond ports and a checksum. That's right when stale data has no value, or when the application handles reliability itself, like QUIC.",
-    },
-    {
-      id: "q3",
-      prompt: "A client sends `send(\"ab\")` then `send(\"cd\")` over TCP. What might one `recv(10)` on the server return?",
-      options: [
-        { id: "a", text: "Always exactly \"ab\"" },
-        { id: "b", text: "Any prefix of \"abcd\" that has arrived, such as \"abcd\" or \"a\"" },
-        { id: "c", text: "\"cdab\"" },
-        { id: "d", text: "Two separate messages" },
-      ],
-      correctOptionId: "b",
-      explanation: "TCP is a byte stream: it keeps the order but not the boundaries between sends. Protocols on top must mark where messages end.",
-    },
-    {
-      id: "q4",
-      prompt: "A receiver has bytes up to 199, and segments starting at 300 and 400 arrive, but 200 to 299 is missing. What ACK number does it send?",
-      options: [
-        { id: "a", text: "200" },
-        { id: "b", text: "300" },
-        { id: "c", text: "500" },
-        { id: "d", text: "It sends no ACK" },
-      ],
-      correctOptionId: "a",
-      explanation: "ACKs are cumulative: the number of the next byte needed. Each out-of-order arrival produces a duplicate ACK for 200.",
-    },
-    {
-      id: "q5",
-      prompt: "Why does TCP resend after three duplicate ACKs instead of waiting for the timeout?",
-      options: [
-        { id: "a", text: "Duplicate ACKs mean the connection is closing" },
-        { id: "b", text: "They show later segments are arriving, so one segment is very likely lost; resending now saves waiting for the timer" },
-        { id: "c", text: "The timeout is too short" },
-        { id: "d", text: "To slow the sender down" },
-      ],
-      correctOptionId: "b",
-      explanation: "That's fast retransmit. Three duplicates (rather than one) avoid resending when packets were merely reordered.",
-    },
-    {
-      id: "q6",
-      prompt: "In congestion avoidance, a TCP Reno sender has cwnd = 20 and gets three duplicate ACKs. What happens?",
-      options: [
-        { id: "a", text: "cwnd becomes 1 and slow start restarts" },
-        { id: "b", text: "cwnd and ssthresh become 10" },
-        { id: "c", text: "cwnd becomes 21" },
-        { id: "d", text: "The connection closes" },
-      ],
-      correctOptionId: "b",
-      explanation: "Multiplicative decrease: halve the window. Dropping to 1 is the response to a timeout, which signals worse congestion.",
-    },
-    {
-      id: "q7",
-      prompt: "Why does AIMD make competing flows converge to equal shares?",
-      options: [
-        { id: "a", text: "Routers divide the bandwidth evenly" },
-        { id: "b", text: "Adding the same amount keeps the gap between flows the same, while halving both halves it, so the gap keeps shrinking" },
-        { id: "c", text: "Faster flows are dropped first" },
-        { id: "d", text: "They don't; the first flow keeps its lead" },
-      ],
-      correctOptionId: "b",
-      explanation: "Additive steps preserve the difference; multiplicative steps scale it down. Repeated, the difference goes to zero.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "transport-quiz")}
 />

@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Probability and the Whole Course
 
@@ -8,102 +10,5 @@ Eight questions: five on probability, three that reach back across the course. G
   courseSlug="discrete-mathematics"
   lessonSlug="final-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "Two fair dice are rolled. What is the probability that the sum is 8?",
-      options: [
-        { id: "a", text: "1/11" },
-        { id: "b", text: "1/6" },
-        { id: "c", text: "5/36" },
-        { id: "d", text: "1/8" },
-      ],
-      correctOptionId: "c",
-      explanation: "(2,6), (3,5), (4,4), (5,3), (6,2): 5 of the 36 equally likely outcomes. The 11 possible sums aren't equally likely.",
-    },
-    {
-      id: "q2",
-      prompt: "A fair coin is flipped 3 times. What is the probability of at least one head?",
-      options: [
-        { id: "a", text: "1/2" },
-        { id: "b", text: "3/4" },
-        { id: "c", text: "7/8" },
-        { id: "d", text: "1/8" },
-      ],
-      correctOptionId: "c",
-      explanation: "Count the complement: all tails has probability (1/2)³ = 1/8, so at least one head is 1 − 1/8 = 7/8.",
-    },
-    {
-      id: "q3",
-      prompt: "When does E[X + Y] = E[X] + E[Y] hold?",
-      options: [
-        { id: "a", text: "Only when X and Y are independent" },
-        { id: "b", text: "Only when X and Y take the same values" },
-        { id: "c", text: "Always" },
-        { id: "d", text: "Only for positive random variables" },
-      ],
-      correctOptionId: "c",
-      explanation: "Linearity of expectation needs no independence. That's what makes it so useful for breaking a count into simple pieces.",
-    },
-    {
-      id: "q4",
-      prompt: "Records get IDs from a 32-bit hash. Roughly how many records before a duplicate ID is more likely than not?",
-      options: [
-        { id: "a", text: "After about 77,000 items" },
-        { id: "b", text: "After about 2 billion items" },
-        { id: "c", text: "After about 4.3 billion items" },
-        { id: "d", text: "Never, with a good hash" },
-      ],
-      correctOptionId: "a",
-      explanation: "The square-root rule: about 1.18 × √(2³²) = 1.18 × 65,536 ≈ 77,000.",
-    },
-    {
-      id: "q5",
-      prompt: "Why does a 128-bit hash give only about 64 bits of collision resistance?",
-      options: [
-        { id: "a", text: "Half the bits are used for padding" },
-        { id: "b", text: "An attacker looking for any colliding pair needs only about √(2¹²⁸) = 2⁶⁴ tries" },
-        { id: "c", text: "Computers process 64 bits at a time" },
-        { id: "d", text: "It doesn't; it gives the full 128" },
-      ],
-      correctOptionId: "b",
-      explanation: "That's the birthday attack. Finding a match for one fixed hash still takes about 2¹²⁸ tries; finding any pair takes about 2⁶⁴.",
-    },
-    {
-      id: "q6",
-      prompt: "Which is equivalent to \"if the cache is warm, the request is fast\"?",
-      options: [
-        { id: "a", text: "If the request is fast, the cache is warm" },
-        { id: "b", text: "If the cache is cold, the request is slow" },
-        { id: "c", text: "If the request is slow, the cache is cold" },
-        { id: "d", text: "The cache is warm and the request is fast" },
-      ],
-      correctOptionId: "c",
-      explanation: "The contrapositive ¬q → ¬p is the only one equivalent to p → q. Options a and b are the converse and the inverse.",
-    },
-    {
-      id: "q7",
-      prompt: "How many ways can you choose 3 of 7 servers to run a replica on?",
-      options: [
-        { id: "a", text: "21" },
-        { id: "b", text: "35" },
-        { id: "c", text: "210" },
-        { id: "d", text: "343" },
-      ],
-      correctOptionId: "b",
-      explanation: "Order doesn't matter and there are no repeats: C(7, 3) = 7 × 6 × 5 / 6 = 35.",
-    },
-    {
-      id: "q8",
-      prompt: "A package manager reports a circular dependency. In graph terms, what did it find?",
-      options: [
-        { id: "a", text: "A vertex with in-degree 0" },
-        { id: "b", text: "A directed cycle, so no topological order exists" },
-        { id: "c", text: "Two connected components" },
-        { id: "d", text: "A tree with n − 1 edges" },
-      ],
-      correctOptionId: "b",
-      explanation: "A topological sort exists exactly when the dependency graph is a DAG. A cycle means some package would have to come before itself.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "final-quiz")}
 />

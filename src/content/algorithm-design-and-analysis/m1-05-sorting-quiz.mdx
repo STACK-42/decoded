@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/algorithm-design-and-analysis/questions";
 
 # Quiz: Analysis & Sorting
 
@@ -8,102 +10,5 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
   courseSlug="algorithm-design-and-analysis"
   lessonSlug="sorting-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "When is an algorithm called correct?",
-      options: [
-        { id: "a", text: "When it passes all the test cases you wrote" },
-        { id: "b", text: "When it halts with the correct output for every valid input" },
-        { id: "c", text: "When it runs in O(n log n) or better" },
-        { id: "d", text: "When it compiles without warnings" },
-      ],
-      correctOptionId: "b",
-      explanation: "Correctness covers every valid input, including the ones you never tried. Tests can reveal bugs, but they can't prove there are none.",
-    },
-    {
-      id: "q2",
-      prompt: "An algorithm does 4n² + 30n + 500 basic operations. What is its Big-O?",
-      options: [
-        { id: "a", text: "O(n)" },
-        { id: "b", text: "O(4n²)" },
-        { id: "c", text: "O(n²)" },
-        { id: "d", text: "O(500)" },
-      ],
-      correctOptionId: "c",
-      explanation: "Keep the fastest-growing term and drop its constant. For large n, the n² term dominates everything else.",
-    },
-    {
-      id: "q3",
-      prompt: "Which notation gives a tight bound, meaning both an upper and a lower bound?",
-      options: [
-        { id: "a", text: "Big-O (O)" },
-        { id: "b", text: "Omega (Ω)" },
-        { id: "c", text: "Theta (Θ)" },
-        { id: "d", text: "Little-o (o)" },
-      ],
-      correctOptionId: "c",
-      explanation: "O is an upper bound (grows no faster than), Ω is a lower bound (grows at least as fast as), and Θ is both at once.",
-    },
-    {
-      id: "q4",
-      prompt: "You run selection sort on [4, 1, 3, 2]. What does the array look like after the first pass?",
-      options: [
-        { id: "a", text: "[1, 4, 3, 2]" },
-        { id: "b", text: "[1, 3, 2, 4]" },
-        { id: "c", text: "[1, 2, 3, 4]" },
-        { id: "d", text: "[4, 1, 2, 3]" },
-      ],
-      correctOptionId: "a",
-      explanation: "Pass 1 finds the smallest element (1, at index 1) and swaps it with index 0. Nothing else moves. [1, 3, 2, 4] is what bubble sort gives you after one pass.",
-    },
-    {
-      id: "q5",
-      prompt: "What is the best-case time complexity of bubble sort with the 'swapped' flag?",
-      options: [
-        { id: "a", text: "O(1)" },
-        { id: "b", text: "O(n)" },
-        { id: "c", text: "O(n log n)" },
-        { id: "d", text: "O(n²)" },
-      ],
-      correctOptionId: "b",
-      explanation: "On sorted input, one pass of n − 1 comparisons makes no swaps, so the flag stops the algorithm. Without the flag it would still be O(n²).",
-    },
-    {
-      id: "q6",
-      prompt: "Your data is almost sorted: only a few elements are out of place. Which simple sort is the best choice?",
-      options: [
-        { id: "a", text: "Selection sort, because it makes the fewest swaps" },
-        { id: "b", text: "Insertion sort, because each element only shifts a few places" },
-        { id: "c", text: "Quick sort with the first element as pivot" },
-        { id: "d", text: "They are all exactly the same" },
-      ],
-      correctOptionId: "b",
-      explanation: "Insertion sort's work depends on how far elements are from their final places, so it's close to O(n) on nearly sorted data. Selection sort always does n(n−1)/2 comparisons, and a first-element-pivot quick sort is at its worst on sorted data.",
-    },
-    {
-      id: "q7",
-      prompt: "Which two sorting algorithms use the divide and conquer paradigm?",
-      options: [
-        { id: "a", text: "Bubble sort and insertion sort" },
-        { id: "b", text: "Selection sort and merge sort" },
-        { id: "c", text: "Merge sort and quick sort" },
-        { id: "d", text: "Insertion sort and quick sort" },
-      ],
-      correctOptionId: "c",
-      explanation: "Both split the problem into smaller subproblems and recurse. Merge sort does its real work in the combine step (merge), quick sort in the divide step (partition).",
-    },
-    {
-      id: "q8",
-      prompt: "Quick sort always picks the first element as the pivot, as in the lab. Why is it O(n²) on an array that is already sorted?",
-      options: [
-        { id: "a", text: "Partitioning a sorted array takes O(n²) time" },
-        { id: "b", text: "The pivot is always the smallest element, so each split leaves n − 1 elements on one side" },
-        { id: "c", text: "Quick sort has to un-sort the array first" },
-        { id: "d", text: "It isn't; quick sort is always O(n log n)" },
-      ],
-      correctOptionId: "b",
-      explanation: "Each partition costs O(n) but only removes one element from the problem. n + (n−1) + … + 1 = O(n²). A middle, random or median-of-three pivot avoids this.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "sorting-quiz")}
 />

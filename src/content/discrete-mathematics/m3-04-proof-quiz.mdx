@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Proof
 
@@ -8,78 +10,5 @@ Six questions on proof methods, induction and loop invariants. Get 5 right to pa
   courseSlug="discrete-mathematics"
   lessonSlug="proof-quiz"
   passThreshold={5/6}
-  questions={[
-    {
-      id: "q1",
-      prompt: "To prove \"if n² is odd then n is odd\" by contrapositive, you would prove:",
-      options: [
-        { id: "a", text: "If n is odd then n² is odd" },
-        { id: "b", text: "If n is even then n² is even" },
-        { id: "c", text: "If n² is even then n is even" },
-        { id: "d", text: "n² is odd and n is even" },
-      ],
-      correctOptionId: "b",
-      explanation: "The contrapositive of p → q is ¬q → ¬p. Here ¬q is \"n is even\" and ¬p is \"n² is even\". Option a is the converse.",
-    },
-    {
-      id: "q2",
-      prompt: "Which single fact disproves \"every odd number greater than 1 is prime\"?",
-      options: [
-        { id: "a", text: "2 is prime and even" },
-        { id: "b", text: "3, 5 and 7 are prime" },
-        { id: "c", text: "9 = 3 × 3" },
-        { id: "d", text: "There are infinitely many primes" },
-      ],
-      correctOptionId: "c",
-      explanation: "9 is odd, greater than 1 and not prime: one counterexample is enough to make a \"for all\" claim false.",
-    },
-    {
-      id: "q3",
-      prompt: "In Euclid's proof that there are infinitely many primes, N = p₁p₂⋯pₙ + 1. What does the proof need?",
-      options: [
-        { id: "a", text: "N is prime" },
-        { id: "b", text: "N has a prime factor not in the list" },
-        { id: "c", text: "N is even" },
-        { id: "d", text: "N is larger than every prime" },
-      ],
-      correctOptionId: "b",
-      explanation: "N leaves remainder 1 when divided by every listed prime, so its prime factors aren't in the list. N itself can be composite: 30031 = 59 × 509.",
-    },
-    {
-      id: "q4",
-      prompt: "In an induction proof, the inductive step shows:",
-      options: [
-        { id: "a", text: "P(1) is true" },
-        { id: "b", text: "P(k) is true for every k" },
-        { id: "c", text: "If P(k) is true then P(k + 1) is true" },
-        { id: "d", text: "P(k + 1) implies P(k)" },
-      ],
-      correctOptionId: "c",
-      explanation: "The step proves an implication. Combined with the base case, it carries the truth along to every n.",
-    },
-    {
-      id: "q5",
-      prompt: "Using 1 + 2 + ⋯ + n = n(n + 1)/2, what is 1 + 2 + ⋯ + 100?",
-      options: [
-        { id: "a", text: "5000" },
-        { id: "b", text: "5050" },
-        { id: "c", text: "10100" },
-        { id: "d", text: "4950" },
-      ],
-      correctOptionId: "b",
-      explanation: "100 × 101 / 2 = 5050. 4950 is 1 + ⋯ + 99.",
-    },
-    {
-      id: "q6",
-      prompt: "A binary search loops while lo <= hi, but moves right with lo = mid instead of lo = mid + 1. What goes wrong?",
-      options: [
-        { id: "a", text: "The window starts in the wrong place" },
-        { id: "b", text: "The target can be thrown out of the window" },
-        { id: "c", text: "The window can stop shrinking, so the loop may never end" },
-        { id: "d", text: "None; the code is still correct" },
-      ],
-      correctOptionId: "c",
-      explanation: "Only too-small elements are dropped, so the invariant survives. But when lo = mid the window doesn't shrink, and the loop never ends.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "proof-quiz")}
 />
