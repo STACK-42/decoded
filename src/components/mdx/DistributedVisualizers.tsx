@@ -20,6 +20,18 @@ import {
   type MsgState,
   type RetryMode,
   type VectorState,
+  HISTORIES,
+  isLinearizable,
+  isSequential,
+  partitionFrames,
+  PARTITION_CODE,
+  quorum,
+  replicationFrames,
+  REPLICATION_CODE,
+  type PartitionMode,
+  type PartitionState,
+  type ReplicationMode,
+  type ReplicationState,
 } from "@/lib/distributed";
 
 /* ============================================================
@@ -247,5 +259,188 @@ export function VectorCompare() {
         {order === "equal" ? ORDER_TEXT.equal(a) : ORDER_TEXT[order](a, b)}
       </p>
     </Panel>
+  );
+}
+
+/* -------------------------------- replication -------------------------------- */
+
+const NODE_X = [70, 200, 330];
+
+export function ReplicationDemo() {
+  const [mode, setMode] = useState<ReplicationMode>("async");
+  const [crash, setCrash] = useState(false);
+  const frames = useMemo(() => replicationFrames(mode, crash), [mode, crash]);
+  return (
+    <Stepper
+      title="One write, three copies"
+      frames={frames}
+      code={REPLICATION_CODE}
+      codeLabel="What happens"
+      legend={[["bg-neon", "leader"], ["bg-sky", "copy on its way"], ["bg-mint", "has x = 2"], ["bg-orange", "crashed"]]}
+      inputs={
+        <div className="flex flex-col gap-2">
+          <Toggle<ReplicationMode> value={mode} onChange={setMode} options={[["sync", "Synchronous"], ["async", "Asynchronous"]]} />
+          <Toggle<string> value={crash ? "y" : "n"} onChange={(v) => setCrash(v === "y")} options={[["n", "No crash"], ["y", "Leader crashes"]]} />
+        </div>
+      }
+      render={(s: ReplicationState) => (
+        <svg viewBox="0 0 400 190" className="w-full max-w-[480px] h-auto block mx-auto" role="img" aria-label="a leader replicating a write to two followers">
+          <rect x={150} y={4} width={100} height={30} rx={4} strokeWidth={1.5} className={s.acked ? "fill-mint/20 stroke-mint" : "fill-card stroke-border"} />
+          <text x={200} y={17} textAnchor="middle" className="fill-foreground font-mono text-[11px] font-bold">client</text>
+          <text x={200} y={29} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">{s.client || "idle"}</text>
+          {s.replicas.map((r, i) => {
+            const tone = r.down ? "fill-orange/20 stroke-orange" : r.value === 2 ? "fill-mint/20 stroke-mint" : "fill-card stroke-border";
+            return (
+              <g key={r.name}>
+                <rect x={NODE_X[i] - 52} y={100} width={104} height={62} rx={4} strokeWidth={r.leader ? 3 : 1.5} className={`${tone} ${r.leader && !r.down ? "!stroke-neon" : ""}`} />
+                <text x={NODE_X[i]} y={120} textAnchor="middle" className="fill-foreground font-mono text-[11px] font-bold">{r.leader ? "leader" : r.name}</text>
+                <text x={NODE_X[i]} y={140} textAnchor="middle" className="fill-foreground font-mono text-[13px]">{r.down ? "crashed" : `x = ${r.value}`}</text>
+                {r.leader && r.name !== "leader" && <text x={NODE_X[i]} y={155} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">(was {r.name})</text>}
+              </g>
+            );
+          })}
+          {s.inflight.map((i) => (
+            <path key={i} d={`M${NODE_X[0]},98 Q${(NODE_X[0] + NODE_X[i]) / 2},${i === 1 ? 62 : 46} ${NODE_X[i]},98`} fill="none" strokeWidth={2.5} strokeDasharray="6 4" className="stroke-sky animate-in fade-in" />
+          ))}
+        </svg>
+      )}
+    />
+  );
+}
+
+/* -------------------------------- quorums -------------------------------- */
+
+export function QuorumExplorer() {
+  const [n, setN] = useState(5);
+  const [w, setW] = useState(3);
+  const [r, setR] = useState(2);
+  const W = Math.min(w, n);
+  const R = Math.min(r, n);
+  const q = quorum(n, W, R);
+  const slider = (label: string, value: number, set: (v: number) => void, max: number, min = 1) => (
+    <label className="flex items-center gap-3 font-mono text-xs">
+      <span className="w-6 font-bold">{label}</span>
+      <input type="range" min={min} max={max} value={value} onChange={(e) => set(Number(e.target.value))} className="w-36 accent-current" aria-label={label} />
+      <span className="w-4">{value}</span>
+    </label>
+  );
+  return (
+    <Panel title="Quorums: N, W and R" legend={[["bg-mint", "has the new write"], ["bg-sky", "asked by the read"]]}>
+      <div className="flex flex-col gap-2">
+        {slider("N", n, setN, 7, 3)}
+        {slider("W", W, setW, n)}
+        {slider("R", R, setR, n)}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {q.written.map((has, i) => (
+          <div key={i} className={`w-14 h-14 rounded-sm border-2 flex flex-col items-center justify-center font-mono text-[11px] ${has ? "bg-mint/25" : "bg-card"} ${q.read[i] ? "border-sky" : "border-border"}`}>
+            <span className="text-muted-foreground">#{i + 1}</span>
+            <span className="font-bold">{has ? "v2" : "v1"}</span>
+          </div>
+        ))}
+      </div>
+      <p className={`border-l-4 pl-3 text-sm ${q.fresh ? "border-mint" : "border-orange"}`}>
+        The write reached {W} replicas and the read asks the {R} least lucky ones.{" "}
+        {q.guaranteed
+          ? `R + W = ${R + W} > N = ${n}, so at least ${q.overlap} of them must overlap: the read always sees v2. Writes survive ${n - W} replica${n - W === 1 ? "" : "s"} being down, reads survive ${n - R}.`
+          : `R + W = ${R + W} ≤ N = ${n}, so the two groups can miss each other entirely, and here they do: the read only sees v1.`}
+      </p>
+    </Panel>
+  );
+}
+
+/* -------------------------------- consistency models -------------------------------- */
+
+export function ConsistencyHistories() {
+  const [id, setId] = useState(HISTORIES[1].id);
+  const h = HISTORIES.find((x) => x.id === id)!;
+  const clients = [...new Set(h.ops.map((o) => o.client))];
+  const end = Math.max(...h.ops.map((o) => o.end)) + 1;
+  const X = (t: number) => 34 + (t / end) * 300;
+  const lin = isLinearizable(h.ops);
+  const seq = isSequential(h.ops);
+  const badge = (ok: boolean, label: string) => (
+    <span className={`font-mono text-[11px] px-2 py-1 rounded-sm border ${ok ? "border-mint bg-mint/20" : "border-orange bg-orange/20"}`}>{ok ? "✓" : "✗"} {label}</span>
+  );
+  return (
+    <Panel title="Is this history allowed?" legend={[["bg-violet", "write"], ["bg-sky", "read"]]}>
+      <select aria-label="history" className={inputCls} value={id} onChange={(e) => setId(e.target.value)}>
+        {HISTORIES.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+      </select>
+      <svg viewBox={`0 0 350 ${clients.length * 40 + 24}`} className="w-full max-w-[460px] h-auto" role="img" aria-label="operations on a timeline, one row per client">
+        {clients.map((c, row) => (
+          <g key={c}>
+            <text x={8} y={row * 40 + 26} className="fill-foreground font-mono text-[12px] font-bold">{c}</text>
+            <line x1={30} y1={row * 40 + 22} x2={340} y2={row * 40 + 22} className="stroke-border" strokeWidth={1} />
+            {h.ops.filter((o) => o.client === c).map((o, k) => (
+              <g key={k}>
+                <rect x={X(o.start)} y={row * 40 + 10} width={X(o.end) - X(o.start)} height={24} rx={3} strokeWidth={1.5} className={o.kind === "w" ? "fill-violet/25 stroke-violet" : "fill-sky/25 stroke-sky"} />
+                <text x={(X(o.start) + X(o.end)) / 2} y={row * 40 + 26} textAnchor="middle" className="fill-foreground font-mono text-[11px]">{o.kind === "w" ? `write ${o.value}` : `read → ${o.value}`}</text>
+              </g>
+            ))}
+          </g>
+        ))}
+        <text x={340} y={clients.length * 40 + 18} textAnchor="end" className="fill-muted-foreground font-mono text-[10px]">time →</text>
+      </svg>
+      <div className="flex flex-wrap gap-2">
+        {badge(lin, "linearizable")}
+        {badge(seq, "sequentially consistent")}
+      </div>
+      <p className="text-sm">{h.note}</p>
+    </Panel>
+  );
+}
+
+/* -------------------------------- partitions -------------------------------- */
+
+const P_POS: [number, number][] = [[70, 70], [190, 70], [330, 70]];
+
+export function PartitionDemo() {
+  const [mode, setMode] = useState<PartitionMode>("CP");
+  const frames = useMemo(() => partitionFrames(mode), [mode]);
+  return (
+    <Stepper
+      title="A network partition, CP or AP"
+      frames={frames}
+      code={PARTITION_CODE}
+      codeLabel="What happens"
+      legend={[["bg-mint", "has x = 2"], ["bg-orange", "conflict or error"]]}
+      inputs={<Toggle<PartitionMode> value={mode} onChange={setMode} options={[["CP", "CP: consistent"], ["AP", "AP: available"]]} />}
+      render={(s: PartitionState) => (
+        <svg viewBox="0 0 400 180" className="w-full max-w-[480px] h-auto block mx-auto" role="img" aria-label="three replicas split by a network partition">
+          <line x1={P_POS[0][0]} y1={70} x2={P_POS[1][0]} y2={70} className="stroke-border" strokeWidth={2} />
+          <line x1={P_POS[1][0]} y1={70} x2={P_POS[2][0]} y2={70} strokeWidth={2} strokeDasharray={s.cut ? "4 6" : undefined} className={s.cut ? "stroke-orange" : "stroke-border"} />
+          {s.cut && (
+            <g className="stroke-orange animate-in fade-in" strokeWidth={3}>
+              <line x1={252} y1={58} x2={268} y2={82} />
+              <line x1={252} y1={82} x2={268} y2={58} />
+            </g>
+          )}
+          {s.values.map((v, i) => {
+            const [x, y] = P_POS[i];
+            const tone = s.conflict && i === 2 ? "fill-orange/20 stroke-orange" : v === 2 ? "fill-mint/20 stroke-mint" : "fill-card stroke-border";
+            return (
+              <g key={i}>
+                <rect x={x - 40} y={y - 26} width={80} height={52} rx={4} strokeWidth={1.5} className={tone} />
+                <text x={x} y={y - 6} textAnchor="middle" className="fill-foreground font-mono text-[11px] font-bold">N{i + 1}</text>
+                <text x={x} y={y + 13} textAnchor="middle" className="fill-foreground font-mono text-[13px]">x = {v}</text>
+              </g>
+            );
+          })}
+          {[0, 1].map((side) => {
+            const x = side ? P_POS[2][0] : P_POS[0][0];
+            const note = s.note[side];
+            const bad = note.includes("error");
+            return (
+              <g key={side}>
+                <line x1={x} y1={96} x2={x} y2={118} className="stroke-border" strokeWidth={1.5} />
+                <text x={x} y={136} textAnchor="middle" className="fill-foreground font-mono text-[11px] font-bold">client {side + 1}</text>
+                <text x={x} y={154} textAnchor="middle" className={`font-mono text-[10px] ${bad ? "fill-orange font-bold" : "fill-muted-foreground"}`}>{note}</text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    />
   );
 }

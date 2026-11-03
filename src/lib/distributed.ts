@@ -275,3 +275,212 @@ export function happenedBefore(events: ClockEvent[]): Set<string> {
   return rel;
 }
 
+
+/* ================================ replication ================================ */
+
+export type ReplicationMode = "sync" | "async";
+export type Replica = { name: string; value: number; leader: boolean; down: boolean };
+export type ReplicationState = { replicas: Replica[]; inflight: number[]; client: string; acked: boolean };
+
+export const REPLICATION_CODE = [
+  "client: write x = 2 to leader",
+  "leader: apply, send to followers",
+  "sync: wait for all acks, then ok",
+  "async: ok now, followers catch up",
+  "client: read x from a follower",
+  "leader crashes: promote follower",
+];
+
+/**
+ * A leader and two followers. A client writes x = 2, then reads from a follower.
+ * Optionally the leader crashes right after confirming, and a follower takes over.
+ */
+export function replicationFrames(mode: ReplicationMode, crash: boolean): Frame<ReplicationState>[] {
+  const frames: Frame<ReplicationState>[] = [];
+  let s: ReplicationState = {
+    replicas: [
+      { name: "leader", value: 1, leader: true, down: false },
+      { name: "follower 1", value: 1, leader: false, down: false },
+      { name: "follower 2", value: 1, leader: false, down: false },
+    ],
+    inflight: [],
+    client: "",
+    acked: false,
+  };
+  let rtts = 0;
+  const set = (i: number, patch: Partial<Replica>) => s.replicas.map((r, k) => (k === i ? { ...r, ...patch } : r));
+  const push = (patch: Partial<ReplicationState>, line: number, message: string) => {
+    s = { ...s, ...patch };
+    frames.push(f(s, line, message, { "round trips before ok": rtts, "copies of x = 2": s.replicas.filter((r) => !r.down && r.value === 2).length }));
+  };
+
+  push({ client: "write x = 2" }, 0, "Every replica holds x = 1. The client sends \"x = 2\" to the leader, the only replica that accepts writes.");
+  push({ replicas: set(0, { value: 2 }), inflight: [1, 2] }, 1, "The leader applies the write to its own copy and sends it to both followers.");
+  if (mode === "sync") {
+    push({ replicas: set(1, { value: 2 }), inflight: [2] }, 2, "Follower 1 applies it and acknowledges.");
+    rtts = 1;
+    push({ replicas: set(2, { value: 2 }), inflight: [] }, 2, "Follower 2 is farther away, so its ack takes longer. The leader waits for it.");
+    push({ acked: true, client: "ok" }, 2, "Only now does the leader tell the client \"ok\". The write is on all three machines, at the cost of waiting for the slowest follower.");
+  } else {
+    push({ acked: true, client: "ok" }, 3, "The leader tells the client \"ok\" straight away, without waiting. Fast, but for now the write exists on only one machine.");
+    if (!crash) push({ replicas: set(1, { value: 2 }), inflight: [2] }, 3, "Follower 1 catches up quickly. Follower 2 is lagging behind.");
+  }
+
+  if (crash) {
+    push({ replicas: set(0, { down: true }), inflight: [] }, 5, mode === "async"
+      ? "The leader crashes before either copy reaches a follower. Both copies are lost with it."
+      : "The leader crashes. Every follower already has x = 2.");
+    const replicas = s.replicas.map((r, k) => (k === 1 ? { ...r, leader: true } : k === 0 ? { ...r, leader: false } : r));
+    push({ replicas }, 5, mode === "async"
+      ? "Follower 1 is promoted to leader. It's as up to date as any surviving replica, but it never got x = 2. The write the client was told succeeded is gone."
+      : "Follower 1 is promoted to leader. It has x = 2, so the confirmed write survives the crash.");
+    const v = s.replicas[1].value;
+    push({ client: `read x → ${v}` }, 4, v === 2 ? "The client reads x = 2 from the new leader. Nothing was lost." : "The client reads x = 1 from the new leader. Its confirmed write has been lost.");
+    return frames;
+  }
+
+  const v = s.replicas[2].value;
+  push({ client: `read x → ${v}` }, 4, v === 2
+    ? "The client reads from follower 2 and gets x = 2, its own write."
+    : "The client reads from follower 2 and gets x = 1, older than the write it was just told succeeded. That's replication lag.");
+  if (mode === "async") {
+    push({ replicas: set(2, { value: 2 }), inflight: [] }, 3, "A moment later follower 2 catches up. Everyone agrees again: the replicas are eventually consistent.");
+  }
+  return frames;
+}
+
+/* ================================ quorums ================================ */
+
+export type QuorumResult = { written: boolean[]; read: boolean[]; overlap: number; fresh: boolean; guaranteed: boolean };
+
+/**
+ * N replicas; a write reaches the first W; a read asks R of them. The read picks the
+ * worst case, the R replicas least likely to have the write (the last R), unless the
+ * caller gives its own choice.
+ */
+export function quorum(n: number, w: number, r: number, readSet?: number[]): QuorumResult {
+  const written = Array.from({ length: n }, (_, i) => i < w);
+  const chosen = readSet ?? Array.from({ length: r }, (_, i) => n - 1 - i);
+  const read = Array.from({ length: n }, (_, i) => chosen.includes(i));
+  const overlap = read.filter((x, i) => x && written[i]).length;
+  return { written, read, overlap, fresh: overlap > 0, guaranteed: r + w > n };
+}
+
+/* ================================ consistency models ================================ */
+
+/** One operation on a single register x (initially 0), with real-time start and end. */
+export type Op = { client: string; kind: "w" | "r"; value: number; start: number; end: number };
+export type History = { id: string; title: string; ops: Op[]; note: string };
+
+export const HISTORIES: History[] = [
+  {
+    id: "fresh",
+    title: "Read after the write",
+    ops: [
+      { client: "A", kind: "w", value: 1, start: 0, end: 2 },
+      { client: "B", kind: "r", value: 1, start: 3, end: 4 },
+    ],
+    note: "A's write finishes, then B reads the new value. The system behaves like one copy.",
+  },
+  {
+    id: "stale",
+    title: "Stale read",
+    ops: [
+      { client: "A", kind: "w", value: 1, start: 0, end: 2 },
+      { client: "B", kind: "r", value: 0, start: 3, end: 4 },
+    ],
+    note: "B starts reading after A's write finished, and still sees 0, as if from a lagging follower. One copy could never do that, so it isn't linearizable. It is sequentially consistent: B's read can be placed before A's write, because nothing ties two different clients to real time.",
+  },
+  {
+    id: "flip",
+    title: "New, then old",
+    ops: [
+      { client: "A", kind: "w", value: 1, start: 0, end: 5 },
+      { client: "B", kind: "r", value: 1, start: 1, end: 2 },
+      { client: "C", kind: "r", value: 0, start: 3, end: 4 },
+    ],
+    note: "While A's write is in progress, B sees the new value and then C, starting later, sees the old one. A read may return either value during the write, but once anyone has seen 1, a later read must too. Not linearizable; sequentially consistent (order C, A, B).",
+  },
+  {
+    id: "own-write",
+    title: "Lost your own write",
+    ops: [
+      { client: "A", kind: "w", value: 1, start: 0, end: 1 },
+      { client: "A", kind: "r", value: 0, start: 2, end: 3 },
+    ],
+    note: "A writes 1 and then reads 0. Even the weakest model that respects each client's own order rules this out. It breaks read-your-writes, so it's neither linearizable nor sequentially consistent.",
+  },
+];
+
+function permutations<T>(xs: T[]): T[][] {
+  if (xs.length <= 1) return [xs];
+  return xs.flatMap((x, i) => permutations([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
+}
+
+/** Does this order of operations behave like one register? Each read returns the last write before it (or 0). */
+const legal = (order: Op[]) => {
+  let x = 0;
+  for (const op of order) {
+    if (op.kind === "w") x = op.value;
+    else if (op.value !== x) return false;
+  }
+  return true;
+};
+
+/** Linearizable: some legal order that also respects real time (if a ends before b starts, a comes first). */
+export function isLinearizable(ops: Op[]): boolean {
+  return permutations(ops).some((p) => legal(p) && p.every((a, i) => p.slice(0, i).every((b) => !(a.end < b.start))));
+}
+
+/** Sequentially consistent: some legal order that keeps each client's own operations in their order. */
+export function isSequential(ops: Op[]): boolean {
+  return permutations(ops).some((p) => legal(p) && p.every((a, i) => p.slice(0, i).every((b) => !(a.client === b.client && a.start < b.start))));
+}
+
+/* ================================ partitions ================================ */
+
+export type PartitionMode = "CP" | "AP";
+export type PartitionState = { values: number[]; cut: boolean; note: [string, string]; conflict: boolean };
+
+export const PARTITION_CODE = [
+  "all three nodes hold x = 1",
+  "the network splits: {N1, N2} | {N3}",
+  "client 1 writes x = 2 through N1",
+  "client 2 reads x through N3",
+  "client 2 writes x = 3 through N3",
+  "the network heals",
+];
+
+/**
+ * Three replicas, split into a majority {N1, N2} and a minority {N3}. A CP system serves
+ * only where it can reach a majority; an AP system answers everywhere and fixes things up
+ * after the partition heals.
+ */
+export function partitionFrames(mode: PartitionMode): Frame<PartitionState>[] {
+  const frames: Frame<PartitionState>[] = [];
+  let errors = 0;
+  let stale = 0;
+  let s: PartitionState = { values: [1, 1, 1], cut: false, note: ["", ""], conflict: false };
+  const push = (patch: Partial<PartitionState>, line: number, message: string) => {
+    s = { ...s, ...patch };
+    frames.push(f(s, line, message, { errors, "stale reads": stale }));
+  };
+  const cp = mode === "CP";
+
+  push({}, 0, "Three replicas hold x = 1. Client 1 talks to N1, client 2 talks to N3.");
+  push({ cut: true }, 1, "A link fails. N1 and N2 can still talk to each other, but neither can reach N3. Nobody knows whether N3 has crashed or is just cut off.");
+  push({ values: [2, 2, 1], note: ["write x = 2 → ok", ""] }, 2, `Client 1 writes x = 2 through N1. N1 and N2 are a majority (2 of 3), so ${cp ? "the write is safe to accept" : "the write is accepted"}. N3 can't hear about it.`);
+  if (cp) {
+    errors++;
+    push({ note: ["write x = 2 → ok", "read x → error"] }, 3, "Client 2 reads through N3. N3 can't reach a majority, so it can't be sure x = 1 is current. A CP system refuses: an error, but never a wrong answer.");
+    errors++;
+    push({ note: ["write x = 2 → ok", "write x = 3 → error"] }, 4, "Client 2 tries to write x = 3. N3 refuses again. On this side of the split the service is unavailable.");
+    push({ cut: false, values: [2, 2, 2], note: ["", ""] }, 5, "The network heals. N3 learns about x = 2 and catches up. There's nothing to reconcile: only one side ever accepted writes.");
+  } else {
+    stale++;
+    push({ note: ["write x = 2 → ok", "read x → 1"] }, 3, "Client 2 reads through N3 and gets x = 1. An AP system always answers, so this answer is stale.");
+    push({ values: [2, 2, 3], note: ["write x = 2 → ok", "write x = 3 → ok"], conflict: true }, 4, "Client 2 writes x = 3, and N3 accepts it. Both sides have now accepted different writes to the same key.");
+    push({ cut: false, note: ["", ""] }, 5, "The network heals and the nodes compare notes: x = 2 on one side, x = 3 on the other, and neither saw the other. A real conflict. The system has to merge them, keep both as siblings, or pick one with last-write-wins and lose the other.");
+  }
+  return frames;
+}

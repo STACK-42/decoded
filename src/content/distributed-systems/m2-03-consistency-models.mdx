@@ -1,0 +1,83 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ConsistencyHistories } from "@/components/mdx/DistributedVisualizers";
+
+# Consistency Models
+
+"Is the database consistent?" has no single answer, because "consistent" means different things in different systems. A **consistency model** is a precise promise: which results a read is allowed to return, given the writes that happened around it. Stronger promises are easier to program against and more expensive to keep.
+
+## The ideal: one copy
+
+The strongest common model is **linearizability**, also called strong consistency or atomic consistency. The system behaves as if there were **one copy** of the data, and every operation takes effect at a single instant somewhere between when it started and when it finished.
+
+In practice that means:
+
+- Once a write has finished, every read that **starts** after it sees that write, or a later one.
+- While a write is still in progress, a read may return either the old value or the new one. But once **any** read has returned the new value, every read that starts afterwards must return it too.
+
+The definition talks about real time, and that's what makes it expensive: replicas have to coordinate on every operation so nobody answers from a stale copy.
+
+## A weaker promise: one order
+
+**Sequential consistency** drops the real-time part. All clients must see the operations in **one** total order, and that order must keep each client's own operations in the order that client issued them. But the order is allowed to disagree with the clock. Client B's read may be ordered before client A's write even if A's write finished first.
+
+Pick a history below. Each bar is one operation on a single value $x$, which starts at 0. The checker tries every possible order of the operations to see which promises can be kept:
+
+<ConsistencyHistories />
+
+"Stale read" is the classic case: what you get from a follower that lags the leader. It breaks linearizability, but sequential consistency allows it, because the two clients aren't connected by any message.
+
+## Causal consistency
+
+Between those and nothing at all sits **causal consistency**: if one operation [happened before](/courses/distributed-systems/lamport-clocks#happened-before) another, everyone sees them in that order. Concurrent operations may be seen in different orders by different clients.
+
+The textbook example is a comment thread. Alice posts "I lost my keys"; Bob sees it and replies "They're on the table". Causal consistency guarantees nobody sees Bob's reply without Alice's post, because the reply was caused by the post. It doesn't care how two unrelated comments are ordered. Systems track causality with mechanisms like the [vector clocks](/courses/distributed-systems/vector-clocks#one-counter-per-process) from the first module.
+
+Causal consistency is attractive because it's the strongest model that stays available during a network partition, which the next lesson explains.
+
+## Eventual consistency
+
+The weakest useful promise is **eventual consistency**: if writes stop, all replicas eventually return the same value. It says nothing about **when**, or about what reads return in the meantime. It's the model of [asynchronous replication](/courses/distributed-systems/replication#synchronous-or-asynchronous) and of most leaderless stores.
+
+Eventual consistency is easy to provide and hard to program against. So systems often add **session guarantees** on top, which promise things about what **one** client sees:
+
+- **Read your writes:** after you write something, your own reads see it. "Lost your own write" in the checker breaks this.
+- **Monotonic reads:** once you've seen a value, you never see an older one. A user refreshing a page shouldn't watch their new comment appear, then vanish, then reappear.
+- **Consistent prefix:** you see writes in an order that makes sense, never an answer before its question.
+
+A common way to get the first two is to send each user's reads to the same replica, or to the leader for a short while after they write.
+
+## The ladder
+
+From strongest to weakest:
+
+| Model | Promise | Cost |
+| --- | --- | --- |
+| Linearizable | one copy, in real time | coordination on every operation; unavailable when cut off from a majority |
+| Sequential | one order everyone agrees on, each client's order kept | still needs agreement on the order |
+| Causal | causes before effects; concurrent things in any order | track dependencies; stays available in a partition |
+| Eventual | replicas converge once writes stop | cheap, always available; reads can be stale |
+
+<Callout tone="violet" label="Not the C in ACID">
+The "consistency" in ACID transactions means something else: the database moves from one valid state to another, keeping rules like "balance never negative". That's about the data's invariants. Consistency models are about replicas and what reads can see. Same word, two ideas.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Configuration and locks" tool="etcd, ZooKeeper">
+etcd offers linearizable reads and writes, which is why Kubernetes keeps its cluster state there. ZooKeeper makes writes linearizable but lets reads be slightly stale unless you call `sync` first.
+</PracticalApplication>
+<PracticalApplication title="Global databases" tool="Google Spanner">
+Spanner gives transactions a guarantee stronger than linearizability, across data centres on several continents, paying for it with coordination and special clocks.
+</PracticalApplication>
+<PracticalApplication title="Causal sessions" tool="MongoDB">
+MongoDB's causally consistent sessions, used with majority read and write concerns, guarantee read-your-writes and monotonic reads, even when reading from secondaries.
+</PracticalApplication>
+<PracticalApplication title="DNS and CDNs" tool="DNS, Cloudflare, Akamai">
+DNS is eventually consistent by design: a changed record spreads as cached copies expire, which is why changes "take time to propagate".
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Linearizability, sequential, causal and eventual consistency, and the session guarantees that make weak models usable. The [next lesson](/courses/distributed-systems/cap-theorem) shows why you can't have the strongest model everywhere: during a partition, something has to give.
+</Callout>

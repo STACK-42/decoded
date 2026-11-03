@@ -41,7 +41,7 @@ Decoded tries to draw that map. Every lesson answers one question:
 | [Data Structures](https://decoded.stack42.tech/courses/data-structures) | Available | 16, from arrays and linked lists through hash maps, heaps, tries and union-find, in Python with Java and C++ |
 | [Computer Networks](https://decoded.stack42.tech/courses/computer-networks) | Available | 13, from layers and packets through subnets, routing, TCP, congestion control, DNS and HTTPS |
 | [Computer Graphics](https://decoded.stack42.tech/courses/computer-graphics) | Available | 20, from pixels, color depth and resolution through CRT and flat-panel displays to DDA and Bresenham line drawing, step by step |
-| [Distributed Systems](https://decoded.stack42.tech/courses/distributed-systems) | In progress | 4 so far: partial failure, Lamport clocks and vector clocks |
+| [Distributed Systems](https://decoded.stack42.tech/courses/distributed-systems) | In progress | 9 so far: partial failure, Lamport and vector clocks, replication, quorums, consistency models and CAP |
 | [Computer Literacy](https://decoded.stack42.tech/courses/computer-literacy) | Available | 3 |
 | [The Exam Mind](https://decoded.stack42.tech/courses/the-exam-mind) | Available | 4 |
 

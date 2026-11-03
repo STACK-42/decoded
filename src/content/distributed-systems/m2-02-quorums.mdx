@@ -1,0 +1,90 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { QuorumExplorer } from "@/components/mdx/DistributedVisualizers";
+
+# Quorums
+
+A leader is a single point of decision, and when it fails, you need [failover](/courses/distributed-systems/replication#failover-is-the-hard-part). Some databases skip the leader entirely: the client sends each write to **several** replicas at once, and reads from several at once. The trick that keeps this correct is a counting argument.
+
+## N, W and R
+
+Each piece of data is stored on $N$ replicas. Then:
+
+- A write is sent to all $N$, and counts as successful once $W$ of them confirm it.
+- A read is sent to the replicas, and the client waits for $R$ of them to answer.
+
+$W$ and $R$ are each a **quorum**: the number of replicas whose answer is enough. Every stored value carries a version number, so when a read gets answers from $R$ replicas that disagree, the client keeps the newest version.
+
+## Why R + W > N works
+
+If
+
+$$
+R + W > N
+$$
+
+then any group of $W$ replicas and any group of $R$ replicas **must share at least one replica**. The two groups together name $R + W$ replicas, but there are only $N$ distinct ones, so some replica is counted twice. That's the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle#the-principle), and it means every read reaches at least one replica that has the latest successful write.
+
+The guarantee holds in the **worst** case: the read is answered by exactly the replicas the write was least likely to reach. Move the sliders and look for the boundary:
+
+<QuorumExplorer />
+
+You can check the claim by brute force, trying every possible write group against every possible read group:
+
+```python
+from itertools import combinations
+
+def always_overlap(n, w, r):
+    replicas = range(n)
+    return all(set(ws) & set(rs)
+               for ws in combinations(replicas, w)
+               for rs in combinations(replicas, r))
+
+print(always_overlap(3, 2, 2))  # True
+print(always_overlap(5, 2, 3))  # False
+print(always_overlap(5, 3, 3))  # True
+```
+
+## Tuning the numbers
+
+$W$ and $R$ trade speed and availability against each other:
+
+| Setting | Reads | Writes | Tolerates |
+| --- | --- | --- | --- |
+| $N = 3$, $W = 2$, $R = 2$ | wait for 2 | wait for 2 | 1 replica down, for reads and writes |
+| $N = 3$, $W = 3$, $R = 1$ | fast: any one replica | every replica must be up | no replica down for writes |
+| $N = 3$, $W = 1$, $R = 3$ | every replica must be up | fast | no replica down for reads |
+| $N = 3$, $W = 1$, $R = 1$ | fast | fast | 2 down, but reads can be stale |
+
+The usual choice is a **majority** for both: $W = R = \lfloor N/2 \rfloor + 1$. With $N = 3$ that's 2 and 2; with $N = 5$ it's 3 and 3.
+
+## Fixing stale replicas
+
+A write that succeeded on $W$ replicas may have missed the others, so replicas drift apart. Two mechanisms pull them back together:
+
+- **Read repair.** When a read gets answers with different versions, the client (or coordinator) writes the newest version back to the replicas that returned an old one. Data that's read often stays fresh.
+- **Anti-entropy.** A background process compares replicas and copies over whatever is missing, usually comparing hashes of ranges of keys (a Merkle tree) so that matching ranges cost almost nothing to check.
+
+<Callout tone="orange" label="What quorums don't promise">
+$R + W > N$ is weaker than it looks. If two clients write concurrently, replicas may disagree about which came first, and you're back to [detecting conflicts](/courses/distributed-systems/vector-clocks#detecting-conflicts). If a write fails on some replicas, it isn't rolled back on the ones where it succeeded. And with timing just wrong, one read can see a new value while a later read sees the old one. Quorums make stale reads unlikely, not impossible. The [next lesson](/courses/distributed-systems/consistency-models) says exactly what "not stale" should mean.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Tunable consistency" tool="Cassandra">
+Cassandra lets each query choose its quorum: `ONE`, `QUORUM` (a majority of the replicas) or `ALL`. With 3 replicas, writing and reading at `QUORUM` gives R + W = 4 > 3.
+</PracticalApplication>
+<PracticalApplication title="Dynamo-style stores" tool="Riak">
+Riak follows the design of Amazon's Dynamo paper: no leader, configurable N, R and W, read repair, and active anti-entropy that compares hash trees.
+</PracticalApplication>
+<PracticalApplication title="Consensus" tool="Raft, Paxos">
+Consensus algorithms rely on the same overlap: any two majorities share a member, so two leaders can never both be elected for the same term.
+</PracticalApplication>
+<PracticalApplication title="Choosing read strength" tool="DynamoDB">
+DynamoDB reads are eventually consistent by default and cost half as much as the strongly consistent reads you can ask for instead.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Leaderless replication with N, W and R, why R + W > N guarantees overlap, and how read repair and anti-entropy heal replicas. Next: [what "consistent" actually means](/courses/distributed-systems/consistency-models).
+</Callout>

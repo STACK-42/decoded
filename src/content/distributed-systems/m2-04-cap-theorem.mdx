@@ -1,0 +1,67 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PartitionDemo } from "@/components/mdx/DistributedVisualizers";
+
+# The CAP Theorem
+
+Networks split. A cable is cut, a switch fails, a misconfigured firewall drops traffic between two data centres. Each side keeps running, and each can still hear from clients. The question every replicated system has to answer is what to do during that time.
+
+## The theorem
+
+Eric Brewer stated it as a conjecture in 2000, and Seth Gilbert and Nancy Lynch proved it in 2002. The **CAP theorem** says that when there's a network **partition** (P), a replicated system has to give up one of two things:
+
+- **Consistency** (C): here it means [linearizability](/courses/distributed-systems/consistency-models#the-ideal-one-copy) specifically, every read seeing the latest write.
+- **Availability** (A): every request to a replica that hasn't crashed gets a non-error answer.
+
+The proof is short. Split the replicas into two groups that can't talk to each other. A client writes a new value on one side. Another client reads on the other side. To be available, that side must answer. To be consistent, it must answer with a value it has no way of knowing. It can't do both.
+
+Step through a three-node system, first as CP, then as AP:
+
+<PartitionDemo />
+
+In the CP version the majority side, N1 and N2, keeps working. Only the minority, N3, refuses. That's how real CP systems behave: a node that can reach a [majority](/courses/distributed-systems/quorums#tuning-the-numbers) can still answer safely, because any two majorities overlap. The AP version answers everywhere and pays later with a stale read and a conflict to resolve, the kind [vector clocks detect](/courses/distributed-systems/vector-clocks#detecting-conflicts).
+
+## "Pick two of three" is misleading
+
+CAP is often summarised as "consistency, availability, partition tolerance: pick two". That framing suggests you could choose C and A and skip P. You can't: partitions aren't a feature you opt out of, they're something the network does to you. The real statement is narrower:
+
+> **When** the network is partitioned, choose consistency or availability.
+
+When the network is healthy, a system can be both consistent and available. And the choice doesn't have to be all-or-nothing: many databases let each operation choose, like Cassandra's per-query quorum or MongoDB's read and write concerns.
+
+## PACELC: the rest of the time
+
+Partitions are rare. The trade-off you pay for **every day** is latency. Daniel Abadi's **PACELC** extends CAP to say so:
+
+> If there's a **P**artition, choose **A**vailability or **C**onsistency; **E**lse, choose **L**atency or **C**onsistency.
+
+Even with a perfect network, a linearizable read has to check with other replicas, and a [synchronous write](/courses/distributed-systems/replication#synchronous-or-asynchronous) has to wait for them. Across continents that's a [round trip](/courses/computer-networks/delay-and-throughput#latency-round-trips-and-throughput) of 100 ms or more, on every operation. Answering from the nearest replica is fast, but possibly stale.
+
+| System, as usually configured | During a partition | Otherwise |
+| --- | --- | --- |
+| Cassandra, Riak, DynamoDB (default reads) | available (PA) | low latency (EL) |
+| etcd, ZooKeeper writes, Spanner | consistent (PC) | consistent (EC) |
+
+<Callout tone="violet" label="How to use this">
+When you pick a database, ask two questions. What happens to my users when the network splits: errors, or possibly wrong answers? And what does consistency cost me on every request when it doesn't? A shopping cart can usually take a wrong answer and merge later. A bank balance or a lock service can't.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Coordination services" tool="etcd, Consul, ZooKeeper">
+These choose consistency: a node cut off from the majority stops serving writes, so two parts of your system can never both think they hold the same lock.
+</PracticalApplication>
+<PracticalApplication title="Always-writable stores" tool="Cassandra, DynamoDB">
+These lean towards availability: writes keep being accepted during a partition, and conflicts are resolved afterwards, by default with last-write-wins.
+</PracticalApplication>
+<PracticalApplication title="Offline-first apps" tool="Notes and docs apps, CRDTs">
+A phone in airplane mode is a partition. Apps that let you keep editing offline have chosen availability, and must merge your edits with everyone else's when you reconnect.
+</PracticalApplication>
+<PracticalApplication title="Multi-region deployments" tool="AWS, Google Cloud regions">
+Running in several regions forces the PACELC question on every request: read locally and fast, or check with a distant region and be sure.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+What CAP actually says, why "pick two" is the wrong summary, and PACELC's everyday trade between latency and consistency. The [quiz](/courses/distributed-systems/replication-quiz) checks the module.
+</Callout>

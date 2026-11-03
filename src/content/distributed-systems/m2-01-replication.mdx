@@ -1,0 +1,75 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ReplicationDemo } from "@/components/mdx/DistributedVisualizers";
+
+# Replication
+
+Keeping one copy of your data on one machine means that machine's failure is your outage, and its disk failure is your data loss. So almost every real database keeps several copies on several machines. Each copy is a **replica**, and keeping them in step is called **replication**.
+
+## Why keep copies
+
+Replication buys three different things, and which one you want shapes the design:
+
+- **Durability:** a write survives the loss of a disk or a whole machine.
+- **Availability:** if one replica is down, another can answer.
+- **Read capacity and latency:** many replicas can serve reads in parallel, and a replica near the user answers faster.
+
+Copies of data that never changes would be easy. All the difficulty is in **changes**: making sure every replica applies every write, in the same order, while machines crash and messages are lost and delayed, as in [partial failure](/courses/distributed-systems/why-distributed-systems-are-hard#partial-failure).
+
+## Leaders and followers
+
+The most common design is **leader-based replication** (also called primary-backup, or primary-replica):
+
+1. One replica is the **leader**. All writes go to it.
+2. The leader applies each write and sends it to the others, the **followers**, in the order it applied them.
+3. Followers apply the writes in that same order. Reads can go to the leader or to any follower.
+
+Because only one machine decides the order of writes, two replicas can't apply the same two writes in different orders. That one rule removes most of the hard problems. What's left is a question of timing: when should the leader tell the client "ok"?
+
+## Synchronous or asynchronous
+
+- **Synchronous:** the leader waits until the followers confirm they have the write, then answers. The write is on several machines before the client hears "ok". The cost is that every write waits for the slowest follower, and if a follower is down, writes stop.
+- **Asynchronous:** the leader answers as soon as it has applied the write, and the followers catch up in the background. Writes are fast and keep working when followers are down. The cost is that, for a while, the write exists on only one machine.
+
+Try both, then crash the leader:
+
+<ReplicationDemo />
+
+Asynchronous replication has two consequences you just saw:
+
+- **Replication lag.** A follower can be seconds, or under heavy load minutes, behind the leader. A client that writes and then reads from a lagging follower doesn't see its own write. The followers become consistent again only once writes stop for long enough. This is called **eventual consistency**, and the [consistency models lesson](/courses/distributed-systems/consistency-models#eventual-consistency) places it among the alternatives.
+- **Lost writes on failover.** If the leader crashes before a write reaches any follower, and a follower is promoted to leader, that write is gone, even though the client was told it succeeded.
+
+Many systems take the middle road, called **semi-synchronous** replication: wait for **one** follower, not all. The write is then on two machines before "ok", and one slow follower doesn't block everyone.
+
+## Failover is the hard part
+
+When the leader dies, a follower must take over. That's **failover**, and each step is harder than it sounds:
+
+1. **Decide the leader is dead.** The only tool is a [timeout](/courses/distributed-systems/why-distributed-systems-are-hard#partial-failure), which can't tell a dead leader from a slow one. Too short, and a busy leader gets replaced for nothing; too long, and the service is down while you wait.
+2. **Choose a new leader,** ideally the most up-to-date follower, and get all replicas to agree on the choice. Agreeing on one thing across unreliable machines is the problem of **consensus**, the subject of a whole module of its own.
+3. **Make everyone use it,** including the old leader if it comes back. An old leader that still believes it's in charge and keeps accepting writes creates **split brain**: two leaders, two diverging histories.
+
+<Callout tone="orange" label="Guarding against split brain">
+A paused leader is the classic trap. A long garbage-collection pause or an overloaded virtual machine can freeze a leader for longer than the timeout. A new leader is elected; then the old one wakes up, unaware it was replaced, and carries on writing. Real systems guard against this with **fencing**: each new leader gets a higher number (an epoch or term), and storage rejects any write that carries an older number.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Database replicas" tool="PostgreSQL, MySQL">
+Both ship asynchronous leader-follower replication by default. PostgreSQL can wait for chosen standbys (`synchronous_standby_names`), and MySQL has a semi-synchronous mode.
+</PracticalApplication>
+<PracticalApplication title="Replica sets" tool="MongoDB">
+A MongoDB replica set has one primary. Writes with `w: "majority"` wait until most members have them, and reads from secondaries may be stale.
+</PracticalApplication>
+<PracticalApplication title="Event logs" tool="Kafka">
+Each Kafka partition has a leader and followers. With `acks=all`, a producer's write is confirmed only once every in-sync replica has it.
+</PracticalApplication>
+<PracticalApplication title="Managed failover" tool="Amazon RDS Multi-AZ">
+Cloud databases keep a synchronous standby in another data centre and promote it automatically when the primary fails.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Leader-based replication, the trade between synchronous and asynchronous copies, replication lag, and why failover is risky. The [next lesson](/courses/distributed-systems/quorums) drops the leader: every replica takes writes, and overlapping majorities keep reads fresh.
+</Callout>

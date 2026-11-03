@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Replication and Consistency
+
+Six questions on replication, quorums, consistency models and CAP. Get 5 right to pass.
+
+<Quiz
+  courseSlug="distributed-systems"
+  lessonSlug="replication-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "A database uses asynchronous leader-follower replication. The leader confirms a write, then crashes before sending it anywhere, and a follower is promoted. What happens to the write?",
+      options: [
+        { id: "a", text: "It's lost, even though the client was told it succeeded" },
+        { id: "b", text: "The new leader fetches it from the old leader's disk automatically" },
+        { id: "c", text: "The client's confirmation is cancelled" },
+        { id: "d", text: "Nothing: asynchronous replication can't lose confirmed writes" },
+      ],
+      correctOptionId: "a",
+      explanation: "Asynchronous replication confirms before any follower has the write. If the leader dies first, the promoted follower never had it.",
+    },
+    {
+      id: "q2",
+      prompt: "N = 5 replicas. Which choice of W and R guarantees that every read sees the latest successful write?",
+      options: [
+        { id: "a", text: "W = 2, R = 2" },
+        { id: "b", text: "W = 2, R = 3" },
+        { id: "c", text: "W = 3, R = 3" },
+        { id: "d", text: "W = 1, R = 4" },
+      ],
+      correctOptionId: "c",
+      explanation: "The guarantee needs R + W > N. Only 3 + 3 = 6 is greater than 5; the others add up to 4 or 5.",
+    },
+    {
+      id: "q3",
+      prompt: "Why does R + W > N guarantee overlap between the read and write groups?",
+      options: [
+        { id: "a", text: "Because replicas copy every write to each other immediately" },
+        { id: "b", text: "Because reads always go to the leader" },
+        { id: "c", text: "Because the client retries until the groups overlap" },
+        { id: "d", text: "By the pigeonhole principle: R + W picks would need more than N distinct replicas" },
+      ],
+      correctOptionId: "d",
+      explanation: "Two groups with R + W members in total, drawn from only N replicas, must name some replica twice.",
+    },
+    {
+      id: "q4",
+      prompt: "Client A's write of x = 1 finishes. Afterwards client B starts a read and gets x = 0. Which statement is true?",
+      options: [
+        { id: "a", text: "The history is linearizable" },
+        { id: "b", text: "It isn't linearizable, but it can be sequentially consistent" },
+        { id: "c", text: "It breaks every consistency model, including eventual consistency" },
+        { id: "d", text: "It breaks read-your-writes for client B" },
+      ],
+      correctOptionId: "b",
+      explanation: "Linearizability ties operations to real time, so B must see 1. Sequential consistency may order B's read before A's write, because they're different clients. Read-your-writes concerns a client's own writes, and B wrote nothing.",
+    },
+    {
+      id: "q5",
+      prompt: "During a network partition, a node in a CP system can't reach a majority. What does it do with a read?",
+      options: [
+        { id: "a", text: "Answers with its local value" },
+        { id: "b", text: "Refuses with an error, rather than risk a stale answer" },
+        { id: "c", text: "Waits forever without replying" },
+        { id: "d", text: "Becomes the leader of its own side" },
+      ],
+      correctOptionId: "b",
+      explanation: "CP gives up availability on the minority side so that no answer is ever wrong. Electing a leader without a majority is exactly the split brain consensus prevents.",
+    },
+    {
+      id: "q6",
+      prompt: "What does PACELC add to CAP?",
+      options: [
+        { id: "a", text: "A fourth guarantee, called partition consistency" },
+        { id: "b", text: "A proof that CAP is false" },
+        { id: "c", text: "The everyday trade-off: even without a partition, consistency costs latency" },
+        { id: "d", text: "A way to avoid partitions entirely" },
+      ],
+      correctOptionId: "c",
+      explanation: "Else (no partition), choose Latency or Consistency: a consistent read or write has to wait for other replicas on every request.",
+    },
+  ]}
+/>

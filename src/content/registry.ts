@@ -217,6 +217,11 @@ const DsHard = lesson(() => import("@/content/distributed-systems/m1-01-why-dist
 const DsLamport = lesson(() => import("@/content/distributed-systems/m1-02-lamport-clocks.mdx"));
 const DsVector = lesson(() => import("@/content/distributed-systems/m1-03-vector-clocks.mdx"));
 const DsQuiz1 = lesson(() => import("@/content/distributed-systems/m1-04-foundations-quiz.mdx"));
+const DsReplication = lesson(() => import("@/content/distributed-systems/m2-01-replication.mdx"));
+const DsQuorums = lesson(() => import("@/content/distributed-systems/m2-02-quorums.mdx"));
+const DsConsistency = lesson(() => import("@/content/distributed-systems/m2-03-consistency-models.mdx"));
+const DsCap = lesson(() => import("@/content/distributed-systems/m2-04-cap-theorem.mdx"));
+const DsQuiz2 = lesson(() => import("@/content/distributed-systems/m2-05-replication-quiz.mdx"));
 const NetLayers = lesson(() => import("@/content/computer-networks/m1-01-layers-and-packets.mdx"));
 const NetDelay = lesson(() => import("@/content/computer-networks/m1-02-delay-and-throughput.mdx"));
 const NetQuiz1 = lesson(() => import("@/content/computer-networks/m1-03-foundations-quiz.mdx"));
@@ -831,6 +836,17 @@ export const courses: Course[] = [
           { slug: "lamport-clocks", title: "Time, Order and Lamport Clocks", duration: "15 min", Component: DsLamport },
           { slug: "vector-clocks", title: "Vector Clocks", duration: "14 min", Component: DsVector },
           { slug: "foundations-quiz", title: "Quiz: Failure and Time", duration: "8 min", kind: "quiz", Component: DsQuiz1 },
+        ],
+      },
+      {
+        title: "Replication and Consistency",
+        blurb: "Keeping copies in step: leaders and followers, quorums, what \"consistent\" can mean, and the trade CAP forces during a partition.",
+        lessons: [
+          { slug: "replication", title: "Replication", duration: "15 min", Component: DsReplication },
+          { slug: "quorums", title: "Quorums", duration: "13 min", Component: DsQuorums },
+          { slug: "consistency-models", title: "Consistency Models", duration: "16 min", Component: DsConsistency },
+          { slug: "cap-theorem", title: "The CAP Theorem", duration: "13 min", Component: DsCap },
+          { slug: "replication-quiz", title: "Quiz: Replication and Consistency", duration: "8 min", kind: "quiz", Component: DsQuiz2 },
         ],
       },
     ],
