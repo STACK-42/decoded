@@ -63,9 +63,13 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 3. ~~**Issue #42, linking: Theory of Computation.** Zero links out across 14 lessons.~~ Done before this queue was written; checked 2026-11-02: 65 links out, in every lesson except the two quizzes.
 4. ~~**Issue #42, linking: Operating Systems.** Zero links out across 17 lessons.~~ Done before this queue was written; checked 2026-11-02: 72 links out, in all 17 lessons.
 5. ~~**Issue #38:** README course table.~~ Done 2026-11-02 (run C): Operating Systems row added, Advanced Algorithms count fixed (24, not 25); every other row matches `registry.ts`.
-6. **Visualizer audit.** Open every visualizer at phone width in light and dark themes (Playwright is installed) and log anything broken, cramped or confusing as its own item here. Fix the worst one in the same run.
+6. ~~**Visualizer audit.**~~ Done 2026-11-03 (run C, PR #54). All 238 lessons at 390 px, every Step button pressed to the end and every toggle tried: **0 crashes, 0 page errors, 0 pages wider than the screen.** 166 places scroll sideways inside a visualizer: 110 are code panels (fine, like any code block) and 56 are pictures or tables. Fixed the worst: Theory of Computation's automaton diagrams (up to 416 px too wide) now fit, with stacked labels. The rest are items 9 to 12.
 7. ~~**Issue #37:** pin the Bun version.~~ PR #51 (pinned to 1.4.4), waiting for review.
 8. **Issue #42, the rest:** Advanced Algorithms, Algorithm Design and Analysis, Computer Literacy, The Exam Mind, then the generic-preview fixes (bold definitions) in the courses marked "previews only".
+9. **Array visualizers are too wide on phones** (up to 284 px): linear and binary search (Algorithm Design, Advanced Algorithms ×3, Discrete Mathematics loop invariants), skip lists, min-max in 1.5n − 2 comparisons. Probably one shared array component; make its cells shrink or wrap.
+10. **Cryptography diagrams are too wide** (up to 260 px): Computational Mathematics `affine-ciphers` "Affine map", `what-is-cryptography` "A secret-key system", `stream-ciphers` "A stream cipher, bit by bit".
+11. **Wide tables in visualizers** (up to 180 px): "Recursion tree & master method" (4 Advanced Algorithms lessons), "CPU scheduler" (2 Operating Systems lessons), "Hash functions side by side". A table scrolling is acceptable; check whether columns can be narrower first.
+12. **Smaller overflows** (under 140 px): Theory of Computation automaton pages' step-through machines in `states-symbols-and-transitions` and `nfa` (136 px, a different component from the one fixed), birthday problem, union-find, bits-and-bytes, activity selection, process switch and multilevel feedback queue (Operating Systems), merge sort levels.
 
 ## Blocked
 
@@ -75,6 +79,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-03 14:50 (run C): visualizer audit (item 6). No crashes or page overflow anywhere; fixed Theory of Computation automaton diagrams on phones (fit to width, labels stacked and outlined, drawn above states); logged items 9-12. PR #54, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).

@@ -296,8 +296,22 @@ export function AutomatonDiagram({
 
   /* ---------- layout ---------- */
   const r = 28;
-  const stateGapX = 140;
-  const sidePadding = 50;
+  // Roomy on wide screens. When the diagram is wider than its box (a phone), states
+  // move closer together, down to 96px apart, and the SVG scales to fit the rest;
+  // text inside it grows to make up for the scaling, so labels stay readable.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [avail, setAvail] = useState<number | null>(null);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([e]) => setAvail(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const roomyWidth = 50 * 2 + Math.max(0, (states.length - 1) * 140) + r * 2;
+  const tight = avail !== null && avail > 0 && roomyWidth > avail;
+  const stateGapX = tight && states.length > 1 ? Math.max(96, Math.min(140, (avail! - 40 * 2 - r * 2) / (states.length - 1))) : 140;
+  const sidePadding = tight ? 40 : 50;
 
   // Longest |fromIdx - toIdx| across non-self edges. Drives extra vertical
   // room so "skip" edges (e.g. q2 → q0 jumping over q1) can curve clear of
@@ -331,6 +345,8 @@ export function AutomatonDiagram({
   const bottomPadding = Math.max(60, skipPad);
   const stateY = topPadding + r;
   const svgWidth = sidePadding * 2 + Math.max(0, (states.length - 1) * stateGapX) + r * 2;
+  const fitScale = avail ? Math.min(1, avail / svgWidth) : 1;
+  const textBoost = Math.min(1.35, 1 / fitScale);
   const svgHeight = topPadding + r * 2 + bottomPadding;
   const stateX = (i: number) => sidePadding + r + i * stateGapX;
 
@@ -487,8 +503,8 @@ export function AutomatonDiagram({
             x={x1}
             y={y1 - r - 42}
             textAnchor="middle"
-            className="font-mono fill-current"
-            fontSize={11}
+            className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+            fontSize={11 * textBoost}
           >
             {labels}
           </text>
@@ -514,6 +530,11 @@ export function AutomatonDiagram({
       const ey = y2 - r * uy;
       const mx = (sx + ex) / 2;
       const my = (sy + ey) / 2 - 8;
+      // A label wider than the gap between the circles (e.g. "$5, $10, $25" on a phone)
+      // is stacked one symbol per line, growing upwards, so it stays clear of the states.
+      const fontSize = 11 * textBoost;
+      const lineH = fontSize * 1.15;
+      const lines = labels.length * fontSize * 0.6 > Math.abs(ex - sx) - 4 && g.labels.length > 1 ? g.labels.map((l, i) => (i < g.labels.length - 1 ? `${l},` : l)) : [labels];
       return (
         <g key={key}>
           <line
@@ -527,12 +548,16 @@ export function AutomatonDiagram({
           />
           <text
             x={mx}
-            y={my}
+            y={my - (lines.length - 1) * lineH}
             textAnchor="middle"
-            className="font-mono fill-current"
-            fontSize={11}
+            className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+            fontSize={fontSize}
           >
-            {labels}
+            {lines.map((l, i) => (
+              <tspan key={i} x={mx} dy={i === 0 ? 0 : lineH}>
+                {l}
+              </tspan>
+            ))}
           </text>
         </g>
       );
@@ -608,8 +633,8 @@ export function AutomatonDiagram({
           y={labelY}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="font-mono fill-current"
-          fontSize={11}
+          className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+          fontSize={11 * textBoost}
         >
           {labels}
         </text>
@@ -622,12 +647,12 @@ export function AutomatonDiagram({
 
   return (
     <div className="not-prose my-8 border border-border bg-card rounded-sm">
-      <div className="overflow-x-auto p-5">
+      <div ref={wrapRef} className="overflow-x-auto p-5">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          width={svgWidth}
-          height={svgHeight}
-          className="block mx-auto text-foreground"
+          width="100%"
+          style={{ maxWidth: svgWidth }}
+          className="block mx-auto h-auto text-foreground"
           role="img"
           aria-label="Finite automaton diagram"
         >
@@ -644,7 +669,6 @@ export function AutomatonDiagram({
             </marker>
           </defs>
 
-          {groupedTransitions.map(renderEdge)}
 
           {initialIdx !== undefined && (
             <line
@@ -687,13 +711,15 @@ export function AutomatonDiagram({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="font-mono fill-current"
-                  fontSize={13}
+                  fontSize={13 * textBoost}
                 >
                   {s}
                 </text>
               </g>
             );
           })}
+          {/* Transitions after states, so their labels sit on top of the circles. */}
+          {groupedTransitions.map(renderEdge)}
         </svg>
       </div>
 
