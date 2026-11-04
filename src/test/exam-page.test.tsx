@@ -46,6 +46,10 @@ describe("course exam page", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("20/20");
     expect(screen.queryByText("What you missed")).toBeNull();
     expect(JSON.parse(localStorage.getItem("decoded:exams:v1")!)["computer-networks"]).toHaveLength(1);
+    // Every exam question also lands in the review queue.
+    const cards = JSON.parse(localStorage.getItem("decoded:review:v1")!);
+    expect(Object.keys(cards)).toHaveLength(20);
+    expect(Object.values(cards).every((c) => (c as { box: number }).box === 2)).toBe(true);
   });
 
   it("asks before submitting with unanswered questions, then shows what was missed", async () => {

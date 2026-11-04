@@ -4,6 +4,7 @@ import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse } from "@/content/registry";
 import { loadBank } from "@/content/questionBanks";
 import type { Question } from "@/lib/questions";
+import { recordAnswers } from "@/lib/review";
 import {
   buildExam,
   EXAM_SIZE,
@@ -54,6 +55,8 @@ export default function ExamPage() {
     (exam: ExamQuestion[], answers: Record<string, string>, started: number) => {
       if (!course) return;
       const result = scoreExam(course, exam, answers);
+      // Every exam question feeds the review queue; unanswered counts as wrong.
+      recordAnswers(exam.map((q) => ({ id: q.id, correct: answers[q.id] === q.correctOptionId })));
       recordAttempt(course.slug, { date: new Date().toISOString(), right: result.right, total: result.total, seconds: Math.round((Date.now() - started) / 1000), conditions });
       setAttempts(readAttempts(course.slug));
       setPhase({ name: "done", exam, result, answers });
@@ -308,7 +311,10 @@ function Results({ courseSlug, course, result, answers, onAgain }: {
 
       {result.missed.length > 0 && (
         <>
-          <h2 className="font-display text-2xl font-bold mb-4">What you missed</h2>
+          <h2 className="font-display text-2xl font-bold mb-2">What you missed</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            These come back in your <Link to="/review" className="underline hover:text-foreground">review queue</Link> tomorrow, and then at growing gaps until you know them.
+          </p>
           <ol className="space-y-6 mb-12">
             {result.missed.map((q) => {
               const yours = q.options.find((o) => o.id === answers[q.id]);

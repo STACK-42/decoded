@@ -19,6 +19,7 @@ import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 // Holds the lesson components and visualizers, which only lesson pages need.
 const LessonPage = lazy(() => import("./pages/LessonPage.tsx"));
 const ExamPage = lazy(() => import("./pages/ExamPage.tsx"));
+const ReviewPage = lazy(() => import("./pages/ReviewPage.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,13 @@ const App = () => (
               } />
             <Route path="/tools" element={<Tools />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/review" element={
+                <ChunkErrorBoundary>
+                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                    <ReviewPage />
+                  </Suspense>
+                </ChunkErrorBoundary>
+              } />
             <Route path="/team" element={<Team />} />
             <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

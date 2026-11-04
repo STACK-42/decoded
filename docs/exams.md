@@ -63,7 +63,15 @@ The generator calls the course's `src/lib` logic for the right answer and builds
 
 ### Review: a Leitner system
 
-Each card sits in one of five boxes. Box 1 is due 1 day after an answer, box 2 after 2 days, then 4, 8 and 16. A right answer moves the card up a box (box 5 stays at 16 days); a wrong answer sends it back to box 1. Cards due today come first; a session is at most 20 cards. This is the classic Leitner system: simple to explain, simple to test, and close enough to the much more complex algorithms in apps like Anki for a study site.
+Each card sits in one of five boxes. Box 1 is due 1 day after an answer, box 2 after 2 days, then 4, 8 and 16. A right answer moves the card up a box (box 5 stays at 16 days); a wrong answer sends it back to box 1. Cards due today come first (most overdue first); a session is at most 20 cards, in a mixed order, with the answer shown right after each one.
+
+Details settled while building it (`src/lib/review.ts`):
+- A new card answered right goes straight to box 2; answered wrong, box 1.
+- A wrong answer resets a card to box 1 whenever it happens, even before it's due.
+- A right answer before the card is due changes nothing, so retaking a quiz the same day can't push cards out to 16 days.
+- Every answer counts, from module quizzes, exams (unanswered counts as wrong) and review sessions. Cards whose question has been removed from the bank are dropped when a session starts.
+- Due dates are the reader's local calendar days. The header shows "Review" with a count only when something is due; the Dashboard shows a review panel once there are any cards.
+- The progress export/import (`src/lib/progressBackup.ts`) covers completed lessons only, not review cards or exam attempts; phase 6 (account sync) should decide whether backups carry them too. This is the classic Leitner system: simple to explain, simple to test, and close enough to the much more complex algorithms in apps like Anki for a study site.
 
 ### Storage and accounts
 

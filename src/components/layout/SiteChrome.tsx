@@ -5,6 +5,24 @@ import { SearchButton } from "@/components/SearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
+import { useReviewCards } from "@/hooks/useReviewCards";
+import { dueIds, localDay } from "@/lib/review";
+
+/** Shown only when review questions are due, with how many. */
+function ReviewLink({ active }: { active: boolean }) {
+  const due = dueIds(useReviewCards(), localDay()).length;
+  if (!due && !active) return null;
+  return (
+    <Link
+      to="/review"
+      aria-label={due ? `Review: ${due} question${due === 1 ? "" : "s"} due` : "Review"}
+      className={`inline-flex items-center gap-1.5 transition-colors hover:text-foreground ${active ? "text-foreground" : "text-muted-foreground"}`}
+    >
+      Review
+      {due > 0 && <span className="inline-flex min-w-[1.25rem] h-5 px-1 items-center justify-center rounded-sm bg-neon text-background text-[10px] font-bold tracking-normal">{due > 99 ? "99+" : due}</span>}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const { pathname } = useLocation();
@@ -28,6 +46,7 @@ export function SiteHeader() {
           >
             Courses
           </Link>
+          <ReviewLink active={pathname === "/review"} />
           <SearchButton />
           <ThemeToggle />
           <AccountButton />
