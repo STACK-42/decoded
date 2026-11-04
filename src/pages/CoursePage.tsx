@@ -7,6 +7,8 @@ import { useQuizScores } from "@/hooks/useQuizScores";
 import { CoursePrerequisites, CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
+import { coursesWithBanks } from "@/content/questionBanks";
+import { readAttempts } from "@/lib/exams";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -56,6 +58,7 @@ export default function CoursePage() {
               <CoursePrerequisites courseSlug={course.slug} />
             </div>
             {total > 0 && <CourseRegistration course={course} />}
+            {coursesWithBanks.has(course.slug) && <ExamEntry slug={course.slug} />}
           </div>
         </header>
 
@@ -127,6 +130,25 @@ export default function CoursePage() {
       </main>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+/** Link to the course exam, with the best score on this device if there is one. */
+function ExamEntry({ slug }: { slug: string }) {
+  const attempts = readAttempts(slug);
+  const best = attempts.reduce<(typeof attempts)[number] | null>((b, a) => (!b || a.right / a.total > b.right / b.total ? a : b), null);
+  return (
+    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+      <Link
+        to={`/courses/${slug}/exam`}
+        className="font-mono text-[11px] uppercase tracking-widest px-5 py-2.5 border border-foreground hover:bg-foreground hover:text-background transition rounded-sm"
+      >
+        Take a course exam
+      </Link>
+      <span className="font-mono text-[11px] text-muted-foreground">
+        {best ? `Best so far: ${best.right}/${best.total}` : "Mixed questions from every module, scored by module"}
+      </span>
     </div>
   );
 }
