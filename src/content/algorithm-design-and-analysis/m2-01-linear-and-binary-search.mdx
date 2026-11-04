@@ -9,7 +9,7 @@ There are two basic ways to do it, and on large inputs the difference in speed b
 
 ## Linear search: check everything
 
-Start at the beginning. Compare each element with the one you want. Stop when you find it or run out of array.
+**Linear search** starts at the beginning. Compare each element with the one you want. Stop when you find it or run out of array.
 
 <SearchVisualizer algorithm="linear" array={[34, 7, 23, 32, 5, 62, 14, 48, 19]} target={14} />
 
@@ -23,7 +23,7 @@ It's hard to make an algorithm simpler. Linear search works on **any** array, so
 
 ## Binary search: throw away half
 
-Now suppose the array is **sorted**. Look at the **middle** element. If it's the target, you're done. If it's smaller than the target, the target can't be anywhere on the left, because everything there is even smaller, so throw away the entire left half. If it's bigger, throw away the right half. Repeat on what's left.
+Now suppose the array is **sorted**. **Binary search** looks at the **middle** element. If it's the target, you're done. If it's smaller than the target, the target can't be anywhere on the left, because everything there is even smaller, so throw away the entire left half. If it's bigger, throw away the right half. Repeat on what's left.
 
 Each comparison cuts the search space in half. It's [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer) again, with only one half to recurse into.
 
