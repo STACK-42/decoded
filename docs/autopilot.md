@@ -65,7 +65,7 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 5. ~~**Issue #38:** README course table.~~ Done 2026-11-02 (run C): Operating Systems row added, Advanced Algorithms count fixed (24, not 25); every other row matches `registry.ts`.
 6. **Visualizer audit.** Open every visualizer at phone width in light and dark themes (Playwright is installed) and log anything broken, cramped or confusing as its own item here. Fix the worst one in the same run.
 7. ~~**Issue #37:** pin the Bun version.~~ PR #51 (pinned to 1.4.4), waiting for review.
-8. **Issue #42, the rest.** Checked 2026-11-04 (run C, PR #60): the Algorithm Design items (space complexity, shortest path, coprime) were already linked, and the C block in `lab-bit-manipulation` is a different program from the C++ ones, so it stays separate. Added the 3 missing Advanced Algorithms links (divide and conquer, recurrence, optimization problem) and bolded definitions at the 6 most-linked targets whose hover preview had none (regular expressions, alphabet, linear and binary search, Big-O, induction, logic gate), which fixed 37 previews. **Still open:** 364 of 785 links show a preview with no bold definition. Many are fine as they are ("next lesson", a section named after the term), so work target by target, most-linked first. To measure, call `extractPreview` for every link (as `src/test/lesson-preview.test.ts` does) and count previews whose text lacks `**<headword>**`.
+8. **Issue #42, the rest.** Checked 2026-11-04 (run C, PR #61): the Algorithm Design items (space complexity, shortest path, coprime) were already linked, and the C block in `lab-bit-manipulation` is a different program from the C++ ones, so it stays separate. Added the 3 missing Advanced Algorithms links (divide and conquer, recurrence, optimization problem) and bolded definitions at the 6 most-linked targets whose hover preview had none (regular expressions, alphabet, linear and binary search, Big-O, induction, logic gate), which fixed 37 previews. **Still open:** 364 of 785 links show a preview with no bold definition. Many are fine as they are ("next lesson", a section named after the term), so work target by target, most-linked first. To measure, call `extractPreview` for every link (as `src/test/lesson-preview.test.ts` does) and count previews whose text lacks `**<headword>**`.
 
 ## Blocked
 
@@ -75,7 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
-- 2026-11-04 14:50 (run C): quality item 8 (issue #42 remainder): 3 missing links, bold definitions at 6 heavily linked targets (generic previews 400 → 364). PR #60, open.
+- 2026-11-04 14:50 (run C): quality item 8 (issue #42 remainder): 3 missing links, bold definitions at 6 heavily linked targets (generic previews 400 → 364). PR #61, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).
