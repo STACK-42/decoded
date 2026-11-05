@@ -75,6 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-05 14:50 (run C): quality item 9 (from #54), array visualizers on phones: `ArrayCells` (search, min-max, select, quicksort) now fits 390 px with one row of cells and unbroken pointer labels; skip lists (+184 px) and Discrete Mathematics loop invariants (+136 px) use other components and remain. Noted: main commit 4c0af73 edited `algorithm-design-and-analysis/m1-05-sorting-quiz.mdx`, which #53 moves into the bank, so #53 needs a rebase and re-check. PR #64, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).
