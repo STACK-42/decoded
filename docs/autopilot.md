@@ -47,7 +47,7 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
 - [x] 3. Review queue (Leitner) at `/review`, with "N due" on the Dashboard. (PR #59, stacked on #58)
 - [ ] 4. Question banks for Operating Systems and Advanced Algorithms, then at least 4 questions per taught lesson everywhere. Also set `lesson` (and `section`) on the 259 migrated questions, which only know their quiz. Split into runs:
   - [x] 4a. Operating Systems bank: 67 questions, every one with `lesson` and `section`. (PR #62, stacked on #59)
-  - [ ] 4b. Advanced Algorithms bank (24 lessons).
+  - [x] 4b. Advanced Algorithms bank: 80 questions across all 24 lessons, each with `lesson` and `section`. (PR #63, stacked on #62)
   - [ ] 4c. Bring other courses up to 4 questions per taught lesson.
   - [ ] 4d. Set `lesson`/`section` on the 259 migrated questions.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
@@ -79,6 +79,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-05 10:40 (run B): exam phase 4b, Advanced Algorithms question bank (80 questions; master method, hashing and probing, red-black trees, DP, greedy and NP worked by script with fresh inputs, every claim checked against its lesson). Every course with quizzes or a bank now has an exam except Computer Literacy and The Exam Mind. PR #63 (stacked on #62), open.
 - 2026-11-05 06:10 (run A): exam phase 4a, Operating Systems question bank (67 questions across all 17 lessons, calculation answers worked by script, every claim checked against its lesson; new test that every `section` is a real heading). The OS exam now works. PR #62 (stacked on #59), open.
 - 2026-11-04 10:40 (run B): exam phase 3, the review queue (Leitner boxes 1/2/4/8/16 days in `src/lib/review.ts`, `/review` with instant feedback and interleaved courses, quizzes and exams feed it, header "Review" badge when due, Dashboard panel). Noted that main already gained three of the Algorithm Design animations proposed on 2026-11-04 (stability, greedy coins 1/3/4, linear search best/worst). PR #59 (stacked on #58), open.
 - 2026-11-04 06:10 (run A): exam phase 2, the course exam page (20 mixed questions allocated by module size, shuffled options, optional 90 s/question timer, per-module results, missed questions with explanations and links back, attempts saved; "Take a course exam" on course pages). First rebased #53 onto main, where a graphics quiz option had been reworded, and re-checked the bank against main. PR #58 (stacked on #53), open.

@@ -91,7 +91,7 @@ describe("course exam page", () => {
   });
 
   it("says so when a course has no questions yet", async () => {
-    renderExam("advanced-algorithms");
+    renderExam("computer-literacy");
     expect(await screen.findByText(/no exam questions yet/)).toBeTruthy();
   });
 });
