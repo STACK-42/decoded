@@ -88,7 +88,7 @@ Each phase is one scheduled run and one pull request. If the previous phase's PR
 1. **Question bank.** Add the `Question` type and per-course `questions.ts`, move all 259 existing quiz questions into them (by script, unchanged wording, ids derived from the quiz and question), and change the quiz `.mdx` files to read from the bank. No visible change. Tests: ids unique, links valid, every old quiz still renders the same questions.
 2. **Course exam page.** `/courses/<course>/exam`, exam conditions toggle, results with per-module scores and links back to lessons, attempt history; an "Exam" entry on each course page.
 3. **Review queue.** Leitner storage, `/review` session page, "N due" on the Dashboard, and quizzes and exams feeding cards in.
-4. **Fill the gaps.** Question banks for Operating Systems and Advanced Algorithms (none today), then bring every course up to at least 4 questions per lesson it teaches, starting with the courses that have the most traffic.
+4. **Fill the gaps.** (Operating Systems has no module quizzes, so its bank feeds exams and review only; adding quiz lessons that draw on it is a possible follow-up.) Question banks for Operating Systems and Advanced Algorithms (none today), then bring every course up to at least 4 questions per lesson it teaches, starting with the courses that have the most traffic.
 5. **Generated questions.** Start with Computer Networks (subnets), Operating Systems (scheduling) and Algorithm Design (Big-O), reusing their `src/lib` logic.
 6. **Account sync.** Review cards and exam attempts follow a signed-in user between devices, merged the same way progress is.
 

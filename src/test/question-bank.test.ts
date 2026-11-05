@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import path from "path";
 import { courses, flattenLessons } from "@/content/registry";
 import { questionsForQuiz, type Question } from "@/lib/questions";
+import { parseSections } from "@/lib/lessonPreview";
 
 const banks = import.meta.glob<{ questions: Question[] }>("@/content/*/questions.ts", { eager: true });
 const byCourse = Object.fromEntries(Object.entries(banks).map(([file, m]) => [file.split("/").at(-2)!, m.questions]));
@@ -47,6 +48,27 @@ describe("question bank", () => {
         if (q.quiz) expect(quizzes, q.id).toContain(q.quiz);
         if (q.lesson) expect(lessons.map((l) => l.slug), q.id).toContain(q.lesson);
       }
+    }
+  });
+
+  it("points every section at a real heading in its lesson", () => {
+    const sources = Object.fromEntries(
+      Object.keys(import.meta.glob("@/content/*/*.mdx")).map((f) => {
+        const file = path.resolve(__dirname, "..", f.replace(/^\/src\//, ""));
+        const [course, name] = file.split("/").slice(-2);
+        return [`${course}/${name}`, readFileSync(file, "utf8")];
+      }),
+    );
+    for (const [slug, qs] of Object.entries(byCourse)) {
+      const course = courses.find((c) => c.slug === slug)!;
+      for (const q of qs.filter((x) => x.section)) {
+        expect(q.lesson, `${q.id} has a section but no lesson`).toBeTruthy();
+        const file = Object.keys(sources).find((k) => k.startsWith(`${slug}/`) && k.endsWith(".mdx") && k.replace(/^.*\/(m\d+-\d+-|\d+-)/, "").replace(/\.mdx$/, "") === q.lesson);
+        expect(file, `${q.id}: no file for lesson ${q.lesson}`).toBeTruthy();
+        const ids = parseSections(sources[file!]).map((s) => s.id);
+        expect(ids, `${q.id}: no heading #${q.section} in ${q.lesson}`).toContain(q.section);
+      }
+      expect(course).toBeTruthy();
     }
   });
 
