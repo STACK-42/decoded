@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/data-structures/questions";
 
 # Quiz: Stacks, Queues and Hash Maps
 
@@ -8,90 +10,5 @@ Seven questions on stacks, queues and hash maps. Get 5 right to pass.
   courseSlug="data-structures"
   lessonSlug="stacks-queues-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "You push A, B, C onto a stack, pop once, then push D. What does the next pop return?",
-      options: [
-        { id: "a", text: "A" },
-        { id: "b", text: "B" },
-        { id: "c", text: "C" },
-        { id: "d", text: "D" },
-      ],
-      correctOptionId: "d",
-      explanation: "The first pop removes C, leaving A, B. Pushing D puts it on top, so it comes off next: last in, first out.",
-    },
-    {
-      id: "q2",
-      prompt: "Which string makes a bracket checker stop with \"closer doesn't match the top\"?",
-      options: [
-        { id: "a", text: "(()" },
-        { id: "b", text: "([)]" },
-        { id: "c", text: "())" },
-        { id: "d", text: "{[]}" },
-      ],
-      correctOptionId: "b",
-      explanation: "When ) arrives, [ is on top. (() leaves an opener unclosed, ()) has a closer with nothing open, and {[]} is balanced.",
-    },
-    {
-      id: "q3",
-      prompt: "Why is list.pop(0) a poor way to dequeue from a Python list?",
-      options: [
-        { id: "a", text: "It removes from the wrong end" },
-        { id: "b", text: "It shifts every remaining item, so each dequeue is O(n)" },
-        { id: "c", text: "It isn't allowed on lists" },
-        { id: "d", text: "It reverses the order" },
-      ],
-      correctOptionId: "b",
-      explanation: "Lists are arrays, so removing index 0 moves everything down. collections.deque does it in O(1).",
-    },
-    {
-      id: "q4",
-      prompt: "A ring buffer has capacity 8, head = 6 and size = 4. Where does the next enqueue go?",
-      options: [
-        { id: "a", text: "Slot 10" },
-        { id: "b", text: "Slot 2" },
-        { id: "c", text: "Slot 0" },
-        { id: "d", text: "It's full" },
-      ],
-      correctOptionId: "b",
-      explanation: "tail = (head + size) mod capacity = (6 + 4) mod 8 = 2. The items sit in slots 6, 7, 0, 1, and the tail has wrapped round.",
-    },
-    {
-      id: "q5",
-      prompt: "A hash map has 16 buckets and 12 keys, and resizes when the load factor passes 0.75. What happens when you add a 13th key?",
-      options: [
-        { id: "a", text: "Nothing: 13/16 is still under 1" },
-        { id: "b", text: "It doubles to 32 buckets and rehashes all 13 keys" },
-        { id: "c", text: "It adds one more bucket" },
-        { id: "d", text: "It rejects the key" },
-      ],
-      correctOptionId: "b",
-      explanation: "12/16 is exactly 0.75, not past it. 13/16 ≈ 0.81 is, so the map doubles to 32 buckets and every key's bucket is recomputed mod 32.",
-    },
-    {
-      id: "q6",
-      prompt: "Why does Python's hash(\"hello\") give a different number each time you start Python?",
-      options: [
-        { id: "a", text: "A bug in CPython" },
-        { id: "b", text: "A random per-process seed, so attackers can't choose keys that all collide" },
-        { id: "c", text: "Strings are stored at different addresses" },
-        { id: "d", text: "It depends on the dict's size" },
-      ],
-      correctOptionId: "b",
-      explanation: "Randomised hashing defends against hash-flooding attacks. Within one run the hash is stable, which is all a dict needs.",
-    },
-    {
-      id: "q7",
-      prompt: "Which structure would you use to check, in O(1) on average, whether a username is already taken?",
-      options: [
-        { id: "a", text: "A sorted array" },
-        { id: "b", text: "A linked list" },
-        { id: "c", text: "A hash set" },
-        { id: "d", text: "A stack" },
-      ],
-      correctOptionId: "c",
-      explanation: "A hash set answers membership in O(1) on average. A sorted array needs O(log n) with binary search; a list or stack needs O(n).",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "stacks-queues-quiz")}
 />

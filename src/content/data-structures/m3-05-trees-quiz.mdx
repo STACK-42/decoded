@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/data-structures/questions";
 
 # Quiz: Trees
 
@@ -8,90 +10,5 @@ Seven questions on traversals, search trees, heaps and tries. Get 5 right to pas
   courseSlug="data-structures"
   lessonSlug="trees-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "Which traversal of a binary search tree lists its keys in sorted order?",
-      options: [
-        { id: "a", text: "Preorder" },
-        { id: "b", text: "Inorder" },
-        { id: "c", text: "Postorder" },
-        { id: "d", text: "Level order" },
-      ],
-      correctOptionId: "b",
-      explanation: "Left subtree, then the node, then the right subtree: everything smaller comes before the node and everything bigger after it.",
-    },
-    {
-      id: "q2",
-      prompt: "To total the sizes of every folder on a disk, which traversal do you need?",
-      options: [
-        { id: "a", text: "Preorder: parents first" },
-        { id: "b", text: "Postorder: children first" },
-        { id: "c", text: "Inorder" },
-        { id: "d", text: "Any order works" },
-      ],
-      correctOptionId: "b",
-      explanation: "A folder's size is the sum of its children's sizes, so every child must be finished before its parent.",
-    },
-    {
-      id: "q3",
-      prompt: "You insert 10, 20, 30, 40, 50 in that order into an empty (unbalanced) BST. What is its height?",
-      options: [
-        { id: "a", text: "2" },
-        { id: "b", text: "3" },
-        { id: "c", text: "4" },
-        { id: "d", text: "5" },
-      ],
-      correctOptionId: "c",
-      explanation: "Each key goes right of the last, so the tree is a chain of 5 nodes: 4 edges from root to leaf. That's why libraries use balanced trees.",
-    },
-    {
-      id: "q4",
-      prompt: "Deleting a BST node that has two children: what replaces its key?",
-      options: [
-        { id: "a", text: "Its left child's key" },
-        { id: "b", text: "The root's key" },
-        { id: "c", text: "Its in-order successor: the smallest key in its right subtree" },
-        { id: "d", text: "The largest key in its right subtree" },
-      ],
-      correctOptionId: "c",
-      explanation: "The successor is the next key in sorted order, so putting it there keeps the ordering rule. (The in-order predecessor, the largest key on the left, also works.)",
-    },
-    {
-      id: "q5",
-      prompt: "In a binary heap stored in an array, where are the children of index 4?",
-      options: [
-        { id: "a", text: "5 and 6" },
-        { id: "b", text: "8 and 9" },
-        { id: "c", text: "9 and 10" },
-        { id: "d", text: "2 and 3" },
-      ],
-      correctOptionId: "c",
-      explanation: "Children of i are at 2i + 1 and 2i + 2: 9 and 10. Its parent is at (4 − 1) // 2 = 1.",
-    },
-    {
-      id: "q6",
-      prompt: "What does std::priority_queue<int> in C++ return from top() after pushing 9, 4, 7, 1?",
-      options: [
-        { id: "a", text: "1" },
-        { id: "b", text: "4" },
-        { id: "c", text: "9" },
-        { id: "d", text: "7" },
-      ],
-      correctOptionId: "c",
-      explanation: "C++'s priority_queue is a max-heap by default. Python's heapq and Java's PriorityQueue are min-heaps and would give 1.",
-    },
-    {
-      id: "q7",
-      prompt: "A trie holds a million words. How many steps does it take to find all words starting with \"pro\" (before listing them)?",
-      options: [
-        { id: "a", text: "About 3" },
-        { id: "b", text: "About 20 (log₂ of a million)" },
-        { id: "c", text: "About a million" },
-        { id: "d", text: "It depends on how many words start with \"pro\"" },
-      ],
-      correctOptionId: "a",
-      explanation: "One step per letter of the prefix, however many words are stored. Listing the matches then costs time in proportion to how many there are.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "trees-quiz")}
 />

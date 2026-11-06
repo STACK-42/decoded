@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Graphs and Trees
 
@@ -8,90 +10,5 @@ Seven questions on graphs, DAGs and trees. Get 5 right to pass.
   courseSlug="discrete-mathematics"
   lessonSlug="graphs-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "An undirected graph has 10 edges. What do its vertex degrees add up to?",
-      options: [
-        { id: "a", text: "10" },
-        { id: "b", text: "20" },
-        { id: "c", text: "It depends on the number of vertices" },
-        { id: "d", text: "45" },
-      ],
-      correctOptionId: "b",
-      explanation: "The handshake lemma: each edge adds 1 to the degree of both its ends, so the sum is 2 × 10.",
-    },
-    {
-      id: "q2",
-      prompt: "Can a graph have exactly 3 vertices of odd degree?",
-      options: [
-        { id: "a", text: "Yes, if it has enough edges" },
-        { id: "b", text: "Yes, if it's directed" },
-        { id: "c", text: "No, the number of odd-degree vertices is always even" },
-        { id: "d", text: "Only if it isn't connected" },
-      ],
-      correctOptionId: "c",
-      explanation: "The degrees add up to an even number, 2m. The even degrees add to something even, so the odd ones must come in an even count.",
-    },
-    {
-      id: "q3",
-      prompt: "A social network has a billion users and about 200 friends each. Which representation fits?",
-      options: [
-        { id: "a", text: "Adjacency matrix: lookups are O(1)" },
-        { id: "b", text: "Adjacency list: space grows with the number of friendships" },
-        { id: "c", text: "Either; they use the same space" },
-        { id: "d", text: "Neither can store it" },
-      ],
-      correctOptionId: "b",
-      explanation: "A matrix needs n² = 10¹⁸ cells. A list needs about n + 2m, roughly 2 × 10¹¹ entries. Sparse graphs want lists.",
-    },
-    {
-      id: "q4",
-      prompt: "A connected graph has vertex degrees 2, 2, 3, 3, 4. Does it have an Euler path?",
-      options: [
-        { id: "a", text: "Yes, an Euler circuit" },
-        { id: "b", text: "Yes, an Euler path starting and ending at the two degree-3 vertices" },
-        { id: "c", text: "No, because some degrees are odd" },
-        { id: "d", text: "No, because one vertex has degree 4" },
-      ],
-      correctOptionId: "b",
-      explanation: "Exactly two vertices have odd degree, so an Euler path exists and runs between them. A circuit would need every degree even.",
-    },
-    {
-      id: "q5",
-      prompt: "Kahn's algorithm stops with some vertices still unordered. What does that mean?",
-      options: [
-        { id: "a", text: "The graph is disconnected" },
-        { id: "b", text: "The graph has a directed cycle" },
-        { id: "c", text: "The graph has more than one valid order" },
-        { id: "d", text: "The algorithm needs a second pass" },
-      ],
-      correctOptionId: "b",
-      explanation: "Every leftover vertex still waits on another leftover. Following those waits must eventually repeat a vertex, which is a cycle.",
-    },
-    {
-      id: "q6",
-      prompt: "How many edges does a tree with 50 vertices have?",
-      options: [
-        { id: "a", text: "49" },
-        { id: "b", text: "50" },
-        { id: "c", text: "51" },
-        { id: "d", text: "It depends on its shape" },
-      ],
-      correctOptionId: "a",
-      explanation: "Every tree with n vertices has n − 1 edges, whatever its shape.",
-    },
-    {
-      id: "q7",
-      prompt: "What is the smallest possible height of a binary tree with 100 vertices?",
-      options: [
-        { id: "a", text: "5" },
-        { id: "b", text: "6" },
-        { id: "c", text: "7" },
-        { id: "d", text: "50" },
-      ],
-      correctOptionId: "b",
-      explanation: "⌊log₂ 100⌋ = 6. Height 5 holds at most 2⁶ − 1 = 63 vertices, too few; height 6 holds up to 127.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "graphs-quiz")}
 />

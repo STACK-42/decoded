@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-graphics/questions";
 
 # Quiz: Resolution
 
@@ -8,78 +10,5 @@ Six questions on PPI, DPI and screen resolution. Get 5 right to pass.
   courseSlug="computer-graphics"
   lessonSlug="resolution-quiz"
   passThreshold={5/6}
-  questions={[
-    {
-      id: "q1",
-      prompt: "A 1500 × 900 image is printed at 300 PPI. How big is the print?",
-      options: [
-        { id: "a", text: "5 × 3 inches" },
-        { id: "b", text: "15 × 9 inches" },
-        { id: "c", text: "4500 × 2700 inches" },
-        { id: "d", text: "3 × 5 inches" },
-      ],
-      correctOptionId: "a",
-      explanation: "1500 ÷ 300 = 5 inches wide and 900 ÷ 300 = 3 inches tall.",
-    },
-    {
-      id: "q2",
-      prompt: "You want an 8 × 10 inch print at 300 PPI. How many pixels does the image need?",
-      options: [
-        { id: "a", text: "800 × 1000" },
-        { id: "b", text: "2400 × 3000" },
-        { id: "c", text: "300 × 300" },
-        { id: "d", text: "24 × 30" },
-      ],
-      correctOptionId: "b",
-      explanation: "Multiply inches by PPI: 8 × 300 = 2400 and 10 × 300 = 3000.",
-    },
-    {
-      id: "q3",
-      prompt: "What does DPI measure?",
-      options: [
-        { id: "a", text: "Pixels in a digital image" },
-        { id: "b", text: "Ink dots a printer places in an inch" },
-        { id: "c", text: "The diagonal of a screen" },
-        { id: "d", text: "Colors per pixel" },
-      ],
-      correctOptionId: "b",
-      explanation: "DPI is a printer's measure. Images and screens are described in PPI.",
-    },
-    {
-      id: "q4",
-      prompt: "How many pixels does a 1280 × 720 screen have?",
-      options: [
-        { id: "a", text: "2,000" },
-        { id: "b", text: "92,160" },
-        { id: "c", text: "921,600" },
-        { id: "d", text: "2,073,600" },
-      ],
-      correctOptionId: "c",
-      explanation: "1280 × 720 = 921,600.",
-    },
-    {
-      id: "q5",
-      prompt: "What is the aspect ratio of a 1280 × 1024 screen?",
-      options: [
-        { id: "a", text: "16:9" },
-        { id: "b", text: "4:3" },
-        { id: "c", text: "5:4" },
-        { id: "d", text: "16:10" },
-      ],
-      correctOptionId: "c",
-      explanation: "The greatest common divisor is 256: 1280 ÷ 256 = 5 and 1024 ÷ 256 = 4.",
-    },
-    {
-      id: "q6",
-      prompt: "Two screens are both 1920 × 1080. One is 24 inches, the other 15.6 inches. Which is true?",
-      options: [
-        { id: "a", text: "They have the same pixel density" },
-        { id: "b", text: "The 15.6-inch screen has a higher pixel density" },
-        { id: "c", text: "The 24-inch screen shows more pixels" },
-        { id: "d", text: "The 24-inch screen is sharper" },
-      ],
-      correctOptionId: "b",
-      explanation: "Same pixels in a smaller space means more pixels per inch: about 141 PPI against 92.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "resolution-quiz")}
 />

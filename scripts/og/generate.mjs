@@ -352,6 +352,21 @@ function plainText(mdx) {
     .trim();
 }
 
+/** Quiz questions live in src/content/<course>/questions.ts, not in the quiz's MDX; index their prompts and explanations with the quiz. */
+async function quizText(courseSlug, quizSlug) {
+  let bank;
+  try {
+    bank = await readFile(path.join(ROOT, "src/content", courseSlug, "questions.ts"), "utf8");
+  } catch {
+    return "";
+  }
+  const parts = [];
+  for (const m of bank.matchAll(/quiz: "([^"]+)",\n\s*prompt: ("(?:[^"\\]|\\.)*"),[\s\S]*?explanation: ("(?:[^"\\]|\\.)*"),/g)) {
+    if (m[1] === quizSlug) parts.push(JSON.parse(m[2]), JSON.parse(m[3]));
+  }
+  return parts.join(" ");
+}
+
 const files = await lessonFiles();
 const searchIndex = [];
 for (const course of mod.courses) {
@@ -360,7 +375,8 @@ for (const course of mod.courses) {
     if (!match) throw new Error(`no MDX file found for ${course.slug}/${lesson.slug}`);
     const mdx = await readFile(path.join(ROOT, "src", match.file), "utf8");
     const headings = [...mdx.matchAll(/^#{2,3} (.+)$/gm)].map((m) => plainText(m[1]));
-    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(mdx).slice(0, SEARCH_TEXT_LIMIT) });
+    const quiz = lesson.kind === "quiz" ? await quizText(course.slug, lesson.slug) : "";
+    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(`${mdx}\n${quiz}`).slice(0, SEARCH_TEXT_LIMIT) });
   }
 }
 await writeFile(path.join(DIST, "search-index.json"), JSON.stringify(searchIndex));

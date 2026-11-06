@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/data-structures/questions";
 
 # Quiz: Choosing and Combining
 
@@ -8,102 +10,5 @@ Eight questions across the whole course. Get 6 right to pass.
   courseSlug="data-structures"
   lessonSlug="final-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "In a union-find with union by rank and path compression, what does each operation cost in practice?",
-      options: [
-        { id: "a", text: "O(n)" },
-        { id: "b", text: "O(log n)" },
-        { id: "c", text: "Effectively constant: O(α(n)), and α(n) ≤ 4 for any realistic n" },
-        { id: "d", text: "O(n log n)" },
-      ],
-      correctOptionId: "c",
-      explanation: "The inverse Ackermann function grows so slowly it never exceeds 4 for inputs that could exist.",
-    },
-    {
-      id: "q2",
-      prompt: "Kruskal's algorithm skips an edge when union(u, v) reports u and v are already together. Why?",
-      options: [
-        { id: "a", text: "The edge is too expensive" },
-        { id: "b", text: "Adding it would create a cycle" },
-        { id: "c", text: "The graph is disconnected" },
-        { id: "d", text: "It has already been added" },
-      ],
-      correctOptionId: "b",
-      explanation: "If u and v are already connected, one more edge between them closes a loop, which a spanning tree can't have.",
-    },
-    {
-      id: "q3",
-      prompt: "You need the 10 highest scores out of a stream of a billion. Which structure keeps this cheap?",
-      options: [
-        { id: "a", text: "A sorted array of everything" },
-        { id: "b", text: "A min-heap of size 10" },
-        { id: "c", text: "A hash map of scores" },
-        { id: "d", text: "A stack" },
-      ],
-      correctOptionId: "b",
-      explanation: "Compare each new score with the heap's minimum, the smallest of the current top 10; replace it if bigger. That's O(log 10) per score with tiny memory.",
-    },
-    {
-      id: "q4",
-      prompt: "A leaderboard must show each player's rank and the players just above and below them. Best fit?",
-      options: [
-        { id: "a", text: "Hash map" },
-        { id: "b", text: "Balanced search tree (with subtree sizes for rank)" },
-        { id: "c", text: "Queue" },
-        { id: "d", text: "Trie" },
-      ],
-      correctOptionId: "b",
-      explanation: "A tree keeps scores sorted, so neighbours are O(log n) away; storing subtree sizes in each node gives the rank in O(log n) too.",
-    },
-    {
-      id: "q5",
-      prompt: "An LRU cache needs O(1) lookup and O(1) \"move this entry to most recently used\". Which combination does it?",
-      options: [
-        { id: "a", text: "Two stacks" },
-        { id: "b", text: "A heap and an array" },
-        { id: "c", text: "A hash map pointing into a doubly linked list" },
-        { id: "d", text: "A sorted array" },
-      ],
-      correctOptionId: "c",
-      explanation: "The map finds the node in O(1); the doubly linked list unlinks it and moves it to the front, or evicts the back, in O(1).",
-    },
-    {
-      id: "q6",
-      prompt: "This Python runs slowly: for u in signups: if u in banned_list: ... What's the usual fix?",
-      options: [
-        { id: "a", text: "Sort signups first" },
-        { id: "b", text: "Turn banned_list into a set once, before the loop" },
-        { id: "c", text: "Use a while loop" },
-        { id: "d", text: "Use a linked list for banned_list" },
-      ],
-      correctOptionId: "b",
-      explanation: "Each `in` on a list scans it, so the loop is O(n × m). With a set, each check is O(1) on average and the loop is O(n + m).",
-    },
-    {
-      id: "q7",
-      prompt: "Which structure processes requests strictly in arrival order with O(1) at both ends?",
-      options: [
-        { id: "a", text: "A Python list using pop(0)" },
-        { id: "b", text: "A deque (ring buffer)" },
-        { id: "c", text: "A heap" },
-        { id: "d", text: "A binary search tree" },
-      ],
-      correctOptionId: "b",
-      explanation: "A ring buffer moves its head instead of shifting items, so both enqueue and dequeue are O(1). list.pop(0) is O(n).",
-    },
-    {
-      id: "q8",
-      prompt: "When does a linked list genuinely beat a dynamic array?",
-      options: [
-        { id: "a", text: "Whenever you need to read item i" },
-        { id: "b", text: "When summing all the items" },
-        { id: "c", text: "When you insert or remove at a node you already hold a reference to, many times" },
-        { id: "d", text: "Always; it uses less memory" },
-      ],
-      correctOptionId: "c",
-      explanation: "That's its one O(1) trick. For indexing and scanning, the array wins, and a list also spends extra memory on pointers.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "final-quiz")}
 />

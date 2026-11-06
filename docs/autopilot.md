@@ -42,10 +42,10 @@ If the job's queue is empty, take the top item in the other queue. If both are e
 
 The owner's priority since 2026-11-03: proper exam practice. The design, decisions and phases are in [`docs/exams.md`](exams.md); follow it, and update it if a phase teaches you something that changes the plan. One phase per run.
 
-- [ ] 1. Question bank: move the 259 quiz questions into per-course `questions.ts`, quizzes read from it, no visible change.
+- [x] 1. Question bank: move the 259 quiz questions into per-course `questions.ts`, quizzes read from it, no visible change. (PR #53)
 - [ ] 2. Course exam page at `/courses/<course>/exam`.
 - [ ] 3. Review queue (Leitner) at `/review`, with "N due" on the Dashboard.
-- [ ] 4. Question banks for Operating Systems and Advanced Algorithms, then at least 4 questions per taught lesson everywhere.
+- [ ] 4. Question banks for Operating Systems and Advanced Algorithms, then at least 4 questions per taught lesson everywhere. Also set `lesson` (and `section`) on the 259 migrated questions, which only know their quiz.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
 - [ ] 6. Account sync for review cards and exam attempts.
 
@@ -75,6 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-03 10:40 (run B): exam phase 1, question bank. 259 questions moved unchanged into 11 `questions.ts` banks (checked identical to the originals), 33 quizzes read from them, search index now includes quiz text from the banks, 6 new tests. PR #53, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).

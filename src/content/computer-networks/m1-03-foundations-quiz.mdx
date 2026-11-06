@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-networks/questions";
 
 # Quiz: How the Internet Fits Together
 
@@ -8,78 +10,5 @@ Six questions on layers, packets and delay. Get 5 right to pass.
   courseSlug="computer-networks"
   lessonSlug="foundations-quiz"
   passThreshold={5/6}
-  questions={[
-    {
-      id: "q1",
-      prompt: "Which layer's job is to deliver data to the right program on a machine, using port numbers?",
-      options: [
-        { id: "a", text: "Application" },
-        { id: "b", text: "Transport" },
-        { id: "c", text: "Network" },
-        { id: "d", text: "Link" },
-      ],
-      correctOptionId: "b",
-      explanation: "IP gets a packet to the right machine; TCP or UDP uses the port to hand it to the right program on that machine.",
-    },
-    {
-      id: "q2",
-      prompt: "A router forwarding a packet normally reads which headers?",
-      options: [
-        { id: "a", text: "Only the HTTP request" },
-        { id: "b", text: "The link and IP headers" },
-        { id: "c", text: "Every header, including TCP and HTTP" },
-        { id: "d", text: "None; it forwards bits blindly" },
-      ],
-      correctOptionId: "b",
-      explanation: "A router works at the network layer: it needs the IP destination to pick the next hop and nothing above that.",
-    },
-    {
-      id: "q3",
-      prompt: "A 12,000-bit packet goes onto a 1 Mb/s link. What is its transmission delay?",
-      options: [
-        { id: "a", text: "1.2 µs" },
-        { id: "b", text: "12 ms" },
-        { id: "c", text: "120 ms" },
-        { id: "d", text: "It depends on the length of the cable" },
-      ],
-      correctOptionId: "b",
-      explanation: "L / R = 12,000 / 1,000,000 = 0.012 s. Cable length affects propagation delay, not transmission delay.",
-    },
-    {
-      id: "q4",
-      prompt: "You upgrade from 100 Mb/s to 1 Gb/s, but a small web page from another continent loads almost as slowly. Why?",
-      options: [
-        { id: "a", text: "The upgrade didn't work" },
-        { id: "b", text: "Small transfers are dominated by propagation delay and round trips, which bandwidth doesn't change" },
-        { id: "c", text: "Web pages are always bandwidth-bound" },
-        { id: "d", text: "Routers slow down fast connections" },
-      ],
-      correctOptionId: "b",
-      explanation: "A 50 KB page needs 4 ms at 100 Mb/s but the round trip across an ocean is about 56 ms. Only a shorter distance helps.",
-    },
-    {
-      id: "q5",
-      prompt: "A path crosses links of 1 Gb/s, 50 Mb/s and 300 Mb/s. What is the most throughput you can get end to end?",
-      options: [
-        { id: "a", text: "1 Gb/s" },
-        { id: "b", text: "300 Mb/s" },
-        { id: "c", text: "50 Mb/s" },
-        { id: "d", text: "1.35 Gb/s" },
-      ],
-      correctOptionId: "c",
-      explanation: "Throughput is limited by the bottleneck, the slowest link on the path.",
-    },
-    {
-      id: "q6",
-      prompt: "Why must a fast sender on a long-distance link keep many bytes \"in flight\" rather than waiting for each reply?",
-      options: [
-        { id: "a", text: "To save memory" },
-        { id: "b", text: "Because the bandwidth-delay product is large: waiting a round trip after each packet would leave the link mostly idle" },
-        { id: "c", text: "Because routers require it" },
-        { id: "d", text: "To avoid packet loss" },
-      ],
-      correctOptionId: "b",
-      explanation: "On 1 Gb/s with 60 ms RTT, 7.5 MB fits in the pipe. Sending one packet per round trip would use a tiny fraction of the link.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "foundations-quiz")}
 />

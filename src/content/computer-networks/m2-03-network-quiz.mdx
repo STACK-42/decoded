@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-networks/questions";
 
 # Quiz: The Network Layer
 
@@ -8,78 +10,5 @@ Six questions on addresses, subnets and routing. Get 5 right to pass.
   courseSlug="computer-networks"
   lessonSlug="network-quiz"
   passThreshold={5/6}
-  questions={[
-    {
-      id: "q1",
-      prompt: "How many usable host addresses does a /27 subnet have?",
-      options: [
-        { id: "a", text: "27" },
-        { id: "b", text: "30" },
-        { id: "c", text: "32" },
-        { id: "d", text: "62" },
-      ],
-      correctOptionId: "b",
-      explanation: "32 − 27 = 5 host bits: 2⁵ = 32 addresses, minus the network and broadcast addresses, leaves 30.",
-    },
-    {
-      id: "q2",
-      prompt: "What is the network address of 172.16.5.4/20?",
-      options: [
-        { id: "a", text: "172.16.0.0" },
-        { id: "b", text: "172.16.5.0" },
-        { id: "c", text: "172.16.4.0" },
-        { id: "d", text: "172.0.0.0" },
-      ],
-      correctOptionId: "a",
-      explanation: "A /20 keeps the first 4 bits of the third byte. 5 is 0000 0101, so its top 4 bits are 0000: the network is 172.16.0.0, and the block runs to 172.16.15.255.",
-    },
-    {
-      id: "q3",
-      prompt: "A forwarding table has 10.0.0.0/8 → A, 10.4.0.0/16 → B and 0.0.0.0/0 → C. Where does a packet for 10.4.9.1 go?",
-      options: [
-        { id: "a", text: "A, the first match" },
-        { id: "b", text: "B, the longest matching prefix" },
-        { id: "c", text: "C, the default route" },
-        { id: "d", text: "It's dropped" },
-      ],
-      correctOptionId: "b",
-      explanation: "All three entries match. The /16 is the most specific, so it wins.",
-    },
-    {
-      id: "q4",
-      prompt: "Your laptop at home has the address 192.168.1.23. How can it reach a public website?",
-      options: [
-        { id: "a", text: "192.168 addresses are public" },
-        { id: "b", text: "The router uses NAT, rewriting the source to its own public address and mapping replies back" },
-        { id: "c", text: "It can't" },
-        { id: "d", text: "The website reaches into the home network" },
-      ],
-      correctOptionId: "b",
-      explanation: "192.168.0.0/16 is a private range. Network address translation lets many private devices share one public IPv4 address.",
-    },
-    {
-      id: "q5",
-      prompt: "In link-state routing, what does each router use to compute its forwarding table?",
-      options: [
-        { id: "a", text: "Only its neighbours' distance estimates" },
-        { id: "b", text: "A full map of every link and its cost, flooded from every router, run through Dijkstra's algorithm" },
-        { id: "c", text: "Business policies between networks" },
-        { id: "d", text: "Random choices" },
-      ],
-      correctOptionId: "b",
-      explanation: "That's OSPF. Distance-vector protocols use only neighbours' estimates; BGP uses policy.",
-    },
-    {
-      id: "q6",
-      prompt: "What stops a packet circulating forever if routers form a loop?",
-      options: [
-        { id: "a", text: "The TCP checksum" },
-        { id: "b", text: "The TTL field: each router decrements it, and the packet is dropped at 0" },
-        { id: "c", text: "BGP detects the loop instantly" },
-        { id: "d", text: "Nothing" },
-      ],
-      correctOptionId: "b",
-      explanation: "Time to live limits how many routers a packet can cross. traceroute uses the same field to discover the path.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "network-quiz")}
 />

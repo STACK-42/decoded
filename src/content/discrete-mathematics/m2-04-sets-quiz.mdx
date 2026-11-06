@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/discrete-mathematics/questions";
 
 # Quiz: Sets, Functions and Relations
 
@@ -8,90 +10,5 @@ Seven questions on sets, functions and relations. Get 5 right to pass.
   courseSlug="discrete-mathematics"
   lessonSlug="sets-quiz"
   passThreshold={5/7}
-  questions={[
-    {
-      id: "q1",
-      prompt: "How many elements does the power set of {a, b, c, d} have?",
-      options: [
-        { id: "a", text: "4" },
-        { id: "b", text: "8" },
-        { id: "c", text: "16" },
-        { id: "d", text: "24" },
-      ],
-      correctOptionId: "c",
-      explanation: "Each of the 4 elements is either in a subset or not: 2⁴ = 16, counting ∅ and the whole set.",
-    },
-    {
-      id: "q2",
-      prompt: "Which set equals the complement of (A ∪ B)?",
-      options: [
-        { id: "a", text: "A' ∪ B'" },
-        { id: "b", text: "A' ∩ B'" },
-        { id: "c", text: "A ∩ B" },
-        { id: "d", text: "A − B" },
-      ],
-      correctOptionId: "b",
-      explanation: "De Morgan's law for sets: outside the union means outside A and outside B.",
-    },
-    {
-      id: "q3",
-      prompt: "In a class, 25 students take Python, 18 take Java and 7 take both. How many take at least one?",
-      options: [
-        { id: "a", text: "36" },
-        { id: "b", text: "43" },
-        { id: "c", text: "50" },
-        { id: "d", text: "29" },
-      ],
-      correctOptionId: "a",
-      explanation: "Inclusion–exclusion: 25 + 18 − 7 = 36. The 7 were counted twice.",
-    },
-    {
-      id: "q4",
-      prompt: "f: ℤ → ℤ with f(x) = 2x is:",
-      options: [
-        { id: "a", text: "Injective but not surjective" },
-        { id: "b", text: "Surjective but not injective" },
-        { id: "c", text: "Bijective" },
-        { id: "d", text: "Neither" },
-      ],
-      correctOptionId: "a",
-      explanation: "Different x give different 2x, so it's injective. Odd numbers are never reached, so it isn't surjective onto ℤ.",
-    },
-    {
-      id: "q5",
-      prompt: "Why can't a hash function from all strings to 64-bit numbers be injective?",
-      options: [
-        { id: "a", text: "Because it isn't a function" },
-        { id: "b", text: "Because there are more strings than 64-bit numbers" },
-        { id: "c", text: "Because it is surjective" },
-        { id: "d", text: "It can be, with a good enough design" },
-      ],
-      correctOptionId: "b",
-      explanation: "Infinitely many inputs, 2⁶⁴ outputs: some outputs must be shared. Collisions are unavoidable; good hashes only make them hard to find.",
-    },
-    {
-      id: "q6",
-      prompt: "Which properties make a relation an equivalence relation?",
-      options: [
-        { id: "a", text: "Reflexive, antisymmetric, transitive" },
-        { id: "b", text: "Reflexive, symmetric, transitive" },
-        { id: "c", text: "Symmetric and transitive" },
-        { id: "d", text: "Reflexive and symmetric" },
-      ],
-      correctOptionId: "b",
-      explanation: "Reflexive, symmetric and transitive. Swap symmetric for antisymmetric and you get a partial order instead.",
-    },
-    {
-      id: "q7",
-      prompt: "The relation \"a divides b\" on {1, 2, 3, 4, 5, 6} is:",
-      options: [
-        { id: "a", text: "An equivalence relation" },
-        { id: "b", text: "A total order" },
-        { id: "c", text: "A partial order that isn't total" },
-        { id: "d", text: "Neither reflexive nor transitive" },
-      ],
-      correctOptionId: "c",
-      explanation: "It's reflexive, antisymmetric and transitive, so a partial order. 2 and 3 don't divide each other, so it isn't total.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "sets-quiz")}
 />

@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/algorithm-design-and-analysis/questions";
 
 # Quiz: Searching, Graphs, Greedy & DP
 
@@ -8,102 +10,5 @@ The second half of the course in eight questions. Get 6 right to pass and finish
   courseSlug="algorithm-design-and-analysis"
   lessonSlug="final-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "What does binary search require that linear search doesn't?",
-      options: [
-        { id: "a", text: "The array must have no duplicates" },
-        { id: "b", text: "The array must be sorted" },
-        { id: "c", text: "The array length must be a power of two" },
-        { id: "d", text: "The target must be in the array" },
-      ],
-      correctOptionId: "b",
-      explanation: "Discarding half the array is only safe if everything on one side of the middle is smaller and everything on the other side is bigger, which is what sorted means.",
-    },
-    {
-      id: "q2",
-      prompt: "Roughly how many comparisons does binary search need, in the worst case, on a sorted array of 1,000,000 elements?",
-      options: [
-        { id: "a", text: "About 20" },
-        { id: "b", text: "About 1,000" },
-        { id: "c", text: "About 500,000" },
-        { id: "d", text: "About 1,000,000" },
-      ],
-      correctOptionId: "a",
-      explanation: "log₂(1,000,000) ≈ 20. Each comparison halves what's left. Linear search's worst case would be the full 1,000,000.",
-    },
-    {
-      id: "q3",
-      prompt: "Using Euclid's algorithm, what is gcd(60, 24)?",
-      options: [
-        { id: "a", text: "6" },
-        { id: "b", text: "12" },
-        { id: "c", text: "24" },
-        { id: "d", text: "4" },
-      ],
-      correctOptionId: "b",
-      explanation: "60 mod 24 = 12, so gcd(60, 24) = gcd(24, 12). Then 24 mod 12 = 0, so gcd(24, 12) = gcd(12, 0) = 12.",
-    },
-    {
-      id: "q4",
-      prompt: "Which data structure does breadth-first search (BFS) use to decide what to visit next?",
-      options: [
-        { id: "a", text: "A stack" },
-        { id: "b", text: "A queue" },
-        { id: "c", text: "A sorted array" },
-        { id: "d", text: "A hash table" },
-      ],
-      correctOptionId: "b",
-      explanation: "BFS uses a FIFO queue, so vertices are explored in the order they were discovered: level by level. DFS uses a stack (often the recursion call stack).",
-    },
-    {
-      id: "q5",
-      prompt: "What is the time complexity of BFS and DFS on a graph stored as an adjacency list?",
-      options: [
-        { id: "a", text: "O(V)" },
-        { id: "b", text: "O(V × E)" },
-        { id: "c", text: "O(V + E)" },
-        { id: "d", text: "O(V²) always" },
-      ],
-      correctOptionId: "c",
-      explanation: "Each vertex is processed once and each edge is examined a constant number of times. With an adjacency matrix it becomes O(V²), because finding neighbours means scanning a whole row.",
-    },
-    {
-      id: "q6",
-      prompt: "Each choice a greedy algorithm makes must be feasible, locally optimal, and…",
-      options: [
-        { id: "a", text: "Reversible" },
-        { id: "b", text: "Random" },
-        { id: "c", text: "Irrevocable" },
-        { id: "d", text: "Recursive" },
-      ],
-      correctOptionId: "c",
-      explanation: "Once a greedy choice is made it's never undone. That keeps greedy fast, but it can miss the optimal answer when an early choice turns out to be wrong.",
-    },
-    {
-      id: "q7",
-      prompt: "In Kruskal's algorithm, what happens to the next cheapest edge if both of its ends are already in the same tree?",
-      options: [
-        { id: "a", text: "It is rejected, because it would create a cycle" },
-        { id: "b", text: "It replaces the most expensive edge in the tree" },
-        { id: "c", text: "It is added, because it is the cheapest one left" },
-        { id: "d", text: "The algorithm starts again from that edge" },
-      ],
-      correctOptionId: "a",
-      explanation: "A spanning tree has no cycles. If the two ends are already connected, the edge adds nothing but a loop, so Kruskal skips it and moves on to the next edge in sorted order.",
-    },
-    {
-      id: "q8",
-      prompt: "In the 0/1 knapsack table, item i (weight wᵢ, value vᵢ) fits in capacity w. What is V[i, w]?",
-      options: [
-        { id: "a", text: "V[i−1, w] + vᵢ" },
-        { id: "b", text: "max(V[i−1, w], vᵢ + V[i−1, w − wᵢ])" },
-        { id: "c", text: "max(V[i, w−1], V[i−1, w])" },
-        { id: "d", text: "vᵢ / wᵢ" },
-      ],
-      correctOptionId: "b",
-      explanation: "Either skip the item (best of the first i−1 items with capacity w), or take it (vᵢ plus the best of the first i−1 items with the capacity that's left). Pick whichever is larger.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "final-quiz")}
 />

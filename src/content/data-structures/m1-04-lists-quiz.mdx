@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/data-structures/questions";
 
 # Quiz: Arrays and Lists
 
@@ -8,78 +10,5 @@ Six questions on arrays, dynamic arrays and linked lists. Get 5 right to pass.
   courseSlug="data-structures"
   lessonSlug="lists-quiz"
   passThreshold={5/6}
-  questions={[
-    {
-      id: "q1",
-      prompt: "An int array starts at address 2000 and each int takes 4 bytes. Where is a[25]?",
-      options: [
-        { id: "a", text: "2025" },
-        { id: "b", text: "2100" },
-        { id: "c", text: "2104" },
-        { id: "d", text: "It depends on what's stored in a[0] to a[24]" },
-      ],
-      correctOptionId: "b",
-      explanation: "start + i × size = 2000 + 25 × 4 = 2100. No need to look at the earlier elements: that's why indexing is O(1).",
-    },
-    {
-      id: "q2",
-      prompt: "Why is inserting at index 0 of a 1,000,000-item array slow?",
-      options: [
-        { id: "a", text: "Finding index 0 takes a long time" },
-        { id: "b", text: "Every existing item has to shift up one slot" },
-        { id: "c", text: "The array must be sorted again" },
-        { id: "d", text: "It isn't; it's O(1)" },
-      ],
-      correctOptionId: "b",
-      explanation: "The items are side by side, so making room at the front moves all of them: O(n).",
-    },
-    {
-      id: "q3",
-      prompt: "A dynamic array doubles its capacity when full. What is the amortized cost of an append?",
-      options: [
-        { id: "a", text: "O(1)" },
-        { id: "b", text: "O(log n)" },
-        { id: "c", text: "O(n)" },
-        { id: "d", text: "O(n²)" },
-      ],
-      correctOptionId: "a",
-      explanation: "The copies add up to 1 + 2 + 4 + … < 2n over n appends, so on average each append does a constant amount of work.",
-    },
-    {
-      id: "q4",
-      prompt: "A dynamic array grows by 100 slots each time it fills. Appending n items costs in total:",
-      options: [
-        { id: "a", text: "O(n)" },
-        { id: "b", text: "O(n log n)" },
-        { id: "c", text: "O(n²)" },
-        { id: "d", text: "O(100n)" },
-      ],
-      correctOptionId: "c",
-      explanation: "The copies are 100 + 200 + 300 + … , about n²/200 in total. Only growing by a constant factor gives amortized O(1).",
-    },
-    {
-      id: "q5",
-      prompt: "Which operation is O(1) on a singly linked list with only a head pointer?",
-      options: [
-        { id: "a", text: "Read the 50th item" },
-        { id: "b", text: "Append at the end" },
-        { id: "c", text: "Insert at the front" },
-        { id: "d", text: "Remove the last item" },
-      ],
-      correctOptionId: "c",
-      explanation: "Point the new node at the old head, then move head. The others all walk the list.",
-    },
-    {
-      id: "q6",
-      prompt: "Summing a million numbers stored in an array is usually much faster than in a linked list. Why, given both are O(n)?",
-      options: [
-        { id: "a", text: "Arrays use fewer instructions per addition" },
-        { id: "b", text: "The array's items sit together, so the CPU cache fetches many at once; list nodes are scattered" },
-        { id: "c", text: "Linked lists are O(n²) to sum" },
-        { id: "d", text: "The compiler can't add linked-list values" },
-      ],
-      correctOptionId: "b",
-      explanation: "Locality of reference: each cache line fetched for an array holds many useful items, while a list often misses the cache at every node.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lists-quiz")}
 />
