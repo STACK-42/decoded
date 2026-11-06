@@ -58,7 +58,8 @@ The generator calls the course's `src/lib` logic for the right answer and builds
 
 - Length: 20 questions by default (or the whole bank if smaller), spread across modules in proportion to their lesson count, with at least one per module.
 - Timer: off by default; "exam conditions" turns on 90 seconds per question. The timer is advice: when it runs out, the exam is submitted.
-- An attempt is saved (score, per-module score, time taken, date) so the course page can show "best" and "last".
+- An attempt is saved (score, time taken, date, whether exam conditions were on; the last 20 per course) so the exam and course pages can show "best" and "last".
+- Questions without a `lesson` (the migrated ones) link "Review this module" and "Re-read" to the first lesson of their quiz's module, until phase 4 gives them a lesson.
 
 ### Review: a Leitner system
 
