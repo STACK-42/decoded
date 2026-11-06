@@ -75,6 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-06 14:50 (run C): rest of quality item 9: skip lists (+184 px) and Discrete Mathematics loop invariants (+136 px) now fit 390 px, cells kept on one row. Noted: main merged #68 (Asmaa), which adds a `practice` mode to `Quiz` and ~40 inline practice questions in Advanced Algorithms; the exam stack will conflict with it at the next rebase (see PR). Local `npm run build` now needs `NODE_OPTIONS=--max-old-space-size=6144` (CI builds with Bun and is fine). PR #69, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).

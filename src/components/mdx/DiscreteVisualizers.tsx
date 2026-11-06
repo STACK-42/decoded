@@ -590,13 +590,14 @@ export function InvariantSearch({ target: t0 = 23 }: { target?: number }) {
       }
       render={(s) => (
         <div className="space-y-3">
-          <div className="flex gap-1 overflow-x-auto pb-1">
+          <div className="flex gap-0.5 sm:gap-1 overflow-x-auto pb-1">
             {s.arr.map((v, i) => {
               const inWin = i >= s.lo && i <= s.hi;
               const cls = s.found === i ? "border-mint bg-mint/40" : s.mid === i ? "border-neon bg-neon/30" : inWin ? "border-sky bg-sky/20" : "border-border opacity-40";
               return (
                 <div key={i} className="flex flex-col items-center gap-0.5">
-                  <div className={`w-10 h-10 shrink-0 flex items-center justify-center font-mono text-sm border rounded-sm transition-all duration-300 ${cls}`}>{v}</div>
+                  {/* 22px wide on phones (40px from sm up), so the 15-cell array fits a 390px screen */}
+                  <div className={`w-[22px] sm:w-10 h-10 shrink-0 flex items-center justify-center font-mono text-[11px] sm:text-sm border rounded-sm transition-all duration-300 ${cls}`}>{v}</div>
                   <div className="font-mono text-[10px] text-muted-foreground">{i}</div>
                 </div>
               );
