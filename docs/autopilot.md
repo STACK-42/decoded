@@ -44,7 +44,7 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
 
 - [x] 1. Question bank: move the 259 quiz questions into per-course `questions.ts`, quizzes read from it, no visible change. (PR #53)
 - [x] 2. Course exam page at `/courses/<course>/exam`. (PR #58, stacked on #53)
-- [ ] 3. Review queue (Leitner) at `/review`, with "N due" on the Dashboard.
+- [x] 3. Review queue (Leitner) at `/review`, with "N due" on the Dashboard. (PR #59, stacked on #58)
 - [ ] 4. Question banks for Operating Systems and Advanced Algorithms, then at least 4 questions per taught lesson everywhere. Also set `lesson` (and `section`) on the 259 migrated questions, which only know their quiz.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
 - [ ] 6. Account sync for review cards and exam attempts.
@@ -75,6 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-04 10:40 (run B): exam phase 3, the review queue (Leitner boxes 1/2/4/8/16 days in `src/lib/review.ts`, `/review` with instant feedback and interleaved courses, quizzes and exams feed it, header "Review" badge when due, Dashboard panel). Noted that main already gained three of the Algorithm Design animations proposed on 2026-11-04 (stability, greedy coins 1/3/4, linear search best/worst). PR #59 (stacked on #58), open.
 - 2026-11-04 06:10 (run A): exam phase 2, the course exam page (20 mixed questions allocated by module size, shuffled options, optional 90 s/question timer, per-module results, missed questions with explanations and links back, attempts saved; "Take a course exam" on course pages). First rebased #53 onto main, where a graphics quiz option had been reworded, and re-checked the bank against main. PR #58 (stacked on #53), open.
 - 2026-11-03 10:40 (run B): exam phase 1, question bank. 259 questions moved unchanged into 11 `questions.ts` banks (checked identical to the originals), 33 quizzes read from them, search index now includes quiz text from the banks, 6 new tests. PR #53, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.

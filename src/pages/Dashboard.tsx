@@ -8,6 +8,8 @@ import { useAccountStatus, useEnrollments, useAccountProfile } from "@/hooks/use
 import { useProgress } from "@/hooks/useProgress";
 import { useQuizScores } from "@/hooks/useQuizScores";
 import { summarize } from "@/lib/dashboard";
+import { useReviewCards } from "@/hooks/useReviewCards";
+import { dueIds, localDay, nextDue } from "@/lib/review";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
@@ -43,6 +45,8 @@ export default function Dashboard() {
           {status !== "signed-in" && activeCourses.length > 0 && (
             <p className="mt-3 font-body italic text-muted-foreground">This is saved on this device. Sign in to keep it on every device.</p>
           )}
+
+          <ReviewPanel />
 
           {activeCourses.length === 0 ? (
             <div className="mt-10 border border-dashed border-border p-10 text-center">
@@ -101,5 +105,35 @@ export default function Dashboard() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+/** Review queue status: how many questions are due today, or when the next ones are. Hidden until there are cards. */
+function ReviewPanel() {
+  const cards = useReviewCards();
+  const today = localDay();
+  const total = Object.keys(cards).length;
+  if (!total) return null;
+  const due = dueIds(cards, today).length;
+  const next = nextDue(cards, today);
+  return (
+    <section aria-label="Review" className="mt-8 border border-border bg-card p-5 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div className="font-display text-2xl font-bold">{due ? `${due} question${due === 1 ? "" : "s"} to review` : "Review: all caught up"}</div>
+        <div className="mt-1 text-sm text-muted-foreground">
+          {due
+            ? "Questions you answered before, back at the right moment to stick."
+            : next
+              ? `${next.count} more come back on ${new Date(next.day + "T00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}. ${total} in your queue.`
+              : `${total} in your queue.`}
+        </div>
+      </div>
+      <Link
+        to="/review"
+        className={`font-mono text-[11px] uppercase tracking-widest px-5 py-2.5 rounded-sm transition ${due ? "bg-neon text-background font-semibold hover:opacity-90" : "border border-border hover:border-foreground"}`}
+      >
+        {due ? "Start reviewing" : "Open review"}
+      </Link>
+    </section>
   );
 }
