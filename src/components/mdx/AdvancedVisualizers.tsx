@@ -1648,10 +1648,11 @@ export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layou
         const onPath = (c: number, lv: number) => s.path.some(([pc, pl]) => pc === c && pl === lv);
         return (
           <div className="overflow-x-auto">
-            <div className="inline-grid gap-x-1 gap-y-1.5 font-mono text-xs" style={{ gridTemplateColumns: `auto repeat(${cols}, 38px)` }}>
+            {/* Columns are 24px on phones and 38px from the sm breakpoint up, so a ten-key list fits a 390px screen. */}
+            <div className="inline-grid gap-x-0.5 sm:gap-x-1 gap-y-1.5 font-mono text-[11px] sm:text-xs [--skip-col:24px] sm:[--skip-col:38px]" style={{ gridTemplateColumns: `auto repeat(${cols}, var(--skip-col))` }}>
               {Array.from({ length: levels }, (_, r) => levels - 1 - r).map((lv) => (
                 <div key={lv} className="contents">
-                  <span className="pr-2 self-center text-right text-[10px] uppercase tracking-widest text-muted-foreground">L{lv}</span>
+                  <span className="pr-1 sm:pr-2 self-center text-right text-[10px] uppercase sm:tracking-widest text-muted-foreground">L{lv}</span>
                   {Array.from({ length: cols }, (_, c) => {
                     const col = c - 1; // -1 header, towers.length sentinel
                     const isHeader = col === -1;
