@@ -75,12 +75,13 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 
 ## Blocked
 
-Nothing yet.
+- **Exam phases (runs A and B), since 2026-11-06.** Main merged #68 (Asmaa): a `practice` mode for `Quiz` plus ~40 practice questions written inline in Advanced Algorithms lessons. Rebasing the exam stack onto it will conflict in `Quiz` (#59 records review answers there), fail #53's "no inline questions" test, and leave Advanced Algorithms with two disconnected question sets (her inline ones and #63's bank). The owner was asked to choose: (A) move practice questions into the bank with a `practice` flag, (B) keep both and exempt practice quizzes, or (C) agree a design with Asmaa first. Until then, exam runs record this and stop instead of stacking more phases on a base that will need reworking.
 
 ## Run log
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-07 06:10 (run A): blocked, no new phase. Waiting for the owner's decision on integrating #68's practice questions with the exam stack (see Blocked). Nothing merged since 2026-11-02; main has moved on (#70).
 - 2026-11-06 10:40 (run B): exam phase 4c, Computational Mathematics +63 questions (matrices, polynomials, number theory, cryptography and the Signals project; every number worked by script, answer positions balanced, 16 answers re-checked after balancing). PR #67 (stacked on #66), open.
 - 2026-11-06 06:10 (run A): first rebased the whole exam stack (#53 → #63) onto main, which had changed the Algorithm Design sorting quiz; regenerated the 11 migrated banks from main's quiz files (only that quiz differed) and checked them equal. Then exam phase 4c, part 1: question banks for Computer Literacy (12) and The Exam Mind (20); every available course now has an exam. PR #66 (stacked on #63), open.
 - 2026-11-05 10:40 (run B): exam phase 4b, Advanced Algorithms question bank (80 questions; master method, hashing and probing, red-black trees, DP, greedy and NP worked by script with fresh inputs, every claim checked against its lesson). Every course with quizzes or a bank now has an exam except Computer Literacy and The Exam Mind. PR #63 (stacked on #62), open.
