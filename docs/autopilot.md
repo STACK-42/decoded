@@ -75,7 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
-- 2026-11-07 14:50 (run C): quality item 10 (from #54), the three cryptography visualizers now fit 390 px: secret-key flow redrawn 480 units wide (was 660 with a 520 px minimum), stream-cipher bits grouped by byte and wrapping, affine map without its 560 px minimum on phones and with larger letters there. Noted: main's Computational Mathematics rounds changed the Polynomials quiz (8dcfbf2), one more quiz edit the exam stack must absorb at its next rebase. PR #71, open.
+- 2026-11-07 14:50 (run C): quality item 10 (from #54), the three cryptography visualizers now fit 390 px: secret-key flow redrawn 480 units wide (was 660 with a 520 px minimum), stream-cipher bits grouped by byte and wrapping, affine map without its 560 px minimum on phones and with larger letters there. Noted: main's Computational Mathematics rounds changed the Polynomials quiz (8dcfbf2), one more quiz edit the exam stack must absorb at its next rebase. PR #73, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).
