@@ -6,7 +6,8 @@ import { gcd, inverseMod } from "@/lib/numberTheory";
 
 /* ------------------------------ secret-key flow ----------------------------- */
 
-const FLOW_X = [60, 190, 330, 470, 600];
+// Stations sit 95 units apart in a 480-wide drawing, so it fits a phone without shrinking the text too far.
+const FLOW_X = [50, 145, 240, 335, 430];
 
 export function SecretKeyFlow({ text = "HELLO", k = 3 }: { text?: string; k?: number }) {
   const frames = useMemo(() => flowFrames(text, k), [text, k]);
@@ -25,7 +26,7 @@ export function SecretKeyFlow({ text = "HELLO", k = 3 }: { text?: string; k?: nu
           { x: FLOW_X[3], label: "D" },
         ];
         return (
-          <svg viewBox="0 0 660 190" className="w-full min-w-[520px]" role="img" aria-label={`Message ${s.plain} encrypted to ${s.cipher} and decrypted again`}>
+          <svg viewBox="0 0 480 190" className="w-full max-w-[600px] mx-auto" role="img" aria-label={`Message ${s.plain} encrypted to ${s.cipher} and decrypted again`}>
             <path d={`M${FLOW_X[0]},70H${FLOW_X[4]}`} className="stroke-border" strokeWidth={2} />
             <text x={FLOW_X[2]} y={40} textAnchor="middle" fontSize={11} className="fill-muted-foreground font-mono">public channel</text>
             <path d={`M${FLOW_X[1]},95V150H${FLOW_X[3]}V95`} fill="none" strokeDasharray="5 4" className="stroke-violet" strokeWidth={1.6} />
@@ -60,7 +61,7 @@ function BitRow({ label, bits, at, tone, keyPrefix }: { label: string; bits: (nu
       {bits.map((b, i) => (
         <div
           key={`${keyPrefix}${i}`}
-          className={`w-6 h-7 shrink-0 flex items-center justify-center text-[12px] rounded-[2px] border transition-[transform,background-color,border-color,opacity] duration-200 motion-reduce:transition-none ${i === at ? `${tone} scale-110` : "border-border bg-background/50"} ${i > 0 && i % 8 === 0 ? "ml-2" : ""}`}
+          className={`w-6 h-7 shrink-0 flex items-center justify-center text-[12px] rounded-[2px] border transition-[transform,background-color,border-color,opacity] duration-200 motion-reduce:transition-none ${i === at ? `${tone} scale-110` : "border-border bg-background/50"}`}
           style={{ opacity: b === null ? 0.25 : 1 }}
         >
           {b ?? "·"}
@@ -92,11 +93,22 @@ export function XorStreamVisualizer() {
         </div>
       }
       render={(s) => (
-        <div className="flex flex-col gap-1.5 overflow-x-auto pb-1">
-          <BitRow label={s.decrypt ? "c" : "m"} bits={s.input} at={s.at} tone="border-neon bg-neon/25" keyPrefix="i" />
-          <BitRow label="⊕ k" bits={s.key} at={s.at} tone="border-violet bg-violet/30" keyPrefix="k" />
-          <div className="h-px bg-foreground/40 ml-11 my-0.5" />
-          <BitRow label={s.decrypt ? "m" : "c"} bits={s.output} at={s.at} tone="border-mint bg-mint/30" keyPrefix="o" />
+        <div className="flex flex-col gap-1.5 pb-1">
+          {/* One group per byte (character). Groups sit side by side and wrap onto new lines on a phone. */}
+          <div className="flex flex-wrap gap-x-5 gap-y-3">
+            {Array.from({ length: Math.ceil(s.input.length / 8) }, (_, g) => {
+              const part = (xs: (number | null)[]) => xs.slice(g * 8, g * 8 + 8);
+              const at = s.at !== null && s.at >= g * 8 && s.at < g * 8 + 8 ? s.at - g * 8 : null;
+              return (
+                <div key={g} className="flex flex-col gap-1.5">
+                  <BitRow label={s.decrypt ? "c" : "m"} bits={part(s.input)} at={at} tone="border-neon bg-neon/25" keyPrefix={`i${g}-`} />
+                  <BitRow label="⊕ k" bits={part(s.key)} at={at} tone="border-violet bg-violet/30" keyPrefix={`k${g}-`} />
+                  <div className="h-px bg-foreground/40 ml-11 my-0.5" />
+                  <BitRow label={s.decrypt ? "m" : "c"} bits={part(s.output)} at={at} tone="border-mint bg-mint/30" keyPrefix={`o${g}-`} />
+                </div>
+              );
+            })}
+          </div>
           <div className="font-mono text-[12px] text-muted-foreground ml-11 mt-1 min-h-[1.4em]">
             {s.decrypt && s.output.every((x) => x !== null) ? <>reads: <span className="text-mint">{bitsToText(s.output as number[])}</span></> : ""}
           </div>
@@ -226,7 +238,7 @@ export function AffineMapVisualizer({ start = "SECURITY" }: { start?: string }) 
   return (
     <Panel title="Affine map" legend={[["bg-mint", "letters in your message"], ["bg-sky", "other letters"]]}>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${26 * STEP + 8} 170`} className="min-w-[560px] w-full" role="img" aria-label={`Letters mapped by ${k1} m plus ${k2} mod 26`}>
+        <svg viewBox={`0 0 ${26 * STEP + 8} 170`} className="w-full sm:min-w-[560px]" role="img" aria-label={`Letters mapped by ${k1} m plus ${k2} mod 26`}>
           {ALPHABET.split("").map((_, m) => {
             const x1 = m * STEP + 14;
             const x2 = (xs[m] ?? table[m]) * STEP + 14;
@@ -234,8 +246,8 @@ export function AffineMapVisualizer({ start = "SECURITY" }: { start?: string }) 
           })}
           {ALPHABET.split("").map((ch, i) => (
             <g key={ch}>
-              <text x={i * STEP + 14} y={20} textAnchor="middle" fontSize={13} className={`font-mono ${used.has(i) ? "fill-mint font-bold" : "fill-foreground"}`}>{ch}</text>
-              <text x={i * STEP + 14} y={158} textAnchor="middle" fontSize={13} className={`font-mono transition-opacity duration-300 ${table.includes(i) ? "fill-orange" : "fill-muted-foreground/25"}`}>{ch}</text>
+              <text x={i * STEP + 14} y={20} textAnchor="middle" fontSize={13} className={`font-mono [font-size:17px] sm:[font-size:13px] ${used.has(i) ? "fill-mint font-bold" : "fill-foreground"}`}>{ch}</text>
+              <text x={i * STEP + 14} y={158} textAnchor="middle" fontSize={13} className={`font-mono [font-size:17px] sm:[font-size:13px] transition-opacity duration-300 ${table.includes(i) ? "fill-orange" : "fill-muted-foreground/25"}`}>{ch}</text>
             </g>
           ))}
         </svg>
