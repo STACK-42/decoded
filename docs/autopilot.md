@@ -81,6 +81,7 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-11 10:40 (run B), also covering the 7 exam runs queued 2026-11-08 to 2026-11-11: still blocked on the owner's A/B/C choice for #68, nothing stacked. New since the block: the owner's Computational Mathematics rounds (#72, round 6) grew the four module quizzes inline from 6-8 to 20-22 questions each, and #75 is doing the same for Logic Design, so quizzes are being expanded in the `.mdx` files, not in banks. That overlaps #67's 63 new questions and makes the phase 1 migration (#53) larger each time it is rebased. The exam plan needs the owner's call before more phases: keep quizzes in the lessons (exam pages read them from there) or move them into banks.
 - 2026-11-07 10:40 (run B): still blocked (see Blocked); no reply or merges since run A. No new phase.
 - 2026-11-07 06:10 (run A): blocked, no new phase. Waiting for the owner's decision on integrating #68's practice questions with the exam stack (see Blocked). Nothing merged since 2026-11-02; main has moved on (#70).
 - 2026-11-06 10:40 (run B): exam phase 4c, Computational Mathematics +63 questions (matrices, polynomials, number theory, cryptography and the Signals project; every number worked by script, answer positions balanced, 16 answers re-checked after balancing). PR #67 (stacked on #66), open.
