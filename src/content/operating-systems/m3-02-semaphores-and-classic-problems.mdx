@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SemaphoreQueue, SemaphoreDeadlock, SemaphoreBuffer, ReadersWriters, DiningPhilosophers } from "@/components/mdx/OsVisualizers";
 
 # Semaphores and the Classic Synchronization Problems
@@ -288,3 +288,158 @@ All of these lead to **deadlock** and **starvation**, and they're hard to find, 
     In 1997 the Pathfinder lander kept rebooting because a low-priority task held a lock a high-priority task needed. Engineers fixed it from Earth by enabling priority inheritance.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<ModelAnswer>
+**(Midterm 2015, Q5; Midterm 2021, Q4; Midterm 2019, Q4) A semaphore does not suffer busy waiting. Explain how its implementation avoids this drawback and describe how it is used to solve the readers-writers problem.** *(The 2019 version asks for the code of the semaphore and the readers-writers solution.)*
+
+**Avoiding busy waiting.** A semaphore has a value and a queue of waiting processes. `wait(S)` decrements the value. If the value is then negative, the process is put in the queue and **blocked**, so it stops using the CPU. `signal(S)` increments the value. If a process is waiting, it removes one from the queue and **wakes** it, so it becomes ready again. A waiting process never loops on the CPU.
+
+```c
+typedef struct { int value; struct process *list; } semaphore;
+
+wait(S)   { S.value--; if (S.value < 0) { add this process to S.list; block(); } }
+signal(S) { S.value++; if (S.value <= 0) { remove a process P from S.list; wakeup(P); } }
+```
+
+**Readers-writers.** Three shared variables: `rw_mutex = 1` (lets a writer, or the first reader, lock out everyone else), `mutex = 1` (protects `read_count`), and `read_count = 0`.
+
+- A **writer** does `wait(rw_mutex)`, writes, then `signal(rw_mutex)`.
+- A **reader** does `wait(mutex)`, increments `read_count`, and if it is the **first** reader it does `wait(rw_mutex)`. It then does `signal(mutex)`, reads, does `wait(mutex)` again, decrements `read_count`, and if it is the **last** reader it does `signal(rw_mutex)`.
+
+Many readers can read together, but a writer can only write when no reader is inside.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2017, Q4) A semaphore does not suffer busy waiting. What is the meaning of the term busy waiting? Explain how the semaphore implementation can avoid busy waiting, and describe how it is used to solve the bounded buffer problem.**
+
+**Busy waiting** means a process keeps looping and testing a condition on the CPU while it waits for another process to leave its critical section. The CPU does nothing useful during that time.
+
+A semaphore avoids it by blocking: a process that finds the value not positive joins the semaphore's queue and sleeps. Another process's `signal()` wakes it up.
+
+**Bounded buffer** (n buffers, each holding one item): `mutex = 1`, `full = 0`, `empty = n`.
+
+- **Producer:** `wait(empty)`, `wait(mutex)`, add the item, `signal(mutex)`, `signal(full)`.
+- **Consumer:** `wait(full)`, `wait(mutex)`, remove the item, `signal(mutex)`, `signal(empty)`.
+
+`empty` counts free slots and `full` counts filled slots, so neither side writes into a full buffer or reads an empty one. `mutex` keeps the two from changing the buffer at the same time. The printed key uses the same three semaphores.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2022, Q5) Regarding the Readers-Writers Problem: The following variables are shared among all processes: `int readCount; FILE *sharedFile; semaphore mutex, writeBlock;`** *(The 2022 answer key is a scan that has not been checked yet; the answers below are ours.)*
+
+1. **Initial values:** `readCount = 0`, `mutex = 1`, `writeBlock = 1`. `mutex` protects `readCount`, and `writeBlock` is the lock that writers, and the first reader, take.
+2. **Three new readers while a writer is updating:** the first reader takes `mutex` and then blocks on `wait(writeBlock)`, because the writer holds it. It keeps `mutex` while it waits. The second and third readers block at `wait(mutex)`, which the first reader holds.
+3. **A new writer while some readers are reading:** the readers hold `writeBlock` (the first reader took it). The writer blocks at `wait(writeBlock)` until the last reader signals `writeBlock` on its way out.
+4. **Writer starvation:** **yes.** As long as new readers keep arriving before the last reader leaves, `read_count` never drops to 0, so `writeBlock` is never released and a writer can wait forever.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2023-27",
+      prompt: "(Final 2023, Q1 item 27) Incorrect use of semaphore operations might lead to deadlock.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Wrong order or a missing wait or signal can leave processes waiting for each other forever. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-39",
+      prompt: "(Final 2023, MCQ item 39) How can a semaphore be used to solve the producer-consumer problem?",
+      options: [{ id: "a", text: "By using two semaphores: one to lock the buffer when the producer is writing and one to lock the buffer when the consumer is reading" }, { id: "b", text: "By using one semaphore: to count the number of items in the buffer, and block the producer or the consumer when the buffer is full or empty" }, { id: "c", text: "By using one semaphore: to signal the producer or the consumer when the buffer is ready for writing or reading" }, { id: "d", text: "By using two semaphores: one to count the number of empty buffers, and one to count the number of full buffers" }],
+      correctOptionId: "d",
+      explanation: "Two counting semaphores track empty and full slots, as in the bounded-buffer solution. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-59",
+      prompt: "(Final 2024, MCQ item 59) In the Readers-Writers Problem, which of the following statements is true regarding the first variation of the problem? a) Writers are given priority over readers, and no reader is allowed to read while a writer is waiting; b) Readers are given priority over writers, and no writer is allowed to write while a reader is reading; c) Both readers and writers are given equal priority, and they can access the shared data simultaneously; d) Writers are given priority, but readers can still read if no writer is waiting",
+      options: [{ id: "a", text: "Writers are given priority over readers" }, { id: "b", text: "Readers are given priority over writers" }, { id: "c", text: "Equal priority and simultaneous access" }, { id: "d", text: "Writers have priority, but readers can read when no writer waits" }],
+      correctOptionId: "b",
+      explanation: "The first readers-writers problem gives readers priority: a writer waits while any reader is reading. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-60",
+      prompt: "(Final 2024, MCQ item 60) In the context of semaphore implementation, what is the primary disadvantage of using busy waiting? a) It increases the complexity of the code; b) It wastes CPU cycles while waiting for a resource to become available; c) It can lead to deadlock if not implemented correctly; d) It violates the bounded waiting requirement",
+      options: [{ id: "a", text: "It increases the complexity of the code" }, { id: "b", text: "It wastes CPU cycles while waiting for a resource to become available" }, { id: "c", text: "It can lead to deadlock if not implemented correctly" }, { id: "d", text: "It violates the bounded waiting requirement" }],
+      correctOptionId: "b",
+      explanation: "A busy-waiting process spins on the CPU instead of sleeping. (Our answer.)",
+    },
+  ]}
+/>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f-producer-consumer-sync",
+      prompt: "(Final 2019 spring, Q1 item 14) The producer-consumer problem is an example that illustrates the need for synchronization.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Producers and consumers share a buffer, so they must coordinate when the buffer is full or empty. That is synchronization.",
+    },
+    {
+      id: "f-semaphore-busy-wait",
+      prompt: "(Final 2020, Q1 item 17) Semaphore is a synchronization tool that requires busy waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A semaphore blocks waiting processes instead of spinning on the CPU, which is its main advantage.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q5) Explain the problems of using semaphores as a synchronization tool. Describe how the Dining Philosophers problem is solved using semaphores.**
+
+**Problems with semaphores:**
+
+- **Wrong use:** `signal(mutex) ... wait(mutex)`, `wait(mutex) ... wait(mutex)`, or leaving out a `wait` or a `signal` (or both).
+- **Deadlock:** two or more processes wait forever for events only the waiting processes can cause. For example, P0 does `wait(S); wait(Q)` while P1 does `wait(Q); wait(S)`.
+- **Starvation:** a process can be blocked on the semaphore's queue forever.
+- **Priority inversion:** a low-priority process holds a lock that a high-priority process needs.
+
+**Dining philosophers:** five philosophers share five chopsticks, each represented by a semaphore `chopstick[i] = 1`. Philosopher *i* does `wait(chopstick[i])`, then `wait(chopstick[(i+1) % 5])`, eats, and signals both. This solution can **deadlock**: if all five pick up their left chopstick at once, each waits for the right one forever. The printed key gives only the basic solution; the deadlock risk is our note.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q5) Semaphores are a synchronization tool that does not require busy waiting. What are the different types of semaphore usage? Show using code the definition of a semaphore and its standard operations. Explain the problems of using semaphores.**
+
+A **counting** semaphore can take any value; a **binary** semaphore takes only 0 or 1.
+
+```c
+typedef struct { int value; struct process *list; } semaphore;
+
+wait(semaphore S)   { S.value--; if (S.value < 0) { add this process to S.list; block(); } }
+signal(semaphore S) { S.value++; if (S.value <= 0) { remove a process P from S.list; wakeup(P); } }
+```
+
+The problems are the same as in the spring final above: wrong use of `wait` and `signal`, deadlock, starvation and priority inversion.
+</ModelAnswer>

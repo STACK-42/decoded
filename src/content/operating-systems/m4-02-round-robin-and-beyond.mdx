@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CpuScheduler, QuantumSwitches, MlfqDemo, LittlesLaw, SchedulerSimulation } from "@/components/mdx/OsVisualizers";
 
 # Round Robin, Multilevel Queues and Choosing a Scheduler
@@ -238,3 +238,199 @@ The **most flexible** schedulers can be **altered by system managers** and tuned
     If a website gets 200 requests a second and each takes 0.05 s, about 10 are in flight at any moment. That tells you how many workers you need.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "m-rr-nonpreemptive",
+      prompt: "(Midterm 2014, Q1 item 11) Round robin scheduling is a nonpreemptive scheduling algorithm.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Round robin is preemptive: when a process uses up its time quantum, the OS takes the CPU away and gives it to the next process. The 2014 key marks it false.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2014, Q4) Assume the following set of processes in the ready queue with their arrival and burst time: P1 arrives at 0 with burst 8; P2 at 2 with burst 2; P3 at 3 with burst 5; P4 at 5 with burst 1. Draw a Gantt chart and calculate the turnaround time of each process and the average, assuming a context-switch overhead of 1 unit of time, for (I) Round robin with quantum q = 2, and (II) Nonpreemptive SJF. Assume no context-switch overhead for the first process.**
+
+Turnaround time is the finish time minus the arrival time. Each switch between two different processes costs 1 unit, and the first process starts with no overhead.
+
+**(I) Round robin, q = 2.** Queue order follows arrival, and a preempted process goes to the back.
+
+| Time | 0–2 | 2–3 | 3–5 | 5–6 | 6–8 | 8–9 | 9–11 | 11–12 | 12–13 | 13–14 | 14–16 | 16–17 | 17–19 | 19–20 | 20–22 | 22–23 | 23–24 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Runs | P1 | switch | P2 | switch | P1 | switch | P3 | switch | P4 | switch | P1 | switch | P3 | switch | P1 | switch | P3 |
+
+Finish times: P1 22, P2 5, P3 24, P4 13. Turnaround: **P1 = 22, P2 = 3, P3 = 21, P4 = 8. Average = 54 / 4 = 13.5.**
+
+**(II) Nonpreemptive SJF.** At time 8, P4 (burst 1) is the shortest ready process.
+
+| Time | 0–8 | 8–9 | 9–10 | 10–11 | 11–13 | 13–14 | 14–19 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Runs | P1 | switch | P4 | switch | P2 | switch | P3 |
+
+Finish times: P1 8, P4 10, P2 13, P3 19. Turnaround: **P1 = 8, P2 = 11, P3 = 16, P4 = 5. Average = 40 / 4 = 10.0.**
+
+**Checking the printed key.** The key's average for round robin (13.5) matches ours, but its per-process values do not: it gives P1 25, P2 4, P3 19, P4 6, and its Gantt chart ends at 25. The key's SJF values are each one unit too high, because it charges the switch away from P1, which has already finished. It gives an average of 11, but the rules in the question give 10.0.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2023-21",
+      prompt: "(Final 2023, Q1 item 21) FCFS CPU scheduling is the same as RR with infinite quantum.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "With an infinite quantum, no process is ever preempted, so round robin behaves like FCFS. (Our answer.)",
+    },
+    {
+      id: "f2023-22",
+      prompt: "(Final 2023, Q1 item 22) Multilevel queue CPU scheduling algorithm cannot suffer from starvation.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Low-priority queues can wait forever while higher queues keep work. Starvation is a risk. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-44",
+      prompt: "(Final 2023, MCQ item 44) What is one reason to use a multilevel queue over a single queue for CPU scheduling?",
+      options: [{ id: "a", text: "It allows processes to be grouped by priority, memory size, or other attributes" }, { id: "b", text: "It allows processes to move between queues based on their changing characteristics" }, { id: "c", text: "It allows processes to have different time quanta for round-robin scheduling" }, { id: "d", text: "It allows different scheduling algorithms to be used for different queues" }],
+      correctOptionId: "a",
+      explanation: "Grouping processes into queues by attributes is the point of a multilevel queue. Moving between queues is the multilevel feedback queue. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-45",
+      prompt: "(Final 2023, MCQ item 45) What is one challenge of scheduling processes in a multiprocessor system?",
+      options: [{ id: "a", text: "Load balancing" }, { id: "b", text: "Processor affinity" }, { id: "c", text: "Cache coherence" }, { id: "d", text: "Synchronization" }],
+      correctOptionId: "a",
+      explanation: "Keeping every processor busy with an even share of work is the main challenge. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-46",
+      prompt: "(Final 2020, MCQ item 46) With round robin scheduling algorithm in a time shared system",
+      options: [{ id: "a", text: "using very large time slices converts it into First come First served scheduling algorithm" }, { id: "b", text: "using very small time slices converts it into First come First served scheduling algorithm" }, { id: "c", text: "using extremely small time slices increases performance" }, { id: "d", text: "using very small time slices converts it into Shortest Job First algorithm" }],
+      correctOptionId: "a",
+      explanation: "Very large slices make round robin behave like FCFS. The other options are wrong. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2020, MCQ items 63 to 66) Round robin with quantum 2 for P1 (arrival 0, burst 6), P2 (arrival 2, burst 8), P3 (arrival 5, burst 7) and P4 (arrival 7, burst 3).** *(Not answered: none of the printed options matches our schedule.)*
+
+Our schedule gives waiting times P1 6, P2 11, P3 12 and P4 9 (average 9.5), and turnaround times P1 12, P2 19, P3 19 and P4 12 (average 15.5). Item 63 (P1 waiting) lists 9, 13, 15 and 21. Item 64 (P2 turnaround) lists 13, 15, 21 and 23. Item 65 (P4 waiting) lists 2, 3, 5 and 12. Item 66 (average turnaround) lists 7, 9, 15 and 25. The closest option is 15 for item 66, but that does not match our 15.5.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-4",
+      prompt: "(Final 2024, MCQ item 4) What scheduling algorithm is used in a time-sharing system?",
+      options: [{ id: "a", text: "Priority scheduling" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "SJF" }],
+      correctOptionId: "b",
+      explanation: "Round robin gives each user's process a fixed slice in turn. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-7",
+      prompt: "(Final 2024, MCQ item 7) In the Round Robin algorithm, what happens if the time quantum is too large?",
+      options: [{ id: "a", text: "It behaves like SJF" }, { id: "b", text: "It behaves like FCFS" }, { id: "c", text: "Processes experience starvation" }, { id: "d", text: "CPU utilization decreases" }],
+      correctOptionId: "b",
+      explanation: "With a very large quantum no process is preempted, so the schedule is FCFS. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-8",
+      prompt: "(Final 2024, MCQ item 8) Which scheduling algorithm minimizes the response time for interactive users?",
+      options: [{ id: "a", text: "SJF" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "Priority Scheduling" }],
+      correctOptionId: "b",
+      explanation: "Round robin gives every process a quick turn, so interactive users see fast responses. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2024, Question two, 1) Briefly describe the different evaluation methods for selecting a CPU scheduling algorithm, with the advantages and disadvantages of each.**
+
+- **Deterministic (analytic) modeling:** run the algorithm on one fixed workload and compute the exact values. Advantage: exact and quick. Disadvantage: the answer only holds for that workload.
+- **Queueing models:** describe arrivals and service with probability distributions and solve the model mathematically. Advantage: general results. Disadvantage: the assumptions must be simplified to make the maths work.
+- **Simulation:** run a model of the system on a trace or random workload. Advantage: realistic and flexible. Disadvantage: slow and costly to build.
+- **Implementation:** build the algorithm into a real OS and measure it. Advantage: the most accurate. Disadvantage: expensive, and users may behave differently in practice.
+</ModelAnswer>
+
+
+<ModelAnswer>
+**(Final 2018, Q1 item 13) The ___ scheduling algorithm allows a process to move between queues.**
+
+**Multilevel feedback queue** (the answer is written in on the printed 2018 paper: 'feedback').
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f-quantum-expiry",
+      prompt: "(Final 2019 spring, Q1 item 8) One of the reasons to transfer the process from CPU is the expiration of a quantum of CPU time allocated to that process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When a quantum runs out, round robin preempts the process and moves it to the back of the queue.",
+    },
+    {
+      id: "f-small-quantum-efficiency",
+      prompt: "(Final 2019 spring, Q1 item 13) The decrease of time quantum in RR algorithm increases the system efficiency.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A smaller quantum means more context switches, and each switch is overhead. Efficiency goes down, though response time improves.",
+    },
+    {
+      id: "f-mlfq-moves",
+      prompt: "(Final 2019 fall, Q1 item 10) The multilevel feedback queue scheduling algorithm allows a process to move between queues.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Moving between queues is the feature that makes it a feedback queue: a process that uses a lot of CPU is moved down.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2016, Q5) What advantage is there in having different time-quantum sizes at different levels of a multilevel queuing system?**
+
+Interactive, I/O-bound processes need quick turns, so the top queue gets a short quantum: they start fast and leave the CPU soon. CPU-bound processes gain little from frequent switches, so the lower queues get longer quanta, which means fewer context switches and less overhead for them. The levels balance response time against overhead.
+</ModelAnswer>
+
+*The 2019 spring Q6 round-robin row and its other rows are in the scheduling answer above. The 2016 final's scheduling question is the same as the 2014 midterm's Q4 (see that answer).*

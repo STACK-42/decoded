@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CpuScheduler, BurstPrediction } from "@/components/mdx/OsVisualizers";
 
 # CPU Scheduling: FCFS, SJF and Priority
@@ -209,3 +209,346 @@ Draw the Gantt chart **first**, then read every process's completion time off it
     Schedulers learn that your text editor uses short CPU bursts and favour it, so a keystroke shows up instantly even while a big compile runs.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, not the exam's.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "m-fcfs-starvation",
+      prompt: "(Midterm 2014, Q1 item 12) A major problem with FCFS scheduling algorithm is starvation.",
+      options: [
+        { id: "t", text: "True" },
+        { id: "f", text: "False" },
+      ],
+      correctOptionId: "f",
+      explanation: "FCFS is fair in order: every process runs in arrival order, so none waits forever. Its real problem is the convoy effect, where one long job at the front makes short jobs behind it wait.",
+    },
+    {
+      id: "m-cpu-bound-first",
+      prompt: "(Midterm 2018, Q1 item 6) It is important that the CPU scheduler select CPU-bound processes more than I/O-bound processes.",
+      options: [
+        { id: "t", text: "True" },
+        { id: "f", text: "False" },
+      ],
+      correctOptionId: "f",
+      explanation: "The scheduler should not favour either kind. A good mix of CPU-bound and I/O-bound processes keeps both the CPU and the devices busy.",
+    },
+  ]}
+/>
+
+**Midterm 2018 second version, Q1 item 9:** the same statement, "It is important that the CPU scheduler select CPU-bound processes more than I/O-bound processes," is marked false in the first version and appears again here. The answer above applies to both.
+
+<ModelAnswer>
+**(Midterm 2015, Q4) How do I/O-bound and CPU-bound processes differ? Which of them is better for efficient machine utilization? Why?**
+
+An **I/O-bound** process spends most of its time waiting for input or output, so it has many short CPU bursts. A **CPU-bound** process spends most of its time computing, so it has long CPU bursts and makes few I/O requests.
+
+Neither type alone is best. If every process is I/O-bound, the ready queue is almost always empty, so the CPU sits idle and the scheduler has little to do. If every process is CPU-bound, the devices sit idle while the processes queue for the CPU. A **mix of both** keeps the CPU and the devices working at the same time, so a mix gives the best utilization.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "m-2019sv-schedulers",
+      prompt: "(Midterm 2019 second version, Q2 item 1) CPU scheduler is a short-term scheduler that is invoked frequently while Job scheduler is a long-term one that is invoked infrequently.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The CPU (short-term) scheduler runs very often, every time the CPU needs a new process. The job (long-term) scheduler runs rarely. The 2019 second-version key marks it true.",
+    },
+    {
+      id: "m-2021-short-term",
+      prompt: "(Midterm 2021, Q1 item 13) What is a short-term scheduler? a) It selects which process has to be brought into the ready queue; b) It selects which process has to be executed next and allocates CPU; c) It selects which process to remove from memory by swapping; d) None of the mentioned.",
+      options: [{ id: "a", text: "It selects which process has to be brought into the ready queue" }, { id: "b", text: "It selects which process has to be executed next and allocates CPU" }, { id: "c", text: "It selects which process to remove from memory by swapping" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "The short-term scheduler picks the next ready process and gives it the CPU. Bringing processes in is the long-term scheduler's job. (Our answer; the paper prints no answer letters.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-20",
+      prompt: "(Final 2023, Q1 item 20) SJF is the optimal CPU scheduling algorithm for minimizing the average waiting time.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "For a given set of processes, SJF gives the minimum average waiting time. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-42",
+      prompt: "(Final 2023, MCQ item 42) What is the main objective of CPU scheduling?",
+      options: [{ id: "a", text: "To minimize CPU utilization" }, { id: "b", text: "To maximize turnaround time" }, { id: "c", text: "To balance the load among different processes" }, { id: "d", text: "To allocate CPU time according to some criteria" }],
+      correctOptionId: "d",
+      explanation: "The scheduler chooses which process gets the CPU, according to criteria such as waiting time and fairness. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-43",
+      prompt: "(Final 2023, MCQ item 43) What is the disadvantage of using the first-come, first-served (FCFS) scheduling algorithm?",
+      options: [{ id: "a", text: "It may cause starvation, where low-priority processes never get the CPU" }, { id: "b", text: "It may cause the convoy effect, where short processes wait behind long processes" }, { id: "c", text: "It may cause thrashing, where processes switch between ready and waiting states frequently" }, { id: "d", text: "All of the above" }],
+      correctOptionId: "b",
+      explanation: "FCFS causes the convoy effect. Starvation is not an FCFS problem, and thrashing is a memory problem. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-46",
+      prompt: "(Final 2023, MCQ item 46) What is the difference between preemptive and non-preemptive scheduling?",
+      options: [{ id: "a", text: "Preemptive scheduling allows a process to be interrupted by the scheduler, while non-preemptive scheduling does not" }, { id: "b", text: "Preemptive scheduling requires a timer interrupt, while non-preemptive scheduling does not" }, { id: "c", text: "Preemptive scheduling is more responsive, while non-preemptive scheduling is more predictable" }, { id: "d", text: "All of the above" }],
+      correctOptionId: "d",
+      explanation: "The first statement gives the definition. The other two describe what usually follows from it. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-29",
+      prompt: "(Final 2020, MCQ item 29) If all process CPU bound, the ready queue will almost always be ___ and the short term Scheduler will have a ___ to do",
+      options: [{ id: "a", text: "full, little" }, { id: "b", text: "full, lot" }, { id: "c", text: "empty, little" }, { id: "d", text: "empty, lot" }],
+      correctOptionId: "c",
+      explanation: "If every process is CPU-bound, the devices sit idle, the ready queue is nearly empty, and the short-term scheduler has little to do. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-42",
+      prompt: "(Final 2020, MCQ item 42) An I/O bound program will typically have",
+      options: [{ id: "a", text: "a few very short CPU bursts" }, { id: "b", text: "Many very short I/O bursts" }, { id: "c", text: "Many very short CPU bursts" }, { id: "d", text: "a few very short I/O bursts" }],
+      correctOptionId: "b",
+      explanation: "An I/O-bound program spends most of its time waiting on I/O, so it has many short I/O bursts. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-43",
+      prompt: "(Final 2020, MCQ item 43) In the following cases preemptive scheduling occurs?",
+      options: [{ id: "a", text: "When a process switches from the running state to the ready state" }, { id: "b", text: "When a process goes from the running state to the waiting state" }, { id: "c", text: "When a process switches from the waiting state to the ready state" }, { id: "d", text: "All of the mentioned" }],
+      correctOptionId: "d",
+      explanation: "Each of the three cases can cause the scheduler to take the CPU away. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-45",
+      prompt: "(Final 2020, MCQ item 45) What is Response time?",
+      options: [{ id: "a", text: "the total time taken from the submission time till the completion time" }, { id: "b", text: "the total time taken from the submission time till the first response is produced" }, { id: "c", text: "the total time taken from submission time till the response is output" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "Response time is the time to the first response, not to completion. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-47",
+      prompt: "(Final 2020, MCQ item 47) The strategy of making processes that are logically runnable to be temporarily suspended is called",
+      options: [{ id: "a", text: "Non preemptive scheduling" }, { id: "b", text: "Preemptive scheduling" }, { id: "c", text: "Shortest job first" }, { id: "d", text: "First come First served" }],
+      correctOptionId: "b",
+      explanation: "Preemptive scheduling temporarily suspends a runnable process. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-48",
+      prompt: "(Final 2020, MCQ item 48) An SJF algorithm is simply a priority algorithm where the priority is",
+      options: [{ id: "a", text: "the predicted next CPU burst" }, { id: "b", text: "the inverse of the predicted next CPU burst" }, { id: "c", text: "the current CPU burst" }, { id: "d", text: "anything the user want" }],
+      correctOptionId: "b",
+      explanation: "Shorter predicted bursts get higher priority, so the priority is the inverse of the burst. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-49",
+      prompt: "(Final 2020, MCQ item 49) A solution to the problem of indefinite blockage of low-priority processes is",
+      options: [{ id: "a", text: "Starvation" }, { id: "b", text: "Wait queue" }, { id: "c", text: "Ready queue" }, { id: "d", text: "Aging" }],
+      correctOptionId: "d",
+      explanation: "Aging raises a waiting process's priority over time, so it eventually runs. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-50",
+      prompt: "(Final 2020, MCQ item 50) Which of the following scheduling algorithms gives minimum average waiting time?",
+      options: [{ id: "a", text: "FCFS" }, { id: "b", text: "SJF" }, { id: "c", text: "Round robin" }, { id: "d", text: "Priority" }],
+      correctOptionId: "b",
+      explanation: "SJF gives the minimum average waiting time. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-1",
+      prompt: "(Final 2024, MCQ item 1) What is the main objective of CPU scheduling?",
+      options: [{ id: "a", text: "Minimize throughput" }, { id: "b", text: "Minimize waiting time" }, { id: "c", text: "Maximize CPU utilization" }, { id: "d", text: "Maximize turnaround time" }],
+      correctOptionId: "c",
+      explanation: "The scheduler keeps the CPU busy, which is the usual main objective. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-2",
+      prompt: "(Final 2024, MCQ item 2) Which CPU scheduling algorithm can result in a convoy effect?",
+      options: [{ id: "a", text: "SJF" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "Priority Scheduling" }],
+      correctOptionId: "c",
+      explanation: "A long job at the front of an FCFS queue makes short jobs wait. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-3",
+      prompt: "(Final 2024, MCQ item 3) What is the key advantage of the Shortest Job First (SJF) algorithm?",
+      options: [{ id: "a", text: "Simplifies process execution" }, { id: "b", text: "Minimizes average waiting time" }, { id: "c", text: "Ensures equal priority for all processes" }, { id: "d", text: "Improves throughput for longer processes" }],
+      correctOptionId: "b",
+      explanation: "SJF gives the minimum average waiting time for a set of processes. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-6",
+      prompt: "(Final 2024, MCQ item 6) In Priority Scheduling, what solution is used to prevent starvation?",
+      options: [{ id: "a", text: "Round Robin scheduling" }, { id: "b", text: "Aging" }, { id: "c", text: "Increasing time quantum" }, { id: "d", text: "None of the above" }],
+      correctOptionId: "b",
+      explanation: "Aging raises the priority of a waiting process over time. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-45",
+      prompt: "(Final 2024, MCQ item 45) If all processes are I/O bound, the ready queue will almost always be ___ and the short-term scheduler will have a ___ to do.",
+      options: [{ id: "a", text: "full, little" }, { id: "b", text: "full, lot" }, { id: "c", text: "empty, little" }, { id: "d", text: "empty, lot" }],
+      correctOptionId: "c",
+      explanation: "If every process is I/O-bound, the ready queue is nearly empty and the scheduler has little to do. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2018, Q1 items 9 and 11) 9. The ___ time must be short in time-sharing systems. 11. A major problem with FCFS scheduling algorithms is ___.**
+
+9. **response** time. 11. the **convoy effect**. Both answers are written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f-throughput-definition",
+      prompt: "(Final 2019 spring, Q1 item 11) Throughput is the time needed by the process to interact with the computers system user.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Throughput is the number of processes completed per unit of time. The time needed to interact with the user describes response time.",
+    },
+    {
+      id: "f-preemptive-definition",
+      prompt: "(Final 2019 spring, Q1 item 12) Preemptive scheduling allows a process to be interrupted in the midst of its execution, taking the CPU away and allocating it to another process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is exactly what preemption means.",
+    },
+    {
+      id: "f-srtf-convoy",
+      prompt: "(Final 2019 fall, Q1 item 9) A major problem with SRTF scheduling algorithms is convoy effect.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The convoy effect belongs to FCFS, where one long job holds up many short ones. SRTF's problem is starvation of long jobs.",
+    },
+    {
+      id: "f-sjf-optimal",
+      prompt: "(Final 2020, Q1 item 15) SJF is the optimal scheduling technique because it gives the minimum average waiting time for any gives set of processes.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "For a given set of processes, SJF gives the minimum average waiting time (non-preemptive SJF is optimal for the same reason).",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q6) Fill in the waiting and turnaround times for each process under FCFS, non-preemptive SJF, preemptive SJF and RR (q = 2).** Arrivals and bursts: P1 (arrives 4, burst 3), P2 (1, 4), P3 (3, 9), P4 (2, 9), P5 (0, 7).
+
+| Policy | P1 wait/turn | P2 | P3 | P4 | P5 | Average wait / turn |
+| --- | --- | --- | --- | --- | --- | --- |
+| FCFS | 25 / 28 | 6 / 10 | 17 / 26 | 9 / 18 | 0 / 7 | 11.4 / 17.8 |
+| Non-preemptive SJF | 3 / 6 | 9 / 13 | 20 / 29 | 12 / 21 | 0 / 7 | 8.8 / 15.2 |
+| Preemptive SJF | 1 / 4 | 0 / 4 | 20 / 29 | 12 / 21 | 7 / 14 | 8.0 / 14.4 |
+| RR, q = 2 | 14 / 17 | 9 / 13 | 20 / 29 | 20 / 29 | 17 / 24 | 16.0 / 22.4 |
+
+We rechecked every row by hand, and RR with a script. All four match the printed key.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q6) Five processes arrive at time 0 in the order P3, P5, P1, P4, P2 with bursts P1 = 2, P2 = 1, P3 = 8, P4 = 4, P5 = 5 and priorities P1 = 2, P2 = 1, P3 = 4, P4 = 2, P5 = 3 (a smaller number means a higher priority). Draw the Gantt charts, and give the turnaround and waiting times and the minimum-average-waiting algorithm.**
+
+- **FCFS:** P3 0–8, P5 8–13, P1 13–15, P4 15–19, P2 19–20. Turnaround 8, 13, 15, 19, 20 (average 15). Waiting 0, 8, 13, 15, 19 (average 11).
+- **SJF:** P2 0–1, P1 1–3, P4 3–7, P5 7–12, P3 12–20. Turnaround 1, 3, 7, 12, 20 (average 8.6). Waiting 0, 1, 3, 7, 12 (average 4.6).
+- **Priority:** the same order as SJF here (P2, P1, P4, P5, P3), so the same numbers.
+- **RR, q = 2:** P3 0–2, P5 2–4, P1 4–6, P4 6–8, P2 8–9, P3 9–11, P5 11–13, P4 13–15, P3 15–17, P5 17–18, P3 18–20. Turnaround: P1 6, P2 9, P3 20, P4 15, P5 18 (average 13.6). Waiting: 4, 8, 12, 11, 13 (average 9.6).
+
+**Minimum average waiting time:** SJF, and priority (which gives the same order here), with 4.6.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-fcfs-wait",
+      prompt: "(Final 2023, MCQ item 61) Processes: P1 (arrival 0, burst 5, priority 2), P2 (1, 3, 1), P3 (2, 8, 4), P4 (3, 6, 3). What is the average waiting time under FCFS? a. 5.75; b. 6.75; c. 7.25; d. 8.25",
+      options: [{ id: "a", text: "5.75" }, { id: "b", text: "6.75" }, { id: "c", text: "7.25" }, { id: "d", text: "8.25" }],
+      correctOptionId: "a",
+      explanation: "FCFS runs P1 0–5, P2 5–8, P3 8–16, P4 16–22. Waits are 0, 4, 6, 13: average 23 / 4 = 5.75. (Our answer.)",
+    },
+    {
+      id: "f2023-srtf-wait",
+      prompt: "(Final 2023, MCQ item 62) Same processes. What is the average waiting time under preemptive SJF? a. 3; b. 4; c. 5; d. 6",
+      options: [{ id: "a", text: "3" }, { id: "b", text: "4" }, { id: "c", text: "5" }, { id: "d", text: "6" }],
+      correctOptionId: "c",
+      explanation: "Preemptive SJF runs P1 0–1, P2 1–4, P1 4–8, P4 8–14, P3 14–22... Waits are P1 3, P2 0, P3 12, P4 5: average 20 / 4 = 5. (Our answer.)",
+    },
+    {
+      id: "f2023-np-priority-wait",
+      prompt: "(Final 2023, MCQ item 64) Same processes, nonpreemptive priority (a lower value means a higher priority). What is the average waiting time? a. 5.25; b. 6.75; c. 7.5; d. 8.25",
+      options: [{ id: "a", text: "5.25" }, { id: "b", text: "6.75" }, { id: "c", text: "7.5" }, { id: "d", text: "8.25" }],
+      correctOptionId: "a",
+      explanation: "P1 runs 0–5. Then P2 (priority 1) runs 5–8, P4 (priority 3) runs 8–14, and P3 (priority 4) runs 14–22. Waits are 0, 4, 5, 12: average 21 / 4 = 5.25. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2023, MCQ item 63) Round robin with a time quantum of 2, for the same four processes.** The printed options are 5.25, 6.75, 8.25 and 10.25, and none of them is the average waiting time we get: **9.75** (waits P1 9, P2 7, P3 12, P4 11). We checked this against the page image, which shows quantum 2. This item has no correct option on the printed paper, so it is not answered here.
+</ModelAnswer>

@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { BoundedBuffer, MessageBuffering, PipeDemo } from "@/components/mdx/OsVisualizers";
 
 # Interprocess Communication
@@ -268,3 +268,266 @@ An ordinary pipe is a **bounded buffer inside the kernel**, the same producer-co
     Big apps are split into services that call each other with RPC frameworks like gRPC, using stubs that marshal parameters just as described.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given. For the 2021 multiple-choice questions the paper prints no answer letters, so the answers below are ours.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "m-comm-link",
+      prompt: "(Midterm 2017, Q1 item 9) If any two processes want to communicate with each other, a communication link must exist between them.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Two processes can't exchange messages unless some link exists between them, whether a direct link or one through a mailbox. The 2017 key marks it true.",
+    },
+    {
+      id: "m-direct-mailbox",
+      prompt: "(Midterm 2019, Q1 item 5) With direct communication, the messages are sent to and received from mailboxes, or ports.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Mailboxes and ports belong to indirect communication. Direct communication names the other process itself, with no mailbox in between.",
+    },
+    {
+      id: "m-rendezvous",
+      prompt: "(Midterm 2019 second version, Q2 item 4) In message passing, if both sender and receiver are synchronous, this is called rendezvous.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When both sides wait for each other, the send and the receive happen together, which is called a rendezvous.",
+    },
+    {
+      id: "m-named-pipe",
+      prompt: "(Midterm 2019 second version, Q2 item 5) Named pipes must be accessed through a parent-child relationship.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Named pipes can be used by unrelated processes. The parent-child requirement applies to ordinary (unnamed) pipes. The printed key says the same.",
+    },
+    {
+      id: "m-2021-blocking",
+      prompt: "(Midterm 2021, Q1 item 9) A blocking send() and blocking receive() is known as a(n): a. synchronized message; b. rendezvous; c. blocked message; d. asynchronous message.",
+      options: [
+        { id: "a", text: "synchronized message" },
+        { id: "b", text: "rendezvous" },
+        { id: "c", text: "blocked message" },
+        { id: "d", text: "asynchronous message" },
+      ],
+      correctOptionId: "b",
+      explanation: "Both sides block until the message is passed, so they meet at the same point. That meeting is a rendezvous.",
+    },
+    {
+      id: "m-2021-indirect",
+      prompt: "(Midterm 2021, Q1 item 10) In indirect communication between processes P and Q _____: a. there is another process R to handle and pass on the messages between P and Q; b. there is another machine between the two processes to help communication; c. there is a mailbox to help communication between P and Q; d. none of the mentioned.",
+      options: [
+        { id: "a", text: "there is another process R to handle and pass on the messages between P and Q" },
+        { id: "b", text: "there is another machine between the two processes to help communication" },
+        { id: "c", text: "there is a mailbox to help communication between P and Q" },
+        { id: "d", text: "none of the mentioned" },
+      ],
+      correctOptionId: "c",
+      explanation: "Indirect communication goes through a mailbox (or port). The processes don't name each other directly.",
+    },
+    {
+      id: "m-2021-direct",
+      prompt: "(Midterm 2021, Q1 item 14) Which of the following are TRUE for direct communication? a. A communication link can be associated with N number of processes; b. A communication link is associated with exactly two processes; c. Exactly N/2 links exist between each pair of processes; d. Exactly two links exist between each pair of processes.",
+      options: [
+        { id: "a", text: "A communication link can be associated with N number of processes" },
+        { id: "b", text: "A communication link is associated with exactly two processes" },
+        { id: "c", text: "Exactly N/2 links exist between each pair of processes" },
+        { id: "d", text: "Exactly two links exist between each pair of processes" },
+      ],
+      correctOptionId: "b",
+      explanation: "In direct communication each link joins exactly two processes, and exactly one link exists between each pair. So only b is true.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2022, Q4) Briefly explain the fundamental models of interprocess communication and the difference between direct and indirect communication.**
+
+There are two fundamental models:
+
+- **Shared memory:** the processes share a region of memory and read and write it. They must synchronize their access to it themselves.
+- **Message passing:** the processes send and receive messages through the OS. They don't share data directly, which makes it easier to use across machines.
+
+**Direct** communication names the other process: `send(P, message)` and `receive(Q, message)`. Each link joins exactly two processes.
+
+**Indirect** communication sends messages to a mailbox (or port). The processes don't need to know each other, and several processes can share one mailbox.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "m-2014-direct-link",
+      prompt: "(Midterm 2014, Q1 item 8) In case of direct communication, a link is established only if processes share a common mailbox.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "With direct communication the link forms between two processes that name each other. No mailbox is involved, so the statement is false. The 2014 key marks it false.",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2023-28",
+      prompt: "(Final 2023, Q1 item 28) With direct inter-process communication, the messages are sent to and received from mailboxes, or ports.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Mailboxes and ports belong to indirect communication. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-38",
+      prompt: "(Final 2023, MCQ item 38) What are the two models of interprocess communication (IPC)?",
+      options: [{ id: "a", text: "Shared memory and message passing" }, { id: "b", text: "Message queue and pipe" }, { id: "c", text: "Semaphore and mutex" }, { id: "d", text: "Signal and socket" }],
+      correctOptionId: "a",
+      explanation: "The two basic IPC models are shared memory and message passing. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-59",
+      prompt: "(Final 2023, MCQ item 59) In the zero capacity queue ___",
+      options: [{ id: "a", text: "the queue can store at least one message" }, { id: "b", text: "the sender blocks until the receiver receives the message" }, { id: "c", text: "the sender keeps sending and the messages don't wait in the queue" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "A zero-capacity queue holds no messages, so the sender must wait until the receiver takes the message. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-33",
+      prompt: "(Final 2020, MCQ item 33) Which of the following two operations are provided by the IPC facility?",
+      options: [{ id: "a", text: "write & delete message" }, { id: "b", text: "delete & receive message" }, { id: "c", text: "send & delete message" }, { id: "d", text: "receive & send message" }],
+      correctOptionId: "d",
+      explanation: "The IPC facility provides send and receive. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-34",
+      prompt: "(Final 2020, MCQ item 34) Which of the following are TRUE for direct communication?",
+      options: [{ id: "a", text: "A communication link can be associated with any number of processes" }, { id: "b", text: "A communication link can be associated with exactly two processes" }, { id: "c", text: "Multiple communication links exist between each pair of processes" }, { id: "d", text: "Exactly two communication links exist between each pair of processes" }],
+      correctOptionId: "b",
+      explanation: "In direct communication each link joins exactly two processes, and one link exists per pair. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-35",
+      prompt: "(Final 2020, MCQ item 35) The zero capacity queue",
+      options: [{ id: "a", text: "is referred to as a message system with buffering" }, { id: "b", text: "is referred to as a message system with no buffering" }, { id: "c", text: "is referred to as a link" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "A zero-capacity queue is a message system with no buffering. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-36",
+      prompt: "(Final 2020, MCQ item 36) Remote Procedure Calls are used",
+      options: [{ id: "a", text: "For communication between two processes remotely different from each other on same system" }, { id: "b", text: "For communication between two processes on the same systems" }, { id: "c", text: "For communication between two processes on separate systems" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "RPC lets a process call a procedure on another system. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-37",
+      prompt: "(Final 2020, MCQ item 37) What is the full form of RMI?",
+      options: [{ id: "a", text: "Remote Memory installation" }, { id: "b", text: "Remote Memory invocation" }, { id: "c", text: "Remote Method installation" }, { id: "d", text: "Remote Method invocation" }],
+      correctOptionId: "d",
+      explanation: "RMI stands for Remote Method Invocation. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-49",
+      prompt: "(Final 2024, MCQ item 49) Which of the following two operations are provided by the IPC facility?",
+      options: [{ id: "a", text: "write & send a message" }, { id: "b", text: "send & receive a message" }, { id: "c", text: "send & read a message" }, { id: "d", text: "receive & read a message" }],
+      correctOptionId: "b",
+      explanation: "The IPC facility provides send and receive. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-50",
+      prompt: "(Final 2024, MCQ item 50) In indirect communication between processes P and Q",
+      options: [{ id: "a", text: "there is another process R to pass the messages between P and Q" }, { id: "b", text: "there is another machine between the two processes to help communication" }, { id: "c", text: "there is a mailbox to help communication between P and Q" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "Indirect communication goes through a mailbox. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-51",
+      prompt: "(Final 2024, MCQ item 51) In the zero capacity queue",
+      options: [{ id: "a", text: "the queue can store at least one message" }, { id: "b", text: "the sender blocks until the receiver receives the message" }, { id: "c", text: "the sender keeps sending and the messages don't wait in the queue" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "With no buffer the sender waits for the receiver. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-52",
+      prompt: "(Final 2024, MCQ item 52) What is a client-side stub?",
+      options: [{ id: "a", text: "transmits the message to the server-side stub to invoke a remote procedure" }, { id: "b", text: "packs the parameters into a form transmittable over the network" }, { id: "c", text: "locates the port on the server" }, { id: "d", text: "all the mentioned" }],
+      correctOptionId: "d",
+      explanation: "A client stub does all three jobs: it packs parameters, finds the server port, and sends the message. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-53",
+      prompt: "(Final 2024, MCQ item 53) What is the full form of RMI?",
+      options: [{ id: "a", text: "Remote Memory Installation" }, { id: "b", text: "Remote Memory Invocation" }, { id: "c", text: "Remote Method Invocation" }, { id: "d", text: "Remote Method Installation" }],
+      correctOptionId: "c",
+      explanation: "RMI stands for Remote Method Invocation. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2018, Q1 item 8) ___ and message passing are two basic models for interprocess communication (IPC).**
+
+**Shared memory**. The answer is written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f-cooperating-children",
+      prompt: "(Final 2019 fall, Q1 item 8) A process is a cooperating process if it has a set of child processes.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A cooperating process is one that can affect, or be affected by, other processes, usually by sharing data or messages. Having children is not the test.",
+    },
+  ]}
+/>
+
+*The 2020 final's multiple-choice questions 33 to 37 cover the IPC facility, direct communication, the zero-capacity queue, RPC and RMI. Those are placed here in a later pass.*

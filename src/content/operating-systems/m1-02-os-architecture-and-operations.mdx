@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MultiprogrammingDemo, DualModeSwitch, TimerInterrupt } from "@/components/mdx/OsVisualizers";
 
 # Inside the OS: Architecture, Operations and Environments
@@ -254,3 +254,286 @@ A **real-time OS** has **well-defined, fixed time constraints**. Processing **mu
     The cloud is the same OS ideas, scaled up: virtual machines, load balancers and storage rented as a service.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "m-multiprocessor",
+      prompt: "(Midterm 2014, Q1 item 2) Multiprocessor systems have two or more processors in close communication, sharing the computer bus with separate clock, memory, and peripheral devices.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprocessor systems share the bus, the clock, and often memory and peripherals. The statement gives each processor its own clock and memory, which describes separate computers, not one multiprocessor system. The 2014 answer key marks it false.",
+    },
+    {
+      id: "m-dual-mode",
+      prompt: "(Midterm 2014, Q1 item 3; Midterm 2015, Q1 item 2) The dual mode of operation provides us with the means for protecting the operating system from errant users and errant users from one another.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Kernel mode and user mode keep user programs from touching the OS or each other's memory directly.",
+    },
+    {
+      id: "m-multiprog-util",
+      prompt: "(Midterm 2014, Q1 item 10) The objective of multiprogramming is to have some process running at all times, to minimize CPU utilization.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprogramming aims to keep the CPU busy, which means maximizing CPU utilization, not minimizing it.",
+    },
+    {
+      id: "m-multiprog-wait",
+      prompt: "(Midterm 2017, Q1 item 8) The objective of multiprogramming is to have some process running at all times, to minimize CPU waiting time.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The goal is to keep some process running at all times (maximum CPU utilization). Reducing waiting time is a side effect of that, not the stated objective, and the 2017 answer key marks this false.",
+    },
+    {
+      id: "m-privileged-user",
+      prompt: "(Midterm 2017, Q1 item 3) The hardware allows privileged instructions to be executed only in user mode.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Privileged instructions run only in kernel mode. Running them in user mode would let any program bypass the OS.",
+    },
+    {
+      id: "m-real-time",
+      prompt: "(Midterm 2017, Q1 item 4) Processing of a real-time system must be done within the predefined time constraints, or the system will fail.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A real-time system is judged by its deadlines. Missing one counts as a failure.",
+    },
+    {
+      id: "m-real-time-space",
+      prompt: "(Midterm 2018 second version, Q1 item 4; Midterm 2019, Q1 item 4) Processing of a real-time system must be done within the predefined space constraints, or the system will fail.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The constraint for a real-time system is time, not space. The version in the 2017 midterm says \"time constraints\" and is true.",
+    },
+    {
+      id: "m-virtual-machine",
+      prompt: "(Midterm 2017, Q1 item 7) The fundamental idea behind a virtual machine is to abstract the hardware of different computers into a single execution environment.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A virtual machine does the reverse: it gives each guest OS the same hardware interface on one machine. It does not merge different computers into one environment.",
+    },
+    {
+      id: "m-vm-difficult",
+      prompt: "(Midterm 2015, Q1 item 6; Midterm 2019, Q1 item 7) The virtual machine concept is difficult to implement due to the effort required to provide an exact duplicate to the underlying machine.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Building an exact copy of the hardware interface for each guest is the hard part, so the statement is true.",
+    },
+    {
+      id: "m-special-processors",
+      prompt: "(Midterm 2018, Q1 item 3; Midterm 2018 second version, Q1 item 3) Almost all single processor systems have other special-purpose processors as well.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Disk, keyboard and graphics controllers are special-purpose processors, so most single-processor systems have them too.",
+    },
+    {
+      id: "m-multicore",
+      prompt: "(Midterm 2018, Q1 item 4) Multicore can be less efficient than multiple chips with single cores because between-chip communication is faster than on-chip communication.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The reverse is true: on-chip communication is faster, which is why multicore chips are usually more efficient.",
+    },
+    {
+      id: "m-privileged-switch",
+      prompt: "(Midterm 2019, Q1 item 3) The instruction to switch to user mode is an example of a privileged instruction.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Only the kernel can switch the CPU back to user mode, so the instruction is privileged.",
+    },
+    {
+      id: "m-2022-interrupt",
+      prompt: "(Midterm 2022, Q1 item 1) An Operating system is considered an Interrupt Driven System.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The OS mostly waits for events: device completions, timers and traps. Each one interrupts the CPU to run the matching handler.",
+    },
+    {
+      id: "m-2022-mode-switch",
+      prompt: "(Midterm 2022, Q1 item 2) Switching from User mode to kernel mode is a non-privileged instruction.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Switching into kernel mode is done by a trap instruction that any program can execute, so it is not privileged. Switching back to user mode is the privileged one (see the 2019 question above).",
+    },
+    {
+      id: "m-2022-async",
+      prompt: "(Midterm 2022, Q1 item 3) In the asynchronous I/O method, the OS returns the control to the user program before the request is completed.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Asynchronous I/O returns control immediately. The program is told later, by an interrupt or a check, when the transfer is done.",
+    },
+    {
+      id: "m-2022-throughput",
+      prompt: "(Midterm 2022, Q1 item 4) Multiprocessor architecture increases the overall system throughput and decreases the system reliability.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprocessors raise throughput and also raise reliability: if one processor fails, the others keep working.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2021, Q2) What is the difference between each of the following term pairs?** (a) multiprocessors and multi-core; (b) multiprogramming and multitasking.
+
+(a) A **multiprocessor** system has several separate processors, each usually with its own chip. A **multi-core** chip puts several processing cores on one chip, sharing that chip's cache and interconnect.
+
+(b) **Multiprogramming** keeps several programs in memory at once, so the CPU can switch to another when one waits for I/O. **Multitasking** is the same idea seen from the user's side: the system switches quickly between tasks so that several appear to run together.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2015, Q2) Which of the following instructions should be privileged? Explain your answer.** (a) set the value of the timer; (b) read the clock; (c) handle a trap; (d) clear memory; (e) turn off interrupts; (f) switch from user to kernel mode.
+
+Privileged instructions can change the system's control, so only the kernel may run them. Setting the timer, handling a trap, clearing memory, turning off interrupts and switching modes are all privileged. Reading the clock only reads a value and can't harm the system, so it is **not** privileged.
+
+The 2015 key gives the same answers.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q2) How does the distinction between kernel mode and user mode function as a primary form of protection system?**
+
+The hardware has a mode bit. In kernel mode the CPU can run any instruction and touch any memory; in user mode it can't run privileged instructions or touch the OS's memory. A program that needs an OS service has to ask through a system call, which switches to kernel mode, checks the request, and returns. Programs therefore can't damage the OS or each other by accident or on purpose.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2022, Q2) Complete the following statements.** *(Our answers. The 2022 key is a scan that has not been checked yet.)*
+
+1. The one program running at all times on the computer is called the **kernel**.
+3. **Asymmetric** and **symmetric** multiprocessing are the two types of multiprocessor systems.
+4. Mapping files onto secondary storage is one of the activities of the **file-management** component of the OS.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f2023-30",
+      prompt: "(Final 2023, Q1 item 30) To prevent user programs from interfering with the proper operation of the system, the hardware has three modes: user mode, system mode, and kernel mode.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The hardware has two modes: user mode and kernel mode. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-34",
+      prompt: "(Final 2023, MCQ item 34) In a multiprogramming environment ___",
+      options: [{ id: "a", text: "the processor executes more than one process at a time" }, { id: "b", text: "the programs are developed by more than one person" }, { id: "c", text: "more than one process resides in the memory" }, { id: "d", text: "a single user can execute many programs at the same time" }],
+      correctOptionId: "c",
+      explanation: "Multiprogramming keeps several processes in memory so the CPU always has one to run. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-36",
+      prompt: "(Final 2023, MCQ item 36) What is the difference between multiprogramming and time-sharing?",
+      options: [{ id: "a", text: "Multiprogramming allows multiple processes to run concurrently on a single CPU, while time-sharing allows multiple users to share a single CPU" }, { id: "b", text: "Multiprogramming allows multiple processes to run concurrently on a single CPU by switching among them, while time-sharing allows multiple processes to share a single CPU by using a timer interrupt" }, { id: "c", text: "Multiprogramming allows multiple processes to run concurrently on multiple CPUs, while time-sharing allows multiple processes to run concurrently on a single CPU" }, { id: "d", text: "Multiprogramming allows multiple processes to share a single CPU by using a timer interrupt, while time-sharing allows multiple processes to run concurrently on a single CPU by switching among them" }],
+      correctOptionId: "a",
+      explanation: "Option a gives the usual textbook contrast; b also describes switching, so it is the closest alternative. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-40",
+      prompt: "(Final 2023, MCQ item 40) Which of the following is an advantage of using a graphical user interface (GUI) over a command-line interface (CLI)?",
+      options: [{ id: "a", text: "A GUI is more portable and compatible than a CLI" }, { id: "b", text: "A GUI is more efficient and faster than a CLI" }, { id: "c", text: "A GUI is more intuitive and user-friendly than a CLI" }, { id: "d", text: "A GUI is more powerful and flexible than a CLI" }],
+      correctOptionId: "c",
+      explanation: "A GUI is easier to learn and use; a CLI is usually the more powerful one. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-22",
+      prompt: "(Final 2020, MCQ item 22) The systems which allow only one process execution at a time, are called",
+      options: [{ id: "a", text: "Uniprogramming systems" }, { id: "b", text: "Uniprocessing systems" }, { id: "c", text: "Unitasking systems" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "A uniprogramming system runs one program at a time. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-28",
+      prompt: "(Final 2020, MCQ item 28) What is the objective of multiprogramming?",
+      options: [{ id: "a", text: "Have a process running at all time" }, { id: "b", text: "Have multiple programs waiting in a queue ready to run" }, { id: "c", text: "To minimize CPU utilization" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "Multiprogramming keeps some process running at all times. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-44",
+      prompt: "(Final 2024, MCQ item 44) What is the objective of multiprogramming?",
+      options: [{ id: "a", text: "To have multiple programs waiting in a queue ready to run" }, { id: "b", text: "To minimize CPU utilization" }, { id: "c", text: "To maximize CPU utilization" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "Multiprogramming keeps the CPU busy. (Our answer.)",
+    },
+  ]}
+/>
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f-time-sharing-response",
+      prompt: "(Final 2019 fall, Q1 item 1) The response time must be long in time-sharing systems.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Time-sharing is built to keep response time short, so each user gets quick turns. A long response time would defeat its purpose.",
+    },
+    {
+      id: "f-kernel-user-privileged",
+      prompt: "(Final 2019 fall, Q1 item 2) The hardware allows privileged instructions to be executed in kernel and user modes.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Privileged instructions run only in kernel mode. Allowing them in user mode would let any program bypass the OS.",
+    },
+    {
+      id: "f-mode-bit-interrupted",
+      prompt: "(Final 2019 spring, Q1 item 6) A mode bit added to computer hardware to indicate if the current process has been interrupted.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The mode bit says whether the CPU is in user mode or kernel mode. It does not record whether a process was interrupted.",
+    },
+    {
+      id: "f-os-file-abstraction",
+      prompt: "(Final 2020, Q1 item 4) The operating system implements the abstract concept of a file by managing mass storage media and the devices that control them.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A file is an abstraction. The OS turns the raw blocks of a disk into named files.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 fall, Q2) What are the advantages of using multiprocessors? What are the main types of multiprocessor systems? What is the difference between multiprocessor and multicore systems? Which of them are more efficient?**
+
+- **Advantages:** more throughput (more work done in less time), economy of scale (they can share peripherals, storage and power), and reliability (if one processor fails, the rest keep the system running, more slowly).
+- **Types:** in **asymmetric** multiprocessing, a boss processor assigns work to worker processors. In **symmetric** multiprocessing (SMP), every processor is a peer and runs the whole OS.
+- **Multicore** means several processing cores on one chip, while a **multiprocessor** system has several processors, usually on separate chips. Multicore can be more efficient, because communication on one chip is faster than between chips.
+</ModelAnswer>

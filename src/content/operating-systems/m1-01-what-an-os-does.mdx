@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SystemLayers, InterruptTimeline, StorageHierarchy, MigrationOfA, DmaCounter } from "@/components/mdx/OsVisualizers";
 
 # What an Operating System Does
@@ -186,3 +186,194 @@ Put it all together and you get the **von Neumann architecture**: the CPU runs a
     Your CPU stays free while gigabytes move between drives, because the controllers copy blocks with DMA and interrupt only when each block is done.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "m-os-environment",
+      prompt: "(Midterm 2014, Q1 item 1; Midterm 2017, Q1 item 1) An operating system does not perform useful function by itself, but it provides an environment within which other programs can do useful work.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "An OS is the layer that other programs run on. Alone it does nothing useful for a user; it provides the services that make useful programs possible.",
+    },
+    {
+      id: "m-intermediary",
+      prompt: "(Midterm 2015, Q1 item 1; Midterm 2018, Q1 item 1) An operating system acts as an intermediary between the computer user and the computer hardware.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Users and programs never talk to the hardware directly. The OS sits in between and manages the hardware for them.",
+    },
+    {
+      id: "m-sync-io",
+      prompt: "(Midterm 2014, Q1 item 4; Midterm 2017, Q1 item 5) After synchronous I/O starts, control returns to user program without waiting for I/O completion.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The reverse is true for asynchronous I/O. With synchronous I/O the program waits until the transfer is complete, and only then continues.",
+    },
+    {
+      id: "m-hierarchy",
+      prompt: "(Midterm 2014, Q1 item 7; Midterm 2015, Q1 item 3) In a hierarchical storage structure, each data item appears at least in two levels of the storage system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "In a hierarchy each item is copied only in the levels where it's needed (for example, a copy in cache and a copy on disk). It doesn't have to be stored in two levels.",
+    },
+    {
+      id: "m-trap-device",
+      prompt: "(Midterm 2015, Q1 item 4) Device controller informs CPU that it has finished its operation by causing a trap.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A device controller finishes an operation by raising an interrupt. A trap is a software-generated interrupt, so the statement is false.",
+    },
+    {
+      id: "m-device-driver",
+      prompt: "(Midterm 2017, Q1 item 2) Operating systems have a specific device driver for each device controllers.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Each kind of controller has its own driver that knows its registers and commands. The OS talks to the device through that driver.",
+    },
+    {
+      id: "m-disk-speed",
+      prompt: "(Midterm 2018, Q1 item 2) Magnetic disks are nonvolatile and in general are faster than solid-state disks.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Both disk types keep data after power is off, so both are nonvolatile. Solid-state disks are generally faster than magnetic disks, not slower.",
+    },
+    {
+      id: "m-ssd-speed",
+      prompt: "(Midterm 2019, Q1 item 2) Solid-state disks are nonvolatile and in general are slower than magnetic disks.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The statement reverses the usual order: solid-state disks are generally faster than magnetic ones. (The 2019 answer key also marks this false.)",
+    },
+    {
+      id: "m-common-driver",
+      prompt: "(Midterm 2018 second version, Q1 item 2; Midterm 2019, Q1 item 1) Operating systems have a common device driver for all device controllers.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Each device type needs its own driver, which is why the answer in the earlier question is false.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2018, Q3) What is the purpose of interrupts? What are the differences between a trap and an interrupt? What is the purpose of traps?**
+
+An **interrupt** is a hardware signal that changes the flow of control, for example when a device finishes an I/O transfer. The CPU runs the matching handler and then returns to the interrupted work. Interrupts let the OS avoid polling devices.
+
+A **trap** is a software-generated interrupt, raised by an instruction, such as a system call or an error like division by zero. Traps let the OS run routines on request and catch arithmetic errors.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2022, Q3) Briefly define each of the following terms: operating system, process, caching.**
+
+- **Operating system:** the program that manages the computer's hardware and gives other programs an environment to run in.
+- **Process:** a program in execution, with its own program counter and resources.
+- **Caching:** keeping a copy of data in a smaller, faster store, so that later accesses are quicker.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019, second version, Q1) Complete the following using the storage hierarchy diagram.**
+
+1. All devices above the **solid-state disk** are volatile, the rest are non-volatile.
+2. The storage size **decreases** as we move upwards.
+3. The cost of the storage device **increases** as we move upwards.
+4. The speed of the storage device **increases** as we move upwards.
+
+The hierarchy goes from slow, large, cheap, non-volatile storage at the bottom to fast, small, expensive, volatile storage at the top. Each step up trades size for speed. The answers match the printed key.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-39",
+      prompt: "(Final 2020, MCQ item 39) What is a trap/exception?",
+      options: [{ id: "a", text: "Hardware generated interrupt caused by an error" }, { id: "b", text: "Software generated interrupt caused by an error" }, { id: "c", text: "User generated interrupt caused by an error" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "A trap is a software-generated interrupt, often caused by an error. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-40",
+      prompt: "(Final 2020, MCQ item 40) DMA is used for",
+      options: [{ id: "a", text: "High speed devices" }, { id: "b", text: "Low speed devices" }, { id: "c", text: "Utilizing CPU cycles" }, { id: "d", text: "All of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "DMA moves data for high-speed devices, one block per interrupt. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2018, Q1 items 2 to 4) Complete the following: 2. A ___ is a software-generated interrupt caused by an error or a user request. 3. ___ is the process of copying information in use from slower to faster storage temporarily. 4. ___ is used to allow high-speed I/O devices to transmit information at close to memory speeds.**
+
+2. **trap**. 3. **Caching**. 4. **Direct memory access (DMA)**.
+The answers are written in on the printed 2018 paper. (Answers as printed.)
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+The 2015 and 2019 spring finals print the same true/false statements. The 2019 spring paper has its answers filled in, and the answers shown here are that key. The 2015 scan has teacher marks that we did not check against it.
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "f-os-interface",
+      prompt: "(Final 2015, Q1 item 1; Final 2019 spring, Q1 item 1) The main function of the operating system is to provide an interface between hardware and application programs used by users.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The OS sits between the hardware and the programs and gives programs and users a way to use the hardware.",
+    },
+    {
+      id: "f-secondary-storage",
+      prompt: "(Final 2015, Q1 item 3; Final 2019 spring, Q1 item 3) The Secondary storage is considered as an extension of main memory that provides large volatile storage capacity.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Secondary storage is an extension of main memory, but it is non-volatile: data stays there when the power goes off.",
+    },
+    {
+      id: "f-disable-interrupts",
+      prompt: "(Final 2015, Q1 item 5; Final 2019 spring, Q1 item 5) One approach to dealing with multiple interrupts is to disable all interrupts while an interrupt is being processed.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Disabling interrupts during a handler is one simple approach. It has a cost, because interrupts that arrive meanwhile wait.",
+    },
+    {
+      id: "f-caching",
+      prompt: "(Final 2015, Q1 item 17; Final 2019 spring, Q1 item 17) Caching is copying information into inexpensive storage system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Caching copies data into a faster (and smaller, more expensive) store so it can be reached quickly. \"Inexpensive\" is the wrong word.",
+    },
+    {
+      id: "f-main-memory-direct",
+      prompt: "(Final 2020, Q1 item 5) Main memory is the only large storage area that the processor can access directly.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The CPU can access only main memory and registers directly. Disks must be read into memory first.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q2, part 1) Explain the difference between interrupts and traps.**
+
+An **interrupt** is a hardware-generated change of flow. The CPU runs an interrupt handler for its cause and then returns to the interrupted instruction. It is used, for example, to signal that an I/O transfer has finished, so the OS doesn't have to poll the device.
+
+A **trap** is a software-generated interrupt. It is used to call an OS routine (a system call) or to catch an error, such as an arithmetic fault.
+</ModelAnswer>
+
+*The 2019 spring Q2 pairs (system calls and system programs, policy and mechanism, logical and physical addresses, internal and external fragmentation) are placed in the lessons that teach them.*

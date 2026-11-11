@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { ProcessMemory, ProcessStateDiagram, ContextSwitch, MultiprogrammingDemo, ForkTree, LinuxProcessTree } from "@/components/mdx/OsVisualizers";
 
 # Processes: The Program in Motion
@@ -211,3 +211,456 @@ Since both copies continue from the line after `fork()`, several `fork()` calls 
     Close the terminal window and the programs started from it usually die too, because their parent went away.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given. For the 2021 multiple-choice questions the paper prints no answer letters, so the answers below are ours.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "m-short-term-controls",
+      prompt: "(Midterm 2014, Q1 item 6) Short-term scheduler controls the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The long-term (job) scheduler decides how many programs enter memory, so it controls the degree of multiprogramming. The short-term scheduler picks which ready process runs next. The 2014 key marks this false.",
+    },
+    {
+      id: "m-long-term-controls",
+      prompt: "(Midterm 2018 second version, Q1 item 10) Long-term scheduler controls the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "This is the mirror image of the 2014 question: the long-term scheduler admits processes into memory and so sets how many run together.",
+    },
+    {
+      id: "m-degree-ready",
+      prompt: "(Midterm 2018, Q1 item 8; Midterm 2019, Q1 item 8) The degree of multiprogramming is the number of processes in the ready queue.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The degree of multiprogramming is the number of processes in memory, not only the ones in the ready queue. Processes waiting for I/O are also counted.",
+    },
+    {
+      id: "m-state-activity",
+      prompt: "(Midterm 2018, Q1 item 9) The state of a process is defined by the activity just executed by the process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The state describes what the process is doing right now, so it is defined in part by its current activity. The 2018 key marks this false; we read it as true, and the key's reasoning is unclear.",
+    },
+    {
+      id: "m-ready-queue-all",
+      prompt: "(Midterm 2018 second version, Q1 item 8; Midterm 2019, Q1 item 9) As processes enter the system, they are put into a ready queue, which consists of all processes in the system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The ready queue holds only processes that are ready to run. Blocked processes wait in other queues, and terminated ones are gone.",
+    },
+    {
+      id: "m-ready-state-meaning",
+      prompt: "(Midterm 2022, Q1 item 8) The ready process state describes the process that is being waited for some events to occur.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A process waiting for an event is in the waiting (blocked) state. A ready process is one that could run now and is waiting only for the CPU.",
+    },
+    {
+      id: "m-2019sv-context-switch",
+      prompt: "(Midterm 2019 second version, Q2 item 2) Context-switch time is overhead; the system does no useful work while switching.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "During a switch the CPU saves and loads state and does no work for any program, so the time is pure overhead.",
+    },
+    {
+      id: "m-2019sv-exit",
+      prompt: "(Midterm 2019 second version, Q2 item 3) A parent process may terminate the execution of children processes using the exit() system call.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A parent ends a child with abort(), not exit(). exit() is what a process calls to end itself. The printed key says so.",
+    },
+    {
+      id: "m-2021-stack",
+      prompt: "(Midterm 2021, Q1 item 1) The _____ of a process contains temporary data such as function parameters, return addresses, and local variables: a. text section; b. data section; c. program counter; d. stack.",
+      options: [
+        { id: "a", text: "text section" },
+        { id: "b", text: "data section" },
+        { id: "c", text: "program counter" },
+        { id: "d", text: "stack" },
+      ],
+      correctOptionId: "d",
+      explanation: "The stack holds function parameters, return addresses and local variables. The text section holds code, the data section holds globals, and the program counter is one register.",
+    },
+    {
+      id: "m-2021-ready",
+      prompt: "(Midterm 2021, Q1 item 7) A process may transition to the Ready state by which of the following actions? a. Completion of an I/O event; b. Awaiting its turn on the CPU; c. Newly admitted process; d. All the choices.",
+      options: [
+        { id: "a", text: "Completion of an I/O event" },
+        { id: "b", text: "Awaiting its turn on the CPU" },
+        { id: "c", text: "Newly admitted process" },
+        { id: "d", text: "All the choices" },
+      ],
+      correctOptionId: "d",
+      explanation: "Each one moves a process into the ready queue: an I/O event finishes, a running process is preempted and waits its turn, or a new process is admitted.",
+    },
+    {
+      id: "m-2021-child",
+      prompt: "(Midterm 2021, Q1 item 5) When a child process is created, which of the following is a possibility in terms of execution or address space of the child process? a. The child process runs concurrently with the parent; b. The child process has a new program loaded into it; c. The child is a duplicate of the parent; d. All the choices.",
+      options: [
+        { id: "a", text: "The child process runs concurrently with the parent" },
+        { id: "b", text: "The child process has a new program loaded into it" },
+        { id: "c", text: "The child is a duplicate of the parent" },
+        { id: "d", text: "All the choices" },
+      ],
+      correctOptionId: "d",
+      explanation: "After fork() the child is a copy of the parent and can run alongside it. A call to exec() then loads a new program into the child.",
+    },
+    {
+      id: "m-2021-program-process",
+      prompt: "(Midterm 2021, Q1 item 11) The difference between a program and a process is that a program is a(n) _____ entity while a process is a _______ entity: a. passive, active; b. active, passive; c. dynamic, static; d. static, dynamic.",
+      options: [
+        { id: "a", text: "passive, active" },
+        { id: "b", text: "active, passive" },
+        { id: "c", text: "dynamic, static" },
+        { id: "d", text: "static, dynamic" },
+      ],
+      correctOptionId: "a",
+      explanation: "A program is a file sitting on disk, which is passive. A process is that program running, with a PC and resources, which is active.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2014, Q3) Describe the differences among short-term, medium-term, and long-term scheduling.**
+
+- **Long-term (job) scheduler:** decides which jobs are brought into memory. It runs rarely and controls the degree of multiprogramming.
+- **Short-term (CPU) scheduler:** picks, from the ready processes in memory, the one that runs next, and gives it the CPU. It runs very often.
+- **Medium-term scheduler:** swaps partly run programs out of memory and brings them back later. It is used mainly in time-sharing systems.
+
+The 2014 key gives the same three roles.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2017, Q3) What is a process? What is a process state and mention the various states of a process? What is a PCB?**
+
+A **process** is a program in execution: an active entity with a program counter and its own resources (stack, data and registers).
+
+A process **state** is its current situation. The states are **new**, **ready**, **running**, **waiting** and **terminated**.
+
+The **PCB** (process control block) is the record the OS keeps for each process. It holds the process state, program counter, CPU registers, CPU-scheduling information, memory-management information, accounting information and I/O status.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q5) Illustrate using a diagram the different states of a process and what triggers the state of each state.**
+
+| From | To | What triggers it |
+| --- | --- | --- |
+| New | Ready | The process is admitted into memory |
+| Ready | Running | The scheduler dispatches it to the CPU |
+| Running | Ready | Its time slice ends or a higher-priority process arrives (interrupt) |
+| Running | Waiting | It requests I/O or waits for an event |
+| Waiting | Ready | The I/O or event finishes |
+| Running | Terminated | It finishes or is killed |
+
+Draw the five states as boxes, with arrows labelled by these triggers.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q6) What is the difference between zombie and orphan processes?**
+
+- A **zombie** is a child that has finished, but its parent has not yet called `wait()`, so its exit status is still held.
+- An **orphan** is a child whose parent has terminated without calling `wait()`. The orphan is adopted by the init process.
+
+The printed key gives the same two definitions.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q8) Including the initial parent process, how many processes are created by the program shown in the code below? Illustrate your answer using a tree.**
+
+The code has three `fork()` calls, one after another, in `main`.
+
+Each `fork()` doubles the number of processes, because every process that exists at that point forks a copy of itself:
+
+- Before any `fork()`: 1 process (the parent).
+- After the first `fork()`: 2.
+- After the second: 4.
+- After the third: 8.
+
+**Answer: 8 processes, including the initial parent.** The tree has the parent at the root, with a child added at each `fork()` for every process that already exists. The printed key says 8 as well.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018, Q4) Describe the actions taken by a kernel to context-switch between processes.**
+
+The kernel saves the state of the running process into its PCB: the CPU registers, the program counter and the memory information. It then loads the state of the next process from that process's PCB into the CPU, so the new process resumes where it stopped. Some architectures also flush caches or the TLB at this point. The switch is pure overhead, because no useful work runs during it.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q4) What is a PCB? Describe the actions taken by a kernel to context-switch between processes.**
+
+The **PCB** is the process control block, the kernel's record for one process (see the 2017 answer above). To context-switch, the kernel saves the running process's registers and program counter into its PCB, then restores the same fields from the next process's PCB and hands over the CPU.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "m-2021-device-queue",
+      prompt: "(Midterm 2021, Q1 item 3) The list of processes waiting for a particular I/O device is called a(n) _____ a) standby queue; b) device queue; c) ready queue; d) interrupt queue.",
+      options: [{ id: "a", text: "standby queue" }, { id: "b", text: "device queue" }, { id: "c", text: "ready queue" }, { id: "d", text: "interrupt queue" }],
+      correctOptionId: "b",
+      explanation: "A device queue holds the processes waiting for one particular I/O device. (Our answer.)",
+    },
+  ]}
+/>
+<ModelAnswer>
+**(Midterm 2021, Q1 item 6) A _______ saves the state of the currently running process and restores the state of the next process to run.**
+
+Answer: **context switch.** (Our answer, which matches the printed 2021 key.)
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2023-19",
+      prompt: "(Final 2023, Q1 item 19) The time it takes for a dispatcher to stop one process and start another one is called dispatcher latency.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Dispatch latency is the time the dispatcher needs to stop one process and start another. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-32",
+      prompt: "(Final 2023, MCQ item 32) A process can be terminated due to ___",
+      options: [{ id: "a", text: "normal exit" }, { id: "b", text: "fatal error" }, { id: "c", text: "killed by another process" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "d",
+      explanation: "A process can end normally, fail with a fatal error, or be killed by another process. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-33",
+      prompt: "(Final 2023, MCQ item 33) The primary distinction between the short-term scheduler and the long-term scheduler is ___",
+      options: [{ id: "a", text: "the length of their queues" }, { id: "b", text: "the type of processes they schedule" }, { id: "c", text: "the frequency of their execution" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler runs very often and the long-term scheduler runs rarely. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-35",
+      prompt: "(Final 2023, MCQ item 35) What is the purpose of a process control block (PCB)?",
+      options: [{ id: "a", text: "To control the execution of a process by issuing commands to the CPU, memory, and I/O devices" }, { id: "b", text: "To allocate and deallocate the resources needed by a process" }, { id: "c", text: "To store the information about the process state, program counter, CPU registers, and other attributes of a process" }, { id: "d", text: "To communicate with other processes by sending and receiving messages" }],
+      correctOptionId: "c",
+      explanation: "The PCB is the record of everything the OS needs to know about one process. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-37",
+      prompt: "(Final 2023, MCQ item 37) What are the system calls used to create and terminate a process in UNIX?",
+      options: [{ id: "a", text: "create() and terminate()" }, { id: "b", text: "fork() and exit()" }, { id: "c", text: "spawn() and kill()" }, { id: "d", text: "exec() and wait()" }],
+      correctOptionId: "b",
+      explanation: "UNIX creates a process with fork() and ends it with exit(). (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-60",
+      prompt: "(Final 2023, MCQ item 60) A process is selected from the ___ queue by the ___ scheduler, to be executed.",
+      options: [{ id: "a", text: "blocked, short term" }, { id: "b", text: "wait, long term" }, { id: "c", text: "ready, short term" }, { id: "d", text: "ready, long term" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler picks a process from the ready queue to run. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-23",
+      prompt: "(Final 2020, MCQ item 23) In Unix, which system call creates the new process?",
+      options: [{ id: "a", text: "Fork" }, { id: "b", text: "Create" }, { id: "c", text: "New" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "UNIX creates a new process with fork(). (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-24",
+      prompt: "(Final 2020, MCQ item 24) What is the ready state of a process?",
+      options: [{ id: "a", text: "when process is scheduled to run after some execution" }, { id: "b", text: "when process is unable to run until some task has been completed" }, { id: "c", text: "when process is using the CPU" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "A ready process can run and waits only for the CPU. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-25",
+      prompt: "(Final 2020, MCQ item 25) A process stack does not contain",
+      options: [{ id: "a", text: "Function parameters" }, { id: "b", text: "Local variables" }, { id: "c", text: "Return addresses" }, { id: "d", text: "PID of child process" }],
+      correctOptionId: "d",
+      explanation: "The stack holds parameters, locals and return addresses. The PID of a child is not stored there. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-26",
+      prompt: "(Final 2020, MCQ item 26) What is a process Control Block?",
+      options: [{ id: "a", text: "Process type variable" }, { id: "b", text: "Data Structure" }, { id: "c", text: "A secondary storage section" }, { id: "d", text: "A Block in memory" }],
+      correctOptionId: "b",
+      explanation: "The PCB is a data structure the kernel keeps for each process. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-27",
+      prompt: "(Final 2020, MCQ item 27) What is the degree of multiprogramming?",
+      options: [{ id: "a", text: "the number of processes executed per unit time" }, { id: "b", text: "the number of processes in the ready queue" }, { id: "c", text: "the number of processes in the I/O queue" }, { id: "d", text: "the number of processes in memory" }],
+      correctOptionId: "d",
+      explanation: "The degree of multiprogramming is how many processes are in memory. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-30",
+      prompt: "(Final 2020, MCQ item 30) Which of the following need not necessarily be saved on a context switch between processes?",
+      options: [{ id: "a", text: "General purpose registers" }, { id: "b", text: "Translation lookaside buffer" }, { id: "c", text: "Program counter" }, { id: "d", text: "All of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "The TLB is a cache and need not be saved, since it can be reloaded. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-44",
+      prompt: "(Final 2020, MCQ item 44) The switching of the CPU from one process or thread to another is called",
+      options: [{ id: "a", text: "process switch" }, { id: "b", text: "task switch" }, { id: "c", text: "context switch" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "This is a context switch. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-5",
+      prompt: "(Final 2024, MCQ item 5) What is the term for the time it takes for the dispatcher to stop one process and start another?",
+      options: [{ id: "a", text: "Dispatch latency" }, { id: "b", text: "Turnaround time" }, { id: "c", text: "Waiting time" }, { id: "d", text: "Response time" }],
+      correctOptionId: "a",
+      explanation: "Dispatch latency is the time to stop one process and start another. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-39",
+      prompt: "(Final 2024, MCQ item 39) In Unix, which system call creates the new process?",
+      options: [{ id: "a", text: "new" }, { id: "b", text: "fork" }, { id: "c", text: "create" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "fork() creates a new process in UNIX. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-41",
+      prompt: "(Final 2024, MCQ item 41) What is the waiting state of a process?",
+      options: [{ id: "a", text: "When the process is scheduled to run after some execution" }, { id: "b", text: "When the process is unable to run until some tasks have been completed" }, { id: "c", text: "When the process is performing an I/O operation" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "A waiting process is blocked, usually for I/O. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-42",
+      prompt: "(Final 2024, MCQ item 42) A process stack does not contain",
+      options: [{ id: "a", text: "Function parameters" }, { id: "b", text: "Local variables" }, { id: "c", text: "Return addresses" }, { id: "d", text: "Global variables" }],
+      correctOptionId: "d",
+      explanation: "Globals live in the data section, not the stack. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-43",
+      prompt: "(Final 2024, MCQ item 43) The primary distinction between the short-term scheduler and the long-term scheduler is the",
+      options: [{ id: "a", text: "length of their queues" }, { id: "b", text: "type of processes they schedule" }, { id: "c", text: "frequency of their execution" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler runs often and the long-term scheduler runs rarely. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-46",
+      prompt: "(Final 2024, MCQ item 46) Which of the following must be saved on a context switch between processes?",
+      options: [{ id: "a", text: "Contents of registers" }, { id: "b", text: "Program counter" }, { id: "c", text: "Both (a) and (b)" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The registers and the program counter must be saved and restored. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-47",
+      prompt: "(Final 2024, MCQ item 47) What is the degree of multiprogramming?",
+      options: [{ id: "a", text: "The number of processes executed per unit of time" }, { id: "b", text: "The number of processes in the ready queue" }, { id: "c", text: "The number of processes in the I/O queue" }, { id: "d", text: "The number of processes in memory" }],
+      correctOptionId: "d",
+      explanation: "The degree of multiprogramming is the number of processes in memory. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2018, Q1 items 5, 7 and 12) Complete the following: 5. A ___ is a program in execution. 7. ___ is when the CPU switches to another process... 12. When the time slot given to a process is completed, the process goes from the running state to the ___.**
+
+5. **process**. 7. **Context switch**. 12. **ready** state (the printed answer also writes 'terminated state' beside it, which is not the right one here).
+The answers are written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f-process-passive",
+      prompt: "(Final 2019 spring, Q1 item 9) Process is considered as a passive entity while program is considered as an active entity.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "It is the other way round: a program is passive (a file on disk) and a process is active (a program running).",
+    },
+    {
+      id: "f-long-term-exit",
+      prompt: "(Final 2020, Q1 item 11) The long-term scheduler may need to be invoked only when a process leaves the system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The long-term scheduler only needs to act when a process leaves and frees a slot for a new one, so it runs infrequently.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q4) Describe the actions taken by a kernel to context-switch between processes.**
+
+The OS saves the state of the running process (the CPU registers, plus its memory information) and restores the state of the process to run next. On many architectures it also flushes caches. The midterm answer above gives the same steps.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q4) During the course of execution, a process may create several new processes. What are the possible options of execution and of resource sharing between the parent and the children? What are the reasons a parent may terminate its child? What are the possible options for process termination?**
+
+- **Execution:** the parent continues to run concurrently with its children, or it waits until some or all of them have terminated.
+- **Resource sharing:** the parent and children share all resources; the children share a subset of the parent's resources; or they share none.
+- **Reasons a parent terminates a child:** the child has exceeded its resources, the task given to the child is no longer needed, or the parent is exiting.
+- **Termination options:** some systems don't let a child continue after its parent terminates, and in cascading termination all children are terminated when the parent is.
+</ModelAnswer>

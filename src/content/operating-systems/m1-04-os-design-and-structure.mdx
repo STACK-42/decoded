@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { OsStructures, BootSequence } from "@/components/mdx/OsVisualizers";
 
 # System Programs, OS Design and Structure
@@ -229,3 +229,256 @@ OSs are designed to run on **any of a class of machines**. So each system must b
     When Windows itself crashes, it writes the kernel's memory to a crash dump file so the bug can be found later.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "m-system-programs",
+      prompt: "(Midterm 2014, Q1 item 9) Some of system programs are simply user interfaces to system calls; others are considerably more complex.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A simple system program, such as a command that only calls one system call, is a user interface. Others, such as a compiler, do much more.",
+    },
+    {
+      id: "m-command-interpreter-api",
+      prompt: "(Midterm 2018, Q1 item 5) The function of the command interpreter is to provide the interface between the API and application program.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The command interpreter (the shell) takes commands typed by the user and runs them. It does not sit between an API and an application program.",
+    },
+    {
+      id: "m-cmd-in-kernel",
+      prompt: "(Midterm 2018 second version, Q1 item 6) All operating systems include the command interpreter in the kernel.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Some systems build the command interpreter into the kernel, and others run it as an ordinary program that starts when a job begins. The statement says \"all\", so it is false.",
+    },
+    {
+      id: "m-kernel-boot",
+      prompt: "(Midterm 2018, Q1 item 7) Kernel is the first part of operating system to load into memory during booting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The bootstrap program loads the kernel first. The kernel then starts the rest of the system.",
+    },
+    {
+      id: "m-bootstrap",
+      prompt: "(Midterm 2018 second version, Q1 item 1) The bootstrap program must locate the operating-system kernel and load it into memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The bootstrap program is small and stored in firmware. Its job is to find the kernel on disk and load it.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q3) Why is the separation of mechanism and policy a desirable property for an operating-system designer?**
+
+A **mechanism** says how to do something, such as the timer that stops a running process. A **policy** says what will be done, such as how long each process gets before the timer fires. Keeping them separate means the policy can be changed without rewriting the mechanism. A system can then use one timer mechanism with different scheduling policies for different users or workloads.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q4) What is the difference between mechanism and policy in designing and implementing an OS? Why is the separation of them desirable?**
+
+- **Mechanism:** how something is done. **Policy:** what will be done.
+- The separation matters because it gives flexibility. If a policy needs to change later, only the policy changes, and the mechanism stays as it is.
+
+The printed key gives the same two points.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "m-2021-microkernel",
+      prompt: "(Midterm 2021, Q1 item 2) Microkernels use _____ for communication. a) message passing; b) shared memory; c) system calls.",
+      options: [{ id: "a", text: "message passing" }, { id: "b", text: "shared memory" }, { id: "c", text: "system calls" }],
+      correctOptionId: "a",
+      explanation: "A microkernel's services run as separate user processes, and they talk through message passing. (Our answer.)",
+    },
+    {
+      id: "m-2021-policy",
+      prompt: "(Midterm 2021, Q1 item 4) Policy _____ a. determines how to do something; b. determines what will be done; c. is not likely to change across places; d. is not likely to change over time.",
+      options: [{ id: "a", text: "determines how to do something" }, { id: "b", text: "determines what will be done" }, { id: "c", text: "is not likely to change across places" }, { id: "d", text: "is not likely to change over time" }],
+      correctOptionId: "b",
+      explanation: "Policy decides what is done. Mechanism decides how. (Our answer.)",
+    },
+  ]}
+/>
+<ModelAnswer>
+**(Midterm 2022, Q2.2) _______ is a piece of software that is stored in EPROM and is loaded when a computer is powered up or rebooted.** *(Our answer; the 2022 key is a scan not yet checked.)*
+
+Answer: the **bootstrap program** (also called the bootstrap loader). It finds the kernel and loads it into memory.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-31",
+      prompt: "(Final 2023, MCQ item 31) Which one of the following is not true?",
+      options: [{ id: "a", text: "The kernel is the program that constitutes the central core of the operating system" }, { id: "b", text: "The kernel is the first part of the operating system to load into memory during booting" }, { id: "c", text: "The kernel is made of various modules which cannot be loaded into the running operating system" }, { id: "d", text: "The kernel remains in the memory during the entire computer session" }],
+      correctOptionId: "c",
+      explanation: "Kernel modules can be loaded into a running OS, so c is the false statement. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-41",
+      prompt: "(Final 2023, MCQ item 41) Which of the following is a process that loads the operating system into the main memory and starts its execution?",
+      options: [{ id: "a", text: "System boot" }, { id: "b", text: "System generation" }, { id: "c", text: "System initialization" }, { id: "d", text: "System termination" }],
+      correctOptionId: "a",
+      explanation: "System boot (bootstrapping) loads the kernel and starts it. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-21",
+      prompt: "(Final 2020, MCQ item 21) What is the main function of the command interpreter?",
+      options: [{ id: "a", text: "To get and execute the next user-specified command" }, { id: "b", text: "To provide the interface between the API and application program" }, { id: "c", text: "To handle the files in operating system" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "The command interpreter reads the user's next command and executes it. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-38",
+      prompt: "(Final 2020, MCQ item 38) The initial program that is run when the computer is powered up is called",
+      options: [{ id: "a", text: "Boot program" }, { id: "b", text: "Boot loader" }, { id: "c", text: "Initializer" }, { id: "d", text: "Bootstrap program" }],
+      correctOptionId: "d",
+      explanation: "The bootstrap program runs first at power-up. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-41",
+      prompt: "(Final 2020, MCQ item 41) In the layered approach of operating systems",
+      options: [{ id: "a", text: "Bottom layer(0) is the user interface" }, { id: "b", text: "Highest layer(N) is the user interface" }, { id: "c", text: "Bottom layer(N) is the hardware" }, { id: "d", text: "Highest layer(N) is the hardware" }],
+      correctOptionId: "b",
+      explanation: "Layer 0 is the hardware and the highest layer is the user interface. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-40",
+      prompt: "(Final 2024, MCQ item 40) What is the main function of the command interpreter?",
+      options: [{ id: "a", text: "To provide the interface between the API and application program" }, { id: "b", text: "To get and execute the next user-specified command" }, { id: "c", text: "To handle the files in the operating system" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "The command interpreter gets and runs the next command the user types. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-54",
+      prompt: "(Final 2024, MCQ item 54) In the layered approach of operating systems",
+      options: [{ id: "a", text: "Bottom Layer (0) is the User interface" }, { id: "b", text: "Topmost Layer (N) is the User interface" }, { id: "c", text: "Bottom Layer (N) is the hardware" }, { id: "d", text: "Topmost Layer (N) is the hardware" }],
+      correctOptionId: "b",
+      explanation: "Layer 0 is the hardware and the top layer is the user interface. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-55",
+      prompt: "(Final 2024, MCQ item 55) In the context of operating system design, what is the primary benefit of separating policy from mechanism?",
+      options: [{ id: "a", text: "It simplifies the implementation of the operating system" }, { id: "b", text: "It allows for maximum flexibility if policy decisions need to be changed later" }, { id: "c", text: "It reduces the need for system calls" }, { id: "d", text: "It improves the performance of the operating system" }],
+      correctOptionId: "b",
+      explanation: "Policy can change without rewriting the mechanism. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-56",
+      prompt: "(Final 2024, MCQ item 56) Which of the following operating systems is an example of a hybrid system that combines multiple approaches to address performance, security, and usability needs?",
+      options: [{ id: "a", text: "macOS" }, { id: "b", text: "Linux" }, { id: "c", text: "Windows" }, { id: "d", text: "All of the above" }],
+      correctOptionId: "d",
+      explanation: "macOS, Linux and Windows all combine several structures in one kernel design. (Our answer.)",
+    },
+  ]}
+/>
+
+
+<ModelAnswer>
+**(Final 2018, Q1 item 10) The ___ program must locate the operating-system kernel to load it into memory.**
+
+**bootstrap** program. The answer is written in on the printed 2018 paper.
+</ModelAnswer>
+
+
+<ModelAnswer>
+**(Final 2018, Q1 item 1) The one program running at all times on a computer is called a ___.**
+
+Answer: **kernel**. The answer is written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f-bootstrap-ram",
+      prompt: "(Final 2015, Q1 item 2; Final 2019 spring, Q1 item 2) The bootstrap program needed for computer start up is stored in RAM.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The bootstrap program is stored in ROM or flash memory, which keeps it when power is off. RAM is empty at power-on.",
+    },
+    {
+      id: "f-layers-no-interact",
+      prompt: "(Final 2019 spring, Q1 item 7) In layer structured approach of operating system, it is divided into a number of layers that doesn't interact with each other.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "In a layered design each layer uses only the layer below it, so the layers do interact. That is the point of the design.",
+    },
+    {
+      id: "f-bootstrap-locate",
+      prompt: "(Final 2019 fall, Q1 item 4) The bootstrap program must locate the operating-system kernel to load it into memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Finding the kernel and loading it is the bootstrap program's main job.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 fall, Q3 and Final 2019 spring, Q3) Explain the different structures of operating systems.**
+
+1. **Simple structure:** no well-defined structure, often a small system that grew (MS-DOS is the example).
+2. **Layered:** the OS is split into layers. Layer 0 is the hardware and the top layer is the user interface, and each layer uses only the one below.
+3. **Microkernel:** only the essential parts (minimal process and memory management, and communication) stay in the kernel. Other services run as user programs, which communicate by message passing.
+4. **Modules:** the kernel is made of loadable modules with protected interfaces. Any module can call another directly, which is faster than message passing.
+5. **Hybrid:** real systems combine several of these structures for performance, security and usability.
+
+*(Final 2016 also asks what SYSGEN is: system generation, the process of configuring the OS for a particular computer's hardware.)*
+</ModelAnswer>

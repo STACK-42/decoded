@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RaceCondition, PetersonDemo, SpinlockDemo, BoundedWaitingDemo } from "@/components/mdx/OsVisualizers";
 
 # Race Conditions and the Critical-Section Problem
@@ -301,3 +301,244 @@ Spinning wastes CPU while waiting. But it needs **no [context switch](/courses/o
     Java's AtomicInteger and C++'s std::atomic use compare-and-swap so counter++ is safe without a full lock.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "m-cs-segment",
+      prompt: "(Midterm 2015, Q1 item 9) Each process has a segment of code, called a critical section, in which the process may be changing shared data.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is the definition of a critical section: the code where a process touches shared data.",
+    },
+    {
+      id: "m-cs-permission",
+      prompt: "(Midterm 2017, Q1 item 10) Each process must request permission to enter its critical section.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The entry section is where a process asks to enter. Only after permission is granted does it run its critical section.",
+    },
+    {
+      id: "m-cs-one-requirement",
+      prompt: "(Midterm 2015, Q1 item 10; Midterm 2019, Q1 item 10) Any solution to the critical-section problem must satisfy at least one of three requirements.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A valid solution must satisfy all three requirements (mutual exclusion, progress and bounded waiting), not just one of them.",
+    },
+    {
+      id: "m-atomic",
+      prompt: "(Midterm 2019 second version, Q2 item 6) An atomic instruction is a type of instructions that can be interrupted during its execution.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "An atomic instruction can't be interrupted part way. That is why it is useful for building locks. The printed key marks this false.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q7) A solution to the critical section problem must satisfy three main requirements. Explain these requirements.**
+
+1. **Mutual exclusion:** if one process is in its critical section, no other process can be in its critical section.
+2. **Progress:** if no process is in its critical section and some want to enter, the choice of who enters next can't be postponed forever. Only the processes that want to enter take part in that choice.
+3. **Bounded waiting:** after a process asks to enter, there is a limit on how many times other processes can enter first.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018, Q5; Midterm 2018 second version, Q5) How does Peterson's solution solve the critical section problem? Explain how it preserves the three requirements. What is its restriction?**
+
+Peterson's solution uses two shared variables: `int turn`, which says whose turn it is to enter, and `boolean flag[2]`, where `flag[i]` is true when process *i* wants to enter. A process sets its flag, gives the turn to the other process, and waits while the other process wants the turn and it is the other process's turn.
+
+- **Mutual exclusion:** both processes can't enter together. Each one sets `turn` to the other, and only one value can be stored last, so one of them must wait.
+- **Progress:** a process is held back only when the other process is also trying to enter. If the other is not interested, the process goes straight in.
+- **Bounded waiting:** once a process has given the turn away, the other process gets in next, so a process waits at most one entry by the other.
+
+**Restriction:** it works only for **two** processes.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+  ]}
+/>
+<ModelAnswer>
+**(Midterm 2021, Q1 item 12) Concurrent access to shared data may result in _____.**
+
+Answer: **data inconsistency.** (Our answer, which matches the printed 2021 key.)
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2023-23",
+      prompt: "(Final 2023, Q1 item 23) Within the context of the critical section problem, each process must ask permission to enter the critical section in the entry section.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The entry section is where a process asks for permission to enter. (Our answer.)",
+    },
+    {
+      id: "f2023-24",
+      prompt: "(Final 2023, Q1 item 24) The solution to the critical section problem should satisfy only bounded waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A solution must satisfy all three requirements: mutual exclusion, progress and bounded waiting. (Our answer.)",
+    },
+    {
+      id: "f2023-25",
+      prompt: "(Final 2023, Q1 item 25) Peterson Algorithms for critical section problems guarantee mutual exclusion, progress, and bounded waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Peterson's solution meets all three requirements, as the midterm answer above shows. (Our answer.)",
+    },
+    {
+      id: "f2023-26",
+      prompt: "(Final 2023, Q1 item 26) The compare and swap hardware instructions could be interruptible.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Hardware instructions such as compare-and-swap are atomic: they run to completion without interruption. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-31",
+      prompt: "(Final 2020, MCQ item 31) If a process is executing in its critical section, then no other processes can be executing in their critical section. This condition is called",
+      options: [{ id: "a", text: "mutual exclusion" }, { id: "b", text: "critical exclusion" }, { id: "c", text: "synchronous exclusion" }, { id: "d", text: "asynchronous exclusion" }],
+      correctOptionId: "a",
+      explanation: "That condition is mutual exclusion. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-32",
+      prompt: "(Final 2020, MCQ item 32) Process synchronization can be done on",
+      options: [{ id: "a", text: "hardware level" }, { id: "b", text: "software level" }, { id: "c", text: "both hardware and software level" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "Synchronization can use hardware instructions and software algorithms. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-61",
+      prompt: "(Final 2020, MCQ item 61) All processes share a semaphore variable mutex, initialized to 1. Each process must execute wait(mutex) before entering the critical section and signal(mutex) afterward. Suppose a process executes signal(mutex), then its critical section, then wait(mutex). In this situation: a. a deadlock will occur; b. processes will starve to enter critical section; c. several processes maybe executing in their critical section; d. all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter critical section" }, { id: "c", text: "several processes maybe executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "signal before the critical section lets a second process enter at the same time, so mutual exclusion is broken. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-62",
+      prompt: "(Final 2020, MCQ item 62) Same setup. Suppose a process executes wait(mutex), then its critical section, then wait(mutex) again. In this situation: a. a deadlock will occur; b. processes will starve to enter critical section; c. several processes maybe executing in their critical section; d. all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter critical section" }, { id: "c", text: "several processes maybe executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "The second wait(mutex) waits for a signal that never comes, so the process blocks forever. (Our answer.)",
+    },
+  ]}
+/>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-38",
+      prompt: "(Final 2024, MCQ item 38) When several processes access the same data concurrently and the outcome depends on the order of access, this is called",
+      options: [{ id: "a", text: "dynamic condition" }, { id: "b", text: "race condition" }, { id: "c", text: "essential condition" }, { id: "d", text: "critical condition" }],
+      correctOptionId: "b",
+      explanation: "This is a race condition. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-48",
+      prompt: "(Final 2024, MCQ item 48) Which of the following is NOT a requirement for solving the critical-section problem?",
+      options: [{ id: "a", text: "Mutual exclusion" }, { id: "b", text: "Progress" }, { id: "c", text: "Bounded waiting" }, { id: "d", text: "Priority inversion" }],
+      correctOptionId: "d",
+      explanation: "The three requirements are mutual exclusion, progress and bounded waiting. Priority inversion is a scheduling problem, not a requirement. The paper labels it e; here it is option d. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-57",
+      prompt: "(Final 2024, MCQ item 57) All processes share a semaphore variable mutex, initialized to 1. Suppose a process executes signal(mutex), then its critical section, then wait(mutex). In this situation: a) a deadlock will occur; b) processes will starve to enter the critical section; c) several processes may be executing in their critical section; d) all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter the critical section" }, { id: "c", text: "several processes may be executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "signal before the critical section lets a second process in at the same time. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-58",
+      prompt: "(Final 2024, MCQ item 58) Suppose a process executes wait(mutex) twice, then its critical section. In this situation: a) a deadlock will occur; b) processes will starve to enter the critical section; c) several processes may be executing in their critical section; d) all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter the critical section" }, { id: "c", text: "several processes may be executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "The second wait(mutex) blocks forever, so the process deadlocks. (Our answer.)",
+    },
+  ]}
+/>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f-mutual-exclusion-essential",
+      prompt: "(Final 2019 spring, Q1 item 15) Mutual Exclusion is essential to solve the critical section problem.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Mutual exclusion is the first requirement: only one process may be in its critical section at a time.",
+    },
+    {
+      id: "f-peterson-busy-wait",
+      prompt: "(Final 2019 spring, Q1 item 16) Peterson solution is used to avoid Busy waiting problem in software solution.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Peterson's solution is a software solution that does busy waiting: a waiting process loops until its turn comes. It avoids a different problem, not busy waiting.",
+    },
+    {
+      id: "f-concurrent-inconsistency",
+      prompt: "(Final 2020, Q1 item 16) Concurrent access to shared data may result in data inconsistency.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When two processes update the same data without coordination, the result can be wrong. That is why the critical section exists.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2016, Q6) What is the critical-section problem? Prove that Peterson's solution satisfies all three requirements for the critical-section problem.**
+
+The **critical-section problem** is how to design a protocol so that processes sharing data can each enter their critical section without corrupting that data. A solution must give mutual exclusion, progress and bounded waiting.
+
+Peterson's solution uses `turn` and `flag[2]`. For **mutual exclusion**: if both processes were in their critical sections, both flags would be true and each would have set `turn` to the other, but `turn` holds one value, so one of them must still be waiting. For **progress**: a process waits only while the other has its flag set and the turn is the other's, so if the other process isn't trying, the waiting process goes straight in. For **bounded waiting**: once a process gives the turn away, the other process gets in next, so a process waits at most one entry by the other.
+</ModelAnswer>

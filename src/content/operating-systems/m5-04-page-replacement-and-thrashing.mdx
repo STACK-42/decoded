@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { PageReplacement, FaultsVsFrames, FrameAllocation, ThrashingChart, WorkingSetDemo } from "@/components/mdx/OsVisualizers";
 
 # Page Replacement and Thrashing
@@ -301,3 +301,322 @@ There's a direct relationship between a process's **working set** and its **page
     Windows and macOS compress pages before writing them out, and keep recently evicted pages around in case they're needed again soon.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+No midterm question is placed in this lesson. Past midterm questions on this topic are found in the other lessons of this course.
+
+### Part 1: Midterm questions
+
+None.
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-7",
+      prompt: "(Final 2023, Q1 item 7) Page replacement algorithms make use of a dirty bit to reduce the overhead of page transfer.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A clean page need not be written to disk when evicted, because the copy on disk is still correct. (Our answer.)",
+    },
+    {
+      id: "f2023-8",
+      prompt: "(Final 2023, Q1 item 8) The frame allocation algorithm determines how many frames to be given for each process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Frame allocation decides how many frames each process gets. Page replacement then chooses which frame to free. (Our answer.)",
+    },
+    {
+      id: "f2023-9",
+      prompt: "(Final 2023, Q1 item 9) LRU page replacement algorithm with a second chance if the page to be replaced has reference bit = 1, it will be left in memory and updated to 0.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is the second-chance (clock) rule: a page with its reference bit set gets a second chance and the bit is cleared. (Our answer.)",
+    },
+    {
+      id: "f2023-10",
+      prompt: "(Final 2023, Q1 item 10) If there are 100 frames and 5 processes, a fixed frame allocation algorithm will allocate 20 frames for each process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Equal allocation gives each of the 5 processes 100 ÷ 5 = 20 frames. (Our answer.)",
+    },
+    {
+      id: "f2023-11",
+      prompt: "(Final 2023, Q1 item 11) The thrashing phenomenon occurs when a process has more frames than it needs.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Thrashing happens when a process has too few frames for its working set, so it faults constantly. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-50",
+      prompt: "(Final 2023, MCQ item 50) What is the difference between global and local page replacement policies?",
+      options: [{ id: "a", text: "Global policy selects a victim frame from the frames allocated to the process that caused the page fault, local policy selects from the set of all frames" }, { id: "b", text: "Global policy selects a victim frame from the set of all frames, local policy selects from the frames allocated to the process that caused the page fault" }, { id: "c", text: "Global policy selects a victim frame from the set of all frames, local policy selects from the frames allocated to the process that caused the page fault" }, { id: "d", text: "Global policy selects a victim frame based on the local page reference string, local policy selects based on the global page reference string" }],
+      correctOptionId: "b",
+      explanation: "Global replacement can take any frame; local replacement only takes frames from the process that faulted. Options b and c are worded the same, so the answer is b either way. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-52",
+      prompt: "(Final 2023, MCQ item 52) What is the difference between thrashing and swapping?",
+      options: [{ id: "a", text: "Thrashing is moving a process from memory to disk, and swapping is moving a process from disk to memory" }, { id: "b", text: "Thrashing is moving a process from disk to memory, and swapping is moving a process from memory to disk" }, { id: "c", text: "Thrashing is the phenomenon of excessive page faults due to insufficient memory, and swapping is the technique of moving processes in and out of memory to increase multiprogramming level" }, { id: "d", text: "Thrashing is the technique of moving processes in and out of memory to increase multiprogramming level, and swapping is the phenomenon of excessive page faults due to insufficient memory" }],
+      correctOptionId: "c",
+      explanation: "Thrashing is a failure mode (too many faults); swapping is a technique (moving whole processes). (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-56",
+      prompt: "(Final 2023, MCQ item 56) Which of the following page-replacement algorithms suffers from Belady's anomaly?",
+      options: [{ id: "a", text: "LRU (Least Recently Used)" }, { id: "b", text: "LFU (Least Frequently Used)" }, { id: "c", text: "OPT (Optimal)" }, { id: "d", text: "FIFO (First-In, First-Out)" }],
+      correctOptionId: "d",
+      explanation: "FIFO can fault more with more frames on some strings. LRU and optimal do not suffer from it. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-57",
+      prompt: "(Final 2023, MCQ item 57) What is the working set of a process?",
+      options: [{ id: "a", text: "The set of pages that the process is currently using" }, { id: "b", text: "The set of pages that the process will use in the future" }, { id: "c", text: "The set of pages that the process has used in the past" }, { id: "d", text: "The set of pages that the process may use at some point" }],
+      correctOptionId: "a",
+      explanation: "The working set is the set of pages the process has used recently, which is the set it is using now. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-60",
+      prompt: "(Final 2020, MCQ item 60) A process is thrashing if",
+      options: [{ id: "a", text: "It is spending more time paging than executing" }, { id: "b", text: "It is spending less time paging than executing" }, { id: "c", text: "Page fault occurs" }, { id: "d", text: "Swapping can not take place" }],
+      correctOptionId: "a",
+      explanation: "A thrashing process spends more time paging than executing. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-26",
+      prompt: "(Final 2024, MCQ item 26) Which page replacement algorithm suffers from Belady's Anomaly?",
+      options: [{ id: "a", text: "FIFO" }, { id: "b", text: "LRU" }, { id: "c", text: "Optimal" }, { id: "d", text: "Clock" }],
+      correctOptionId: "a",
+      explanation: "FIFO can fault more with more frames on some strings. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-27",
+      prompt: "(Final 2024, MCQ item 27) What is the working set model in memory management?",
+      options: [{ id: "a", text: "A model for optimal frame allocation" }, { id: "b", text: "A set of pages that a process uses frequently" }, { id: "c", text: "A scheduling technique for real-time systems" }, { id: "d", text: "A method to reduce internal fragmentation" }],
+      correctOptionId: "b",
+      explanation: "The working set is the set of pages a process is actively using. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-28",
+      prompt: "(Final 2024, MCQ item 28) How does the second chance page replacement algorithm work?",
+      options: [{ id: "a", text: "It removes the oldest page in memory" }, { id: "b", text: "It gives priority to modified pages" }, { id: "c", text: "It uses a reference bit to decide if a page gets a second chance" }, { id: "d", text: "It always replaces the least recently used page" }],
+      correctOptionId: "c",
+      explanation: "A page with its reference bit set is spared once and the bit is cleared. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-31",
+      prompt: "(Final 2024, MCQ item 31) What is thrashing in a virtual memory system?",
+      options: [{ id: "a", text: "Frequent swapping of processes in and out of memory" }, { id: "b", text: "Allocation of too many frames to a single process" }, { id: "c", text: "High CPU utilization with low memory usage" }, { id: "d", text: "Low CPU utilization due to excessive page faults" }],
+      correctOptionId: "d",
+      explanation: "Thrashing wastes the CPU on page faults, so utilization falls. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-33",
+      prompt: "(Final 2024, MCQ item 33) What is the primary difference between global and local page replacement algorithms?",
+      options: [{ id: "a", text: "Global replacement selects from all frames; local replacement selects from a process's own frames" }, { id: "b", text: "Global replacement is faster; local replacement is more secure" }, { id: "c", text: "Global replacement works with segmentation; local replacement works with paging" }, { id: "d", text: "Global replacement uses the working set model; local replacement does not" }],
+      correctOptionId: "a",
+      explanation: "Global replacement can take any frame; local replacement only uses the process's own frames. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-34",
+      prompt: "(Final 2024, MCQ item 34) Which algorithm uses the reference bit and modify bit in concert as an improved algorithm?",
+      options: [{ id: "a", text: "Clock algorithm" }, { id: "b", text: "Second chance" }, { id: "c", text: "Enhanced second chance" }, { id: "d", text: "Enhanced clock algorithm" }],
+      correctOptionId: "c",
+      explanation: "The enhanced second-chance algorithm uses both bits, so it prefers unmodified pages. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-35",
+      prompt: "(Final 2024, MCQ item 35) Which of the following algorithms uses a circular buffer to approximate LRU?",
+      options: [{ id: "a", text: "FIFO" }, { id: "b", text: "Clock (second chance)" }, { id: "c", text: "Optimal" }, { id: "d", text: "LRU" }],
+      correctOptionId: "b",
+      explanation: "The clock algorithm walks a circular list of frames, giving each a second chance. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-37",
+      prompt: "(Final 2024, MCQ item 37) In proportional allocation with m = 128, s1 = 30 and s2 = 215, what are the frames allocated to process 1 and process 2?",
+      options: [{ id: "a", text: "a1 = 16, a2 = 112" }, { id: "b", text: "a1 = 17, a2 = 114" }, { id: "c", text: "a1 = 18, a2 = 112" }, { id: "d", text: "a1 = 16, a2 = 114" }],
+      correctOptionId: "a",
+      explanation: "S = 245. a1 = 30/245 × 128 ≈ 15.7, rounded to 16. a2 = 215/245 × 128 ≈ 112.3, rounded to 112. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2024, Question two, 3b) Reference string 7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1 with 3 frames: count the page faults for LRU, FIFO and optimal.**
+
+**LRU: 12 faults. FIFO: 15 faults (12 replacements, since the first 3 fill empty frames). Optimal: 9 faults.** We simulated the string. The same string appears in the 2023 final, where the answers match.
+</ModelAnswer>
+
+
+<ModelAnswer>
+**(Final 2018, Q1 item 16) ___ page replacement requires that each process select from only its own set of allocated frames.**
+
+**Local** page replacement. The answer is written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f-local-replacement",
+      prompt: "(Final 2019 fall, Q1 item 15) Local page replacement requires that each process select from only its own set of allocated frames.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "With local replacement a process can only replace its own frames, so one process can't take frames from another.",
+    },
+    {
+      id: "f-thrashing-cpu",
+      prompt: "(Final 2019 fall, Q1 item 16) Thrashing decrease the CPU utilization as a result of increasing the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Past a point, each process has too few frames, so it spends its time paging. The CPU sits idle while the disk works, so utilization falls.",
+    },
+    {
+      id: "f-belady",
+      prompt: "(Final 2020, Q1 item 20) With FIFO page replacement, adding more frames can cause more page faults.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is Belady's anomaly. Some reference strings produce more faults with more frames under FIFO.",
+    },
+    {
+      id: "f-2020-fifo-3",
+      prompt: "(Final 2020, MCQ item 72) A process refers to 5 pages, in order: A, B, C, D, A, B, E, A, B, C, D, E. If the page replacement algorithm is FIFO, the number of page faults with an empty internal store of 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "c",
+      explanation: "We simulated it: FIFO with 3 frames faults 9 times. (Our answer; the 2020 paper prints no answer letters.)",
+    },
+    {
+      id: "f-2020-lru-3",
+      prompt: "(Final 2020, MCQ item 73) The same reference string (A, B, C, D, A, B, E, A, B, C, D, E). If the page replacement algorithm is LRU, the number of page faults with 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "d",
+      explanation: "We simulated it: LRU with 3 frames faults 10 times. (Our answer.)",
+    },
+    {
+      id: "f-2020-opt-3",
+      prompt: "(Final 2020, MCQ item 74) The same reference string. If the optimal page replacement algorithm is used, the number of page faults with 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "b",
+      explanation: "We simulated it: optimal with 3 frames faults 7 times. (Our answer.)",
+    },
+    {
+      id: "f-2020-fifo-4",
+      prompt: "(Final 2020, MCQ item 75) The same reference string. If the page replacement algorithm is FIFO, the number of page faults with 4 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "d",
+      explanation: "We simulated it: FIFO with 4 frames faults 10 times, more than with 3 frames, which is Belady's anomaly. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q8) Consider the reference string 7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1. How many page faults occur with three frames under LRU, FIFO and optimal replacement?**
+
+**LRU: 12. FIFO: 15. Optimal: 9.** We simulated all three, and the printed key agrees. The 2015 final asks the same question with the same string, so its answers are identical.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q8) Consider the reference string 1, 2, 3, 4, 7, 6, 3, 2, 1, 2, 3, 6, 2, 1, 5, 6, 2, 1, 2, 3. How many page faults and page replacements occur with four frames under FIFO, LRU and optimal replacement?**
+
+| | FIFO | LRU | Optimal |
+| --- | --- | --- | --- |
+| Page faults | 14 | 10 | 8 |
+| Page replacements | 10 | 6 | 4 |
+
+Replacements are the faults beyond the first four (the frames fill up first). We simulated all three, and they match the printed key.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2016, last question) Consider the reference string 1, 2, 3, 4, 2, 1, 5, 6, 2, 1, 2, 3, 7, 6, 3, 2, 1, 2, 3, 6. How many page faults occur with five frames under FIFO, optimal and LRU?**
+
+**FIFO: 10. Optimal: 7. LRU: 8.** We simulated this string, which is a different order from the 2019 fall string.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2017, Q7) What is the cause of thrashing? How does the system detect thrashing? Once it detects thrashing, what can the system do to eliminate this problem?**
+
+- **Cause:** the processes together need more frames than memory has. Each one keeps losing pages it still needs, so it faults again and again.
+- **Detection:** CPU utilization drops while the paging disk is busy. More processes are added, and utilization falls further.
+- **Fix:** lower the degree of multiprogramming (suspend some processes), or use local replacement with a working-set or page-fault-frequency policy, so each process gets the frames it needs.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-lru-faults",
+      prompt: "(Final 2023, MCQ item 68) Reference string 7,0,1,2,0,3,0,4,2,3,0,3,0,3,2,1,2,0,1,7,0,1 with 3 frames. LRU page replacement will result in ___ page faults. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "c",
+      explanation: "We simulated it: LRU faults 12 times. (Our answer.)",
+    },
+    {
+      id: "f2023-fifo-replacements",
+      prompt: "(Final 2023, MCQ item 69) The same reference string with 3 frames. FIFO page replacement will result in ___ page replacements. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "c",
+      explanation: "FIFO causes 15 faults. The first 3 faults fill empty frames and are not replacements, so 15 − 3 = 12 replacements. (Our answer.)",
+    },
+    {
+      id: "f2023-opt-faults",
+      prompt: "(Final 2023, MCQ item 70) The same reference string with 3 frames. Optimal page replacement will result in ___ page faults. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "b",
+      explanation: "We simulated it: optimal faults 9 times. (Our answer.)",
+    },
+  ]}
+/>

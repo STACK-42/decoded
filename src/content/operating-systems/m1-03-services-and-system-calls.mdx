@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SystemCallFlow, CopyFileCalls, ParameterPassing } from "@/components/mdx/OsVisualizers";
 
 # OS Services, Interfaces and System Calls
@@ -158,3 +158,137 @@ When a C program calls `printf()`, that's a **library call**. The C library then
     That error comes back from a system call: the kernel checked your user ID against the file's permissions and refused.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="services-and-system-calls"
+  practice
+  questions={[
+    {
+      id: "m-syscall-interface",
+      prompt: "(Midterm 2015, Q1 items 5 and 7) System calls provide an end user interface to the services made available by an operating system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "System calls are the programmer's interface to the OS, used by programs. Users reach the OS through a shell or GUI, which then makes the system calls. The 2015 key marks it false.",
+    },
+    {
+      id: "m-api-syscalls",
+      prompt: "(Midterm 2017, Q1 item 6; Midterm 2018 second version, Q1 item 7) Functions that make up an API typically invoke the actual system calls on behalf of the application programmer.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "An API function such as open() or printf() is a wrapper. It calls the matching system call for you.",
+    },
+    {
+      id: "m-syscall-access",
+      prompt: "(Midterm 2018, Q1 item 10) To access the services of operating system, the interface is provided by the system calls.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Programs reach OS services through system calls, which is exactly what the system-call interface is for.",
+    },
+    {
+      id: "m-services-user",
+      prompt: "(Midterm 2018 second version, Q1 item 5; Midterm 2019, Q1 item 6) Program execution and resource allocation are example of operating-system services provides functions that are helpful to the user.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Program execution is for the user, but resource allocation is for the system's efficiency. The usual split is: user-facing services (execution, I/O, file system, communication, error detection) and system-efficiency services (resource allocation, accounting, protection). The 2019 key also marks it false.",
+    },
+    {
+      id: "m-stack-params",
+      prompt: "(Midterm 2014, Q1 item 5) The program stack can be used to pass a system call parameters to the operating system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "One of the three parameter-passing methods pushes the parameters onto the stack, and the OS pops them off.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2014, Q2; Midterm 2018, Q2; Midterm 2019, Q2; Midterm 2019 second version, Q3; Midterm 2021, Q3) Describe the three methods for passing parameters needed by system calls.**
+
+1. **In registers.** The parameters are put in CPU registers before the system call. This is quick, but there may be more parameters than registers.
+2. **In a block or table in memory.** The program stores the parameters in a block and passes the block's starting address in a register. Any number of parameters can be passed this way.
+3. **On the stack.** The program pushes the parameters onto the stack, and the operating system pops them off.
+
+The 2014 and 2018 keys use the same three methods, and the 2019 second-version key adds that the block's address goes in a register.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2015, Q3) Services and functions provided by an operating system can be divided into two main categories. Briefly describe the two categories and list the main services of each category.**
+
+- **Services that help the user:** user interface, program execution, I/O operations, file-system manipulation, communications and error detection. These make programs easier to use.
+- **Services that keep the system efficient:** resource allocation, accounting, and protection and security. These make sure the system as a whole runs well and safely, and they are usually invisible to the user.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2017, Q2) What is the purpose of system calls? What is the purpose of system programs?**
+
+A **system call** lets a running user program ask the operating system for a service it can't do itself, such as reading a file or creating a process. A **system program** is a bundle of useful system calls that is shipped with the OS, such as a file copier or a compiler, so users don't have to write their own tools for common jobs.
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="services-and-system-calls"
+  practice
+  questions={[
+  ]}
+/>
+<ModelAnswer>
+**(Midterm 2021, Q1 item 8) _______ provides an interface to the services provided by an operating system.**
+
+Answer: **system call.** (Our answer, which matches the printed 2021 key.)
+</ModelAnswer>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="services-and-system-calls"
+  practice
+  questions={[
+    {
+      id: "f2023-29",
+      prompt: "(Final 2023, Q1 item 29) Program execution and resource allocation are examples of operating-system services that provide functions that are helpful to the user.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Program execution helps the user, but resource allocation is for the system's efficiency. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2018, Q1 item 6) System calls are mostly accessed by programs via ___ rather than direct system call use.**
+
+**APIs** (application programming interfaces). The answer is written in on the printed 2018 paper.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="services-and-system-calls"
+  practice
+  questions={[
+    {
+      id: "f-cli-service",
+      prompt: "(Final 2015, Q1 item 4; Final 2019 spring, Q1 item 4) Command line interpreter is one of the OS services applied to system users.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The command interpreter (shell) is a user-facing service: it reads commands and runs them for the user.",
+    },
+    {
+      id: "f-param-methods",
+      prompt: "(Final 2019 fall, Q1 item 5) There are three general methods to pass parameters to the operating system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The three methods are registers, a block in memory whose address goes in a register, and the stack. See the midterm answer above for details.",
+    },
+  ]}
+/>
+
+*The 2017 final (Q2) asks for the purpose of system calls, the purpose of system programs, and the three parameter-passing methods. The answers are the same as the midterm answers above.*

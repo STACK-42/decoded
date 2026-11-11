@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { JavaThreadLifecycle, ThreadRace, MatrixAddThreads } from "@/components/mdx/OsVisualizers";
 
 # Lab: Threads in Java
@@ -316,3 +316,28 @@ Each thread writes to **its own row**, so no two threads ever touch the same cel
     "Download these 10 files, then zip them" is a join: start ten threads, wait for all of them, then continue.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours. Threads are not a lecture chapter in these notes, so the question sits here with the threads lab.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="lab-java-threads"
+  practice
+  questions={[
+    {
+      id: "m-thread-pc",
+      prompt: "(Midterm 2022, Q1 item 6) The multi-threaded process has one program counter for all its threads.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Each thread runs its own sequence of instructions, so each has its own program counter. The threads of one process share its code, data and open files, but not the program counter.",
+    },
+  ]}
+/>
+
+### Part 2: Final exam questions
+
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

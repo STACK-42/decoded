@@ -77,7 +77,7 @@ export default function CoursePage() {
                   <div key={module.title}>
                     <div className="flex items-baseline gap-4 mb-1">
                       <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-                        Module {String(mi).padStart(2, "0")}
+                        {module.label ?? `Module ${String(mi).padStart(2, "0")}`}
                       </span>
                     </div>
                     <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">{module.title}</h2>

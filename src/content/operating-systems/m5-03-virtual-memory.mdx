@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { PageFaultSteps, DemandPagingCost, CopyOnWrite } from "@/components/mdx/OsVisualizers";
 
 # Virtual Memory and Demand Paging
@@ -208,3 +208,165 @@ That's the topic of the next lesson.
     Redis forks a child to save its data to disk. Thanks to COW, the child sees a frozen snapshot while the parent keeps serving requests.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
+### Part 1: Midterm questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "m-vm-whole-memory",
+      prompt: "(Midterm 2022, Q1 item 5) Virtual memory allows the execution of processes that are stored completely in memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The point of virtual memory is to run a process whose pages are not all in memory. Only the pages it is using need to be present, through demand paging.",
+    },
+  ]}
+/>
+
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f2023-1",
+      prompt: "(Final 2023, Q1 item 1) Virtual memory increases the system throughput.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Virtual memory lets larger programs run and lets more processes share memory. It doesn't by itself raise throughput, and paging costs time. (Our answer.)",
+    },
+    {
+      id: "f2023-2",
+      prompt: "(Final 2023, Q1 item 2) During MMU address translation, a page fault routine will be executed if the page is a memory resident.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A page fault happens when the page is not in memory. A memory-resident page raises no fault. (Our answer.)",
+    },
+    {
+      id: "f2023-3",
+      prompt: "(Final 2023, Q1 item 3) The operating system executes the page fault routing through a software interrupt.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A page fault is a trap, a software-generated interrupt, so the OS runs its handler through one. (Our answer.)",
+    },
+    {
+      id: "f2023-4",
+      prompt: "(Final 2023, Q1 item 4) During the demand paging the operating system doesn't need to perform a context switch.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A page fault blocks the process while the page is read from disk, so the CPU switches to another process. (Our answer.)",
+    },
+    {
+      id: "f2023-5",
+      prompt: "(Final 2023, Q1 item 5) Effective access time is a measure to evaluate the demand paging implementation.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Effective access time is the average memory access time with paging, counting the page-fault cost. (Our answer.)",
+    },
+    {
+      id: "f2023-6",
+      prompt: "(Final 2023, Q1 item 6) Zero-fill-on-demand pages have been zeroed out while being allocated thus erasing the previous content.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Zero-fill-on-demand clears a page before giving it to a process, so no old data is exposed. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-53",
+      prompt: "(Final 2023, MCQ item 53) What is the main advantage of virtual memory over contiguous memory allocation?",
+      options: [{ id: "a", text: "It reduces external fragmentation" }, { id: "b", text: "It reduces internal fragmentation" }, { id: "c", text: "It allows programs to be larger than physical memory" }, { id: "d", text: "It simplifies memory management" }],
+      correctOptionId: "c",
+      explanation: "Virtual memory runs programs bigger than physical memory, using demand paging. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-54",
+      prompt: "(Final 2023, MCQ item 54) What is the difference between a valid bit and a dirty bit in a page table entry?",
+      options: [{ id: "a", text: "Valid bit indicates whether the page is writable or not, dirty bit indicates whether the page is accessible or not" }, { id: "b", text: "Valid bit indicates whether the page is accessible or not, dirty bit indicates whether the page is writable or not" }, { id: "c", text: "Valid bit indicates whether the page has been modified or not, dirty bit indicates whether the page is in memory or not" }, { id: "d", text: "Valid bit indicates whether the page is in memory or not, dirty bit indicates whether the page has been modified or not" }],
+      correctOptionId: "d",
+      explanation: "The valid bit says whether the page is in memory; the dirty bit says whether it has been changed. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-55",
+      prompt: "(Final 2023, MCQ item 55) What is the basic idea of demand paging?",
+      options: [{ id: "a", text: "To replace a page that is no longer needed by the process" }, { id: "b", text: "To bring a page into memory only when it is needed by the process" }, { id: "c", text: "To allocate a fixed number of pages to each process" }, { id: "d", text: "To divide the virtual address space into equal-sized pages" }],
+      correctOptionId: "b",
+      explanation: "Demand paging loads a page only on first use. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-25",
+      prompt: "(Final 2024, MCQ item 25) What is the main benefit of Copy-On-Write (COW)?",
+      options: [{ id: "a", text: "Improved security" }, { id: "b", text: "Efficient memory usage during process creation" }, { id: "c", text: "Faster swapping" }, { id: "d", text: "Reduced process priority" }],
+      correctOptionId: "b",
+      explanation: "COW lets parent and child share pages until one of them writes. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-29",
+      prompt: "(Final 2024, MCQ item 29) What is the purpose of the swap space in a virtual memory system?",
+      options: [{ id: "a", text: "To store temporary files" }, { id: "b", text: "To back up main memory in case of power failure" }, { id: "c", text: "To hold pages that are not in main memory" }, { id: "d", text: "None of the answers" }],
+      correctOptionId: "c",
+      explanation: "Swap space holds pages that have been moved out of main memory. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-30",
+      prompt: "(Final 2024, MCQ item 30) In demand paging, what is a lazy swapper?",
+      options: [{ id: "a", text: "A swapper that preloads all pages before execution" }, { id: "b", text: "A swapper that only swaps when memory is full" }, { id: "c", text: "A swapper that brings pages into memory only when needed" }, { id: "d", text: "A swapper that prioritizes large processes" }],
+      correctOptionId: "c",
+      explanation: "A lazy swapper never swaps a page in until it is needed. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-32",
+      prompt: "(Final 2024, MCQ item 32) What is the effective access time in demand paging?",
+      options: [{ id: "a", text: "The time to retrieve a page from disk" }, { id: "b", text: "The average time to access memory considering page faults" }, { id: "c", text: "The time to swap a page into memory" }, { id: "d", text: "The time to execute a process from start to finish" }],
+      correctOptionId: "b",
+      explanation: "Effective access time averages the memory access time over the page-fault rate. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-36",
+      prompt: "(Final 2024, MCQ item 36) How does Copy-On-Write (COW) improve process creation performance?",
+      options: [{ id: "a", text: "By copying all memory pages at the time of process creation" }, { id: "b", text: "By sharing pages between parent and child processes until a write occurs" }, { id: "c", text: "By sharing pages between parent and child processes" }, { id: "d", text: "By reducing the size of the page table" }],
+      correctOptionId: "b",
+      explanation: "Pages are copied only when one process writes to them. (Our answer.)",
+    },
+  ]}
+/>
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f-vm-separation",
+      prompt: "(Final 2019 fall, Q1 item 14) Virtual memory involves the separation of logical memory as perceived by users from physical memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Users see a large, continuous logical memory. The OS maps it onto physical memory, which may be smaller.",
+    },
+  ]}
+/>
+
+*The 2017 final's question on the cause of thrashing and how to detect and fix it is answered with the page-replacement lesson.*

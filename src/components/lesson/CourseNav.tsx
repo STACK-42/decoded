@@ -89,7 +89,7 @@ export function CourseNav({
               >
                 <span className="flex flex-col gap-0.5 min-w-0">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Module {i} · {modDone}/{m.lessons.length}
+                    {m.label ?? `Module ${i}`} · {modDone}/{m.lessons.length}
                   </span>
                   <span className="font-display text-sm font-semibold leading-snug group-hover:text-foreground">{m.title}</span>
                 </span>
