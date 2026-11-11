@@ -75,6 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-11 (catch-up): the session was down 2026-11-08 to 2026-11-10, and 10 queued runs fired together on 2026-11-11. Did one task, not three: quality item 11 (from #54), the recursion-tree / master-method, CPU scheduler and hash-function tables fit 390 px (were 160-180 px too wide, hiding the turnaround, waiting and level-cost columns): no table minimum width on phones, short CPU headers there, narrower inputs, the Gantt chart's minimum lowered to 280 px with its end label kept clear. The 7 exam runs (A/B) stayed blocked on the owner's A/B/C choice for #68's practice questions; nothing new stacked. PR #PRNUM, open.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).

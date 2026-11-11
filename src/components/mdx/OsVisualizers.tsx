@@ -2527,14 +2527,15 @@ function Gantt({ slices, t, names }: { slices: { name: string | null; from: numb
   const ticks: number[] = [];
   for (const x of [...new Set(slices.flatMap((s) => [s.from, s.to]))].sort((a, b) => a - b)) {
     const prev = ticks[ticks.length - 1];
-    if (prev !== undefined && (x - prev) / total < 0.045) {
+    // the end label is right-aligned rather than centred, so it needs a wider gap
+    if (prev !== undefined && (x - prev) / total < (x === total ? 0.06 : 0.045)) {
       if (x === total) ticks[ticks.length - 1] = x; // always keep the end
       continue;
     }
     ticks.push(x);
   }
   return (
-    <div className="min-w-[320px]">
+    <div className="min-w-[280px]">
       <div className="relative h-10 rounded-sm border border-border bg-background/60 overflow-hidden">
         {slices.map((s, i) => {
           const end = Math.min(s.to, t);
@@ -2605,7 +2606,7 @@ export function CpuScheduler({ presets, algos }: { presets?: string; algos?: str
     setProcs((ps) => ps.map((p, j) => (j === i ? { ...p, [k]: Math.max(k === "burst" ? 1 : 0, Math.min(99, v || 0)) } : p)));
   };
   const names = procs.map((p) => p.name);
-  const cell = "w-14 bg-transparent border border-border rounded-sm px-1 py-0.5 font-mono text-xs text-right";
+  const cell = "w-10 sm:w-14 bg-transparent border border-border rounded-sm px-1 py-0.5 font-mono text-xs text-right";
   return (
     <Panel title="CPU scheduler" legend={procs.map((p, i) => [PROC_FILL[i % PROC_FILL.length], p.name] as [string, string])}>
       <div className="flex flex-wrap gap-1.5">
@@ -2643,16 +2644,16 @@ export function CpuScheduler({ presets, algos }: { presets?: string; algos?: str
         <Gantt slices={run.slices} t={t} names={names} />
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-xs border-collapse min-w-[460px]">
+        <table className="w-full font-mono text-xs border-collapse sm:min-w-[460px]">
           <thead>
-            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
-              <th className="text-left py-1.5 font-normal">process</th>
-              <th className="text-right py-1.5 font-normal">arrival</th>
+            <tr className="text-[10px] uppercase tracking-normal sm:tracking-widest text-muted-foreground border-b border-border">
+              <th className="text-left py-1.5 font-normal"><span className="hidden sm:inline">process</span><span className="sm:hidden">proc</span></th>
+              <th className="text-right py-1.5 font-normal"><span className="hidden sm:inline">arrival</span><span className="sm:hidden">arr</span></th>
               <th className="text-right py-1.5 font-normal">burst</th>
-              {showPriority && <th className="text-right py-1.5 font-normal">priority</th>}
-              <th className="text-right py-1.5 font-normal">finish</th>
-              <th className="text-right py-1.5 font-normal">turnaround</th>
-              <th className="text-right py-1.5 font-normal">waiting</th>
+              {showPriority && <th className="text-right py-1.5 font-normal"><span className="hidden sm:inline">priority</span><span className="sm:hidden">prio</span></th>}
+              <th className="text-right py-1.5 pl-1 font-normal"><span className="hidden sm:inline">finish</span><span className="sm:hidden">finish</span></th>
+              <th className="text-right py-1.5 pl-1 font-normal"><span className="hidden sm:inline">turnaround</span><span className="sm:hidden">turn</span></th>
+              <th className="text-right py-1.5 pl-1 font-normal"><span className="hidden sm:inline">waiting</span><span className="sm:hidden">wait</span></th>
             </tr>
           </thead>
           <tbody>
@@ -2662,7 +2663,7 @@ export function CpuScheduler({ presets, algos }: { presets?: string; algos?: str
               return (
                 <tr key={p.name} className="border-b border-border/50">
                   <td className="py-1">
-                    <span className={`inline-block h-2.5 w-2.5 rounded-[2px] mr-2 ${PROC_FILL[i % PROC_FILL.length]}`} />
+                    <span className={`inline-block h-2.5 w-2.5 rounded-[2px] mr-1 sm:mr-2 ${PROC_FILL[i % PROC_FILL.length]}`} />
                     {p.name}
                   </td>
                   <td className="py-1 text-right">
