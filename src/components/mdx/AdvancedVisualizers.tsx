@@ -1867,7 +1867,11 @@ export function HashTableVisualizer({
             </div>
 
             <div className="overflow-x-auto pb-1">
-              <div className="grid gap-1.5 font-mono min-w-fit" style={{ gridTemplateColumns: `repeat(${m}, minmax(3.25rem, 1fr))` }}>
+              {/* one row from sm up; on phones the slots wrap into even rows of at most 6 */}
+              <div
+                className="grid gap-1.5 font-mono [grid-template-columns:repeat(var(--cols-phone),minmax(2.5rem,1fr))] sm:[grid-template-columns:repeat(var(--cols),minmax(2.5rem,1fr))] sm:min-w-fit"
+                style={{ "--cols": m, "--cols-phone": Math.ceil(m / Math.ceil(m / 6)) } as React.CSSProperties}
+              >
                 {s.slots.map((v, idx) => {
                   const isHit = idx === s.hit;
                   const isBad = idx === s.bad;
