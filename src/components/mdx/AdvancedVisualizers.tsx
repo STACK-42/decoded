@@ -249,32 +249,34 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
       <div className="font-display text-xl md:text-2xl font-semibold">{recText}</div>
 
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-xs border-collapse min-w-[460px]">
+        <table className="w-full font-mono text-xs border-collapse sm:min-w-[460px]">
           <thead>
             <tr className="text-xs text-muted-foreground border-b border-border">
-              <th className="text-left py-2 pr-3 font-normal">level</th>
-              <th className="text-left py-2 pr-3 font-normal">subproblems</th>
-              <th className="text-left py-2 pr-3 font-normal">each of size</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">level</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">subproblems</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">each of size</th>
               <th className="text-left py-2 font-normal">level cost (× root)</th>
             </tr>
           </thead>
           <tbody>
             {shown.map((l) => (
               <tr key={l.depth} className="border-b border-border/50">
-                <td className="py-2 pr-3">{l.depth}</td>
-                <td className="py-2 pr-3">
-                  <span className="inline-flex flex-wrap gap-[3px] max-w-[160px] align-middle">
+                <td className="py-2 pr-2 sm:pr-3">{l.depth}</td>
+                <td className="py-2 pr-2 sm:pr-3">
+                  <span className="inline-flex flex-wrap gap-[3px] max-w-[70px] sm:max-w-[160px] align-middle">
                     {Array.from({ length: Math.min(l.nodes, 27) }, (_, i) => (
                       <span key={i} className="inline-block h-2.5 w-2.5 rounded-full border border-violet bg-violet/20" />
                     ))}
                     {l.nodes > 27 && <span className="text-muted-foreground">…</span>}
                   </span>
-                  <span className="ml-2">{formatOps(l.nodes)}</span>
+                  <span className="block sm:inline sm:ml-2">{formatOps(l.nodes)}</span>
                 </td>
-                <td className="py-2 pr-3">{l.depth === 0 ? "n" : `n/${formatOps(Math.pow(v.b, l.depth))}`}</td>
+                <td className="py-2 pr-2 sm:pr-3">{l.depth === 0 ? "n" : `n/${formatOps(Math.pow(v.b, l.depth))}`}</td>
                 <td className="py-2">
-                  <span className="inline-flex items-center gap-2 w-full">
-                    <span className="h-2.5 bg-violet rounded-full transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}px` }} />
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 w-full">
+                    <span className="w-[50px] sm:w-[100px] shrink-0">
+                      <span className="block h-2.5 bg-violet rounded-full transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}%` }} />
+                    </span>
                     {fmtExp(l.cost)}
                   </span>
                 </td>
@@ -1927,10 +1929,10 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
   const fold = hashFolding(k, 2);
   const row = (name: string, how: React.ReactNode, value: React.ReactNode) => (
     <tr className="border-b border-border/40 align-middle">
-      <td className="py-3 pr-4 font-medium whitespace-nowrap">{name}</td>
-      <td className="py-3 pr-4 text-muted-foreground">{how}</td>
+      <td className="py-3 pr-2 sm:pr-4 font-medium align-top sm:align-middle">{name}</td>
+      <td className="py-3 pr-2 sm:pr-4 text-muted-foreground [overflow-wrap:anywhere]">{how}</td>
       <td className="py-3 text-right">
-        <span className="inline-block min-w-[3rem] text-center rounded-full bg-mint/15 text-mint px-3 py-1 text-base tabular-nums">{value}</span>
+        <span className="inline-block min-w-[2.5rem] sm:min-w-[3rem] text-center rounded-full bg-mint/15 text-mint px-2 sm:px-3 py-1 text-sm sm:text-base tabular-nums">{value}</span>
       </td>
     </tr>
   );
@@ -1942,7 +1944,7 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
         <span className="text-muted-foreground">table size n = 100</span>
       </label>
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-sm border-collapse min-w-[480px]">
+        <table className="w-full font-mono text-xs sm:text-sm border-collapse sm:min-w-[480px]">
           <tbody>
             {row("Division", `${k} mod 97 (a prime near 100)`, hashDivision(k, 97))}
             {row("Multiplication", `⌊100 · (${k} × 0.618033 mod 1)⌋`, hashMultiplication(k, 100))}
