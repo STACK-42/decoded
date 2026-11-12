@@ -2333,8 +2333,8 @@ export function PropagationDelayLab() {
     <Panel
       title="Cascaded Path Propagation Delay Analyzer"
       legend={[
-        ["bg-mint/30", "rising transition (0 \u2192 1)"],
-        ["bg-sky/30", "falling transition (1 \u2192 0)"],
+        ["bg-mint/30", "rising transition (0 → 1)"],
+        ["bg-sky/30", "falling transition (1 → 0)"],
       ]}
     >
       <div className="flex flex-col gap-4 font-mono text-[13px]">
@@ -2348,7 +2348,7 @@ export function PropagationDelayLab() {
               onClick={() => setTransition("0to1")}
               className={`${btn} !px-2.5 ${transition === "0to1" ? "bg-mint text-background font-bold" : ""}`}
             >
-              Rising (0 \u2192 1)
+              Rising (0 → 1)
             </button>
             <button
               type="button"
@@ -2356,7 +2356,7 @@ export function PropagationDelayLab() {
               onClick={() => setTransition("1to0")}
               className={`${btn} !px-2.5 ${transition === "1to0" ? "bg-sky text-background font-bold" : ""}`}
             >
-              Falling (1 \u2192 0)
+              Falling (1 → 0)
             </button>
           </div>
           <div className="text-[14px]">
@@ -2383,12 +2383,12 @@ export function PropagationDelayLab() {
                   <td className="px-3 py-2 font-bold text-foreground">{stg.label}</td>
                   <td className="px-3 py-2 text-center">
                     <span className={`px-2 py-0.5 rounded text-[11px] ${stg.inEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
-                      {stg.inBefore} \u2192 {stg.inAfter} ({stg.inEdge})
+                      {stg.inBefore} → {stg.inAfter} ({stg.inEdge})
                     </span>
                   </td>
                   <td className="px-3 py-2 text-center">
                     <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${stg.outEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
-                      {stg.outBefore} \u2192 {stg.outAfter} ({stg.outEdge})
+                      {stg.outBefore} → {stg.outAfter} ({stg.outEdge})
                     </span>
                   </td>
                   <td className="px-3 py-2 text-center font-bold text-neon">{stg.delayParameter}</td>
@@ -2510,7 +2510,7 @@ export function BooleanAlgebraLab() {
           <div>
             <div className="eyebrow text-sky mb-1">Dual Form (Principle of Duality)</div>
             <div className="text-base font-bold text-sky break-words">{leftDual} = {rightDual}</div>
-            <div className="text-[11px] text-muted-foreground font-body mt-1">Interchanging (+ \u2194 \u00B7) and (0 \u2194 1) while preserving literals.</div>
+            <div className="text-[11px] text-muted-foreground font-body mt-1">Interchanging (+ ↔ ·) and (0 ↔ 1) while preserving literals.</div>
           </div>
         </div>
 
@@ -2539,7 +2539,7 @@ export function BooleanAlgebraLab() {
                     ))}
                     <td className="px-3 py-0.5 text-center font-bold text-foreground">{a}</td>
                     <td className="px-3 py-0.5 text-center font-bold text-foreground">{b}</td>
-                    <td className="px-3 py-0.5 text-center text-mint font-bold">{match ? "\u2713" : "\u2717"}</td>
+                    <td className="px-3 py-0.5 text-center text-mint font-bold">{match ? "✓" : "✗"}</td>
                   </tr>
                 );
               })}
@@ -2663,7 +2663,7 @@ export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
                 <span className="text-[11px] text-muted-foreground">{on.length} minterms</span>
               </div>
               <div className="font-bold text-mint break-words mb-1">
-                F({vars.join(", ")}) = \u2211 m({[...on].sort((a, b) => a - b).join(", ") || "\u2205"})
+                F({vars.join(", ")}) = ∑ m({[...on].sort((a, b) => a - b).join(", ") || "∅"})
               </div>
               <div className="text-[12px] text-foreground break-words font-mono">
                 F = {sopStr}
@@ -2680,7 +2680,7 @@ export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
                 <span className="text-[11px] text-muted-foreground">{zeros.length} maxterms</span>
               </div>
               <div className="font-bold text-sky break-words mb-1">
-                F({vars.join(", ")}) = \u220F M({[...zeros].sort((a, b) => a - b).join(", ") || "\u2205"})
+                F({vars.join(", ")}) = ∏ M({[...zeros].sort((a, b) => a - b).join(", ") || "∅"})
               </div>
               <div className="text-[12px] text-foreground break-words font-mono">
                 F = {posStr}
@@ -2692,7 +2692,7 @@ export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
 
             {/* Inverted function */}
             <div className="text-[12px] text-muted-foreground">
-              Complement function: <span className="font-bold text-foreground">F' = \u2211 m({zeros.join(", ")}) = \u220F M({[...on].sort((a, b) => a - b).join(", ")})</span>
+              Complement function: <span className="font-bold text-foreground">F' = ∑ m({zeros.join(", ")}) = ∏ M({[...on].sort((a, b) => a - b).join(", ")})</span>
             </div>
           </div>
         </div>
@@ -2891,7 +2891,7 @@ export function KMapExplorer({
               </div>
             ))}
             <div className="text-[10px] text-muted-foreground mt-2">
-              Tip: Click cell to cycle <span className="text-foreground font-bold">0 \u2192 1 \u2192 X (don't care) \u2192 0</span>.
+              Tip: Click cell to cycle <span className="text-foreground font-bold">0 → 1 → X (don't care) → 0</span>.
             </div>
           </div>
 
@@ -2963,7 +2963,7 @@ export function HazardLab() {
         <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded border border-border/60">
           <div className="flex items-center gap-3">
             <span className="eyebrow text-muted-foreground">Transition:</span>
-            <span className="font-bold text-foreground">A: 0 \u2192 1 (with B=1, C=1)</span>
+            <span className="font-bold text-foreground">A: 0 → 1 (with B=1, C=1)</span>
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -2997,14 +2997,14 @@ export function HazardLab() {
               onClick={() => setTimeStep(Math.max(0, timeStep - 1))}
               className={`${btn} !px-2 text-[11px]`}
             >
-              \u25C0 Step
+              ◀ Step
             </button>
             <button
               type="button"
               onClick={() => setTimeStep(Math.min(6, timeStep + 1))}
               className={`${btn} !px-2 text-[11px]`}
             >
-              Step \u25B6
+              Step ▶
             </button>
           </div>
         </div>
@@ -3259,7 +3259,7 @@ const BUBBLE_STEPS = [
   {
     step: 2,
     title: "Step 2: De Morgan Graphic Equivalence",
-    desc: "By De Morgan's theorem, (A' \u00B7 B')' = A + B. An OR gate with bubbles on all its inputs is physically and logically identical to a standard NAND gate with an output bubble!",
+    desc: "By De Morgan's theorem, (A' · B')' = A + B. An OR gate with bubbles on all its inputs is physically and logically identical to a standard NAND gate with an output bubble!",
   },
   {
     step: 3,
@@ -3304,7 +3304,7 @@ export function BubblePushingLab() {
               onClick={() => setStep(Math.max(0, step - 1))}
               className={`${btn} !px-2 text-[11px] disabled:opacity-40`}
             >
-              \u25C0 Previous
+              ◀ Previous
             </button>
             <button
               type="button"
@@ -3312,7 +3312,7 @@ export function BubblePushingLab() {
               onClick={() => setStep(Math.min(BUBBLE_STEPS.length - 1, step + 1))}
               className={`${btn} !px-2 text-[11px] disabled:opacity-40`}
             >
-              Next \u25B6
+              Next ▶
             </button>
           </div>
         </div>
@@ -3328,7 +3328,7 @@ export function BubblePushingLab() {
           <div className="bg-muted/10 p-3 rounded border border-border/60 text-center">
             <div className="eyebrow text-mint mb-2">NAND Graphic Equivalence</div>
             <div className="font-mono text-sm text-foreground">
-              [AND with bubble] \u2261 [OR with input bubbles]
+              [AND with bubble] ≡ [OR with input bubbles]
             </div>
             <div className="text-[11px] text-muted-foreground font-body mt-1">
               (AB)' = A' + B' (De Morgan Law 1)
@@ -3337,7 +3337,7 @@ export function BubblePushingLab() {
           <div className="bg-muted/10 p-3 rounded border border-border/60 text-center">
             <div className="eyebrow text-sky mb-2">NOR Graphic Equivalence</div>
             <div className="font-mono text-sm text-foreground">
-              [OR with bubble] \u2261 [AND with input bubbles]
+              [OR with bubble] ≡ [AND with input bubbles]
             </div>
             <div className="text-[11px] text-muted-foreground font-body mt-1">
               (A + B)' = A'B' (De Morgan Law 2)
