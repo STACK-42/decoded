@@ -50,6 +50,7 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
   - [x] 4b. Advanced Algorithms bank: 80 questions across all 24 lessons, each with `lesson` and `section`. (PR #63, stacked on #62)
   - [ ] 4c. Bring other courses up to 4 questions per taught lesson. Gap measured 2026-11-06 (taught lessons × 4 − questions): Computational Mathematics 64, Logic Design 48, Computer Architecture 44, Computer Graphics 32, Theory of Computation 26, Computer Organization 26, Discrete Mathematics 26, Data Structures 20, Microprocessors 18, Computer Networks 9. **Algorithm Design (28) is left to the owner**, whose issue #60 round 6 ("Practice") covers it. One or two courses per run, biggest gap first:
     - [x] Computer Literacy (12) and The Exam Mind (20), which had none, so their exams were empty. (PR #66, stacked on #63)
+    - [x] Computational Mathematics: +63 (28 → 91), every lesson including the Signals project, each with `lesson` and `section`. (PR #67, stacked on #66)
   - [ ] 4d. Set `lesson`/`section` on the 259 migrated questions.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
 - [ ] 6. Account sync for review cards and exam attempts.
@@ -74,12 +75,17 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 
 ## Blocked
 
-Nothing yet.
+- **Exam phases (runs A and B), since 2026-11-06.** Main merged #68 (Asmaa): a `practice` mode for `Quiz` plus ~40 practice questions written inline in Advanced Algorithms lessons. Rebasing the exam stack onto it will conflict in `Quiz` (#59 records review answers there), fail #53's "no inline questions" test, and leave Advanced Algorithms with two disconnected question sets (her inline ones and #63's bank). The owner was asked to choose: (A) move practice questions into the bank with a `practice` flag, (B) keep both and exempt practice quizzes, or (C) agree a design with Asmaa first. Until then, exam runs record this and stop instead of stacking more phases on a base that will need reworking.
 
 ## Run log
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-12 06:10 (run A): still blocked, nothing stacked. Asmaa's #77 (merged 2026-11-11) added exam practice to the Operating Systems lessons inline, one more course where quizzes now grow in the `.mdx` files and overlap this stack (#62's Operating Systems bank).
+- 2026-11-11 10:40 (run B), also covering the 7 exam runs queued 2026-11-08 to 2026-11-11: still blocked on the owner's A/B/C choice for #68, nothing stacked. New since the block: the owner's Computational Mathematics rounds (#72, round 6) grew the four module quizzes inline from 6-8 to 20-22 questions each, and #75 is doing the same for Logic Design, so quizzes are being expanded in the `.mdx` files, not in banks. That overlaps #67's 63 new questions and makes the phase 1 migration (#53) larger each time it is rebased. The exam plan needs the owner's call before more phases: keep quizzes in the lessons (exam pages read them from there) or move them into banks.
+- 2026-11-07 10:40 (run B): still blocked (see Blocked); no reply or merges since run A. No new phase.
+- 2026-11-07 06:10 (run A): blocked, no new phase. Waiting for the owner's decision on integrating #68's practice questions with the exam stack (see Blocked). Nothing merged since 2026-11-02; main has moved on (#70).
+- 2026-11-06 10:40 (run B): exam phase 4c, Computational Mathematics +63 questions (matrices, polynomials, number theory, cryptography and the Signals project; every number worked by script, answer positions balanced, 16 answers re-checked after balancing). PR #67 (stacked on #66), open.
 - 2026-11-06 06:10 (run A): first rebased the whole exam stack (#53 → #63) onto main, which had changed the Algorithm Design sorting quiz; regenerated the 11 migrated banks from main's quiz files (only that quiz differed) and checked them equal. Then exam phase 4c, part 1: question banks for Computer Literacy (12) and The Exam Mind (20); every available course now has an exam. PR #66 (stacked on #63), open.
 - 2026-11-05 10:40 (run B): exam phase 4b, Advanced Algorithms question bank (80 questions; master method, hashing and probing, red-black trees, DP, greedy and NP worked by script with fresh inputs, every claim checked against its lesson). Every course with quizzes or a bank now has an exam except Computer Literacy and The Exam Mind. PR #63 (stacked on #62), open.
 - 2026-11-05 06:10 (run A): exam phase 4a, Operating Systems question bank (67 questions across all 17 lessons, calculation answers worked by script, every claim checked against its lesson; new test that every `section` is a real heading). The OS exam now works. PR #62 (stacked on #59), open.
