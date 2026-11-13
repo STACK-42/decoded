@@ -2369,31 +2369,34 @@ export function PropagationDelayLab() {
           <table className="w-full font-mono text-[12px] border-collapse border border-border">
             <thead>
               <tr className="bg-muted/40 text-left">
-                <th className="px-3 py-1.5 border-b border-border">Stage</th>
-                <th className="px-3 py-1.5 border-b border-border text-center">Input Transition</th>
-                <th className="px-3 py-1.5 border-b border-border text-center">Output Transition</th>
-                <th className="px-3 py-1.5 border-b border-border text-center">Parameter</th>
-                <th className="px-3 py-1.5 border-b border-border text-right">Stage Delay</th>
-                <th className="px-3 py-1.5 border-b border-border text-right">Cumulative</th>
+                <th className="px-1.5 sm:px-3 py-1.5 border-b border-border">Stage</th>
+                <th className="px-1.5 sm:px-3 py-1.5 border-b border-border text-center"><span className="hidden sm:inline">Input Transition</span><span className="sm:hidden">In</span></th>
+                <th className="px-1.5 sm:px-3 py-1.5 border-b border-border text-center"><span className="hidden sm:inline">Output Transition</span><span className="sm:hidden">Out</span></th>
+                <th className="px-1.5 sm:px-3 py-1.5 border-b border-border text-center"><span className="hidden sm:inline">Parameter</span><span className="sm:hidden">Delay</span></th>
+                <th className="hidden sm:table-cell px-3 py-1.5 border-b border-border text-right">Stage Delay</th>
+                <th className="px-1.5 sm:px-3 py-1.5 border-b border-border text-right"><span className="hidden sm:inline">Cumulative</span><span className="sm:hidden">Total</span></th>
               </tr>
             </thead>
             <tbody>
               {result.stages.map((stg) => (
                 <tr key={stg.index} className="border-b border-border/50 hover:bg-muted/10">
-                  <td className="px-3 py-2 font-bold text-foreground">{stg.label}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={`px-2 py-0.5 rounded text-[11px] ${stg.inEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
-                      {stg.inBefore} → {stg.inAfter} ({stg.inEdge})
+                  <td className="px-1.5 sm:px-3 py-2 font-bold text-foreground">{stg.label}</td>
+                  <td className="px-1.5 sm:px-3 py-2 text-center">
+                    <span className={`inline-block whitespace-nowrap px-1.5 sm:px-2 py-0.5 rounded text-[11px] ${stg.inEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
+                      {stg.inBefore} → {stg.inAfter}<span className="hidden sm:inline"> ({stg.inEdge})</span>
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${stg.outEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
-                      {stg.outBefore} → {stg.outAfter} ({stg.outEdge})
+                  <td className="px-1.5 sm:px-3 py-2 text-center">
+                    <span className={`inline-block whitespace-nowrap px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold ${stg.outEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
+                      {stg.outBefore} → {stg.outAfter}<span className="hidden sm:inline"> ({stg.outEdge})</span>
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-center font-bold text-neon">{stg.delayParameter}</td>
-                  <td className="px-3 py-2 text-right">{stg.delayNs} ns</td>
-                  <td className="px-3 py-2 text-right font-bold text-foreground">{stg.cumulativeNs} ns</td>
+                  <td className="px-1.5 sm:px-3 py-2 text-center font-bold text-neon">
+                    {stg.delayParameter}
+                    <span className="sm:hidden block font-normal text-foreground whitespace-nowrap">{stg.delayNs} ns</span>
+                  </td>
+                  <td className="hidden sm:table-cell px-3 py-2 text-right">{stg.delayNs} ns</td>
+                  <td className="px-1.5 sm:px-3 py-2 text-right font-bold text-foreground whitespace-nowrap">{stg.cumulativeNs} ns</td>
                 </tr>
               ))}
             </tbody>
