@@ -3,15 +3,15 @@ import { RegisterSchematic, ShiftChain } from "@/components/mdx/SymbolMaps";
 
 # Registers and Shift Registers
 
-A flip-flop holds one bit. A **register** is a group of flip-flops that hold a whole word, so the ALU and the rest of the CPU can use it while a program runs. Some registers can do more than hold, such as shift their bits along or count.
+A [D flip-flop](/courses/computer-architecture/sequential-logic-and-latches#the-d-flip-flop) holds one bit, and takes a new one at each clock edge. A **register** is a group of flip-flops side by side that holds a whole [word](/courses/computer-organization/bits-and-bytes#how-much-is-a-lot), the number of bits the CPU handles in one go. The [ALU](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most) (arithmetic logic unit, the part that does the calculations) and the rest of the CPU read and write registers while a program runs. Some registers can do more than hold, such as shift their bits along or count.
 
 ## The 4-bit register
 
-The lecture's simple register is four D flip-flops stacked up, drawn as boxes. Read it with [the schematic marks](/courses/computer-architecture/demystifying-circuit-schematics#marks-on-wires-and-pins):
+The simplest register is four D flip-flops stacked up, drawn as boxes. Read it with [the schematic marks](/courses/computer-architecture/demystifying-circuit-schematics#marks-on-wires-and-pins):
 
 * Inputs $I_0$ to $I_3$ come in on the left, one to each D pin; outputs $A_0$ to $A_3$ leave from the Q pins.
 * One **Clock** wire branches (the dots) to the C pin of every flip-flop. Every C pin has a triangle, so all four copy their D input at the same clock edge.
-* One **Clear** wire branches to every R pin. The bubbles make it active-low: pull Clear to 0 and all four outputs go to 0 at once, without waiting for the clock.
+* One **Clear** wire branches to every R (reset) pin. Each R pin has a bubble, so Clear is [active-low](/courses/computer-architecture/demystifying-circuit-schematics#marks-on-wires-and-pins): it rests at 1, and pulling it to 0 sends all four outputs to 0 at once. This happens straight away, without waiting for a clock edge, so it is called an **asynchronous** clear.
 * The input wires cross the Clock and Clear wires with no dot, so they don't touch.
 
 Set the inputs and pulse the clock. Then hold Clear at 0 and pulse again.
@@ -20,22 +20,22 @@ Set the inputs and pulse the clock. Then hold Clear at 0 and pulse again.
 
 ### Loading only when asked
 
-As drawn, the register takes in new data at every clock edge. A CPU register has to keep its value for many cycles and load only when the control unit says so. Switching off its clock would do that, but gating the clock adds delay to it and can cause glitches, so designers leave the clock running and add a **LOAD** input instead.
+As drawn, the register takes in new data at every clock edge. A CPU register has to keep its value for many clock cycles and load only when the [control unit](/courses/computer-architecture/control-unit), the part of the CPU that directs every step, says so. One option is to block the clock with a gate whenever the register should hold, which is called **clock gating**. But the extra gate delays the clock, and it can let through **glitches**, short false pulses that trigger the flip-flops at the wrong time. So designers leave the clock running and add a **LOAD** input instead.
 
 Put a 2-to-1 [multiplexer](/courses/logic-design/multiplexers) in front of each D input:
 
 * **LOAD = 1**: the multiplexer passes the new input $I_i$, and the clock edge stores it.
 * **LOAD = 0**: the multiplexer passes the flip-flop's own output back to its D input, and the clock edge stores the same value again. Nothing changes.
 
-Tick "add a LOAD control" in the drawing above to see the multiplexers and the wires running back from each Q. When an instruction like `MOV AX, BX` runs, the control unit puts BX on the internal bus and sets LOAD on register AX for one clock cycle, and all sixteen bits load together.
+Tick "add a LOAD control" in the drawing above to see the multiplexers and the wires running back from each Q. Take the instruction `MOV AX, BX`, which copies 16-bit register BX into 16-bit register AX. When it runs, the control unit puts BX's value on the **internal bus**, the shared wires that carry data between the CPU's registers, and sets LOAD on AX for one clock cycle. All sixteen bits load together at the next clock edge.
 
 ## Shift registers
 
 A **shift register** can move its bits one place left or right on each clock edge. The simplest kind is a chain of D flip-flops, each Q wired to the next D and all sharing one clock. Bits enter at the **serial input** (SI) and leave at the **serial output** (SO).
 
-Left and right are named by bit significance. Shifting **left** moves bits toward the most significant bit; shifting **right** moves them toward the least significant bit. In the drawing below, bits enter at $Q_3$, the most significant bit, and move right toward $Q_0$.
+Left and right are named by bit significance. The **most significant bit** (MSB) is the one with the highest place value, the leftmost when a binary number is written down, and the **least significant bit** (LSB) is the rightmost. Shifting **left** moves bits toward the MSB, and shifting **right** moves them toward the LSB. In the drawing below, bits enter at $Q_3$, the most significant bit, and move right toward $Q_0$.
 
-Step the lecture's example stream, `1011001110`, through the chain. The table underneath is laid out like the one on the slide: one row per wire, one column per clock edge.
+Step the example stream `1011001110` through the chain. The table underneath has one row per wire and one column per clock edge.
 
 <ShiftChain />
 
@@ -45,7 +45,7 @@ Read the SO row against the SI row: it is the same stream, delayed by four clock
 
 Shift registers are named by how data gets in and out:
 
-* **Serial in, serial out (SISO)**: one bit in, one bit out per clock. Used as a delay line.
+* **Serial in, serial out (SISO)**: one bit in, one bit out per clock. Used as a **delay line**, a circuit whose output is its input a fixed number of clock cycles later.
 * **Serial in, parallel out (SIPO)**: bits arrive one at a time; after $n$ clocks all $n$ are read at once from the Q outputs. This is how a serial receiver turns a stream back into a word.
 * **Parallel in, serial out (PISO)**: a whole word loads in one clock, then leaves one bit per clock. This is how a serial transmitter sends a word down one wire.
 * **Parallel in, parallel out (PIPO)**: load all bits at once, read all at once. A CPU's general-purpose registers work this way.
