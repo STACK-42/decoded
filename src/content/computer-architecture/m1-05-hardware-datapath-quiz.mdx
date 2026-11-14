@@ -2,7 +2,7 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Hardware Datapath and Logic
 
-Six questions covering circuit schematics, latches, shift registers, and counter synthesis. Get 5 right to pass.
+Six questions on circuit schematics, latches, shift registers and counter design. Get 5 right to pass.
 
 <Quiz
   courseSlug="computer-architecture"
@@ -13,13 +13,13 @@ Six questions covering circuit schematics, latches, shift registers, and counter
       id: "q1",
       prompt: "In a digital schematic, what does an inversion bubble (small circle) on an input pin signify?",
       options: [
-        { id: "a", text: "The input is active-low: it triggers when voltage drops to logical 0" },
+        { id: "a", text: "The input is active-low: it acts when pulled to 0" },
         { id: "b", text: "The input requires higher voltage than other pins" },
         { id: "c", text: "The input is an analog clock reference" },
         { id: "d", text: "The input wire crosses over without touching" },
       ],
       correctOptionId: "a",
-      explanation: "A circle on an input pin denotes logical NOT, meaning low voltage (ground, 0V) asserts the function.",
+      explanation: "A bubble means \"inverted\". On an input it marks an active-low pin, which rests at 1 and does its job when pulled to 0 (low voltage). It has nothing to do with voltage levels, clocks or crossing wires: wires that cross without touching are simply drawn with no dot.",
     },
     {
       id: "q2",
@@ -31,7 +31,7 @@ Six questions covering circuit schematics, latches, shift registers, and counter
         { id: "d", text: "It converts the latch into a combinational multiplexer" },
       ],
       correctOptionId: "a",
-      explanation: "When both inputs are high, both outputs drop to 0, violating complementarity. When released simultaneously to 0, propagation delay differences cause random latching.",
+      explanation: "With S = R = 1, both NOR gates output 0, so Q and Q' are no longer opposites. If both inputs then drop to 0 at the same time, whichever gate is slightly faster decides the stored bit, so the result can't be predicted. Nothing is damaged, and the circuit stays a latch.",
     },
     {
       id: "q3",
@@ -55,7 +55,7 @@ Six questions covering circuit schematics, latches, shift registers, and counter
         { id: "d", text: "96 ns" },
       ],
       correctOptionId: "a",
-      explanation: "Rolling from 0111 to 1000 requires all four flip-flops to toggle sequentially, accumulating 4 × 12 ns = 48 ns total delay.",
+      explanation: "Going from 0111 to 1000 changes all four bits, and in a ripple counter each flip-flop waits for the one before it. The delays add up: 4 × 12 ns = 48 ns. 12 ns would be one stage, and 24 ns two.",
     },
     {
       id: "q5",
@@ -67,19 +67,19 @@ Six questions covering circuit schematics, latches, shift registers, and counter
         { id: "d", text: "T2 = A1 + A0" },
       ],
       correctOptionId: "a",
-      explanation: "Bit A2 toggles only when both lower bits A1 and A0 are 1, requiring an AND carry gate evaluating A1 · A0.",
+      explanation: "Bit A2 flips only when both lower bits, A1 and A0, are 1 (as in 011 → 100), so T2 needs an AND gate: T2 = A1 · A0. T2 = A0 is the rule for the middle bit, T2 = 1 for the lowest bit, and an OR would flip A2 too often.",
     },
     {
       id: "q6",
       prompt: "How does the CPU's Program Counter (PC) handle non-sequential jumps and branches?",
       options: [
-        { id: "a", text: "The control unit asserts the parallel LOAD control line, writing the jump address directly into the counter flip-flops" },
+        { id: "a", text: "The control unit sets the PC's LOAD input, and the jump address is loaded into its flip-flops" },
         { id: "b", text: "The counter is cleared to zero and counted up one tick at a time" },
         { id: "c", text: "The processor resets the machine power" },
         { id: "d", text: "The counter shifts bits left until the branch is reached" },
       ],
       correctOptionId: "a",
-      explanation: "A synchronous counter with parallel load accepts a target address on its data input pins and latches it immediately when LOAD is pulsed.",
+      explanation: "The PC is a synchronous counter with a parallel load input. For a jump, the control unit puts the target address on the PC's data inputs and sets LOAD, and the address is stored at the next clock edge, replacing the count. Counting up from zero or shifting would take far too long, and nothing resets the power.",
     },
   ]}
 />
