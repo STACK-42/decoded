@@ -3,21 +3,23 @@ import { SchematicMarks, GateAnatomy, IcChip } from "@/components/mdx/SymbolMaps
 
 # How to Read Circuit Schematics
 
-The slides in this module are full of drawings: triangles, D shapes, boxes with letters on them, wires with dots and wires without. They follow a small set of rules. Once you know the rules, every drawing in the module can be read the same way: find the parts, read each mark, follow the wires.
+Circuit drawings, called **schematics**, are full of triangles, D shapes, boxes with letters on them, and wires with dots and wires without. They follow a small set of rules. Once you know the rules, every drawing in this module can be read the same way: find the parts, read each mark, follow the wires.
 
 This lesson covers the marks on wires and pins, then the gate symbols, then the chips the gates come in.
 
 ## Marks on wires and pins
 
-A line is a wire. It carries one bit: high voltage for 1, low (ground) for 0. Five marks change what a wire or pin means.
+A line is a wire. It carries one bit: high voltage for 1, low voltage (ground, 0 V) for 0. A **pin** is the point where a wire meets a part, such as one input of a gate or one leg of a chip. Five marks change what a wire or pin means.
 
-**Dot or no dot.** Where wires meet at a dot, they are joined: one wire, one value. Where two wires cross with no dot, they pass over each other without touching. The register drawing in this module has its data wires crossing the shared clock wire with no dot; they are not connected.
+**Dot or no dot.** Where wires meet at a dot, they are joined: one wire, one value. Where two wires cross with no dot, they pass over each other without touching. The register drawing later in this module has its data wires crossing the shared clock wire with no dot, so they are not connected.
 
-**Slash and number.** A short slash across a line with a number beside it, like /8, means that many wires drawn as one line. An 8-wire **bus** carrying a byte is usually labelled $D_0$ to $D_7$; a 16-wire address bus $A_0$ to $A_{15}$.
+**Slash and number.** A short slash across a line with a number beside it, like /8, means that many wires drawn as one line. A group of wires that carries one value together is a **bus**. An 8-wire data bus carrying a byte is usually labelled $D_0$ to $D_7$, and a 16-wire address bus $A_0$ to $A_{15}$.
 
-**A bubble** (small circle) means "inverted". On an input it means the pin is **active-low**: it does its job when pulled to 0 and rests at 1. Its name usually carries a bar or a prime, such as $\overline{\text{CLR}}$ or CLR'. On an output it means the pin gives the opposite of the value inside, which is why a flip-flop's $\overline{Q}$ pin has one.
+**A bubble** (small circle) means "inverted". On an input it means the pin is **active-low**. Most pins are active-high: a 1 tells them to do their job. An active-low pin works the other way round. It sits at 1 while nothing is happening, and a 0 tells it to act. A clear pin that is active-low, for example, wipes the stored value when it is pulled to 0. Its name usually carries a bar or a prime, such as $\overline{\text{CLR}}$ or CLR', so you can spot it even without the bubble. Logic Design explains why designers use both kinds in [active-high and active-low logic](/courses/logic-design/logic-gates#active-high-vs-active-low-logic).
 
-**A triangle on the clock pin** means **edge-triggered**: the device acts only at the instant the clock changes from 0 to 1 (the **rising edge**). A clock pin with no triangle is **level-triggered**: the device acts for the whole time the clock is 1.
+On an output, a bubble means the pin gives the opposite of the value inside. The storage parts in the next lesson, flip-flops, have two outputs: $Q$, the stored bit, and $\overline{Q}$ ("not Q"), its opposite, drawn with a bubble.
+
+Many parts have a **clock** pin. The [clock](/courses/logic-design/d-latch-and-clock#the-clock-signal) is a signal that switches between 0 and 1 at a steady rate, and it tells storage parts when to update. **A triangle on the clock pin** means **edge-triggered**: the part acts only at the instant the clock changes from 0 to 1 (the **rising edge**). A clock pin with no triangle is **level-triggered**: the part acts for the whole time the clock is 1.
 
 **A bubble and a triangle** means the device acts on the **falling edge**, when the clock goes from 1 to 0.
 
@@ -31,7 +33,7 @@ In most gate drawings, signals flow one way: inputs on the left, outputs on the 
 
 ## Gate symbols, read by their parts
 
-The lecture's chart of gate symbols has a dozen entries, but they are built from four bodies and two kinds of bubble. Read a symbol from left to right:
+A standard chart of gate symbols has a dozen entries, but they are built from four body shapes and the bubble. Read a symbol from left to right:
 
 1. **Bubbles on the inputs?** Flip each input first.
 2. **The body.** A triangle passes the signal through (a **buffer**). A flat back with a round front is AND. A curved back with a pointed front is OR. A curved back with a second curved line behind it is XOR.
@@ -41,7 +43,7 @@ So NAND is an AND body with an output bubble, and NOR is an OR body with an outp
 
 The two entries that confuse people are the **negative-AND** and **negative-OR**: an AND or OR body with bubbles on the inputs. Build one below and compare its truth table: a negative-AND gives exactly the same table as NOR, and a negative-OR the same as NAND. That is [De Morgan's theorem](/courses/logic-design/boolean-algebra#de-morgans-theorems-and-function-complementation), $\overline{A}\cdot\overline{B} = \overline{A+B}$, drawn as a picture. Designers pick whichever drawing matches what the circuit means: a gate that should fire when both inputs are 0 is clearer drawn as a negative-AND.
 
-Two marks can appear inside the body without changing the logic. A diamond with a bar under it marks an **open-collector** output: the gate can pull its wire to 0 but cannot drive it to 1, so a pull-up resistor supplies the 1 (Logic Design covers [open-drain outputs and pull-up resistors](/courses/logic-design/signals#push-pull-vs-open-drain-outputs-and-pull-up-resistors)). A small loop marks **Schmitt-trigger** inputs, which switch at two different voltages so a slow or noisy input doesn't make the output flicker.
+Two marks can appear inside the body without changing the logic. A diamond with a bar under it marks an **open-collector** output. The gate can pull its wire to 0 but cannot drive it to 1, so a pull-up resistor supplies the 1 (Logic Design covers [open-drain outputs and pull-up resistors](/courses/logic-design/signals#push-pull-vs-open-drain-outputs-and-pull-up-resistors)). A small loop marks **Schmitt-trigger** inputs, which switch at two different voltages so a slow or noisy input doesn't make the output flicker.
 
 <GateAnatomy />
 
@@ -63,6 +65,6 @@ Switch chips below and look at where the gates sit. The 7402 puts its outputs be
 
 ## Decoders and multiplexers
 
-The lecture's list of digital components also names **decoders** and **multiplexers**. On a schematic both are drawn as labelled boxes, with a multiplexer often drawn as a trapezoid, and the same pin marks apply: a bubble on an enable pin means the enable is active-low. What they do is covered in Logic Design: [decoders](/courses/logic-design/comparators-decoders-encoders) pick one output line from a binary number, and [multiplexers](/courses/logic-design/multiplexers) pick one input to pass through. The register later in this module uses a multiplexer in front of each flip-flop.
+Two more parts appear on almost every schematic: **decoders** and **multiplexers**. On a schematic both are drawn as labelled boxes, and a multiplexer is often drawn as a trapezoid. The same pin marks apply: a bubble on an enable pin means the enable is active-low. What they do is covered in Logic Design: [decoders](/courses/logic-design/comparators-decoders-encoders) pick one output line from a binary number, and [multiplexers](/courses/logic-design/multiplexers) pick one input to pass through. The [register](/courses/computer-architecture/registers-and-shift-registers#loading-only-when-asked) later in this module uses a multiplexer in front of each flip-flop.
 
 With these marks you can read the rest of the module: the latch and flip-flop boxes, the register built from them, and the counters.
