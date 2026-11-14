@@ -75,7 +75,7 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
-- 2026-11-14 14:50 (run C): from the 2026-11-12 audit, the Computational Mathematics `averaging-is-convolution` "Sliding the kernel" stepper (208 px too wide at 390 px) now fits: on phones the row names sit above the cells and the 7 cells are 36 px wide, so the kernel and outputs stay aligned under the window. Desktop unchanged. PR #PRNUM, open. Exam runs A and B on 2026-11-14 found nothing changed and logged nothing.
+- 2026-11-14 14:50 (run C): from the 2026-11-12 audit, the Computational Mathematics `averaging-is-convolution` "Sliding the kernel" stepper (208 px too wide at 390 px) now fits: on phones the row names sit above the cells and the 7 cells are 36 px wide, so the kernel and outputs stay aligned under the window. Desktop unchanged. PR #81, open. Exam runs A and B on 2026-11-14 found nothing changed and logged nothing.
 - 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).
