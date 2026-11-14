@@ -3,7 +3,7 @@ import { CounterSchematic } from "@/components/mdx/SymbolMaps";
 
 # Counters and the Program Counter
 
-A **counter** is a register that steps through a fixed sequence of values, one step per clock pulse. It can count events, or time the steps of something else. In a CPU, counters time the control unit's steps and, as the **program counter**, keep track of which instruction comes next.
+A **counter** is a register that steps through a fixed sequence of values, one step per clock pulse. It can count events, or time the steps of something else. In a CPU, counters time the steps of the [control unit](/courses/computer-architecture/control-unit) and, as the **program counter**, keep track of which instruction comes next.
 
 ## The state diagram
 
@@ -13,24 +13,24 @@ The values a counter goes through are drawn as a **state diagram**: a circle per
 
 In a **ripple counter**, only the first flip-flop gets the count pulses. Every other flip-flop is clocked by the output of the one before it, so a change ripples down the chain.
 
-The lecture's 4-bit ripple counter uses four T flip-flops with T tied to 1, so each one toggles every time its clock input is triggered. Their clock pins carry a bubble and a triangle, so each triggers on a **falling edge**, 1 to 0:
+A 4-bit ripple counter uses four [T flip-flops](/courses/computer-architecture/sequential-logic-and-latches#jk-and-t-flip-flops) with T tied to 1, so each one toggles every time its clock input is triggered. Their clock pins carry [a bubble and a triangle](/courses/computer-architecture/demystifying-circuit-schematics#marks-on-wires-and-pins), so each triggers on a **falling edge**, 1 to 0:
 
 * Stage 0 toggles on every count pulse.
 * Stage 1 is clocked by $Q_0$. It toggles only when $Q_0$ falls from 1 to 0, which is every second pulse.
 * Stage 2 toggles when $Q_1$ falls, every fourth pulse; stage 3 when $Q_2$ falls, every eighth.
 
-Each bit runs at half the rate of the bit before it, which is exactly how binary counting goes: $0000, 0001, 0010, 0011, \dots$. The waveform on the slide shows the same thing: $Q_0$ at half the pulse frequency, $Q_1$ at a quarter, and so on.
+Each bit runs at half the rate of the bit before it, which is exactly how binary counting goes: $0000, 0001, 0010, 0011, \dots$. A timing diagram of the counter shows the same thing: $Q_0$ switches at half the rate of the count pulses, $Q_1$ at a quarter, and so on.
 
 ### The settling problem
 
-Each flip-flop takes time to respond, its **propagation delay** $t_{pd}$. In a ripple counter these delays add up, because stage 1 can't start until stage 0 has finished. With $t_{pd} = 10\text{ ns}$, the step from 7 ($0111$) to 8 ($1000$) goes:
+Each flip-flop takes a short time to respond, its [propagation delay](/courses/logic-design/logic-gates#propagation-delay-and-transition-times) $t_{pd}$. In a ripple counter these delays add up, because stage 1 can't start until stage 0 has finished. Delays this short are measured in **nanoseconds** (ns), billionths of a second. With $t_{pd} = 10\text{ ns}$, the step from 7 ($0111$) to 8 ($1000$) goes:
 
 1. at 10 ns, $Q_0$ falls: the outputs read $0110$ (6);
 2. at 20 ns, $Q_1$ falls: $0100$ (4);
 3. at 30 ns, $Q_2$ falls: $0000$ (0);
 4. at 40 ns, $Q_3$ rises: $1000$ (8).
 
-For 40 ns the counter shows values it never really held. Any circuit that reads it in that window, such as a decoder picking a memory address, gets a wrong answer. The longer the counter, the longer it takes to **settle**: up to $n \times t_{pd}$ for $n$ bits.
+For 40 ns the counter shows values it never really held. Any circuit that reads it in that window, such as a [decoder](/courses/logic-design/comparators-decoders-encoders) picking a memory address, gets a wrong answer. The longer the counter, the longer it takes to **settle**: up to $n \times t_{pd}$ for $n$ bits.
 
 Jump to 7 below and send a count pulse to watch the ripple.
 
@@ -40,11 +40,11 @@ Jump to 7 below and send a count pulse to watch the ripple.
 
 A **synchronous counter** sends the count pulses straight to the clock input of every flip-flop. All flip-flops change at the same edge, so there are no in-between values and the settling time no longer grows with the number of bits.
 
-Each flip-flop now needs logic to decide whether it should flip on the next edge. The lecture derives it for a 3-bit counter with T flip-flops, $A_2 A_1 A_0$:
+Each flip-flop now needs logic to decide whether it should flip on the next edge. Here is how to find it for a 3-bit counter built from T flip-flops, with bits $A_2 A_1 A_0$:
 
 1. **State diagram**: $000 \to 001 \to \dots \to 111 \to 000$.
 2. **State table**: each present state next to the state that follows it.
-3. **Flip-flop inputs**: a T flip-flop must toggle exactly when a bit changes, so $T = Q \oplus Q^{+}$, present state XOR next state.
+3. **Flip-flop inputs**: a T flip-flop must toggle exactly when its bit changes. Write $Q^{+}$ for a bit's next value, the value after the coming clock edge. Then $T = Q \oplus Q^{+}$, where $\oplus$ is XOR: 1 when the present and next values differ, 0 when they are the same.
 
 | Present $A_2 A_1 A_0$ | Next $A_2^+ A_1^+ A_0^+$ | $T_{A2}$ | $T_{A1}$ | $T_{A0}$ |
 |:---:|:---:|:---:|:---:|:---:|
@@ -62,7 +62,7 @@ Each flip-flop now needs logic to decide whether it should flip on the next edge
    * $T_{A1}$ is 1 exactly when $A_0 = 1$: $T_{A1} = A_0$.
    * $T_{A2}$ is 1 exactly when $A_1 = A_0 = 1$: $T_{A2} = A_1 A_0$.
 
-That is the circuit on the slide: $T_{A0}$ tied to 1, $A_0$ wired straight to $T_{A1}$, and one AND gate making $A_1 A_0$ for $T_{A2}$. A bit flips when every bit below it is 1, the same rule as carrying in binary addition. For more bits the AND chain grows: $T_n = A_{n-1} \cdots A_1 A_0$.
+So the circuit has $T_{A0}$ tied to 1, $A_0$ wired straight to $T_{A1}$, and one AND gate making $A_1 A_0$ for $T_{A2}$. A bit flips when every bit below it is 1, the same rule as [carrying in binary addition](/courses/logic-design/binary-arithmetic#unsigned-binary-arithmetic): adding 1 to $0111$ flips every bit up to and including the first 0. For more bits the AND chain grows: $T_n = A_{n-1} \cdots A_1 A_0$.
 
 Switch the drawing above to "synchronous". Before each edge, the boxes whose T input is 1 are outlined: those are the ones that will flip, all together.
 
@@ -74,5 +74,5 @@ A ripple counter needs no extra gates, which makes it cheap, and it is fine for 
 
 The CPU's **program counter** (PC) is a synchronous counter with a [parallel load](/courses/computer-architecture/registers-and-shift-registers#loading-only-when-asked) input:
 
-* **Normal flow**: after each instruction is fetched, the PC counts up to point at the next one ($PC \leftarrow PC + 1$, or $+4$ on machines whose instructions are 4 bytes long).
+* **Normal flow**: after each instruction is fetched, the PC counts up to point at the next one ($PC \leftarrow PC + 1$). The PC holds a memory address counted in bytes, so on machines whose instructions are 4 bytes long it adds 4 instead.
 * **Jumps and branches**: the control unit sets the PC's LOAD input, and the jump target is loaded into its flip-flops in one clock cycle, replacing the count.
