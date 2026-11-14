@@ -348,7 +348,10 @@ export function ConvolutionStepper() {
   const h = KERNELS[k][1];
   const x = SIGNALS[sig][1];
   const frames = useMemo(() => convFrames(x, h), [k, sig]); // eslint-disable-line react-hooks/exhaustive-deps
-  const cell = "h-11 w-14 shrink-0 flex flex-col items-center justify-center border font-mono text-sm rounded-sm";
+  // 36 px cells on phones so the 7 cells (5 samples + 2 zero pads) fit 390 px; the row name sits above them there
+  const cell = "h-11 w-9 sm:w-14 shrink-0 flex flex-col items-center justify-center border font-mono text-xs sm:text-sm rounded-sm";
+  const row = "flex flex-col gap-1 sm:flex-row sm:items-center";
+  const cells = "flex items-center gap-[3px] sm:gap-1";
   const f = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
   return (
     <Stepper
@@ -359,8 +362,9 @@ export function ConvolutionStepper() {
       legend={[["bg-neon", "inside the window"], ["bg-mint", "outputs so far"]]}
       render={(s) => (
         <div className="flex flex-col gap-3 overflow-x-auto pb-2 max-w-full">
-          <div className="flex items-center gap-1">
-            <span className={`${label} w-16 shrink-0`}>signal</span>
+          <div className={row}>
+            <span className={`${label} sm:w-16 shrink-0`}>signal</span>
+            <div className={cells}>
             {[0, ...s.x, 0].map((v, i) => {
               const inWin = s.n >= 0 && s.n < s.x.length && i >= s.n && i <= s.n + 2;
               const pad = i === 0 || i === s.x.length + 1;
@@ -370,9 +374,11 @@ export function ConvolutionStepper() {
                 </div>
               );
             })}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className={`${label} w-16 shrink-0`}>kernel</span>
+          <div className={row}>
+            <span className={`${label} sm:w-16 shrink-0`}>kernel</span>
+            <div className={cells}>
             {[0, ...s.x, 0].map((_, i) => {
               const j = i - s.n;
               const show = s.n >= 0 && s.n < s.x.length && j >= 0 && j <= 2;
@@ -383,15 +389,18 @@ export function ConvolutionStepper() {
                 </div>
               );
             })}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className={`${label} w-16 shrink-0`}>output</span>
-            <div className="w-14 shrink-0" />
+          <div className={row}>
+            <span className={`${label} sm:w-16 shrink-0`}>output</span>
+            <div className={cells}>
+            <div className="w-9 sm:w-14 shrink-0" />
             {s.y.map((v, i) => (
               <div key={i} className={`${cell} ${v === null ? "border-border text-muted-foreground" : i === s.n ? "border-neon bg-neon/15" : "border-mint bg-mint/10"}`}>
                 {v === null ? "·" : f(v)}
               </div>
             ))}
+            </div>
           </div>
         </div>
       )}
