@@ -487,6 +487,7 @@ export function SchematicMarks() {
     const qn: Bit = sig ? 0 : 1;
     stage = (
       <>
+        <path d="M75,80 H120" strokeWidth={3} className={`transition-colors ${wire(!!sig)}`} />
         <rect x={120} y={30} width={120} height={100} rx={4} strokeWidth={2} className="fill-card stroke-foreground/70" />
         <text x={180} y={70} textAnchor="middle" className={small}>stored bit</text>
         <text x={180} y={98} textAnchor="middle" className="fill-foreground font-mono text-[24px] font-bold">{sig}</text>
