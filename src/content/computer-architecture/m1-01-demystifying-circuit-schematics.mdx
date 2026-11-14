@@ -36,7 +36,7 @@ In most gate drawings, signals flow one way: inputs on the left, outputs on the 
 A standard chart of gate symbols has a dozen entries, but they are built from four body shapes and the bubble. Read a symbol from left to right:
 
 1. **Bubbles on the inputs?** Flip each input first.
-2. **The body.** A triangle passes the signal through (a **buffer**). A flat back with a round front is AND. A curved back with a pointed front is OR. A curved back with a second curved line behind it is XOR.
+2. **The body.** A triangle passes the signal through (a **buffer**). A flat back with a round front is AND. A curved back with a pointed front is OR. A curved back with a second curved line behind it is XOR. For each gate's truth table and Boolean expression, see [the eight fundamental logic gates](/courses/logic-design/logic-gates#the-eight-fundamental-logic-gates) in Logic Design.
 3. **Bubble on the output?** Flip the result.
 
 So NAND is an AND body with an output bubble, and NOR is an OR body with an output bubble. The inverter is a triangle with a bubble, and the chart draws it twice, with the bubble on either side, because both mean the same thing.
@@ -58,6 +58,14 @@ To read a pin diagram:
 * Pin 1 is marked by a dot or sits just left of a notch at one end of the package.
 * Pins are numbered counterclockwise seen from the top: down one side, back up the other. On a 14-pin package that is 1 to 7 along the bottom and 8 to 14 along the top.
 * Two pins power every gate inside: on these chips, pin 14 is the supply ($V_{CC}$, +5 V) and pin 7 is ground.
+
+**Why the chip needs power pins.** A gate doesn't pass its inputs' voltage through to the output. It makes a new signal: for a 1 its transistors connect the output to the supply, and for a 0 they connect it to ground. So until pin 14 is wired to +5 V and pin 7 to 0 V, none of the gates inside do anything, whatever their inputs are. All the gates in the package share those two pins, so the 7400's four NAND gates draw their power from the same pin 14.
+
+**The names.** $V_{CC}$ comes from the bipolar transistors in early chips: it is the supply to their collectors. Chips built from CMOS transistors often call the supply $V_{DD}$ and ground $V_{SS}$, but they mean the same two rails. GND is ground.
+
+**Why schematics leave them out.** A gate symbol shows only its logic pins. The power pins are left off, because every gate needs them and drawing them would add two wires to every symbol. A full schematic lists them once per chip, often in a small table in a corner ("U3: pin 14 = VCC, pin 7 = GND"), or draws a separate power block for each chip. When you build the circuit, you still have to wire them.
+
+**The corners aren't always 14 and 7.** Most 14-pin logic chips put the supply in the top-left corner and ground in the bottom-right, and 16-pin chips use pins 16 and 8 the same way. A few older chips break the rule: the 7490 counter has $V_{CC}$ on pin 5 and ground on pin 10. Check the datasheet before wiring power, because reversing the supply can destroy the chip.
 
 Switch chips below and look at where the gates sit. The 7402 puts its outputs before its inputs, so check the pin diagram for each chip.
 
