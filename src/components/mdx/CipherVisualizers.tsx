@@ -259,10 +259,11 @@ export function FrequencyAnalysisVisualizer({ start = DEFAULT_CIPHER }: { start?
         </label>
 
         {/* 26-letter frequency histogram */}
+        {/* all 26 letters fit a phone: the chart scales down and its labels get larger font sizes there to stay readable */}
         <div className="overflow-x-auto pb-1">
           <svg
-            viewBox="0 0 546 140"
-            className="min-w-[480px] w-full"
+            viewBox="0 -8 546 148"
+            className="w-full sm:min-w-[480px]"
             role="img"
             aria-label="Letter frequency bar chart of ciphertext"
           >
@@ -292,7 +293,7 @@ export function FrequencyAnalysisVisualizer({ start = DEFAULT_CIPHER }: { start?
                       y={y - 4}
                       textAnchor="middle"
                       fontSize={10}
-                      className="fill-muted-foreground font-mono"
+                      className="fill-muted-foreground font-mono [font-size:16px] sm:[font-size:10px]"
                     >
                       {count}
                     </text>
@@ -302,7 +303,7 @@ export function FrequencyAnalysisVisualizer({ start = DEFAULT_CIPHER }: { start?
                     y={118}
                     textAnchor="middle"
                     fontSize={12}
-                    className={`font-mono ${
+                    className={`font-mono [font-size:19px] sm:[font-size:12px] ${
                       isPeak ? "fill-neon font-bold" : "fill-foreground"
                     }`}
                   >
