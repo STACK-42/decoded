@@ -3,9 +3,9 @@ import { BusArbiter } from "@/components/mdx/ArchitectureVisualizers";
 
 # Buses and Arbitration
 
-Inside a computer, thousands of hardware functional units must communicate. Connecting every component to every other component with dedicated point-to-point wires would require millions of individual traces, consuming all available silicon area and motherboard layers. Instead, computers share common communication pathways called **buses**. Because a bus is a shared highway, it requires strict electrical conventions and traffic rules so signals do not collide.
+Inside a computer, many hardware components must exchange data. Connecting every component to every other component with dedicated point-to-point wires would require millions of individual copper traces, consuming excessive board space and motherboard layers. Instead, components share common communication pathways called **buses**. Because a bus is a shared medium, devices require clear electrical conventions and arbitration protocols so signals do not collide.
 
-## What is a Bus?
+## What is a bus?
 
 A **bus** is a shared communication pathway consisting of parallel conductors that connect two or more hardware devices. A single conductive wire within a bus is a **bus line**, carrying binary voltage signals representing $0$ or $1$.
 
@@ -26,22 +26,22 @@ In any bus transaction, the participating devices take on one of two roles:
 - A **bus master**: An active hardware device (such as the CPU, a DMA controller, or a high-speed network controller) that initiates transfers by driving address lines and issuing control strobes.
 - A **bus slave**: A passive hardware component (such as a DRAM module or a basic peripheral status port) that monitors the bus, decodes its address, and only responds to commands asserted by a master.
 
-### The Electrical Problem of Shared Lines
+### The electrical problem of shared lines
 
-When multiple semiconductor chips connect to the same metal wire, two chips driving conflicting voltages at the same time (one driving $3.3\text{ V}$ and another driving $0\text{ V}$) create a low-resistance short circuit. This causes **bus contention**, drawing destructive electrical currents and corrupting data.
+When multiple semiconductor chips connect to the same metal wire, two chips driving conflicting voltages at the same time (one driving $3.3\text{ V}$ and another driving $0\text{ V}$) create a low-resistance short circuit. This causes **bus contention**, drawing high electrical currents and corrupting data.
 
 To prevent this, every device connects to shared bus lines through a [tri-state buffer](/courses/logic-design/memory-unit#tri-state-logic-and-shared-system-buses). A tri-state buffer provides three distinct electrical output states: logic 1 (high voltage), logic 0 (ground), and **high impedance** (**Hi-Z**).
 
 In the Hi-Z state, the device's output pins act as an electrical open circuit, completely disconnecting the chip from the copper wire. Only the single currently granted bus master is permitted to drive voltages onto the wires; all other devices keep their bus drivers in the Hi-Z state.
 
-## The Physical Limits of Wide Parallel Buses
+## The physical limits of wide parallel buses
 
-Early computers routed all components through a single, wide parallel backplane bus (such as ISA, VME, or early PCI). As microprocessors accelerated from megahertz to gigahertz frequencies, shared parallel buses ran into severe physical barriers:
+Early computers routed all components through a single, wide parallel backplane bus (such as ISA, VME, or early PCI). As microprocessors accelerated from megahertz to gigahertz frequencies, shared parallel buses ran into physical barriers:
 
 1. **Capacitive Loading**: Every device pin and solder pad attached to a multi-drop bus adds parasitic capacitance. This capacitance increases the $RC$ time constant of the trace, rounding off sharp digital voltage transitions and capping maximum clock frequencies.
 2. **Clock Skew**: In a 64-bit parallel bus, minute variations in copper trace lengths, board dielectric thickness, and solder joints mean that 64 bits transmitted simultaneously arrive at the receiver at slightly different times. When clock periods drop below a few nanoseconds, this **clock skew** exceeds the timing window, corrupting the received word.
-3. **Electromagnetic Crosstalk**: As clock frequencies rise into hundreds of megahertz, rapid current transitions on one parallel wire radiate electromagnetic fields that induce unwanted noise voltages on adjacent wires.
-4. **Trace Routing Density**: Routing 64 or 128 matched-length parallel copper traces across multiple motherboard layers consumes vast board area and creates manufacturing bottlenecks.
+3. **Electromagnetic Crosstalk**: As clock frequencies rise into hundreds of megahertz, rapid current transitions on one parallel wire radiate electromagnetic fields that induce noise voltages on adjacent wires.
+4. **Trace Routing Density**: Routing 64 or 128 matched-length parallel copper traces across multiple motherboard layers consumes board area and creates manufacturing bottlenecks.
 
 | Physical Characteristic | Wide Parallel Bus (e.g., PCI) | Switched Serial Interconnect (e.g., PCIe) |
 |---|---|---|
@@ -51,13 +51,11 @@ Early computers routed all components through a single, wide parallel backplane 
 | **Bandwidth Scaling** | Add more parallel wires (worsens skew) | Add more lanes ($\times 1, \times 4, \times 8, \times 16$) |
 | **Maximum Frequency** | Capped at $33\text{ MHz}$ to $66\text{ MHz}$ | Operates at $2.5\text{ GHz}$ to $32\text{ GHz}$ per lane |
 
-<Callout tone="orange" label="Trap: Assuming wider buses can always be clocked faster">
-A common design mistake is assuming that doubling bus width from 32 bits to 64 bits doubles data throughput at any frequency.
-
-In reality, widening a parallel bus increases capacitive load and worsens clock skew between the outermost and innermost traces. Designers are frequently forced to reduce the clock frequency of wider parallel buses, negating much of the theoretical throughput advantage.
+<Callout tone="orange" label="Trap: Wider parallel buses cannot always run faster">
+Doubling bus width from 32 bits to 64 bits does not double data throughput in practice. Widening a parallel bus increases capacitive load and worsens clock skew between the outermost and innermost traces. Designers often have to reduce the bus clock frequency, cutting into the throughput gain.
 </Callout>
 
-### The Shift to Switched Serial Fabrics (PCIe)
+### The shift to switched serial fabrics (PCIe)
 
 Modern computer architectures resolved these physical limits by replacing shared parallel buses with high-speed, point-to-point **switched serial fabrics**, exemplified by PCI Express (PCIe):
 
@@ -66,19 +64,19 @@ Modern computer architectures resolved these physical limits by replacing shared
 - **Lanes and Aggregation**: A single PCIe **lane** consists of two differential pairs (four wires total: transmit $\text{Tx}^+/\text{Tx}^-$ and receive $\text{Rx}^+/\text{Rx}^-$). Bandwidth scales linearly by aggregating lanes into links: $\times 1, \times 4, \times 8$, or $\times 16$.
 - **Packetized Switching**: Devices do not share physical wires. A central PCIe switch routes packetized messages directly between source and destination endpoints, enabling multiple devices to communicate simultaneously without bus contention.
 
-### The Modern Interconnect Hierarchy
+### The modern interconnect hierarchy
 
 Today's computers organize communication in a hierarchy of specialized links connected by bridges:
 
-- **Processor-Memory Interconnect**: Extremely short, point-to-point coherent interconnects (such as Intel UPI/QPI or AMD Infinity Fabric) operating at gigahertz frequencies directly between CPU sockets and memory controllers.
+- **Processor-Memory Interconnect**: Short, point-to-point coherent interconnects (such as Intel UPI/QPI or AMD Infinity Fabric) operating at gigahertz frequencies directly between CPU sockets and memory controllers.
 - **System Expansion Fabric**: PCIe links connecting graphics processors, NVMe SSDs, and high-speed network interfaces to the CPU Root Complex (the silicon bridge built into the processor die that joins the CPU cores and memory to the PCIe fabric).
-- **Peripheral Buses**: Low-speed serial buses (USB, SATA, SPI, I2C, UART) managed through a chipset (Platform Controller Hub / PCH).
+- **Peripheral Buses**: Slower serial buses (USB, SATA, SPI, I2C, UART) managed through a chipset (Platform Controller Hub, or PCH).
 
-## Bus Protocols and Timing: Synchronous vs. Asynchronous
+## Bus protocols and timing: synchronous vs. asynchronous
 
 The rules governing when an address is valid, when data is sampled, and how devices coordinate transfers form the **bus protocol**.
 
-### Synchronous Bus Timing
+### Synchronous bus timing
 
 In a **synchronous bus**, every bus event is coordinated by the edges of a shared system clock. All devices on the bus must run at the same clock frequency or an integer divisor of it.
 
@@ -92,7 +90,7 @@ If a slave device (such as slow DRAM) cannot retrieve data within a single clock
 
 Synchronous buses require minimal control logic and achieve high throughput over short physical distances. However, they suffer from clock skew over long wires, and every transaction must run at the speed of the slowest participating device unless wait states are inserted.
 
-### Asynchronous Bus Timing
+### Asynchronous bus timing
 
 In an **asynchronous bus**, there is no shared bus clock. Timing is controlled entirely by interlocking control signals using a four-phase [handshake](/courses/computer-architecture/io-methods#asynchronous-handshaking-protocols):
 
@@ -104,8 +102,8 @@ In an **asynchronous bus**, there is no shared bus clock. Timing is controlled e
 
 Asynchronous buses accommodate devices of wildly different speeds without wasting cycles, and they are immune to clock skew over long cables. However, the round-trip signal propagation delay and handshake edge detection add protocol overhead to every single transfer.
 
-<Callout tone="orange" label="Trap: Confusing bus clock frequency with effective data throughput">
-A synchronous bus operating at a high clock rate (such as $100\text{ MHz}$) does not necessarily deliver high data throughput. If a memory transfer requires 1 cycle for addressing, 3 wait states for DRAM access, and 1 cycle for data transfer (5 cycles total for one 4-byte word), the bus is actively transferring payload data during only $1/5 = 20\%$ of its operational cycles.
+<Callout tone="orange" label="Trap: Bus clock rate does not equal payload throughput">
+A synchronous bus operating at a high clock rate (such as $100\text{ MHz}$) does not necessarily deliver high payload data throughput. If a memory transfer requires 1 cycle for addressing, 3 wait states for DRAM access, and 1 cycle for data transfer (5 cycles total for one 4-byte word), the bus is actively transferring payload data during only $1/5 = 20\%$ of its operational cycles.
 </Callout>
 
 ## Arbitration: whose turn is it?
@@ -122,7 +120,7 @@ An arbitration scheme balances three primary design goals:
 2. **Fairness**: Low-priority devices (such as background CPU processing) must not be starved of bus access indefinitely. **Starvation** is the condition where a master never receives bus access because higher-priority devices monopolize the bus.
 3. **Hardware Overhead**: The arbitration protocol should require minimal dedicated wires and simple silicon logic.
 
-### 1. Daisy Chaining (Serial Grant)
+### 1. Daisy chaining (serial grant)
 
 In a **daisy chain** arbitration protocol, all bus masters share a single Bus Request (`BR`) line and a single Bus Busy (`BBUSY`) line. A single Bus Grant (`BG`) line leaves the central arbiter and loops serially through each device in physical order.
 
@@ -139,15 +137,13 @@ In a **daisy chain** arbitration protocol, all bus masters share a single Bus Re
 - If Master 0 did not request the bus, it passes `BG` out to Master 1.
 - The grant signal continues snaking through devices until it reaches the first requesting master.
 
-**Trade-offs:** Daisy chaining uses only three control wires regardless of how many devices are attached, and the central arbiter is trivial. However, priority is fixed by physical slot position: Master 0 always wins. If Master 0 generates continuous requests, all downstream devices suffer from starvation. Furthermore, grant propagation delay increases linearly with the number of devices ($O(N)$), and if any device in the chain fails or is unplugged, the grant signal breaks for all downstream masters.
+**Trade-offs:** Daisy chaining uses only three control wires regardless of how many devices are attached, and the central arbiter is simple. However, priority is fixed by physical slot position: Master 0 always wins. If Master 0 generates continuous requests, all downstream devices suffer from starvation. In addition, grant propagation delay increases linearly with the number of devices ($O(N)$), and if any device in the chain fails or is removed, the grant signal breaks for all downstream masters.
 
-<Callout tone="orange" label="Trap: Believing daisy chaining provides fair access">
-Students often assume that because all devices connect to the same grant wire, every device will eventually get a turn.
-
-In a daisy chain, physical position completely dictates priority. The master closest to the arbiter has absolute veto power over all downstream masters. If Master 0 has a continuous stream of packets or disk blocks to transfer, Master 1, Master 2, and the CPU will experience complete starvation.
+<Callout tone="orange" label="Trap: Daisy chaining is not fair">
+All devices share the same grant wire, but they do not receive equal turns. Physical position completely dictates priority. The master closest to the arbiter intercepts the grant first. If Master 0 has a continuous stream of transfers, downstream masters and the CPU receive zero bus time, causing starvation.
 </Callout>
 
-### 2. Centralized Parallel Arbitration
+### 2. Centralized parallel arbitration
 
 In **centralized parallel arbitration**, each individual bus master has dedicated, independent Bus Request ($\text{REQ}_i$) and Bus Grant ($\text{GNT}_i$) lines connected directly to a central arbiter chip.
 
@@ -161,12 +157,12 @@ In **centralized parallel arbitration**, each individual bus master has dedicate
 Because the arbiter sees every active request simultaneously, it can execute sophisticated prioritization algorithms:
 
 - **Fixed Priority**: Requests pass through an internal [priority encoder](/courses/logic-design/comparators-decoders-encoders#priority-encoders) (e.g., Master 0 > Master 1 > Master 2). Real-time devices are guaranteed minimal latency, but low-priority masters can still starve under heavy loads.
-- **Round-Robin (Rotating Priority)**: The arbiter maintains an internal pointer to the most recently served master, $k$. In the next arbitration cycle, priority begins at $(k + 1) \bmod N$. This guarantees perfect fairness: no device can be starved, and maximum waiting time is mathematically bounded to $(N - 1)$ transactions.
+- **Round-Robin (Rotating Priority)**: The arbiter maintains an internal pointer to the most recently served master, $k$. In the next arbitration cycle, priority begins at $(k + 1) \bmod N$. This guarantees fairness: no device can be starved, and maximum waiting time is bounded to $(N - 1)$ transactions.
 - **Dynamic Priority**: The operating system or hardware controller dynamically changes master priority levels by writing to configuration registers inside the arbiter.
 
 Parallel arbitration completes decisions in a single clock cycle and isolates device failures. Its drawback is line overhead: connecting $N$ masters requires $2N$ dedicated control lines.
 
-### 3. Distributed (Decentralized) Arbitration
+### 3. Distributed arbitration
 
 **Distributed arbitration** eliminates the central arbiter chip entirely. All bus masters participate in the arbitration decision using shared control and priority identification lines.
 
@@ -181,7 +177,7 @@ A classic implementation is **wired-OR self-selection** (used in SCSI and CAN bu
 
 Distributed arbitration provides high reliability with zero single point of failure, but it requires arbitration logic in every device interface.
 
-## Split-Transaction (Pipelined) Protocols
+## Split-transaction protocols
 
 In a traditional synchronous or asynchronous bus transaction, a memory read holds the bus locked for the entire duration of the transfer:
 
@@ -194,8 +190,8 @@ A **split-transaction bus** (also called a **pipelined bus** or **disconnected b
 | Bus Timeline | Traditional Locked Bus | Split-Transaction Bus |
 |---|---|---|
 | **Step 1** | Master A drives Address and Read Command | Master A drives Request + Address + **Transaction Tag A**; **releases bus** |
-| **Step 2** | Bus sits idle; DRAM accesses row internally (locked!) | Master B drives Request + Address + **Transaction Tag B**; **releases bus** |
-| **Step 3** | Bus sits idle; DRAM accesses row internally (locked!) | Master C transfers a fast I/O word to Master D |
+| **Step 2** | Bus sits idle; DRAM accesses row internally (locked) | Master B drives Request + Address + **Transaction Tag B**; **releases bus** |
+| **Step 3** | Bus sits idle; DRAM accesses row internally (locked) | Master C transfers a fast I/O word to Master D |
 | **Step 4** | DRAM finishes; drives Data to Master A; bus freed | Memory arbitrates bus; drives Reply Data + **Tag A**; Master A latches |
 | **Step 5** | Next master can finally begin arbitration | Memory arbitrates bus; drives Reply Data + **Tag B**; Master B latches |
 
@@ -204,12 +200,10 @@ A **split-transaction bus** (also called a **pipelined bus** or **disconnected b
 3. **Reply Phase**: When DRAM finishes fetching the data, the memory controller arbitrates for the bus as a master. Once granted, it places the data word onto the data bus along with the matching Transaction Tag. The original requesting master recognizes its tag, captures the data, and completes the read.
 
 <Callout tone="orange" label="Trap: Split-transaction buses do not reduce single-read latency">
-A split-transaction bus does not make an individual memory read complete any faster. In fact, single-transfer latency is slightly longer because the system must arbitrate twice and decode transaction tags.
-
-The benefit of split transactions is aggregate throughput: by utilizing the idle memory latency periods to serve other requests, the bus can sustain multiple concurrent transactions simultaneously.
+A split-transaction bus does not make an individual memory read complete faster. An individual read takes slightly longer because the system must arbitrate twice and decode transaction tags. The gain is aggregate throughput: while memory works on a read request internally, other devices use the bus for their own transfers.
 </Callout>
 
-## Comparison of Bus Arbitration Protocols
+## Comparison of bus arbitration protocols
 
 | Arbitration Scheme | Number of Control Lines | Decision Latency | Fairness | Fault Tolerance |
 |---|---|---|---|---|
@@ -218,9 +212,9 @@ The benefit of split transactions is aggregate throughput: by utilizing the idle
 | **Centralized Parallel (Round-Robin)** | $2N$ lines | 1 clock cycle | Perfect (bounded wait time) | High (isolated device failures) |
 | **Distributed (Self-Selection)** | $\log_2 N$ arbitration lines | Bitwise settling time | Flexible (ID dependent) | Maximum (no central point of failure) |
 
-## Exam-Style Practice
+## Exam-style practice
 
-### Problem 1: Synchronous vs. Asynchronous Bus Bandwidth Analysis
+### Problem 1: Synchronous vs. asynchronous bus bandwidth analysis
 
 <ModelAnswer>
 **Problem:** A computer architecture supports both a synchronous bus and an asynchronous bus. The bus data path is $32\text{ bits}$ wide ($4\text{ bytes}$).
@@ -287,7 +281,7 @@ $$\text{Bandwidth}_{\text{async}} = \frac{4\text{ bytes}}{87 \times 10^{-9}\text
 Comparing the two: The synchronous bus ($60.60\text{ ns}$, $66.0\text{ MB/s}$) is faster than the asynchronous bus ($87\text{ ns}$, $45.98\text{ MB/s}$) for single-word transfers, because the asynchronous bus must pay $32\text{ ns}$ of four-phase handshaking delays.
 </ModelAnswer>
 
-### Problem 2: Bus Arbitration Analysis: Daisy Chain vs. Round-Robin Fairness
+### Problem 2: Bus arbitration analysis: daisy chain vs. round-robin fairness
 
 <ModelAnswer>
 **Problem:** A computer system has 4 bus masters: Master 0 (GPU), Master 1 (NVMe SSD), Master 2 (Gigabit Network), and Master 3 (CPU). Each bus transaction takes exactly $100\text{ ns}$ of bus transmission time.
@@ -317,19 +311,19 @@ If Master 0 increases its demand to $80\%$ and Master 1 requires $25\%$:
 
 $$\text{Demand}_{\text{M0}} + \text{Demand}_{\text{M1}} = 80\text{\%} + 25\text{\%} = 105\text{\%} > 100\text{\%}$$
 
-Master 0 takes $80\%$, Master 1 takes the remaining $20\%$ (leaving Master 1 partially starved), and **zero bandwidth ($0\%$)** reaches Master 2 and Master 3. The CPU (Master 3) is completely starved of memory access, freezing all foreground user computation.
+Master 0 takes $80\%$, Master 1 takes the remaining $20\%$ (leaving Master 1 partially starved), and zero bandwidth ($0\%$) reaches Master 2 and Master 3. The CPU (Master 3) is completely starved of memory access, freezing all foreground user computation.
 
 **Part B: Round-Robin Bounded Waiting Time**
 
 In a 4-master round-robin arbiter, after serving Master 3, the arbiter services Master 0, Master 1, and Master 2 in rotation.
 
-The worst-case scenario occurs when Master 3 asserts its request an infinitesimal instant after the arbiter grant has already passed Master 3 and started serving Master 0.
+The worst-case scenario occurs when Master 3 asserts its request right after the arbiter grant has already passed Master 3 and started serving Master 0.
 
 Before Master 3 can receive another grant, each of the other three masters can execute at most one $100\text{ ns}$ transaction:
 
 $$T_{\text{wait\_max}} = (N - 1) \times T_{\text{transaction}} = (4 - 1) \times 100\text{ ns} = 3 \times 100\text{ ns} = 300\text{ ns}$$
 
-Master 3 is guaranteed to begin its transaction within at most $300\text{ ns}$. Starvation is mathematically impossible.
+Master 3 is guaranteed to begin its transaction within at most $300\text{ ns}$. Starvation cannot occur.
 
 **Part C: Round-Robin Bandwidth Allocation**
 
@@ -341,5 +335,5 @@ Each master receives exactly one transaction per 4-transaction cycle.
 
 $$\text{Bandwidth Share} = \frac{1}{4} = 25\text{\%}$$
 
-Each master is guaranteed exactly $25\%$ of total bus bandwidth, providing complete fairness regardless of device priority or physical slot position.
+Each master receives exactly $25\%$ of total bus bandwidth, providing complete fairness regardless of device priority or physical slot position.
 </ModelAnswer>
