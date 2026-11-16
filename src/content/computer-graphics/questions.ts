@@ -127,7 +127,8 @@ export const questions: Question[] = [
       { id: "d", text: "3 × 5 inches" },
     ],
     correctOptionId: "a",
-    explanation: "1500 ÷ 300 = 5 inches wide and 900 ÷ 300 = 3 inches tall.",
+    explanation:
+      "Divide pixel dimensions by PPI: 1500 ÷ 300 = 5 inches wide and 900 ÷ 300 = 3 inches tall. 15 × 9 divides by 100 PPI instead of 300, 4500 × 2700 mistakenly multiplies by 300 instead of dividing, and 3 × 5 reverses width and height.",
   },
   {
     id: "computer-graphics/resolution-quiz/q2",
@@ -140,7 +141,8 @@ export const questions: Question[] = [
       { id: "d", text: "24 × 30" },
     ],
     correctOptionId: "b",
-    explanation: "Multiply inches by PPI: 8 × 300 = 2400 and 10 × 300 = 3000.",
+    explanation:
+      "Multiply target physical dimensions by PPI: 8 × 300 = 2400 pixels wide and 10 × 300 = 3000 pixels tall. 800 × 1000 assumes 100 PPI, 300 × 300 confuses the PPI figure with resolution dimensions, and 24 × 30 uses a factor of 3 rather than 300.",
   },
   {
     id: "computer-graphics/resolution-quiz/q3",
@@ -153,7 +155,8 @@ export const questions: Question[] = [
       { id: "d", text: "Colors per pixel" },
     ],
     correctOptionId: "b",
-    explanation: "DPI is a printer's measure. Images and screens are described in PPI.",
+    explanation:
+      "DPI (dots per inch) specifically measures how many physical dots of ink a printer deposits per linear inch. Pixels in a digital file and screen densities are measured in PPI, screen diagonals are measured in inches, and colors per pixel are governed by bit depth.",
   },
   {
     id: "computer-graphics/resolution-quiz/q4",
@@ -166,7 +169,8 @@ export const questions: Question[] = [
       { id: "d", text: "2,073,600" },
     ],
     correctOptionId: "c",
-    explanation: "1280 × 720 = 921,600.",
+    explanation:
+      "Multiply columns by rows: 1280 × 720 = 921,600 pixels (standard 720p HD). 2,000 approximates 1280 + 720, 92,160 is off by a factor of 10, and 2,073,600 corresponds to 1080p Full HD (1920 × 1080).",
   },
   {
     id: "computer-graphics/resolution-quiz/q5",
@@ -179,7 +183,8 @@ export const questions: Question[] = [
       { id: "d", text: "16:10" },
     ],
     correctOptionId: "c",
-    explanation: "The greatest common divisor is 256: 1280 ÷ 256 = 5 and 1024 ÷ 256 = 4.",
+    explanation:
+      "Divide both dimensions by their greatest common divisor (256): 1280 ÷ 256 = 5 and 1024 ÷ 256 = 4, yielding 5:4. 16:9 and 16:10 are widescreen ratios, while 4:3 would require 1280 × 960 or 1024 × 768.",
   },
   {
     id: "computer-graphics/resolution-quiz/q6",
@@ -192,7 +197,8 @@ export const questions: Question[] = [
       { id: "d", text: "The 24-inch screen is sharper" },
     ],
     correctOptionId: "b",
-    explanation: "Same pixels in a smaller space means more pixels per inch: about 141 PPI against 92.",
+    explanation:
+      "Both displays have the identical total pixel count (1920 × 1080 = 2,073,600 pixels). Distributing the same pixel count across a smaller physical diagonal (15.6 inches) packs more pixels per inch (~141 PPI versus ~92 PPI on 24 inches), giving the 15.6-inch screen higher pixel density. They do not have the same density because physical sizes differ, pixel counts are identical rather than larger on the 24-inch monitor, and lower pixel density yields larger, less sharp pixels.",
   },
   {
     id: "computer-graphics/displays-quiz/q1",

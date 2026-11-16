@@ -3,18 +3,18 @@ import { PrintSizeCalculator } from "@/components/mdx/GraphicsVisualizers";
 
 # Resolution: PPI and DPI
 
-"Resolution" gets used for two different things, and mixing them up is the most common mistake in this topic:
+The word "resolution" gets used for two different things, and mixing them up is the most common mistake in this topic:
 
-- **Pixel dimensions**: how many pixels an image has, like 1200 × 800. This is fixed by the file.
-- **Resolution** in the strict sense: how densely those pixels are packed, **how many pixels per inch**. This decides how big the image looks once it's shown or printed.
+- **Pixel dimensions**: how many pixels an image has, like 1200 × 800. This count is fixed by the file.
+- **Resolution** in the strict sense: how densely those pixels are packed, measured as **pixels per inch** (or **pixel density**). This decides how big the image looks once it is shown or printed.
 
-The same 1200 × 800 photo can be a postcard or a poster. The pixels don't change; only how tightly they're packed does.
+The same 1200 × 800 photo can be printed as a postcard or a poster. The pixels do not change; only how tightly they are packed does.
 
-Notes often name the two kinds **image resolution**, the pixel density of an image in PPI, and **screen resolution**, how many pixels a display has. Don't confuse image resolution with **image dimension**, which is the 640 × 480 kind of number: the count of columns and rows. Screen resolution gets [its own lesson](/courses/computer-graphics/screen-resolution).
+Course notes often distinguish between **image resolution** (the pixel density in PPI) and **screen resolution** (how many pixels a display has). Do not confuse image resolution with **image dimensions**, which is the count of columns and rows like 640 × 480. Screen resolution gets [its own lesson](/courses/computer-graphics/screen-resolution).
 
 ## PPI: pixels per inch
 
-**PPI (pixels per inch)** counts how many pixels fit along one inch. It describes digital images and screens. More pixels per inch means each pixel is smaller, so the picture is sharper and edges look smoother.
+**PPI (pixels per inch)** counts how many pixels fit along one inch. It describes digital images and screens. More pixels per inch means each pixel is smaller, so the picture looks sharper and lines look smoother.
 
 To find the printed size of an image, divide its pixels by the PPI:
 
@@ -34,7 +34,7 @@ $$
 \frac{1200}{300} = 4 \text{ in wide}, \qquad \frac{800}{300} \approx 2.667 \text{ in tall}
 $$
 
-Raising the PPI from 72 to 300 shrank the print to about a quarter of the width, since $300 \div 72 \approx 4.2$. It's the same file, just with its pixels pushed closer together. If a question wants centimetres, multiply inches by 2.54: 4 inches is 10.16 cm. Try it:
+Raising the PPI from 72 to 300 shrinks the print to about a quarter of the width, since $300 \div 72 \approx 4.17$. It is the same file, with its pixels packed closer together. If an exam question asks for centimetres, multiply inches by 2.54: 4 inches is 10.16 cm. Try it:
 
 <PrintSizeCalculator />
 
@@ -46,44 +46,44 @@ $$
 \text{pixels} = \text{inches} \times \text{PPI}
 $$
 
-To print a 4 × 6 inch photo at a good quality of 240 PPI, you need
+To print a 4 × 6 inch photo at a quality of 240 PPI, you need
 
 $$
 240 \times 4 = 960 \text{ pixels wide}, \qquad 240 \times 6 = 1440 \text{ pixels tall}
 $$
 
-A smaller image will either print smaller or get stretched. Stretching shows as blur, because the software has to invent the missing pixels by averaging their neighbors, and averages are softer than real detail.
+A smaller image will either print smaller or get stretched. Stretching causes blur because the software has to invent missing pixels by averaging neighbors, and averages are softer than real detail.
 
 ## The third question: what PPI will I get?
 
-Sometimes you know both the pixels and the print size, and need the quality. Divide pixels by inches:
+When you know both the pixel count and the physical print size, divide pixels by inches to find the density:
 
 $$
 \text{PPI} = \frac{\text{pixels}}{\text{inches}}
 $$
 
-A 1200-pixel-wide photo printed 8 inches wide comes out at $1200 \div 8 = 150$ PPI, fine for a poster seen from across a room but soft up close. So the one formula answers three questions, depending on which two numbers you already have.
+A 1200-pixel-wide photo printed 8 inches wide comes out at $1200 \div 8 = 150$ PPI. That looks fine for a poster seen from across a room, but soft up close. The same formula answers three questions, depending on which two numbers you already have.
 
-<Callout tone="orange" label="More PPI isn't more detail">
-Typing a bigger PPI into an image's settings doesn't make it sharper. Without new pixels it only makes the print smaller. Real detail comes from the pixel count; PPI just decides how tightly that detail is packed.
+<Callout tone="orange" label="More PPI is not more detail">
+Typing a larger PPI into an image's settings does not make it sharper. Without new pixels, it only makes the print smaller. Real detail comes from the pixel count. PPI only decides how tightly those pixels are packed.
 </Callout>
 
 ## DPI: dots per inch
 
-**DPI (dots per inch)** belongs to printers. A printer doesn't print pixels. It sprays tiny dots of a few ink colors, and it takes several dots to fake one pixel's color. DPI counts how many of those ink dots the printer can place in an inch. Inkjet printers manage roughly 300 to 720 DPI; laser printers 600 to 2,400.
+**DPI (dots per inch)** belongs to physical printers. A printer does not print pixels directly. It sprays tiny dots of ink, and it takes multiple dots of cyan, magenta, yellow and black to reproduce one pixel's color. DPI counts how many ink dots the printer can place along one inch. Inkjet printers manage roughly 300 to 720 DPI, and laser printers reach 600 to 2,400 DPI.
 
 | | PPI | DPI |
 |---|---|---|
-| Measures | pixels in a digital image or on a screen | ink dots a printer lays down |
-| Belongs to | the image or the display | the printer |
-| You set it when | preparing a file | choosing printer quality |
+| Measures | pixels in an image or on a screen | ink dots a printer lays down |
+| Belongs to | the digital file or display | the physical printer |
+| Set when | preparing an image file | selecting print quality |
 
 <Callout tone="orange" label="Used interchangeably anyway">
-Plenty of software, and plenty of notes, say "DPI" when they mean PPI, especially for screens. On an exam, use PPI for images and screens and DPI for printers, and you'll be right either way.
+Many software tools and lecture notes write "DPI" when they mean PPI, especially for screens. On an exam, write PPI for digital images and screens, and DPI for printers.
 </Callout>
 
 <PracticalApplication title="Design and printing" tool="Photoshop's Image Size, print shops">
-A print shop asks for "300 DPI" files. What they need is enough pixels for 300 per inch at the final size. Changing the number in Photoshop's Image Size dialog without **resampling** (adding or removing pixels) changes only the printed size, exactly as in the calculator above.
+A print shop often asks for "300 DPI" files. What they need is enough pixels for 300 per inch at the final printed size. Changing the number in an image editor without **resampling** (adding or removing pixels) changes only the printed size, exactly as in the calculator above.
 </PracticalApplication>
 
 The [next lesson](/courses/computer-graphics/screen-resolution) applies the same idea to screens, where the size in inches is fixed and the question is how many pixels it holds.
