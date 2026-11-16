@@ -483,5 +483,87 @@ export function decodeCanonicalAddress48(address: bigint): {
   return { pml4, pdpt, pd, pt, offset };
 }
 
+/* ------------------------------- module 4: I/O & buses ------------------------------- */
+
+/** Calculates CPU polling overhead and utilization percentage. */
+export function calculatePollingOverhead(
+  clockHz: number,
+  pollFreqHz: number,
+  cyclesNoPacket: number,
+  cyclesWithPacket: number,
+  packetRateHz: number
+): {
+  idlePollCycles: number;
+  activePacketCycles: number;
+  totalCyclesPerSec: number;
+  cpuUtilizationPercent: number;
+} {
+  const idlePolls = Math.max(0, pollFreqHz - packetRateHz);
+  const idlePollCycles = idlePolls * cyclesNoPacket;
+  const activePacketCycles = packetRateHz * cyclesWithPacket;
+  const totalCyclesPerSec = idlePollCycles + activePacketCycles;
+  const cpuUtilizationPercent = (totalCyclesPerSec / clockHz) * 100;
+  return {
+    idlePollCycles,
+    activePacketCycles,
+    totalCyclesPerSec,
+    cpuUtilizationPercent,
+  };
+}
+
+/** Calculates DMA block transfer timings, bus time, and effective throughput. */
+export function calculateDmaTransfer(
+  bytesToTransfer: number,
+  busWidthBytes: number,
+  busClockHz: number,
+  busCyclesPerWord: number,
+  setupCycles: number,
+  completionCycles: number,
+  cpuClockHz: number
+): {
+  words: number;
+  busCycles: number;
+  busTimeSec: number;
+  cpuTimeSec: number;
+  totalTimeSec: number;
+  effectiveThroughputMBps: number;
+} {
+  const words = Math.ceil(bytesToTransfer / busWidthBytes);
+  const busCycles = words * busCyclesPerWord;
+  const busTimeSec = busCycles / busClockHz;
+  const cpuTimeSec = (setupCycles + completionCycles) / cpuClockHz;
+  const totalTimeSec = busTimeSec + cpuTimeSec;
+  const effectiveThroughputMBps = (bytesToTransfer / (1024 * 1024)) / totalTimeSec;
+  return {
+    words,
+    busCycles,
+    busTimeSec,
+    cpuTimeSec,
+    totalTimeSec,
+    effectiveThroughputMBps,
+  };
+}
+
+/** Calculates peak vs effective bus bandwidth in megabytes per second (decimal MB/s). */
+export function calculateBusBandwidth(
+  busWidthBytes: number,
+  busClockHz: number,
+  cyclesPerTransfer: number
+): {
+  peakBandwidthMBps: number;
+  effectiveBandwidthMBps: number;
+  efficiencyPercent: number;
+} {
+  const peakBandwidthMBps = (busWidthBytes * busClockHz) / 1e6;
+  const effectiveBandwidthMBps = (busWidthBytes * (busClockHz / cyclesPerTransfer)) / 1e6;
+  const efficiencyPercent = (1 / cyclesPerTransfer) * 100;
+  return {
+    peakBandwidthMBps,
+    effectiveBandwidthMBps,
+    efficiencyPercent,
+  };
+}
+
+
 
 

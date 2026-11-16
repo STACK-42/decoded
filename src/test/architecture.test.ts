@@ -3,12 +3,15 @@ import {
   amat,
   amdahl,
   calculateAmdahlRequiredSpeedup,
+  calculateBusBandwidth,
   calculateCacheOverhead,
   calculateControlStoreSize,
+  calculateDmaTransfer,
   calculateDramRefreshOverhead,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
   calculatePageTableOverhead,
+  calculatePollingOverhead,
   calculateRegisterWindows,
   decodeCanonicalAddress48,
   simulateTreePlru4Way,
@@ -201,5 +204,39 @@ describe("module 3 calculations", () => {
     expect(res.offset).toBe(0x567);
   });
 });
+
+describe("module 4 calculations", () => {
+  it("calculates CPU polling overhead and utilization", () => {
+    // 1 GHz CPU (1e9 Hz), 100 kHz polling (100,000 polls/sec)
+    // 50,000 packets/sec, 30 cycles idle, 250 cycles active
+    const res = calculatePollingOverhead(1e9, 100000, 30, 250, 50000);
+    expect(res.idlePollCycles).toBe(50000 * 30); // 1,500,000
+    expect(res.activePacketCycles).toBe(50000 * 250); // 12,500,000
+    expect(res.totalCyclesPerSec).toBe(14000000); // 14 million cycles
+    expect(res.cpuUtilizationPercent).toBeCloseTo(1.4, 2); // 1.4%
+  });
+
+  it("calculates DMA transfer timing and throughput", () => {
+    // 64 KB = 65536 bytes, 32-bit bus (4 bytes), 100 MHz bus (1e8 Hz)
+    // 1 cycle per 4-byte word in burst mode
+    // 600 cycles setup, 450 cycles completion on 1 GHz CPU (1e9 Hz)
+    const res = calculateDmaTransfer(65536, 4, 100e6, 1, 600, 450, 1e9);
+    expect(res.words).toBe(16384);
+    expect(res.busCycles).toBe(16384);
+    expect(res.busTimeSec).toBeCloseTo(0.00016384, 8); // 163.84 microseconds
+    expect(res.cpuTimeSec).toBeCloseTo(0.00000105, 8); // 1.05 microseconds
+    expect(res.effectiveThroughputMBps).toBeCloseTo(379.03, 1);
+  });
+
+  it("calculates synchronous bus bandwidth and efficiency", () => {
+    // 32-bit (4-byte) bus at 66 MHz
+    // Single word read with 1 wait state: 1 address + 2 latency + 1 data = 4 cycles
+    const res = calculateBusBandwidth(4, 66e6, 4);
+    expect(res.peakBandwidthMBps).toBeCloseTo(264, 0); // 4 * 66 = 264 MB/s
+    expect(res.effectiveBandwidthMBps).toBeCloseTo(66, 0); // 264 / 4 = 66 MB/s
+    expect(res.efficiencyPercent).toBeCloseTo(25, 0); // 25% efficiency
+  });
+});
+
 
 
