@@ -15,7 +15,8 @@ export const questions: Question[] = [
       { id: "d", text: "A smaller copy of the image" },
     ],
     correctOptionId: "b",
-    explanation: "The pixel values are all there, but each row starts in the wrong place, so the picture shears sideways.",
+    explanation:
+      "Because images are stored in row-major order, every pixel value is read, but each line starts at the wrong horizontal offset, shearing the image diagonally. The image is not blank because the data is read, colors remain unchanged, and the overall pixel count does not shrink into a miniature copy.",
   },
   {
     id: "computer-graphics/images-quiz/q2",
@@ -28,7 +29,8 @@ export const questions: Question[] = [
       { id: "d", text: "256" },
     ],
     correctOptionId: "c",
-    explanation: "2⁴ = 16.",
+    explanation:
+      "A bit depth of n bits per pixel represents 2ⁿ distinct states. For 4 bits, 2⁴ = 16 colors. 4 is the bit count itself, 8 is 2³, and 256 requires 8 bits (2⁸).",
   },
   {
     id: "computer-graphics/images-quiz/q3",
@@ -41,7 +43,8 @@ export const questions: Question[] = [
       { id: "d", text: "The first color in the palette" },
     ],
     correctOptionId: "b",
-    explanation: "0 is no brightness, so black. 255 is white. (In an indexed image, 0 would be the first palette entry.)",
+    explanation:
+      "In grayscale, 0 represents minimum light intensity (black) and 255 represents maximum intensity (white). Transparency requires a dedicated alpha channel, and palette lookup applies to indexed color rather than grayscale.",
   },
   {
     id: "computer-graphics/images-quiz/q4",
@@ -54,7 +57,8 @@ export const questions: Question[] = [
       { id: "d", text: "It's a mistake kept for compatibility" },
     ],
     correctOptionId: "b",
-    explanation: "5 + 6 + 5 = 16, and the spare bit goes where it's most visible.",
+    explanation:
+      "16 bits cannot divide equally into three color channels. The 5-6-5 layout gives the extra bit to green because human eyes are most sensitive to green light, making steps in green brightness easiest to notice. Memory needs and LED brightness do not dictate channel bit counts.",
   },
   {
     id: "computer-graphics/images-quiz/q5",
@@ -67,7 +71,8 @@ export const questions: Question[] = [
       { id: "d", text: "It depends on the red channel" },
     ],
     correctOptionId: "c",
-    explanation: "255 is fully opaque and 0 is fully transparent.",
+    explanation:
+      "Alpha measures opacity from 0 (completely transparent) to 255 (completely opaque). At alpha 255, the foreground pixel completely replaces the background. Invisible corresponds to alpha 0, half see-through to alpha 128, and alpha is independent of the red channel.",
   },
   {
     id: "computer-graphics/images-quiz/q6",
@@ -80,7 +85,8 @@ export const questions: Question[] = [
       { id: "d", text: "480,000 KB" },
     ],
     correctOptionId: "b",
-    explanation: "800 × 600 = 480,000 pixels × 3 bytes = 1,440,000 bytes ÷ 1024 = 1406.25 KB.",
+    explanation:
+      "800 × 600 = 480,000 pixels. At 24 bits (3 bytes) per pixel, total bytes = 480,000 × 3 = 1,440,000 bytes. Dividing by 1024 yields 1406.25 KB. 468.75 KB forgets to multiply by 3 bytes per pixel, 1875 KB multiplies by 4 bytes (32-bit), and 480,000 KB confuses pixels with kilobytes.",
   },
   {
     id: "computer-graphics/images-quiz/q7",
@@ -93,7 +99,8 @@ export const questions: Question[] = [
       { id: "d", text: "The 8-bit file is 2 times bigger" },
     ],
     correctOptionId: "a",
-    explanation: "Size is proportional to bits per pixel, not to the number of colors. 8 bits is 8 times 1 bit.",
+    explanation:
+      "Image storage scales in direct proportion to bits per pixel, not color count. An 8-bit image uses 8 bits per pixel, which is exactly 8 times the 1 bit per pixel used by binary images. 256 is the number of possible colors (2⁸), not the memory ratio.",
   },
   {
     id: "computer-graphics/images-quiz/q8",
@@ -106,7 +113,8 @@ export const questions: Question[] = [
       { id: "d", text: "Indexed images can't store 200" },
     ],
     correctOptionId: "b",
-    explanation: "In indexed color the value is a position in the palette, which can hold any color.",
+    explanation:
+      "In indexed color, the byte value 200 is an index into a 256-entry palette that can store any 24-bit RGB color. In grayscale, 200 directly specifies a bright gray intensity. The pixels will differ unless palette slot 200 happens to store gray, and 8-bit indexed formats support indices from 0 to 255.",
   },
   {
     id: "computer-graphics/resolution-quiz/q1",
