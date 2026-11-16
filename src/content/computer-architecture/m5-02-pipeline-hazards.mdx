@@ -381,6 +381,237 @@ The pipelined processor achieves a $3.54\times$ speedup over the multicycle desi
 
 ---
 
+### Problem 3: Dynamic branch prediction state trace and 2-bit counter performance
+
+An inner loop terminates with a conditional branch instruction. Across three outer loop invocations, the branch outcome produces the 12-outcome sequence:
+$$\text{Outcome Sequence} = [\text{T}, \text{T}, \text{T}, \text{NT}, \text{T}, \text{T}, \text{T}, \text{NT}, \text{T}, \text{T}, \text{T}, \text{NT}]$$
+(where each inner loop runs 3 iterations taken, followed by 1 loop exit not taken).
+
+Two branch prediction schemes are compared:
+- **Scheme 1: 1-bit dynamic predictor**, initialized to **Taken (`T`)**.
+- **Scheme 2: 2-bit saturating counter predictor**, with states:
+  - `00`: Strongly Not Taken
+  - `01`: Weakly Not Taken
+  - `10`: Weakly Taken
+  - `11`: Strongly Taken
+  Initialized to **Strongly Taken (`11`)**.
+
+Trace the predictions, outcomes, hits/misses, and state transitions for all 12 executions, and calculate the overall prediction accuracy for both schemes.
+
+<ModelAnswer>
+**Step-by-step trace:**
+
+| Step | Outcome | 1-Bit Pred | 1-Bit Hit? | 1-Bit Next State | 2-Bit Pred | 2-Bit State | 2-Bit Hit? | 2-Bit Next State |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **2** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **3** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **4** | **NT** | T | **MISS (1)** | **NT** | T | 11 (Strong T) | **MISS (1)** | **10 (Weak T)** |
+| **5** | **T** | NT | **MISS (2)** | **T** | T | 10 (Weak T) | **Hit** | **11 (Strong T)** |
+| **6** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **7** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **8** | **NT** | T | **MISS (3)** | **NT** | T | 11 (Strong T) | **MISS (2)** | **10 (Weak T)** |
+| **9** | **T** | NT | **MISS (4)** | **T** | T | 10 (Weak T) | **Hit** | **11 (Strong T)** |
+| **10** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **11** | **T** | T | **Hit** | T | T | 11 (Strong T) | **Hit** | 11 (saturated) |
+| **12** | **NT** | T | **MISS (5)** | **NT** | T | 11 (Strong T) | **MISS (3)** | **10 (Weak T)** |
+
+---
+
+**Accuracy evaluation:**
+
+- **1-bit predictor:**
+  $$\text{Mispredictions} = 5, \quad \text{Hits} = 7$$
+  $$\text{Accuracy}_{\text{1-bit}} = \frac{7}{12} \times 100\% \approx 58.33\%$$
+
+- **2-bit saturating counter:**
+  $$\text{Mispredictions} = 3, \quad \text{Hits} = 9$$
+  $$\text{Accuracy}_{\text{2-bit}} = \frac{9}{12} \times 100\% = 75.00\%$$
+
+---
+
+**Why the 2-bit counter excels on loops:**
+
+On a loop exit, the branch is unexpectedly Not Taken.
+- The 1-bit predictor immediately inverts its state to `NT`. When the outer loop starts the inner loop again (steps 5 and 9), it incorrectly predicts `NT`, causing a **second misprediction on loop re-entry**. The 1-bit predictor suffers 2 mispredictions for every single loop exit.
+- The 2-bit counter requires two consecutive opposing outcomes to flip its prediction. On loop exit, it merely decrements from `11` (Strongly Taken) to `10` (Weakly Taken). Because state `10` still predicts Taken, the subsequent loop re-entry is correctly predicted as Taken, cutting mispredictions from 5 down to 3.
+</ModelAnswer>
+
+---
+
+### Problem 4: Forwarding unit boolean logic and double data hazard priority
+
+In a classic 5-stage RISC processor datapath, operand multiplexers at the ALU inputs are controlled by two 2-bit control lines from the Forwarding Unit: `ForwardA` and `ForwardB`.
+- `00`: Use operand value from `ID/EX` register (no forwarding).
+- `10`: Forward operand value from `EX/MEM` pipeline register.
+- `01`: Forward operand value from `MEM/WB` pipeline register.
+
+The processor contains 32 registers ($R_0$ through $R_{31}$), with $R_0$ hardwired to 0.
+
+1. Write the formal boolean logic conditions implemented by the Forwarding Unit to assert `ForwardA = 10` and `ForwardA = 01`.
+2. Explain why the conditions must explicitly verify that the destination register is not $R_0$ (`exMemRd != 0`).
+3. Analyze the **double data hazard** illustrated by the following sequence:
+   ```assembly
+   I1: ADD R1, R2, R3    ; R1 = R2 + R3 (produces R1)
+   I2: ADD R1, R1, R4    ; R1 = R1 + R4 (updates R1 with new value)
+   I3: SUB R5, R1, R6    ; R5 = R1 - R6 (consumes R1)
+   ```
+   Determine which stages $I_1$, $I_2$, and $I_3$ occupy when $I_3$ enters EX, and explain how the forwarding logic guarantees that $I_3$ receives the updated value from $I_2$ rather than the stale value from $I_1$.
+
+<ModelAnswer>
+**Part 1: Forwarding Unit Boolean equations:**
+
+- **Forward from EX/MEM (`ForwardA = 10`):**
+  Occurs when the instruction in the EX/MEM stage writes to a register (`RegWrite = 1`), the destination register is not $R_0$, and the destination matches source operand 1 of the instruction in ID/EX:
+  $$\text{if } (\text{EX/MEM.RegWrite} \land (\text{EX/MEM.RegisterRd} \ne 0) \land (\text{EX/MEM.RegisterRd} == \text{ID/EX.RegisterRs1})) \implies \text{ForwardA} = 10$$
+
+- **Forward from MEM/WB (`ForwardA = 01`):**
+  Occurs when the instruction in MEM/WB writes to a register, the destination is not $R_0$, the destination matches `ID/EX.RegisterRs1`, **AND** the EX/MEM stage is not already forwarding to the same register:
+  $$\begin{aligned}
+  \text{if } &(\text{MEM/WB.RegWrite} \land (\text{MEM/WB.RegisterRd} \ne 0) \land (\text{MEM/WB.RegisterRd} == \text{ID/EX.RegisterRs1}) \\
+  &\land \neg (\text{EX/MEM.RegWrite} \land (\text{EX/MEM.RegisterRd} \ne 0) \land (\text{EX/MEM.RegisterRd} == \text{ID/EX.RegisterRs1}))) \\
+  &\implies \text{ForwardA} = 01
+  \end{aligned}$$
+
+---
+
+**Part 2: Why destination register cannot be $R_0$:**
+
+In RISC architectures (like MIPS and RISC-V), register $R_0$ is hardwired to logic 0. Any instruction that specifies $R_0$ as its destination (e.g. `ADD R0, R1, R2`) is effectively a no-operation; the hardware discards the write.
+If the forwarding unit did not check `RegisterRd != 0`, an instruction writing to $R_0$ in EX/MEM would cause `ForwardA` to assert whenever a subsequent instruction reads $R_0$, forwarding the non-zero ALU result instead of the constant 0.
+
+---
+
+**Part 3: Resolving the double data hazard:**
+
+When $I_3$ (`SUB R5, R1, R6`) arrives in the Execution stage (cycle 5):
+- $I_2$ (`ADD R1, R1, R4`) is in the **EX/MEM** stage, having just computed the most recent value of $R_1$.
+- $I_1$ (`ADD R1, R2, R3`) is in the **MEM/WB** stage, holding the older, stale value of $R_1$.
+- Both $I_1$ and $I_2$ have `RegWrite = 1` and destination `Rd = 1`.
+
+Because both stages hold a matching destination address ($R_1$), both potential forwarding conditions match:
+- If unconstrained, the MEM/WB condition might overwrite or race with EX/MEM.
+- The forwarding unit equation explicitly gives **higher priority to EX/MEM** by conditioning `ForwardA = 01` on the negation of the EX/MEM condition.
+- Consequently, `ForwardA` is asserted as `10`, selecting the newest result from $I_2$ in the EX/MEM pipeline register. $I_3$ executes with the correct value with **0 stall cycles**.
+</ModelAnswer>
+
+---
+
+### Problem 5: Comparative evaluation of branch hazard mitigation strategies
+
+A processor design team evaluates four architectural approaches for handling control hazards. The target workload instruction mix consists of:
+- **Arithmetic / Logic**: $60\%$ of instructions (0 stalls).
+- **Memory Loads / Stores**: $15\%$ of instructions (0 stalls).
+- **Unconditional Jumps**: $5\%$ of instructions ($f_{\text{jump}} = 0.05$). Jumps are resolved in the ID stage (stage 2), incurring a 1-cycle flush penalty across all designs.
+- **Conditional Branches**: $20\%$ of instructions ($f_{\text{branch}} = 0.20$). Profiling shows that $70\%$ of conditional branches are taken ($p_{\text{taken}} = 0.70$) and $30\%$ are not taken ($p_{\text{not\_taken}} = 0.30$).
+
+Evaluate the effective CPI for the following four designs:
+1. **Design A (Freeze / Stall until resolution in EX)**: The pipeline stalls unconditionally for 2 cycles on every conditional branch until outcome and target are determined in stage 3.
+2. **Design B (Predict Not Taken, resolved in EX)**: Continues fetching sequential instructions ($PC + 4$). If the branch is taken, 2 instructions in IF and ID are flushed (2-cycle penalty). If not taken, 0 stalls occur.
+3. **Design C (Delayed Branching with 1 delay slot)**: Branch target resolution occurs in ID (stage 2). Exactly 1 instruction in the delay slot following the branch is always executed. The optimizing compiler succeeds in filling the delay slot with a useful instruction $60\%$ of the time; the remaining $40\%$ must be filled with a `NOP`.
+4. **Design D (Dynamic Branch Target Buffer - BTB)**: A BTB in the IF stage predicts the branch outcome and target address with $90\%$ accuracy ($10\%$ misprediction rate). Correct predictions incur 0 stalls; mispredictions require flushing 2 cycles of speculative instructions.
+
+<ModelAnswer>
+**Baseline jump stall penalty across all designs:**
+$$\text{Stall}_{\text{jump}} = f_{\text{jump}} \times 1\text{ cycle} = 0.05 \times 1 = 0.05\text{ stall cycles/instruction}$$
+
+---
+
+**Design A: Stall until EX resolution:**
+Every branch stalls 2 cycles:
+$$\text{Stall}_{\text{branch\_A}} = f_{\text{branch}} \times 2 = 0.20 \times 2 = 0.40\text{ stall cycles/instruction}$$
+$$\text{CPI}_A = 1.0 + 0.05 + 0.40 = 1.450$$
+
+---
+
+**Design B: Predict Not Taken:**
+Stalls occur only when the branch is actually Taken:
+$$\text{Stall}_{\text{branch\_B}} = f_{\text{branch}} \times p_{\text{taken}} \times 2 = 0.20 \times 0.70 \times 2 = 0.280\text{ stall cycles/instruction}$$
+$$\text{CPI}_B = 1.0 + 0.05 + 0.280 = 1.330$$
+
+---
+
+**Design C: Delayed Branch with 1 delay slot:**
+Stalls occur only when the compiler must insert a `NOP` (40% of branches):
+$$\text{Stall}_{\text{branch\_C}} = f_{\text{branch}} \times (1.0 - \text{Useful Fraction}) \times 1 = 0.20 \times (1.0 - 0.60) \times 1 = 0.080\text{ stall cycles/instruction}$$
+$$\text{CPI}_C = 1.0 + 0.05 + 0.080 = 1.130$$
+
+---
+
+**Design D: Dynamic Branch Target Buffer (BTB):**
+Stalls occur only on branch mispredictions ($10\%$ of branches):
+$$\text{Stall}_{\text{branch\_D}} = f_{\text{branch}} \times p_{\text{mispredict}} \times 2 = 0.20 \times 0.10 \times 2 = 0.040\text{ stall cycles/instruction}$$
+$$\text{CPI}_D = 1.0 + 0.05 + 0.040 = 1.090$$
+
+---
+
+**Performance comparison:**
+
+$$\text{Speedup}_{D \text{ vs } A} = \frac{\text{CPI}_A}{\text{CPI}_D} = \frac{1.450}{1.090} \approx 1.330\ (33.0\%\text{ faster})$$
+
+Design D (Dynamic BTB) delivers the best performance with an effective CPI of **1.090**, outperforming Design A (1.450), Design B (1.330), and Design C (1.130).
+</ModelAnswer>
+
+---
+
+### Problem 6: Out-of-order execution, Tomasulo's algorithm, and register renaming
+
+An out-of-order superscalar execution core processes floating-point instructions using Tomasulo's algorithm and a Register Alias Table (RAT). Consider the following instruction sequence:
+
+```assembly
+I1: DIV.D F0, F2, F4      ; F0 = F2 / F4 (Floating-point divide: 10 cycles)
+I2: ADD.D F6, F0, F8      ; F6 = F0 + F8 (Floating-point add: 2 cycles)
+I3: SUB.D F8, F10, F14    ; F8 = F10 - F14 (Floating-point subtract: 2 cycles)
+I4: MUL.D F6, F10, F8     ; F6 = F10 * F8 (Floating-point multiply: 4 cycles)
+```
+
+1. Identify all data dependencies (True RAW, Anti WAR, and Output WAW) present in this instruction sequence under architectural registers.
+2. Explain why a traditional in-order pipeline must stall execution of instructions $I_3$ and $I_4$, and calculate the total stall cycles.
+3. Show how register renaming using physical registers ($P_0, P_1, P_2, \dots$) eliminates the WAR and WAW hazards, allowing $I_3$ and $I_4$ to execute concurrently while $I_1$ and $I_2$ are still waiting for division to complete.
+
+<ModelAnswer>
+**Part 1: Dependency analysis:**
+
+- **True data dependencies (RAW):**
+  - $I_1 \to I_2$ on `F0`: $I_2$ reads `F0` produced by $I_1$.
+  - $I_3 \to I_4$ on `F8`: $I_4$ reads `F8` produced by $I_3$.
+- **Anti-dependencies (WAR):**
+  - $I_2 \to I_3$ on `F8`: $I_2$ reads architectural `F8` while $I_3$ writes architectural `F8`. If $I_3$ writes before $I_2$ reads, $I_2$ would receive the wrong value.
+- **Output dependencies (WAW):**
+  - $I_2 \to I_4$ on `F6`: Both $I_2$ and $I_4$ write to architectural register `F6`. If $I_4$ finishes before $I_2$, architectural register `F6` would be overwritten with the older result.
+
+---
+
+**Part 2: In-order execution stalls:**
+
+In a strict in-order pipeline:
+- $I_1$ requires 10 clock cycles to compute `F0`.
+- $I_2$ depends directly on $I_1$ (RAW) and stalls in the decode/issue stage for 10 cycles.
+- Because issue is strictly in-order, $I_3$ and $I_4$ are blocked behind $I_2$, even though $I_3$ only depends on `F10` and `F14` (which are already available!).
+- The in-order pipeline wastes approximately **10 clock cycles of complete processor stalling** before $I_3$ can even begin execution.
+
+---
+
+**Part 3: Register renaming resolution:**
+
+The processor maintains a pool of physical registers ($P_0, P_1, P_2, \dots$). When instructions are decoded, the Register Alias Table (RAT) maps architectural registers to distinct physical registers:
+
+| Instruction | Architectural Code | Renamed Physical Instruction | Notes |
+| :--- | :--- | :--- | :--- |
+| **$I_1$** | `DIV.D F0, F2, F4` | `DIV.D P10, P2, P4` | `F0` mapped to $P_{10}$ |
+| **$I_2$** | `ADD.D F6, F0, F8` | `ADD.D P11, P10, P8` | `F6` mapped to $P_{11}$; reads $P_{10}$ and $P_8$ |
+| **$I_3$** | `SUB.D F8, F10, F14` | `SUB.D P12, P10_orig, P14` | `F8` mapped to **new** physical register $P_{12}$! |
+| **$I_4$** | `MUL.D F6, F10, F8` | `MUL.D P13, P10_orig, P12` | `F6` mapped to **new** physical register $P_{13}$! Reads $P_{12}$ |
+
+**Resulting execution flow:**
+1. **WAR eliminated**: $I_3$ writes to physical register $P_{12}$, leaving $P_8$ undisturbed. $I_2$ will read the original value from $P_8$ whenever it executes, with zero conflict.
+2. **WAW eliminated**: $I_4$ writes to physical register $P_{13}$, while $I_2$ writes to $P_{11}$. Both results are preserved independently.
+3. **Out-of-order progress**: Because $I_3$ has its operands ready, it issues immediately to a reservation station on cycle 2, finishes in cycle 4, and forwards $P_{12}$ to $I_4$. $I_4$ finishes in cycle 8.
+4. Both $I_3$ and $I_4$ execute and complete entirely while $I_1$ is still computing its division in the floating-point unit, achieving near-optimal Instruction-Level Parallelism (ILP).
+</ModelAnswer>
+
+---
+
 ## Practice
 
 <Quiz

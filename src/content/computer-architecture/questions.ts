@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "architecture-and-organization",
+    section: "structure-and-function",
     prompt: "Which of these is part of a computer's architecture, not its organization?",
     options: [
       { id: "a", text: "The instruction set" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "measuring-performance",
+    section: "working-out-weighted-cpi",
     prompt: "A program's instructions are 50% ALU at 1 cycle, 30% load/store at 3 cycles and 20% branch at 2 cycles. What is the CPI?",
     options: [
       { id: "a", text: "1.8" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "measuring-performance",
+    section: "mips-and-mflops-pitfalls",
     prompt: "A 500 MHz machine has a CPI of 2. What is its MIPS?",
     options: [
       { id: "a", text: "1000" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "risc-and-cisc",
+    section: "core-principles-of-risc",
     prompt: "Which is typical of RISC?",
     options: [
       { id: "a", text: "Variable-length instructions" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "control-unit",
+    section: "microprogrammed-control",
     prompt: "What's the main advantage of a microprogrammed control unit over a hardwired one?",
     options: [
       { id: "a", text: "It's faster" },

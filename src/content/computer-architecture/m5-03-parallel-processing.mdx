@@ -386,6 +386,259 @@ Trace the state of block `X` in each core's cache and record the resulting bus t
 
 ---
 
+### Problem 3: Gustafson's weak scaling vs Amdahl's strong scaling on large supercomputers
+
+A national laboratory runs a global climatology climate simulation model. Detailed profiling indicates that $96\%$ of the floating-point computation can be partitioned independently across geographic grid cells ($p = 0.96$). The remaining $4\%$ represents sequential global boundary convergence checking, file I/O, and inter-node barriers ($s = 0.04$).
+
+1. **Amdahl's Law (Strong Scaling)**: Assuming the total problem size (spatial grid resolution) remains fixed:
+   - Calculate the theoretical speedup ceiling on an infinite number of processors ($N \to \infty$).
+   - Calculate the speedup and parallel efficiency ($\text{Speedup} / N \times 100\%$) for $N = 128$, $512$, and $2,048$ processor cores.
+2. **Gustafson's Law (Weak Scaling)**: In practice, researchers increase grid resolution when more processors are available to improve forecast accuracy, keeping total execution time constant:
+   - Calculate the Gustafson scaled speedup and parallel efficiency for $N = 128$, $512$, and $2,048$ processor cores.
+3. Contrast the results and explain why supercomputing centers evaluate scalable architectures using Gustafson's weak scaling rather than Amdahl's strong scaling.
+
+<ModelAnswer>
+**Part 1: Strong scaling under Amdahl's law:**
+
+- Asymptotic speedup ceiling:
+  $$\text{Speedup}_{\max} = \frac{1}{s} = \frac{1}{0.04} = 25.0\times$$
+  Regardless of how many thousands of cores are added, strong scaling can never exceed a $25\times$ speedup.
+
+- Speedup and efficiency evaluations:
+  $$\text{Speedup}(N) = \frac{1}{s + \dfrac{1 - s}{N}} = \frac{1}{0.04 + \dfrac{0.96}{N}}$$
+
+  - **$N = 128$ cores:**
+    $$\text{Speedup}_{128} = \frac{1}{0.04 + \dfrac{0.96}{128}} = \frac{1}{0.04 + 0.0075} = \frac{1}{0.0475} \approx 21.05\times$$
+    $$\text{Efficiency}_{128} = \frac{21.05}{128} \times 100\% \approx 16.45\%$$
+
+  - **$N = 512$ cores:**
+    $$\text{Speedup}_{512} = \frac{1}{0.04 + \dfrac{0.96}{512}} = \frac{1}{0.04 + 0.001875} = \frac{1}{0.041875} \approx 23.88\times$$
+    $$\text{Efficiency}_{512} = \frac{23.88}{512} \times 100\% \approx 4.66\%$$
+
+  - **$N = 2,048$ cores:**
+    $$\text{Speedup}_{2048} = \frac{1}{0.04 + \dfrac{0.96}{2048}} = \frac{1}{0.04 + 0.00046875} = \frac{1}{0.04046875} \approx 24.71\times$$
+    $$\text{Efficiency}_{2048} = \frac{24.71}{2048} \times 100\% \approx 1.21\%$$
+
+Under strong scaling, efficiency collapses to $1.2\%$ at 2,048 cores because the fixed 4% serial workload dominates total runtime.
+
+---
+
+**Part 2: Weak scaling under Gustafson's law:**
+
+Under Gustafson's law, the workload scales with processor count:
+$$\text{Speedup}_{\text{scaled}}(N) = N - s(N - 1) = N - 0.04(N - 1)$$
+
+- **$N = 128$ cores:**
+  $$\text{Speedup}_{128} = 128 - 0.04(127) = 128 - 5.08 = 122.92\times$$
+  $$\text{Efficiency}_{128} = \frac{122.92}{128} \times 100\% \approx 96.03\%$$
+
+- **$N = 512$ cores:**
+  $$\text{Speedup}_{512} = 512 - 0.04(511) = 512 - 20.44 = 491.56\times$$
+  $$\text{Efficiency}_{512} = \frac{491.56}{512} \times 100\% \approx 96.01\%$$
+
+- **$N = 2,048$ cores:**
+  $$\text{Speedup}_{2048} = 2048 - 0.04(2047) = 2048 - 81.88 = 1,966.12\times$$
+  $$\text{Efficiency}_{2048} = \frac{1966.12}{2048} \times 100\% \approx 96.00\%$$
+
+---
+
+**Part 3: Significance for supercomputing:**
+
+Amdahl's law models running a small, fixed-size problem faster. On 2,048 cores, each core receives only a tiny fraction of the problem, so serial bottlenecks overwhelm the run.
+Gustafson's law models solving larger, higher-resolution problems in the same total wall-clock time. In climate modeling or AI training, scientists refine the mesh or expand dataset size as computing clusters grow. Because the parallel workload expands linearly while the sequential setup overhead remains constant, supercomputers achieve over $95\%$ parallel efficiency on tens of thousands of cores.
+</ModelAnswer>
+
+---
+
+### Problem 4: Directory-based cache coherence for large NUMA systems
+
+A symmetric shared-bus snooping protocol cannot scale to a 16-node NUMA multiprocessor (Nodes 0 through 15) because broadcast traffic would saturate the bus. The system instead uses a directory-based cache coherence protocol over a point-to-point mesh network.
+
+Each cache block entry in a node's local directory contains:
+- **State**: `Uncached` (`U`), `Shared` (`S`), or `Exclusive` (`E`).
+- **Sharer Mask**: A 16-bit vector $\{b_{15}, \dots, b_0\}$ where bit $b_i = 1$ if Node $i$ currently caches a copy of the block.
+
+Initially, cache block address `0x9000` belongs to **Node 0** (the home node), and its directory state is **`U`** with mask `0x0000`.
+
+Trace the exact directory state transitions, sharing mask updates, and point-to-point network messages for the following sequence of operations:
+1. **Node 1 reads block `0x9000`**.
+2. **Node 4 reads block `0x9000`**.
+3. **Node 7 writes block `0x9000`**.
+4. **Node 2 reads block `0x9000`**.
+
+<ModelAnswer>
+**Step 1: Node 1 reads block `0x9000`**
+- Message: Node 1 sends a point-to-point `ReadReq` message to Home Node 0.
+- Home directory lookup: Prior state is `U`, sharers `0x0000`.
+- Home action: Home Node 0 fetches block `0x9000` from its local memory and sends a `DataReply` packet containing the block directly to Node 1.
+- State update: Directory transitions to **`Shared (S)`**; sets bit 1 in sharer mask (`0x0002`).
+- Result: Node 1 caches block in state `S`. Home directory: **`S`**, sharers: **`0x0002`** (Node 1).
+
+---
+
+**Step 2: Node 4 reads block `0x9000`**
+- Message: Node 4 sends a `ReadReq` message to Home Node 0.
+- Home directory lookup: State is `S`, sharers `0x0002`.
+- Home action: Because state is `S`, memory copy is clean. Home Node 0 sends `DataReply` to Node 4.
+- State update: Directory stays in **`Shared (S)`**; sets bit 4 in sharer mask (`0x0002 | 0x0010 = 0x0012`).
+- Result: Both Node 1 and Node 4 hold block in state `S`. Home directory: **`S`**, sharers: **`0x0012`** (Nodes 1, 4).
+
+---
+
+**Step 3: Node 7 writes block `0x9000`**
+- Message: Node 7 sends a `WriteReq` message to Home Node 0 requesting exclusive ownership.
+- Home directory lookup: State is `S`, sharers `0x0012` (Nodes 1 and 4).
+- Invalidation: Home Node 0 inspects the sharer mask and sends directed **`Invalidate`** messages **only to Node 1 and Node 4** (avoiding network-wide broadcast).
+- Acknowledgment: Node 1 and Node 4 invalidate their local copies and send `InvAck` messages to Node 7.
+- Data supply: Home Node 0 sends `DataReply` (or permission grant) to Node 7.
+- State update: Directory transitions to **`Exclusive (E)`**; clears previous sharers and sets bit 7 (`0x0080`).
+- Result: Node 7 holds block in state `M` (Modified). Home directory: **`E`**, owner: **`0x0080`** (Node 7).
+
+---
+
+**Step 4: Node 2 reads block `0x9000`**
+- Message: Node 2 sends a `ReadReq` message to Home Node 0.
+- Home directory lookup: State is `E`, owner is Node 7. Memory copy is stale!
+- Home action: Home Node 0 forwards a `Fetch` message to Node 7.
+- Owner action: Node 7 downgrades its cache state from `M` to `S`, writes back the dirty block to Home Node 0, and sends the updated data directly to Node 2.
+- State update: Home Node 0 updates main memory and sets directory state to **`Shared (S)`** with sharers `{Node 7, Node 2}` (`0x0080 | 0x0004 = 0x0084`).
+- Result: Node 7 and Node 2 both hold block in `S`. Home directory: **`S`**, sharers: **`0x0084`**.
+
+**Traffic advantage**: In Step 3, invalidations required only 2 targeted point-to-point packets rather than 15 broadcast messages across the network.
+</ModelAnswer>
+
+---
+
+### Problem 5: False sharing quantitative penalty and cache line alignment
+
+A team develops a multi-threaded metrics aggregator for a 4-core server. Each thread $i \in \{0, 1, 2, 3\}$ runs on a dedicated core and performs $1,000,000$ increment operations on an assigned counter.
+
+The original implementation allocates counters contiguously in an array:
+```c
+struct StatsUnpadded {
+  int64_t counter[4]; // 4 * 8 bytes = 32 bytes (resides in a single 64-byte cache line)
+};
+```
+
+Memory hierarchy parameters:
+- Core clock frequency: $1.0\text{ GHz}$ ($1\text{ ns}$ cycle).
+- L1 cache hit latency: $1\text{ cycle}$ ($1\text{ ns}$).
+- Remote cache-to-cache transfer penalty (bus invalidation and miss service): $100\text{ cycles}$ ($100\text{ ns}$).
+- Under concurrent execution without padding, ping-pong cache line invalidations cause each write to suffer an estimated $75\%$ cache miss rate ($p_{\text{miss}} = 0.75$).
+
+To eliminate false sharing, the structure is padded to align each counter onto its own 64-byte cache line:
+```c
+struct alignas(64) PaddedCounter {
+  int64_t counter;
+  uint8_t padding[56]; // 8 bytes data + 56 bytes padding = 64 bytes
+};
+PaddedCounter counters[4];
+```
+With padding, each thread writes exclusively to its private cache line (100% L1 cache hits after initial load).
+
+Calculate:
+1. The average cycles per write and total execution time for the unpadded design.
+2. The average cycles per write and total execution time for the padded design.
+3. The speedup delivered by cache line padding and the memory footprint increase.
+
+<ModelAnswer>
+**Part 1: Unpadded design with false sharing:**
+
+- Average latency per write operation:
+  $$\text{Latency}_{\text{unpadded}} = (1 - p_{\text{miss}}) \times t_{\text{hit}} + p_{\text{miss}} \times t_{\text{miss}} = 0.25 \times 1\text{ cycle} + 0.75 \times 100\text{ cycles} = 0.25 + 75.0 = 75.25\text{ cycles}$$
+
+- Total execution time for $1,000,000$ writes:
+  $$T_{\text{unpadded}} = 1,000,000 \times 75.25\text{ cycles} \times 1\text{ ns/cycle} = 75,250,000\text{ ns} = 75.25\text{ ms}$$
+
+---
+
+**Part 2: Padded design without false sharing:**
+
+- Each thread's counter resides in a completely separate 64-byte cache block. No core issues `Invalidate` signals to any other core during execution.
+- Average latency per write operation = 1 cycle (1 ns).
+- Total execution time for $1,000,000$ writes:
+  $$T_{\text{padded}} = 1,000,000 \times 1\text{ cycle} \times 1\text{ ns/cycle} = 1,000,000\text{ ns} = 1.00\text{ ms}$$
+
+---
+
+**Part 3: Performance speedup and memory trade-off:**
+
+$$\text{Speedup} = \frac{T_{\text{unpadded}}}{T_{\text{padded}}} = \frac{75.25\text{ ms}}{1.00\text{ ms}} = 75.25\times$$
+
+- Memory footprint comparison:
+  - Unpadded: $4 \times 8\text{ bytes} = 32\text{ bytes}$.
+  - Padded: $4 \times 64\text{ bytes} = 256\text{ bytes}$.
+  - Memory increase: $256 - 32 = 224\text{ bytes}$.
+
+By allocating an additional 224 bytes of memory padding, the application eliminates false sharing bus traffic and runs **$75.25\times$ faster**.
+</ModelAnswer>
+
+---
+
+### Problem 6: SIMD vectorization speedup and branch divergence penalties
+
+A image filter processes an array of $1,024$ 32-bit floating-point pixels using a conditional threshold formula:
+
+```c
+for (int i = 0; i < 1024; i++) {
+  if (pixels[i] > 0.5f) {
+    pixels[i] = pixels[i] * 1.5f + 0.1f; // Path A (Taken): 2 floating-point ops (4 cycles)
+  } else {
+    pixels[i] = pixels[i] * 0.5f;        // Path B (Not Taken): 1 floating-point op (2 cycles)
+  }
+}
+```
+
+System parameters:
+- Across the image, $50\%$ of pixel values exceed $0.5\text{f}$ ($p = 0.5$).
+- The scalar processor takes 4 cycles to execute Path A and 2 cycles to execute Path B (assume 0 branch mispredictions).
+- The vector processor supports AVX-512 (512-bit registers), holding $W = 16$ single-precision (32-bit) floats per SIMD vector register.
+- In SIMD/SIMT architectures, conditional execution across vector lanes uses predication (mask registers). When a 16-element vector contains both true and false conditions (**branch divergence**), the hardware must execute **both Path A and Path B sequentially**, disabling inactive lanes with write masks.
+
+Calculate:
+1. Total clock cycles to process the $1,024$-pixel array on the scalar CPU.
+2. The probability of branch divergence in a 16-element vector, the execution cycles required per vector, and the total cycles to process the array on the SIMD processor.
+3. The actual SIMD speedup over scalar execution, and the SIMD execution efficiency ($\text{Speedup} / W \times 100\%$).
+
+<ModelAnswer>
+**Part 1: Scalar execution cycles:**
+
+- Total pixels = 1,024.
+- 512 pixels take Path A (4 cycles each) = $512 \times 4 = 2,048$ cycles.
+- 512 pixels take Path B (2 cycles each) = $512 \times 2 = 1,024$ cycles.
+$$\text{Cycles}_{\text{scalar}} = 2048 + 1024 = 3,072\text{ clock cycles}$$
+
+---
+
+**Part 2: SIMD execution with branch divergence:**
+
+- Total 16-element vectors = $1,024 / 16 = 64$ vectors.
+- Probability that all 16 elements in a vector are $> 0.5\text{f}$:
+  $$P(\text{all Path A}) = (0.5)^{16} \approx 0.000015\ (0.0015\%)$$
+- Probability that all 16 elements are $\le 0.5\text{f}$:
+  $$P(\text{all Path B}) = (0.5)^{16} \approx 0.000015\ (0.0015\%)$$
+- Probability that a vector diverges (contains both types of pixels):
+  $$P(\text{divergent}) = 1.0 - 2 \times (0.5)^{16} \approx 0.99997\ (99.997\%)$$
+
+Because divergence occurs in essentially $100\%$ of vectors, the SIMD unit must execute both Path A (4 cycles) with mask $M_1$ and Path B (2 cycles) with inverted mask $\neg M_1$:
+$$\text{Cycles per vector} = t_{\text{Path A}} + t_{\text{Path B}} = 4 + 2 = 6\text{ cycles}$$
+
+Total SIMD execution cycles across all 64 vectors:
+$$\text{Cycles}_{\text{SIMD}} = 64\text{ vectors} \times 6\text{ cycles/vector} = 384\text{ clock cycles}$$
+
+---
+
+**Part 3: Speedup and SIMD efficiency:**
+
+$$\text{Speedup} = \frac{\text{Cycles}_{\text{scalar}}}{\text{Cycles}_{\text{SIMD}}} = \frac{3,072}{384} = 8.00\times$$
+
+$$\text{SIMD Efficiency} = \frac{\text{Speedup}}{W} \times 100\% = \frac{8.00}{16} \times 100\% = 50.0\%$$
+
+Although the vector register processes 16 elements simultaneously ($W = 16$), the speedup is limited to **$8\times$** ($50\%$ efficiency). Branch divergence forces the SIMD execution units to evaluate both conditional code blocks sequentially, cutting effective throughput in half.
+</ModelAnswer>
+
+---
+
 ## Practice
 
 <Quiz

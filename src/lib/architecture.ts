@@ -1136,6 +1136,250 @@ export function simulateBranchPredictors(
   return { steps, accuracy1BitPercent, accuracy2BitPercent };
 }
 
+/* ---------------- module 5 practice: advanced pipeline & parallel helpers -- */
+
+export type PipelineRegisterSizing = {
+  ifIdBits: number;
+  idExBits: number;
+  exMemBits: number;
+  memWbBits: number;
+  totalBits: number;
+};
+
+/** Calculates bit width of interstage pipeline registers in a standard RISC datapath. */
+export function calculatePipelineRegisterBits(params?: {
+  addressBits?: number;
+  dataBits?: number;
+  regIndexBits?: number;
+  includePcInIdEx?: boolean;
+  exControlBits?: number;
+  memControlBits?: number;
+  wbControlBits?: number;
+}): PipelineRegisterSizing {
+  const addressBits = params?.addressBits ?? 32;
+  const dataBits = params?.dataBits ?? 32;
+  const regIndexBits = params?.regIndexBits ?? 5; // 32 general purpose registers
+  const includePcInIdEx = params?.includePcInIdEx ?? true;
+  const exControlBits = params?.exControlBits ?? 4; // ALUOp(2), ALUSrc(1), RegDst(1)
+  const memControlBits = params?.memControlBits ?? 3; // Branch(1), MemRead(1), MemWrite(1)
+  const wbControlBits = params?.wbControlBits ?? 2; // RegWrite(1), MemtoReg(1)
+
+  // IF/ID: PC+4 (addressBits) + Instruction Word (dataBits)
+  const ifIdBits = addressBits + dataBits;
+
+  // ID/EX: PC+4 (if included) + ReadData1 + ReadData2 + SignExtendedImmediate + Rs + Rt + Rd + Control
+  const idExBits =
+    (includePcInIdEx ? addressBits : 0) +
+    dataBits + // ReadData1
+    dataBits + // ReadData2
+    dataBits + // SignExtImm
+    regIndexBits + // Rs
+    regIndexBits + // Rt
+    regIndexBits + // Rd
+    (exControlBits + memControlBits + wbControlBits);
+
+  // EX/MEM: Branch Target + Zero/Condition Flag(1) + ALU Result + WriteData + Rd + MemControl + WbControl
+  const exMemBits =
+    addressBits + // Branch target address
+    1 + // Zero flag
+    dataBits + // ALU result
+    dataBits + // Write data (Rt value for store)
+    regIndexBits + // Destination register Rd
+    (memControlBits + wbControlBits);
+
+  // MEM/WB: Memory Read Data + ALU Result + Rd + WbControl
+  const memWbBits =
+    dataBits + // Mem read data
+    dataBits + // ALU result
+    regIndexBits + // Destination register Rd
+    wbControlBits;
+
+  const totalBits = ifIdBits + idExBits + exMemBits + memWbBits;
+
+  return { ifIdBits, idExBits, exMemBits, memWbBits, totalBits };
+}
+
+/** Determines optimal pipeline depth balancing clock frequency scaling against branch hazard penalties. */
+export function calculateOptimalPipelineStages(params: {
+  combinationalDelayPs: number;
+  registerDelayPs: number;
+  branchFrequency: number;
+  branchMispredictRate: number;
+  branchPenaltyRatio?: number; // stage penalty fraction (e.g. 0.4 means penalty = Math.round(0.4 * k))
+  maxStagesToTest?: number;
+}): {
+  optimalStages: number;
+  optimalClockPeriodPs: number;
+  optimalCpi: number;
+  optimalTimePerInstructionPs: number;
+  stageEvaluations: {
+    stages: number;
+    clockPeriodPs: number;
+    cpi: number;
+    timePerInstructionPs: number;
+  }[];
+} {
+  const penaltyRatio = params.branchPenaltyRatio ?? 0.4;
+  const maxStages = params.maxStagesToTest ?? 40;
+  const stageEvaluations: {
+    stages: number;
+    clockPeriodPs: number;
+    cpi: number;
+    timePerInstructionPs: number;
+  }[] = [];
+
+  let bestStages = 1;
+  let bestTime = Infinity;
+  let bestClockPeriod = 0;
+  let bestCpi = 1;
+
+  for (let k = 1; k <= maxStages; k++) {
+    const clockPeriodPs = params.combinationalDelayPs / k + params.registerDelayPs;
+    // Base CPI is 1.0. Branch penalty cycles scale roughly with pipeline depth to branch resolution stage
+    const penaltyCycles = Math.max(1, Math.round(penaltyRatio * (k - 1)));
+    const branchStall = params.branchFrequency * params.branchMispredictRate * penaltyCycles;
+    const cpi = 1.0 + branchStall;
+    const timePerInstructionPs = cpi * clockPeriodPs;
+
+    stageEvaluations.push({
+      stages: k,
+      clockPeriodPs,
+      cpi,
+      timePerInstructionPs,
+    });
+
+    if (timePerInstructionPs < bestTime) {
+      bestTime = timePerInstructionPs;
+      bestStages = k;
+      bestClockPeriod = clockPeriodPs;
+      bestCpi = cpi;
+    }
+  }
+
+  return {
+    optimalStages: bestStages,
+    optimalClockPeriodPs: bestClockPeriod,
+    optimalCpi: bestCpi,
+    optimalTimePerInstructionPs: bestTime,
+    stageEvaluations,
+  };
+}
+
+export type ForwardSource = "00" | "10" | "01"; // 00: ID/EX (no forward), 10: EX/MEM forward, 01: MEM/WB forward
+
+/** Calculates forwarding unit multiplexer control lines and resolves double hazards. */
+export function calculateForwardingControl(params: {
+  idExRs1: number;
+  idExRs2: number;
+  exMemRd: number;
+  exMemRegWrite: boolean;
+  memWbRd: number;
+  memWbRegWrite: boolean;
+}): {
+  forwardA: ForwardSource;
+  forwardB: ForwardSource;
+  explanationA: string;
+  explanationB: string;
+} {
+  let forwardA: ForwardSource = "00";
+  let explanationA = "No forwarding: operand read from ID/EX register";
+
+  // Check ForwardA
+  // Priority 1: EX/MEM hazard (most recent result)
+  if (params.exMemRegWrite && params.exMemRd !== 0 && params.exMemRd === params.idExRs1) {
+    forwardA = "10";
+    explanationA = `Forwarded from EX/MEM stage (R${params.exMemRd})`;
+  } else if (params.memWbRegWrite && params.memWbRd !== 0 && params.memWbRd === params.idExRs1) {
+    forwardA = "01";
+    explanationA = `Forwarded from MEM/WB stage (R${params.memWbRd})`;
+  }
+
+  let forwardB: ForwardSource = "00";
+  let explanationB = "No forwarding: operand read from ID/EX register";
+
+  // Check ForwardB
+  if (params.exMemRegWrite && params.exMemRd !== 0 && params.exMemRd === params.idExRs2) {
+    forwardB = "10";
+    explanationB = `Forwarded from EX/MEM stage (R${params.exMemRd})`;
+  } else if (params.memWbRegWrite && params.memWbRd !== 0 && params.memWbRd === params.idExRs2) {
+    forwardB = "01";
+    explanationB = `Forwarded from MEM/WB stage (R${params.memWbRd})`;
+  }
+
+  return { forwardA, forwardB, explanationA, explanationB };
+}
+
+/** Calculates SIMD warp execution cycles under branch divergence where lanes take opposing paths. */
+export function calculateSimdBranchDivergence(params: {
+  vectorWidth: number;
+  takenProbability: number;
+  takenCycles: number;
+  notTakenCycles: number;
+}): {
+  probAllTaken: number;
+  probAllNotTaken: number;
+  probDivergent: number;
+  averageSimdCycles: number;
+  idealScalarEquivalentCycles: number;
+  simdEfficiencyPercent: number;
+} {
+  const p = params.takenProbability;
+  const w = params.vectorWidth;
+
+  const probAllTaken = Math.pow(p, w);
+  const probAllNotTaken = Math.pow(1 - p, w);
+  const probDivergent = Math.max(0, 1 - probAllTaken - probAllNotTaken);
+
+  // Divergent warps execute both taken and not taken blocks under mask
+  const divergentCycles = params.takenCycles + params.notTakenCycles;
+  const averageSimdCycles =
+    probAllTaken * params.takenCycles +
+    probAllNotTaken * params.notTakenCycles +
+    probDivergent * divergentCycles;
+
+  const idealScalarEquivalentCycles = p * params.takenCycles + (1 - p) * params.notTakenCycles;
+  const simdEfficiencyPercent = (idealScalarEquivalentCycles / averageSimdCycles) * 100;
+
+  return {
+    probAllTaken,
+    probAllNotTaken,
+    probDivergent,
+    averageSimdCycles,
+    idealScalarEquivalentCycles,
+    simdEfficiencyPercent,
+  };
+}
+
+/** Evaluates the performance penalty of false sharing and cache ping-ponging vs cache line padding. */
+export function calculateFalseSharingOverhead(params: {
+  writesPerThread: number;
+  threads: number;
+  cacheMissPenaltyCycles: number;
+  hitCycles: number;
+}): {
+  cyclesWithoutPadding: number;
+  cyclesWithPadding: number;
+  speedup: number;
+} {
+  // Without padding, almost every concurrent write causes an invalidation miss across threads
+  // Average miss probability ~ (threads - 1) / threads under heavy concurrent writing
+  const missProb = (params.threads - 1) / params.threads;
+  const avgCyclesPerWriteUnpadded =
+    missProb * params.cacheMissPenaltyCycles + (1 - missProb) * params.hitCycles;
+  const cyclesWithoutPadding = params.writesPerThread * avgCyclesPerWriteUnpadded;
+
+  // With padding, each thread exclusively accesses its own private cache line: 100% L1 cache hits after initial fetch
+  const cyclesWithPadding = params.writesPerThread * params.hitCycles;
+  const speedup = cyclesWithoutPadding / cyclesWithPadding;
+
+  return {
+    cyclesWithoutPadding,
+    cyclesWithPadding,
+    speedup,
+  };
+}
+
+
 
 
 

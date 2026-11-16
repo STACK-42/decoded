@@ -12,16 +12,21 @@ import {
   calculateDmaCycleStealImpact,
   calculateDmaTransfer,
   calculateDramRefreshOverhead,
+  calculateFalseSharingOverhead,
   calculateFifoOverrunMargin,
+  calculateForwardingControl,
   calculateGustafsonSpeedup,
   calculateMaxDaisyChainDevices,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
+  calculateOptimalPipelineStages,
   calculatePageTableOverhead,
   calculatePipelineCpiWithHazards,
+  calculatePipelineRegisterBits,
   calculatePipelineSpeedup,
   calculatePollingOverhead,
   calculateRegisterWindows,
+  calculateSimdBranchDivergence,
   calculateSplitTransactionThroughput,
   checkBernsteinConditions,
   decodeCanonicalAddress48,
@@ -463,6 +468,100 @@ describe("module 5: pipelining and parallelism", () => {
     // 2-bit counter avoids flipping on the single loop exit, outperforming 1-bit predictor
     expect(res.accuracy2BitPercent).toBeGreaterThanOrEqual(res.accuracy1BitPercent);
     expect(res.steps).toHaveLength(10);
+  });
+
+  it("calculates pipeline register bit widths across stages", () => {
+    const sizing = calculatePipelineRegisterBits();
+    expect(sizing.ifIdBits).toBe(64); // 32-bit PC + 32-bit instruction
+    expect(sizing.idExBits).toBe(152); // 32 PC + 3x32 data/imm + 3x5 reg indices + 9 control
+    expect(sizing.exMemBits).toBe(107); // 32 target + 1 zero + 32 ALU + 32 write data + 5 Rd + 5 control
+    expect(sizing.memWbBits).toBe(71); // 32 mem data + 32 ALU + 5 Rd + 2 control
+    expect(sizing.totalBits).toBe(394);
+  });
+
+  it("calculates optimal pipeline stages balancing frequency and branch penalty", () => {
+    // 1000 ps total combinational delay, 20 ps register overhead, 20% branches, 10% mispredict rate
+    const opt = calculateOptimalPipelineStages({
+      combinationalDelayPs: 1000,
+      registerDelayPs: 20,
+      branchFrequency: 0.20,
+      branchMispredictRate: 0.10,
+    });
+
+    expect(opt.optimalStages).toBeGreaterThan(5);
+    expect(opt.optimalStages).toBeLessThan(45);
+    expect(opt.optimalClockPeriodPs).toBeGreaterThan(20);
+    expect(opt.optimalCpi).toBeGreaterThan(1.0);
+  });
+
+  it("calculates forwarding unit multiplexer control signals and resolves double hazards", () => {
+    // Normal EX hazard: EX/MEM writes R1, ID/EX reads R1 as Rs1
+    const exHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 2,
+      exMemRd: 1,
+      exMemRegWrite: true,
+      memWbRd: 0,
+      memWbRegWrite: false,
+    });
+    expect(exHazard.forwardA).toBe("10"); // Forward from EX/MEM
+    expect(exHazard.forwardB).toBe("00"); // No forward for Rs2
+
+    // Normal MEM hazard: MEM/WB writes R2, ID/EX reads R2 as Rs2
+    const memHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 2,
+      exMemRd: 0,
+      exMemRegWrite: false,
+      memWbRd: 2,
+      memWbRegWrite: true,
+    });
+    expect(memHazard.forwardA).toBe("00");
+    expect(memHazard.forwardB).toBe("01"); // Forward from MEM/WB
+
+    // Double hazard: both EX/MEM and MEM/WB write to R1; ID/EX reads R1
+    // EX/MEM must win because it contains the more recent value
+    const doubleHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 5,
+      exMemRd: 1,
+      exMemRegWrite: true,
+      memWbRd: 1,
+      memWbRegWrite: true,
+    });
+    expect(doubleHazard.forwardA).toBe("10"); // Most recent wins!
+  });
+
+  it("calculates SIMD warp execution cycles under branch divergence", () => {
+    const res = calculateSimdBranchDivergence({
+      vectorWidth: 16,
+      takenProbability: 0.5,
+      takenCycles: 10,
+      notTakenCycles: 12,
+    });
+
+    // In a 16-wide warp with 50% condition probability, divergence is near certain
+    expect(res.probDivergent).toBeGreaterThan(0.99);
+    // When divergent, both branches execute under mask (10 + 12 = 22 cycles)
+    expect(res.averageSimdCycles).toBeCloseTo(22, 1);
+    expect(res.idealScalarEquivalentCycles).toBe(11);
+    expect(res.simdEfficiencyPercent).toBeCloseTo(50, 1);
+  });
+
+  it("evaluates false sharing bus invalidation overhead vs cache line padding", () => {
+    const res = calculateFalseSharingOverhead({
+      writesPerThread: 1000,
+      threads: 4,
+      cacheMissPenaltyCycles: 100,
+      hitCycles: 1,
+    });
+
+    // With 4 threads ping-ponging, miss rate is 75% without padding
+    // Average cycle cost per write is 0.75 * 100 + 0.25 * 1 = 75.25 cycles
+    expect(res.cyclesWithoutPadding).toBe(75250);
+    // With padding, 100% hits = 1,000 cycles
+    expect(res.cyclesWithPadding).toBe(1000);
+    expect(res.speedup).toBeCloseTo(75.25, 2);
   });
 });
 
