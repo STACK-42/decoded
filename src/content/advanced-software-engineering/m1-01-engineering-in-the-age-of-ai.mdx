@@ -1,7 +1,9 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph } from "@/components/mdx/MdxComponents";
 import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Software Engineering in the Age of AI
+
+<Epigraph quote="The only way to go fast, is to go well." by="Robert C. Martin" source="Clean Architecture, 2017" />
 
 This course has one idea running through every lecture:
 
@@ -17,7 +19,7 @@ The course sets itself three goals.
 2. **Master structural <Term id="trade-off">trade-offs</Term>.** Every design decision has a cost. You will learn to name that cost and, where possible, measure it.
 3. **Command the AI-augmented <Term id="sdlc">SDLC</Term>.** <Term id="llm">LLMs</Term> now write code faster than any person. Without rules and checks around them, they also produce <Term id="technical-debt">technical debt</Term> faster than any person.
 
-The motto the course borrows for this is: *"The only way to go fast is to go well."* Speed that comes from cutting corners is borrowed speed, and it gets paid back with interest.
+The motto above, from Robert C. Martin, is the course's prime directive. Speed that comes from cutting corners is borrowed speed, and it gets paid back with interest.
 
 ## Three wrong ideas about AI and code
 
@@ -70,7 +72,7 @@ The breakthrough came from changing the question. Instead of *"how do we make th
   caption="State lives in files and commits, not in a model's memory. Each worker starts clean and picks up where the last one stopped."
 />
 
-<Callout tone="sky" label="Notice">
+<Callout tone="mint" label="Notice">
 Every part of the harness is ordinary engineering: splitting responsibilities, keeping state outside the worker, loading things on demand, and automated tests as the definition of done. Lecture 3's [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp) is the same instinct applied to classes.
 </Callout>
 

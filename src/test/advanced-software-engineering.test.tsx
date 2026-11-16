@@ -5,7 +5,7 @@ import path from "path";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { glossary } from "@/content/advanced-software-engineering/glossary";
-import { accumulate, float32Spacing, featureCost, FRONT_CAMERA_METHODS, runInvoicePipeline, INVOICE_FILES, queueFrames } from "@/lib/softwareEngineering";
+import { accumulate, float32Spacing, featureCost, FRONT_CAMERA_METHODS, runInvoicePipeline, INVOICE_FILES, queueFrames, streamifyEstimate } from "@/lib/softwareEngineering";
 import { Term, KeyTerms } from "@/components/mdx/SoftwareEngineeringVisualizers";
 import { questions as bank } from "@/content/advanced-software-engineering/questions";
 
@@ -27,7 +27,7 @@ describe("Advanced Software Engineering course", () => {
   it("is registered, available and organized by lecture", () => {
     expect(course).toBeDefined();
     expect(course.status).toBe("available");
-    expect(course.modules.map((m) => m.label)).toEqual(["Lecture 1", "Lecture 2", "Lecture 3", "Lecture 4", "Lecture 5"]);
+    expect(course.modules.map((m) => m.label)).toEqual(["Lecture 1", "Lecture 2", "Lecture 3", "Lecture 4", "Lecture 5", "Lecture 6"]);
   });
 
   it("ends every lecture with a practice lesson that has a scored quiz and system/diagram questions", () => {
@@ -117,11 +117,11 @@ describe("Advanced Software Engineering course", () => {
 });
 
 describe("glossary popups", () => {
-  it("every entry is short and names a lecture from 1 to 5", () => {
+  it("every entry is short and names a lecture from 1 to 6", () => {
     for (const [id, e] of Object.entries(glossary)) {
       expect(e.definition.length, id).toBeLessThan(260);
       expect(e.lecture, id).toBeGreaterThanOrEqual(1);
-      expect(e.lecture, id).toBeLessThanOrEqual(5);
+      expect(e.lecture, id).toBeLessThanOrEqual(6);
     }
   });
 
@@ -173,6 +173,15 @@ describe("software engineering helpers", () => {
     expect(ls.output).toHaveLength(6);
     expect(grep.output.every((f) => f.includes("August"))).toBe(true);
     expect(sort.output).toEqual(["inv-102-August-2024.pdf", "inv-104-August-2024.pdf", "inv-117-August-2024.pdf"]);
+  });
+
+  it("reproduces Lecture 6's back-of-the-envelope numbers", () => {
+    const e = streamifyEstimate();
+    expect(e.peakStreams).toBe(15e6);
+    expect(e.egressTbps).toBeCloseTo(2.4, 5);
+    expect(e.storagePB).toBeCloseTo(2, 5);
+    expect(Math.round(e.eventsPerSecAvg / 1e3)).toBe(231);
+    expect(e.eventsPerSecPeak).toBeGreaterThan(690e3);
   });
 
   it("lets the client send without waiting and serves the queue in FIFO order", () => {

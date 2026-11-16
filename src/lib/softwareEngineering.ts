@@ -98,3 +98,16 @@ export function queueFrames(events: QueueEvent[]): QueueFrame[] {
   }
   return frames;
 }
+
+/* --------------------- Lecture 6: back-of-the-envelope --------------------- */
+
+export type Estimate = { peakStreams: number; egressTbps: number; storagePB: number; eventsPerSecAvg: number; eventsPerSecPeak: number };
+
+/** Lecture 6's Streamify estimates. Peak events assume about 3× the average, as the slide does (230 K → ~700 K). */
+export function streamifyEstimate({ dau = 100e6, concurrency = 0.15, bitrateKbps = 160, tracks = 100e6, encodings = 4, mbPerFile = 5, eventsPerUser = 200 } = {}): Estimate {
+  const peakStreams = dau * concurrency;
+  const egressTbps = (peakStreams * bitrateKbps * 1e3) / 1e12;
+  const storagePB = (tracks * encodings * mbPerFile * 1e6) / 1e15;
+  const eventsPerSecAvg = (dau * eventsPerUser) / 86400;
+  return { peakStreams, egressTbps, storagePB, eventsPerSecAvg, eventsPerSecPeak: eventsPerSecAvg * 3 };
+}

@@ -1,0 +1,138 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Streamify, Stage 3: Elements, Connectors and "Press Play"
+
+[Stage 2](/courses/advanced-software-engineering/decomposing-streamify) gave twelve subsystems. Stage 3 zooms in and names the actual elements, because
+
+> an architecture = components + connectors + data stores + interfaces + the constraints on how they combine.
+
+These are the same building blocks as Lecture 4's [component-and-connector view](/courses/advanced-software-engineering/component-and-connector-views#components-and-connectors), now for a real system.
+
+## The component catalog
+
+**Client side (inside S1):**
+
+| Element | Type | Responsibility | Provided interface | Required interfaces |
+| --- | --- | --- | --- | --- |
+| Playback engine | client component | buffering, decoding, seeking, gapless playback (no silence between tracks) | `play(trackId)`, `seek(ms)` | Audio Fetcher, Key client |
+| Audio fetcher | client component | chooses a source: local cache → CDN → origin (historically P2P peers) | `fetchChunk(fileId, range)` | CDN HTTP, peer protocol |
+| Local cache | client data store | encrypted LRU cache of audio chunks, plus offline downloads | `get/put(chunk)` | filesystem |
+| Event logger | client component | buffers events on the device, batches and retries | `log(event)` | event gateway |
+
+(An LRU cache throws out the *least recently used* item first when it is full.)
+
+**Backend, middleware and data processing:**
+
+| Element | Type | Responsibility | Provided interface | Required |
+| --- | --- | --- | --- | --- |
+| API gateway | edge service | token checks, routing, throttling, aggregation (BFF) | REST / gRPC endpoints | domain services |
+| Catalog service | backend service | metadata + availability rules (geo, licensing) | `getTrack(id, market)` | metadata DB, cache |
+| Search service | backend service | query parsing, ranking | `search(q, market)` | search index |
+| Playlist service | backend service | create/read/update/delete playlists, versions, collaboration | `getPlaylist`, `applyChange` | playlist store |
+| Storage resolver | backend service | maps a `trackId` to encrypted file IDs / URLs per bitrate | `resolve(trackId, quality)` | object store, CDN signer |
+| Key service | backend service | issues decryption keys bound to a user and device | `getKey(fileId, deviceToken)` | HSM (a tamper-proof key-storage device) / key DB |
+| Ingestion pipeline | backend subsystem | validate → transcode → normalise → fingerprint → encrypt → publish | `submit(deliveryPackage)` | object store, catalog |
+| Event gateway / bus | middleware | durable, partitioned, <Term id="at-least-once">at-least-once</Term> event transport | `publish(topic, e)`, `subscribe(topic)` | storage |
+| Recommendation jobs | data processing | feature extraction, model training, playlist generation | output datasets | data lake |
+| Royalty aggregator | data processing | de-duplicate plays → counts per rights holder | reports | data lake |
+
+Styles are already visible in this catalog: request/response services (client-server), a six-step pipeline (pipe-and-filter) and publish/subscribe (messaging).
+
+## The connector catalog
+
+The lines between the boxes matter too. <Term id="connector">Connectors</Term> are first-class design elements, yet architects often leave them out. **A diagram with boxes but no specified connectors is incomplete.**
+
+| Connector | Type | Used between | Properties | Points to style |
+| --- | --- | --- | --- | --- |
+| HTTPS/REST + gRPC | synchronous request/response | client ↔ gateway ↔ services | low latency, stateless, idempotent reads | client-server |
+| HTTP range requests | streaming data transfer | client ↔ CDN | cacheable, resumable, chunked | client-server (+ CDN) |
+| Peer protocol (historic) | symmetric P2P over TCP | client ↔ client | decentralised, opportunistic | peer-to-peer |
+| Message bus (pub/sub topics) | asynchronous, durable | producers → consumers | decoupled in time and space, buffering, replay | messaging |
+| Pipes (queues, dataset hand-off) | data-flow stream | pipeline stage → stage | one direction, composable | pipe-and-filter |
+| Server push (WebSocket / push) | persistent connection | backend → client | Connect handoff (FR10), real-time updates | server-push variant |
+
+**Choosing a connector is often choosing a style.** Pick synchronous or asynchronous, request or stream, durable or not, and the style mostly follows. Same boxes, different connectors, different system: play events sent over synchronous REST instead of a durable bus would fail QA5 and put QA1 at risk.
+
+## Data stores: polyglot persistence
+
+**<Term id="polyglot-persistence">Polyglot persistence</Term>** means each kind of data gets the kind of store that fits it.
+
+| Data | Characteristics | Store type | Why |
+| --- | --- | --- | --- |
+| Audio files | ~PB, never changes, read-heavy | object storage + CDN | cheap, durable, cacheable anywhere |
+| Catalog metadata | read-heavy, replicated across regions | wide-column NoSQL (Cassandra-style) + caches | high read throughput in every region |
+| Playlists | moderate writes, owned by a user, versioned | NoSQL partitioned by playlist ID | scales by partition, no joins across users |
+| User accounts / billing | strong consistency required | relational database | transactions for money |
+| Search index | inverted index, rebuilt often | search engine (Lucene / Elasticsearch-style) | full-text and fuzzy ranking |
+| Events / data lake | append-only, huge | distributed log + columnar warehouse | replayable streams + analytics |
+
+Choose the store from the data's characteristics, not out of habit. And **services own their data: no shared databases between subsystems.** A shared schema couples teams and breaks QA6.
+
+## The key interaction: "user presses play"
+
+One tap, about ten messages, a 250 ms budget (the cache-miss case). Read it top to bottom:
+
+<SequenceDiagram
+  title="User presses play (cache miss)"
+  width={1100}
+  participants={["Engine (S1)", "Cache (S1)", "Gateway (S2)", "Catalog (S4)", "Resolver (S7)", "KeySvc (S7)", "CDN (S7)", "Bus (S9)"]}
+  steps={[
+    { from: 0, to: 1, label: "① get(t42)" },
+    { note: "cache MISS", at: 1 },
+    { from: 0, to: 2, label: "② resolve(t42, market, quality)" },
+    { from: 2, to: 3, label: "③ check rights (market / C1)" },
+    { from: 3, to: 2, label: "④ allowed", dashed: true },
+    { from: 2, to: 4, label: "⑤ resolve file" },
+    { from: 2, to: 0, label: "⑥ signed CDN URL + fileId", dashed: true },
+    { from: 0, to: 5, label: "⑦a getKey(fileId)  (in parallel with ⑦b)" },
+    { from: 0, to: 6, label: "⑦b GET range 0–N" },
+    { from: 6, to: 0, label: "⑧ encrypted first chunk", dashed: true },
+    { from: 0, to: 0, label: "⑨ decrypt + decode + PLAY ≤ 250 ms" },
+    { from: 0, to: 7, label: "⑩ log(PlayStarted): async batch", dashed: true },
+  ]}
+  caption="Two paths: control (② to ⑥) goes through the gateway; audio bytes (⑦b, ⑧) go straight to the CDN. ⑩ is asynchronous: the event logger batches events to the bus and never blocks playback."
+/>
+
+Walk through it once:
+
+1. **①** The engine checks the local cache first. Here it misses.
+2. **② to ⑥** The control path. The gateway asks the catalog whether this track may play in this market (constraint C1). Then it asks the resolver for the file, and returns a signed CDN URL.
+3. **⑦a and ⑦b** The <Term id="drm">DRM</Term> key and the first chunk are requested *at the same time*, so neither waits for the other.
+4. **⑧ and ⑨** The first chunk arrives, is decrypted and decoded, and playback starts, inside the 250 ms budget.
+5. **⑩** The "play started" event is handed to the event logger. It goes to the bus later, in a batch.
+
+## Design tactics for latency
+
+How the sequence meets QA1 (start time) and QA2 (no stutter):
+
+| Tactic | What it does | Where in the sequence | Supports |
+| --- | --- | --- | --- |
+| Local cache first | check the device before any network call; many plays never leave the device | step ① | QA1 |
+| Parallel requests | fetch the decryption key and the first chunk at the same time | ⑦a + ⑦b | QA1 |
+| Small first chunk | start playing before the whole file arrives | ⑧ | QA1 |
+| <Term id="prefetching">Prefetching</Term> | fetch the next track in the queue before the current one ends | after ⑨ | QA1, QA2 |
+| Asynchronous logging | telemetry is buffered and batched; it never blocks playback | ⑩ | QA1 |
+
+Evidence the lecture cites: a 2010 IEEE P2P paper by Kreitz and Niemelä reported that a large share of plays were served straight from the client's local cache.
+
+## Derived constraints for Stage 4
+
+Stages 1 to 3 produce four rules the style choices must respect:
+
+| # | Derived constraint | Protects | Where it came from | Answered by |
+| --- | --- | --- | --- | --- |
+| 1 | The client must not depend synchronously on analytics or event infrastructure | QA1 | step ⑩ and the async-logging tactic | messaging (+ on-device event logger) |
+| 2 | Audio never changes and is addressed by content, so it can be cached anywhere (CDN, client, historically peers) | QA3, QA8 | the 2 PB estimate and the data-store choice | client-server + CDN; historically P2P |
+| 3 | Services own their data; no shared databases between subsystems | QA6 | bounded contexts, Conway's Law | service decomposition, layered backend services |
+| 4 | Every royalty-relevant event passes through a durable channel | QA5 | 700 K events/s and royalty obligations (BD3) | messaging (durable, at-least-once bus) |
+
+The chain so far: business drivers → quality scenarios → decomposition → elements → derived constraints. Every style choice in [Stage 4](/courses/advanced-software-engineering/choosing-styles-per-subsystem) must respect these four.
+
+<Callout tone="orange" label="Common mistake">
+Drawing boxes and leaving the lines unlabelled. Whether a line is synchronous or asynchronous, durable or not, request or stream, decides the style and the qualities. Logging plays over synchronous REST looks like a small detail and breaks two of the four ASRs.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["polyglot-persistence", "prefetching"]} />

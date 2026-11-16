@@ -87,6 +87,12 @@ const AseNTier = lesson(() => import("@/content/advanced-software-engineering/m5
 const AsePipeMessaging = lesson(() => import("@/content/advanced-software-engineering/m5-03-pipe-and-filter-and-messaging.mdx"));
 const AseTenStyles = lesson(() => import("@/content/advanced-software-engineering/m5-04-ten-styles-at-a-glance.mdx"));
 const AseL5Practice = lesson(() => import("@/content/advanced-software-engineering/m5-05-lecture-5-practice.mdx"));
+const AseL6Requirements = lesson(() => import("@/content/advanced-software-engineering/m6-01-requirements-and-quality-scenarios.mdx"));
+const AseL6Decomposition = lesson(() => import("@/content/advanced-software-engineering/m6-02-decomposing-streamify.mdx"));
+const AseL6Elements = lesson(() => import("@/content/advanced-software-engineering/m6-03-elements-and-press-play.mdx"));
+const AseL6Styles = lesson(() => import("@/content/advanced-software-engineering/m6-04-choosing-styles-per-subsystem.mdx"));
+const AseL6Integrated = lesson(() => import("@/content/advanced-software-engineering/m6-05-integrated-architecture-and-evaluation.mdx"));
+const AseL6Practice = lesson(() => import("@/content/advanced-software-engineering/m6-06-lecture-6-practice.mdx"));
 const CmMatrices = lesson(() => import("@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx"));
 const CmTranspose = lesson(() => import("@/content/computational-mathematics/m0-02-transpose-and-products.mdx"));
 const CmMultiply = lesson(() => import("@/content/computational-mathematics/m0-03-multiplying-matrices.mdx"));
@@ -519,7 +525,7 @@ export const courses: Course[] = [
     title: "Advanced Software Engineering",
     tagline: "Architecture is the decisions that are hard to change later.",
     description:
-      "Software engineering for the age of AI, decoded. Why an LLM needs an engineered harness, essential versus accidental complexity, the economics of architecture, the SOLID principles applied to real car software, architectural views (module, component-and-connector, allocation), and ten architectural styles from n-tier to microservices. Every lecture has highlighted terms you can tap for a definition, diagrams of the systems it describes, and a practice set with system and diagram questions.",
+      "Software engineering for the age of AI, decoded. Why an LLM needs an engineered harness, essential versus accidental complexity, the economics of architecture, the SOLID principles applied to real car software, architectural views (module, component-and-connector, allocation), ten architectural styles from n-tier to microservices, and a full case study that architects a Spotify-style streaming platform with five styles at once. Every lecture has highlighted terms you can tap for a definition, diagrams of the systems it describes, and a practice set with system and diagram questions.",
     accent: "sky",
     status: "available",
     authors: [asmaaFarouq],
@@ -581,6 +587,19 @@ export const courses: Course[] = [
           { slug: "pipe-and-filter-and-messaging", title: "Pipe-and-Filter and Messaging", duration: "14 min", Component: AsePipeMessaging },
           { slug: "ten-styles-at-a-glance", title: "Ten Architecture Styles at a Glance", duration: "16 min", Component: AseTenStyles },
           { slug: "lecture-5-practice", title: "Lecture 5 Practice", duration: "20 min", kind: "quiz", Component: AseL5Practice },
+        ],
+      },
+      {
+        title: "Architecting a Global Music Streaming Platform",
+        label: "Lecture 6",
+        blurb: "One case study, start to finish: requirements, decomposition, elements, and a style for each subsystem.",
+        lessons: [
+          { slug: "requirements-and-quality-scenarios", title: "Streamify, Stage 1: Requirements and Quality Scenarios", duration: "20 min", Component: AseL6Requirements },
+          { slug: "decomposing-streamify", title: "Streamify, Stage 2: Decomposing the System", duration: "16 min", Component: AseL6Decomposition },
+          { slug: "elements-and-press-play", title: "Streamify, Stage 3: Elements, Connectors and \"Press Play\"", duration: "18 min", Component: AseL6Elements },
+          { slug: "choosing-styles-per-subsystem", title: "Streamify, Stage 4: Choosing a Style for Each Subsystem", duration: "24 min", Component: AseL6Styles },
+          { slug: "integrated-architecture-and-evaluation", title: "Streamify: The Integrated Architecture, ADRs and Evaluation", duration: "20 min", Component: AseL6Integrated },
+          { slug: "lecture-6-practice", title: "Lecture 6 Practice", duration: "25 min", kind: "quiz", Component: AseL6Practice },
         ],
       },
     ],

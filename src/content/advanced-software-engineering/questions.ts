@@ -1642,5 +1642,395 @@ export const questions: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "1. publish (provider → registry), 2. find (consumer → registry), 3. bind/invoke (consumer → provider), over SOAP or REST."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q1",
+    quiz: "lecture-6-practice",
+    lesson: "requirements-and-quality-scenarios",
+    prompt: "Which requirement is written as a testable quality-attribute scenario?",
+    options: [
+      {
+        id: "a",
+        text: "The system should be fast"
+      },
+      {
+        id: "b",
+        text: "Playback should be quick and reliable"
+      },
+      {
+        id: "c",
+        text: "On a cache miss under normal load, playback starts in ≤ 250 ms (median), ≤ 1 s (p99)"
+      },
+      {
+        id: "d",
+        text: "Users love the app"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "Only (c) has a response measure, so it can be tested and compared across designs. 'Fast' and 'quick and reliable' are exactly the unmeasurable wording the lecture warns against."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q2",
+    quiz: "lecture-6-practice",
+    lesson: "requirements-and-quality-scenarios",
+    prompt: "In a quality-attribute scenario, which part is 'the track is not in the local cache; normal load'?",
+    options: [
+      {
+        id: "a",
+        text: "Stimulus"
+      },
+      {
+        id: "b",
+        text: "Artifact"
+      },
+      {
+        id: "c",
+        text: "Environment"
+      },
+      {
+        id: "d",
+        text: "Response measure"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "The environment is the condition the system is in when the stimulus arrives. The stimulus is pressing play; the artifact is the playback path; the response measure is ≤ 250 ms."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q3",
+    quiz: "lecture-6-practice",
+    lesson: "requirements-and-quality-scenarios",
+    prompt: "Peak egress is about 2.4 Tbps. What kind of problem is this, and what does the lecture say about 'add more servers'?",
+    options: [
+      {
+        id: "a",
+        text: "A compute problem; more servers fix it"
+      },
+      {
+        id: "b",
+        text: "A bandwidth problem; more servers don't solve it, caching and a CDN (historically P2P) do"
+      },
+      {
+        id: "c",
+        text: "A storage problem; add disks"
+      },
+      {
+        id: "d",
+        text: "Not a problem at all"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "15 M streams × 160 kbps is a bandwidth problem. The lecture's common mistake: first ask which resource is the bottleneck before choosing a solution."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q4",
+    quiz: "lecture-6-practice",
+    lesson: "requirements-and-quality-scenarios",
+    prompt: "Which is a constraint rather than a quality attribute?",
+    options: [
+      {
+        id: "a",
+        text: "Playback starts in ≤ 250 ms"
+      },
+      {
+        id: "b",
+        text: "Licensing contracts require DRM and per-country rules"
+      },
+      {
+        id: "c",
+        text: "Stutter in < 1 % of plays"
+      },
+      {
+        id: "d",
+        text: "Cost per stream-hour grows sub-linearly"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Constraints are non-negotiable limits you design within (C1). The others are quality scenarios that can be traded off against each other."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q5",
+    quiz: "lecture-6-practice",
+    lesson: "requirements-and-quality-scenarios",
+    prompt: "Why are QA1, QA3, QA5, QA6 and C1 Streamify's architecturally significant requirements?",
+    options: [
+      {
+        id: "a",
+        text: "They were written first"
+      },
+      {
+        id: "b",
+        text: "In the utility tree they rate High for business importance and High for technical difficulty"
+      },
+      {
+        id: "c",
+        text: "They are the easiest to implement"
+      },
+      {
+        id: "d",
+        text: "Every requirement is an ASR"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "(H, H) items are the hardest and most valuable, so they're designed first. Treating everything as top priority means nothing is prioritised."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q6",
+    quiz: "lecture-6-practice",
+    lesson: "decomposing-streamify",
+    prompt: "Which split is NOT justified by any of the lecture's decomposition criteria?",
+    options: [
+      {
+        id: "a",
+        text: "Separating Playlists from Identity because each owns its own data"
+      },
+      {
+        id: "b",
+        text: "Hiding the DRM vendor behind a stable interface"
+      },
+      {
+        id: "c",
+        text: "Separating latency-critical audio delivery from throughput-oriented analytics"
+      },
+      {
+        id: "d",
+        text: "Putting all Java code in one box and all database code in another"
+      }
+    ],
+    correctOptionId: "d",
+    explanation: "Splitting by technology layer has no criterion behind it. The others use bounded context, information hiding and different quality profiles."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q7",
+    quiz: "lecture-6-practice",
+    lesson: "decomposing-streamify",
+    prompt: "FR8 (record every play) involves S1, S9, S10 and S12. What does that show?",
+    options: [
+      {
+        id: "a",
+        text: "S1 is doing too little"
+      },
+      {
+        id: "b",
+        text: "Recording a play is a data flow across subsystems, not one feature in one box"
+      },
+      {
+        id: "c",
+        text: "The decomposition is wrong"
+      },
+      {
+        id: "d",
+        text: "FR8 should be removed"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "S1 logs → S9 carries → S10 analyses → S12 pays. The traceability matrix makes this visible."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q8",
+    quiz: "lecture-6-practice",
+    lesson: "elements-and-press-play",
+    prompt: "In the press-play sequence, why does step ⑩ (log PlayStarted) go to the bus asynchronously?",
+    options: [
+      {
+        id: "a",
+        text: "Because the bus is slow"
+      },
+      {
+        id: "b",
+        text: "So telemetry never blocks playback and QA1's 250 ms budget holds (derived constraint 1)"
+      },
+      {
+        id: "c",
+        text: "Because events aren't important"
+      },
+      {
+        id: "d",
+        text: "To save storage"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Asynchronous logging is a latency tactic. The events still matter for royalties, which is why the bus is durable (QA5)."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q9",
+    quiz: "lecture-6-practice",
+    lesson: "elements-and-press-play",
+    prompt: "Which store fits user accounts and billing, according to the polyglot-persistence table?",
+    options: [
+      {
+        id: "a",
+        text: "Object storage + CDN"
+      },
+      {
+        id: "b",
+        text: "A relational database, for transactions"
+      },
+      {
+        id: "c",
+        text: "A search engine"
+      },
+      {
+        id: "d",
+        text: "An append-only event log"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Money needs strong consistency and transactions. Audio goes to object storage, search to an inverted index, events to a distributed log."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q10",
+    quiz: "lecture-6-practice",
+    lesson: "choosing-styles-per-subsystem",
+    prompt: "S7 audio delivery appears twice in the style fit matrix. Why?",
+    options: [
+      {
+        id: "a",
+        text: "A copy-paste error"
+      },
+      {
+        id: "b",
+        text: "The same subsystem and requirement (QA1) used hybrid P2P from 2008 and client-server via CDN from ~2014, because the context changed"
+      },
+      {
+        id: "c",
+        text: "Audio delivery needs two styles at once"
+      },
+      {
+        id: "d",
+        text: "One row is for premium users"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Constraint C5 (expensive bandwidth) weakened and mobile became dominant, so ADR-004 superseded ADR-001."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q11",
+    quiz: "lecture-6-practice",
+    lesson: "choosing-styles-per-subsystem",
+    prompt: "Which statement about layered vs. client-server is correct?",
+    options: [
+      {
+        id: "a",
+        text: "You must choose one of them"
+      },
+      {
+        id: "b",
+        text: "Layered answers how code is organised (module view); client-server answers how running parts interact (C&C view), so they are combined"
+      },
+      {
+        id: "c",
+        text: "Client-server is a kind of layering"
+      },
+      {
+        id: "d",
+        text: "Layered is only for frontends"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Common mistake #4. Streamify uses layering inside the client and inside each service, and client-server between them."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q12",
+    quiz: "lecture-6-practice",
+    lesson: "choosing-styles-per-subsystem",
+    prompt: "How does Streamify get 'effectively once' processing of play events from an at-least-once bus?",
+    options: [
+      {
+        id: "a",
+        text: "The bus never duplicates"
+      },
+      {
+        id: "b",
+        text: "Unique event IDs plus idempotent consumers that remove duplicates"
+      },
+      {
+        id: "c",
+        text: "By switching to synchronous REST"
+      },
+      {
+        id: "d",
+        text: "By deleting old events"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "At-least-once + dedupe = effectively once: the bus guarantees nothing is lost, and the royalty aggregator removes duplicates."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q13",
+    quiz: "lecture-6-practice",
+    lesson: "choosing-styles-per-subsystem",
+    prompt: "Why was pure P2P never an option for Streamify?",
+    options: [
+      {
+        id: "a",
+        text: "Peers are too slow"
+      },
+      {
+        id: "b",
+        text: "Licensing, authentication and royalties need a central authority that untrusted peers can't provide"
+      },
+      {
+        id: "c",
+        text: "P2P can't send audio"
+      },
+      {
+        id: "d",
+        text: "It was too cheap"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "That's why the 2008 design was hybrid: servers kept authority, first chunks and fallback. Common mistake #7."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q14",
+    quiz: "lecture-6-practice",
+    lesson: "integrated-architecture-and-evaluation",
+    prompt: "Which is a trade-off point rather than a sensitivity point?",
+    options: [
+      {
+        id: "a",
+        text: "Client cache size"
+      },
+      {
+        id: "b",
+        text: "The CDN cache-hit ratio"
+      },
+      {
+        id: "c",
+        text: "At-least-once messaging: improves reliability, but needs dedupe and adds complexity"
+      },
+      {
+        id: "d",
+        text: "The partitioning key of event topics"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "A trade-off point helps one quality and hurts another. The other three are single parameters with a strong effect: sensitivity points."
+  },
+  {
+    id: "advanced-software-engineering/lecture-6-practice/q15",
+    quiz: "lecture-6-practice",
+    lesson: "integrated-architecture-and-evaluation",
+    prompt: "What makes ADR-002 the 'strongest form' of ADR in the lecture?",
+    options: [
+      {
+        id: "a",
+        text: "It is the longest"
+      },
+      {
+        id: "b",
+        text: "It lists three rejected alternatives, each with a reason"
+      },
+      {
+        id: "c",
+        text: "It was written first"
+      },
+      {
+        id: "d",
+        text: "It has no consequences section"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Rejected alternatives with reasons let reviewers see what was considered. Context → decision → consequences, plus the alternatives."
   }
 ];

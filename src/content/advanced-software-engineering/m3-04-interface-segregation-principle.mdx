@@ -175,7 +175,7 @@ public class VehicleMotionController {
 
 **Level 3 handover becomes clean:** `VehicleMotionController` just switches which `MotionControl` it receives, human or AD stack. That substitution is type-safe and [LSP-compliant](/courses/advanced-software-engineering/liskov-substitution-principle).
 
-<Callout tone="sky" label="ISP vs SRP">
+<Callout tone="orange" label="ISP vs SRP">
 They sound alike but look from different sides. [SRP](/courses/advanced-software-engineering/design-principles-and-srp) is about a *class*: it should answer to one actor. ISP is about an *interface's clients*: none should depend on methods it doesn't use.
 </Callout>
 

@@ -10,6 +10,7 @@ import {
   runInvoicePipeline,
   INVOICE_FILES,
   queueFrames,
+  streamifyEstimate,
   type QueueEvent,
 } from "@/lib/softwareEngineering";
 
@@ -929,5 +930,57 @@ export function UmlComponentNotation() {
       </div>
       <figcaption className="mt-2 text-center text-sm text-muted-foreground">A provided interface is a lollipop (line + circle). A required interface is a socket (line + half-circle). Both attach at ports, the small squares on the component's edge.</figcaption>
     </figure>
+  );
+}
+
+/* -------------------- Lecture 6: estimation calculator -------------------- */
+
+const big = (n: number) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} B` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${Math.round(n / 1e3)} K` : `${Math.round(n)}`);
+
+/** Change Streamify's assumptions and watch which number becomes the problem. */
+export function EstimationCalculator() {
+  const [dau, setDau] = useState(100);
+  const [conc, setConc] = useState(15);
+  const [kbps, setKbps] = useState(160);
+  const [events, setEvents] = useState(200);
+  const e = streamifyEstimate({ dau: dau * 1e6, concurrency: conc / 100, bitrateKbps: kbps, eventsPerUser: events });
+  const slider = (label: string, v: number, set: (n: number) => void, min: number, max: number, step: number, unit: string) => (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="font-mono text-xs text-muted-foreground">
+        {label}: <span className="text-foreground">{v}{unit}</span>
+      </span>
+      <input type="range" min={min} max={max} step={step} value={v} onChange={(ev) => set(Number(ev.target.value))} aria-label={label} />
+    </label>
+  );
+  const row = (q: string, calc: string, r: string, hot = false) => (
+    <tr className="border-t border-border/60">
+      <td className="py-1 pr-3">{q}</td>
+      <td className="py-1 pr-3 text-muted-foreground">{calc}</td>
+      <td className={`py-1 font-semibold ${hot ? "text-orange" : ""}`}>{r}</td>
+    </tr>
+  );
+  return (
+    <FocusPanel title="Streamify by the numbers" eyebrowTone="text-sky">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {slider("Daily active users", dau, setDau, 10, 500, 10, " M")}
+        {slider("Share streaming at peak", conc, setConc, 5, 30, 1, " %")}
+        {slider("Average bitrate", kbps, setKbps, 96, 320, 32, " kbps")}
+        {slider("Events per user per day", events, setEvents, 50, 500, 50, "")}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left font-mono text-xs">
+          <tbody>
+            {row("Peak concurrent streams", `${dau} M × ${conc} %`, big(e.peakStreams))}
+            {row("Peak egress bandwidth", `streams × ${kbps} kbps`, `${e.egressTbps.toFixed(1)} Tbps`, true)}
+            {row("Catalog storage", "100 M tracks × 4 encodings × 5 MB", `${e.storagePB.toFixed(0)} PB`)}
+            {row("Events, average", `${dau} M × ${events} ÷ 86 400 s`, `${big(e.eventsPerSecAvg)}/s`)}
+            {row("Events, peak (≈ 3× avg)", "", `${big(e.eventsPerSecPeak)}/s`, true)}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        The two orange numbers are the unusual ones. Terabits per second is a bandwidth problem (answered by caching, a CDN and, in 2008, peers); hundreds of thousands of events a second is a throughput problem (answered by an asynchronous message bus). Neither is solved by "add more servers".
+      </p>
+    </FocusPanel>
   );
 }

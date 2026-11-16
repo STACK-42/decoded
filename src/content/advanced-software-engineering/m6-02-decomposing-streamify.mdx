@@ -1,0 +1,143 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Streamify, Stage 2: Decomposing the System
+
+With the requirements from [Stage 1](/courses/advanced-software-engineering/requirements-and-quality-scenarios), the next question is how to cut Streamify into parts. Stage 2 answers it, and insists on one rule: **a decomposition only makes sense in light of its criteria.** You must be able to say *why* each box is separate.
+
+## System context (C4 level 1)
+
+The <Term id="c4-model">C4 model</Term> draws a system at four zoom levels: **C**ontext, **C**ontainers, **C**omponents and **C**ode. Level 1, the context, shows the whole platform as one box and only *who* it talks to, not how it works inside.
+
+<BoxDiagram
+  title="Streamify system context"
+  width={640}
+  height={290}
+  nodes={[
+    { id: "lis", label: "Listener", stereo: "actor", x: 320, y: 35, w: 150, h: 48 },
+    { id: "sys", label: "Streamify\nPlatform", stereo: "system", x: 320, y: 150, w: 170, h: 70, tone: "mint" },
+    { id: "lab", label: "Labels /\nDistributors", stereo: "external", x: 90, y: 115, w: 140, h: 58 },
+    { id: "adv", label: "Advertisers", stereo: "external", x: 90, y: 215, w: 140, h: 50 },
+    { id: "pay", label: "Payment\nproviders", stereo: "external", x: 555, y: 85, w: 140, h: 58 },
+    { id: "cdn", label: "CDN providers", stereo: "external", x: 555, y: 170, w: 140, h: 50 },
+    { id: "roy", label: "Royalty / rights\nsocieties", stereo: "external", x: 555, y: 255, w: 150, h: 58 },
+  ]}
+  edges={[
+    { from: "lis", to: "sys", label: "streams, searches" },
+    { from: "lab", to: "sys", label: "audio + metadata" },
+    { from: "adv", to: "sys", label: "ads" },
+    { from: "sys", to: "pay", label: "payments" },
+    { from: "sys", to: "cdn", label: "media" },
+    { from: "sys", to: "roy", label: "audit reports" },
+  ]}
+  caption="C4 level 1. CDN providers are external: part of the delivery path (QA1, QA3) runs on third-party infrastructure, a deliberate choice that gives global low-latency streaming without owning edge hardware."
+/>
+
+## Decomposition criteria
+
+The lecture uses five criteria. Each one is a question you ask about a possible split:
+
+| # | Criterion | Question it answers | Streamify example |
+| --- | --- | --- | --- |
+| 1 | Business capability / <Term id="bounded-context">bounded context</Term> (Domain-Driven Design) | Which part of the domain does this own, with its data? | S6 Playlists owns playlists; S3 Identity owns accounts |
+| 2 | <Term id="information-hiding">Information hiding</Term> (Parnas, 1972) | Which design decisions are likely to change? | codecs, recommendation algorithms and the DRM vendor sit behind stable interfaces |
+| 3 | Different quality profiles | Do these parts need very different qualities? | latency-critical S7 Audio Delivery vs throughput-oriented S10 Data Platform |
+| 4 | Rate of change and team ownership (<Term id="conways-law">Conway's Law</Term>) | Who changes it, and how often? | Spotify's teams ("squads") own services end to end (QA6) |
+| 5 | <Term id="data-gravity">Data gravity</Term> | Where does the data live? | big batch jobs run where the data lake is |
+
+**Good decomposition:** every box can be explained by at least one criterion. **Bad decomposition:** boxes split by technology layer ("the DB box", "the Java box") with no criterion behind them. That isn't a decomposition argument.
+
+Criterion 2 is the module-level version of Lecture 3's advice to [encapsulate what varies](/courses/advanced-software-engineering/design-principles-and-srp).
+
+## The twelve subsystems
+
+**User-facing and core domain:**
+
+| # | Subsystem | Responsibility | Main qualities | FRs |
+| --- | --- | --- | --- | --- |
+| S1 | Client applications | UI, local playback engine, cache, offline storage, DRM decryption | performance, usability | FR2–FR5, FR10 |
+| S2 | Edge / API gateway | authentication, routing, rate limiting, protocol translation | security, availability | all |
+| S3 | Identity and subscription | accounts, auth tokens, plans, payments | security, reliability | FR1 |
+| S4 | Catalog and metadata | tracks, albums, artists, licensing and geo rules | availability, read performance | FR2, FR7 |
+| S5 | Search | full-text and fuzzy search, autocompletion | latency | FR2 |
+| S6 | Playlist and library | user collections, playlists, follows | consistency, availability | FR4 |
+
+**Delivery, data and money:**
+
+| # | Subsystem | Responsibility | Main qualities | FRs |
+| --- | --- | --- | --- | --- |
+| S7 | Audio delivery | serving encrypted audio chunks, key service, CDN / P2P | latency, scalability, cost | FR3, FR5 |
+| S8 | Content ingestion | receiving, validating, transcoding, normalising, publishing audio | throughput, correctness | FR7 |
+| S9 | Event delivery | collecting client and backend events reliably | reliability, scalability | FR8 |
+| S10 | Data platform and recommendations | batch and stream processing, ML features, personal playlists | throughput, modifiability | FR6, FR8 |
+| S11 | Ads | ad selection, insertion, impression reporting | latency, accuracy | FR9 |
+| S12 | Royalty and reporting | turning plays into payouts and label reports | correctness, auditability | FR8 |
+
+The criteria at work:
+
+- **S3, S4 and S6 are separate bounded contexts.** Each owns its own data.
+- **S1 is heavy on purpose:** playback, cache, offline storage, DRM. At this scale the client is an active participant in the architecture, not a [thin client](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#the-n-tier-client-server-pattern).
+- **S7 and S10 have different quality profiles.** S7 is about milliseconds, S10 about petabytes overnight. One subsystem would force a compromise on both.
+- **FR8 crosses four subsystems:** S1 logs the play → S9 carries it → S10 analyses it → S12 pays for it. Recording a play is a data flow, not one feature.
+
+## The decomposition diagram (C4 level 2)
+
+<BoxDiagram
+  title="Streamify's twelve subsystems (simplified)"
+  width={680}
+  height={360}
+  nodes={[
+    { id: "cl", label: "S1 Clients\nmobile · desktop · web · embedded", x: 340, y: 35, w: 280, h: 50, tone: "sky" },
+    { id: "gw", label: "S2 Edge / API gateway", x: 250, y: 120, w: 220, tone: "orange" },
+    { id: "s3", label: "S3 Identity", x: 70, y: 200, w: 110 },
+    { id: "s4", label: "S4 Catalog", x: 185, y: 200, w: 105 },
+    { id: "s5", label: "S5 Search", x: 295, y: 200, w: 100 },
+    { id: "s6", label: "S6 Playlists", x: 405, y: 200, w: 110 },
+    { id: "s11", label: "S11 Ads", x: 510, y: 200, w: 85 },
+    { id: "s7", label: "S7 Audio delivery\nCDN + key service", x: 590, y: 120, w: 160, h: 50, tone: "mint" },
+    { id: "s8", label: "S8 Content ingestion pipeline", x: 250, y: 270, w: 250, tone: "violet" },
+    { id: "s9", label: "S9 Event delivery\n(message bus)", x: 90, y: 330, w: 170, h: 46, tone: "orange" },
+    { id: "s10", label: "S10 Data & recs", x: 290, y: 335, w: 150 },
+    { id: "s12", label: "S12 Royalty", x: 440, y: 335, w: 120 },
+    { id: "s11r", label: "S11 Ads reporting", x: 590, y: 335, w: 150 },
+  ]}
+  edges={[
+    { from: "cl", to: "gw", label: "HTTPS / gRPC" },
+    { from: "cl", to: "s7", label: "audio chunks" },
+    { from: "gw", to: "s4" },
+    { from: "gw", to: "s5" },
+    { from: "gw", to: "s6" },
+    { from: "gw", to: "s3" },
+    { from: "gw", to: "s11" },
+    { from: "s8", to: "s4", label: "publish" },
+    { from: "s8", to: "s7", label: "publish", bend: -30 },
+    { from: "cl", to: "s9", label: "events", bend: 90, dashed: true },
+    { from: "s9", to: "s10", dashed: true },
+    { from: "s9", to: "s12", dashed: true, bend: 25 },
+    { from: "s9", to: "s11r", dashed: true, bend: 40 },
+  ]}
+  caption="Look for three paths: control requests go through the gateway (S2); audio bytes go straight to S7, bypassing the gateway; events go to the S9 bus and then to its consumers."
+/>
+
+## Checking the decomposition: a traceability matrix
+
+Does every requirement have an owner? A **<Term id="traceability-matrix">traceability matrix</Term>** checks. ● is primary responsibility, ○ is contributes.
+
+| | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 | S9 | S10 | S11 | S12 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| FR3 Stream | ● | ● | ● | ● | | | ● | | ○ | | | |
+| FR6 Recommend | ● | ● | | ● | | ○ | | | ● | ● | | |
+| FR7 Ingest | | | | ● | ● | | ● | ● | | | | |
+| FR8 Record plays | ● | | | | | | | | ● | ● | | ● |
+| QA1 Latency | ● | ● | | ○ | | | ● | | | | | |
+| QA5 No event loss | ● | | | | | | | | ● | | | ● |
+
+The lecture's discussion prompt: is any requirement unowned? Is any subsystem doing too much? S1 appears in five of the six rows. That is intentional: the client is an active participant at this scale.
+
+<Callout tone="orange" label="Common mistake">
+Drawing boxes without saying why they're separate, or splitting by technology ("the database box"). Each box needs a criterion: a bounded context, a decision you're hiding, a different quality profile, a different team, or where the data lives.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["c4-model", "bounded-context", "information-hiding", "conways-law", "data-gravity", "traceability-matrix"]} />

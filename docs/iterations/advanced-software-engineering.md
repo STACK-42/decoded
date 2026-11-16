@@ -4,7 +4,7 @@ Tracks the Advanced Software Engineering course through the rounds in [Build in 
 
 The course follows the lectures, not chapters. Each module is one lecture, labelled **Lecture N** in the registry, and ends with a **Lecture N Practice** lesson holding a scored multiple-choice quiz and a separate set of system and diagram questions.
 
-Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L2** Foundations of Modern Engineering · **L3** SOLID Principles · **L4** Architectural Views · **L5** Building Software Architecture (with the ten-styles infographic)
+Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L2** Foundations of Modern Engineering · **L3** SOLID Principles · **L4** Architectural Views · **L5** Building Software Architecture (with the ten-styles infographic) · **L6** Architecting a Global Music Streaming Platform (added after round 12)
 
 - [x] 1. Skeleton (whole course)
 - [x] 2. Source fidelity
@@ -365,3 +365,48 @@ Checked the course against the final-quality list in the original request, and r
 - **Round 11, real readers.** Students need to use the course and report what didn't work: confusing terms, unclear diagrams, questions too easy or ambiguous. Its findings should start a new round of fixes here.
 - **A fresh-session read-through.** Round 10 was done by the session that built the course; a separate reviewer would catch different things.
 - **Upstream.** The course is on this fork's branch (and on `main` up to the merge after round 5). It reaches decoded.stack42.tech only through a pull request to STACK-42/decoded.
+
+### Lecture 6 added: Architecting a Global Music Streaming Platform
+
+The Week 6 slides (55 pages, a Spotify-style case study called "Streamify") arrived after round 12. Converted to text with markitdown (`_sources/advanced-software-engineering/Week_6_-_Architecting_a_Global_Music_Streaming_Platform.md`, clean text, no OCR needed); the diagram slides (process, C4 context and containers, client runtime, press-play sequence, layered client, both pipelines, the event bus, the integrated view, the traceability matrix) were read as images.
+
+Built to the bar the other lectures reached after rounds 1 to 10, not as a thin skeleton:
+
+**Lessons (m6-01 to m6-06):** Stage 1 requirements and quality scenarios; Stage 2 decomposition; Stage 3 elements, connectors, data stores and the press-play sequence; Stage 4 a style per subsystem (client-server, layered, historic P2P and its retirement, pipe-and-filter, messaging); the integrated architecture, four ADRs, ATAM-lite, the seven common mistakes, the five discussion questions with model answers (labelled as ours), and a summary of the activities and assignment; then Lecture 6 Practice.
+
+**Source fidelity:** every slide is covered: drivers, stakeholders, FR1–FR10, the six-part scenario, QA1–QA8, C1–C5, the estimates and "numbers to decisions", the utility tree, C4 L1/L2, the five criteria, S1–S12, the traceability matrix (checked cell by cell against the slide image), both catalogs, polyglot persistence, the ten-step sequence, latency tactics, four derived constraints, the method and fit matrix, all five styles with justifications, trade-offs and rejected alternatives, the integrated view and ASR traceability, ADR-001 to ADR-004, sensitivity/trade-off points, risks.
+
+**Terminology:** 30 new glossary entries (lecture 6), e.g. quality-attribute scenario, response measure, p99, utility tree, ATAM, C4 model, bounded context, information hiding, Conway's Law, CDN, BFF, DRM, polyglot persistence, at-least-once, idempotent, temporal coupling, sensitivity point, trade-off point, superseded. Each content lesson highlights its terms, lists key terms and has a common-mistake callout.
+
+**Visualizations:** the four-stage process, the C4 context, the 12-subsystem container view, the ten-step press-play sequence diagram, layered client and service (tabs), P2P 2008 vs CDN 2014 (tabs), both pipe-and-filter pipelines (tabs), the event bus with topics, the integrated architecture; plus a new `EstimationCalculator` (sliders for users, peak share, bitrate and events; logic in `streamifyEstimate`, tested against the slide's 15 M, 2.4 Tbps, 2 PB and ~230 K/s).
+
+**Practice:** 15 scored questions in the bank (every content lesson covered) and 7 labelled system/diagram questions covering all seven types except diagram interpretation (sequence, missing component, error detection, system interpretation, relationship, design decision, diagram construction).
+
+**Connections:** links back to Lecture 2 (ADRs, Second Law), Lecture 3 (encapsulate what varies), Lecture 4 (C&C, module views) and Lecture 5 (process, client-server, P2P, layered, pipe-and-filter, messaging).
+
+**Also changed:** the course's first lesson now opens with the epigraph the writing guide requires ("The only way to go fast, is to go well." Robert C. Martin, *Clean Architecture*, 2017), which was also the slides' prime directive.
+
+**Source notes:**
+- The deck's headers and footers say "Week 5" though the file is Week 6; the lessons call it Lecture 6, after Lecture 5's styles.
+- Small slips on the slides: "FR6 The system could recommends", "FR8 shall be able to records", "F5" for FR5, "descreased". The lessons use corrected wording.
+
+**Found but not fixed:**
+- (Fixed in the follow-up below.) Several earlier lessons used `tone="sky"` for cross-reference notes, which the guide reserves for the formal view.
+- (Fixed in the follow-up below.) Lecture 6 hadn't had its own plain-language and read-through rounds.
+
+**Checked:** lint (0 errors), the course, question-bank, link, preview and paths/tools tests, the build (300 pages), and all six new pages at 390 px in dark theme (no overflow, no page errors; the calculator updates live).
+
+### Lecture 6 review rounds, callout tones and epigraph check
+
+**Lecture 6, plain language and student read-through:** scanned m6-01 to m6-06 for long sentences, hard words and em-dashes (none), then read them as a first-time student.
+- Glossed jargon used without explanation: gapless playback, HSM (m6-03); circuit breakers, points of presence, CRUD, NAT, Avro/Protobuf (m6-04).
+- Split five long sentences (m6-01 guiding question kept; m6-03 control path, m6-04 pipe vs topic, two in m6-05) and turned the activities paragraph into a list.
+- Rounds 2 (source fidelity), 5 (terminology), 6 (visualizations), 7–8 (practice) and 9 (connections) were met when the lecture was written; the course tests enforce the terminology, coverage and question-type rules for it like every other lecture.
+
+**Callout tones across the course** (writing guide: orange = trap, violet = why it exists, sky = formal view, mint = recap, neon = the one key insight): 14 callouts moved off `sky`. Cross-reference and roadmap notes → mint; "ISP vs SRP" and "messaging vs publish-subscribe" → orange (common confusions); "why this matters / who cares / why work assignment is architecture / connectors are first-class" → violet; "the surprising conclusion" (structure beats behavior) → neon. No `sky` callouts remain, since the course has no formal-notation views.
+
+**Epigraph:** "The only way to go fast, is to go well." confirmed as Robert C. Martin's wording in chapter 1 of *Clean Architecture* (2017).
+
+**Checked:** lint (0 errors), all 3504 tests, the build (300 pages).
+
+**Still open:** round 11, real readers, for all six lectures.
