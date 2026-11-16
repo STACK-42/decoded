@@ -650,6 +650,151 @@ export function calculateFifoOverrunMargin(
   };
 }
 
+/** Calculates daisy-chain interrupt dispatch latency for a device at index i. */
+export function calculateDaisyChainLatency(
+  deviceIndex: number,
+  instructionCompleteNs: number,
+  intaAssertNs: number,
+  perDevicePropNs: number,
+  vectorDriveNs: number,
+  cpuLatchSetupNs: number
+): {
+  totalDispatchLatencyNs: number;
+  daisyChainPropagationNs: number;
+} {
+  const daisyChainPropagationNs = deviceIndex * perDevicePropNs;
+  const totalDispatchLatencyNs =
+    instructionCompleteNs +
+    intaAssertNs +
+    daisyChainPropagationNs +
+    vectorDriveNs +
+    cpuLatchSetupNs;
+  return {
+    totalDispatchLatencyNs,
+    daisyChainPropagationNs,
+  };
+}
+
+/** Calculates maximum devices supported on a daisy chain within an acquisition timing budget. */
+export function calculateMaxDaisyChainDevices(
+  budgetNs: number,
+  intaAssertNs: number,
+  perDevicePropNs: number,
+  vectorDriveNs: number,
+  cpuLatchSetupNs: number
+): number {
+  const fixedOverheadNs = intaAssertNs + vectorDriveNs + cpuLatchSetupNs;
+  if (budgetNs < fixedOverheadNs) return 0;
+  const maxHops = Math.floor((budgetNs - fixedOverheadNs) / perDevicePropNs);
+  return maxHops + 1;
+}
+
+/** Simulates distributed self-selection arbitration with active-high wired-OR logic. */
+export function simulateDistributedArbitration(
+  priorities: number[],
+  bitWidth: number
+): {
+  winnerIndex: number;
+  winnerPriority: number;
+  steps: Array<{
+    bitIndex: number;
+    busValue: number;
+    activeDeviceIndices: number[];
+    withdrawnDeviceIndices: number[];
+  }>;
+} {
+  let active = priorities.map((_, i) => i);
+  const steps: Array<{
+    bitIndex: number;
+    busValue: number;
+    activeDeviceIndices: number[];
+    withdrawnDeviceIndices: number[];
+  }> = [];
+
+  for (let b = bitWidth - 1; b >= 0; b--) {
+    const bitMask = 1 << b;
+    const busValue = active.some((idx) => (priorities[idx] & bitMask) !== 0) ? 1 : 0;
+    const stillActive: number[] = [];
+    const withdrawn: number[] = [];
+
+    for (const idx of active) {
+      const devBit = (priorities[idx] & bitMask) !== 0 ? 1 : 0;
+      if (devBit === busValue) {
+        stillActive.push(idx);
+      } else {
+        withdrawn.push(idx);
+      }
+    }
+
+    steps.push({
+      bitIndex: b,
+      busValue,
+      activeDeviceIndices: [...stillActive],
+      withdrawnDeviceIndices: withdrawn,
+    });
+
+    active = stillActive;
+  }
+
+  const winnerIndex = active[0] ?? -1;
+  const winnerPriority = winnerIndex >= 0 ? priorities[winnerIndex] : -1;
+
+  return {
+    winnerIndex,
+    winnerPriority,
+    steps,
+  };
+}
+
+/** Calculates effective CPI under DMA cycle stealing memory bus contention. */
+export function calculateDmaCycleStealImpact(
+  cpuFreqHz: number,
+  baseCpi: number,
+  busFreqHz: number,
+  busWidthBytes: number,
+  dmaThroughputBytesPerSec: number,
+  instructionsPerMemoryAccess: number,
+  collisionProbability: number
+): {
+  maxBusThroughputBytesPerSec: number;
+  dmaBusUtilizationPercent: number;
+  cpuBusUtilizationPercent: number;
+  combinedBusDemandPercent: number;
+  stallCyclesPerCollision: number;
+  averageStallCyclesPerInstruction: number;
+  effectiveCpi: number;
+  slowdownPercent: number;
+} {
+  const maxBusThroughputBytesPerSec = busFreqHz * busWidthBytes;
+  const dmaBusUtilizationPercent = (dmaThroughputBytesPerSec / maxBusThroughputBytesPerSec) * 100;
+
+  const baselineInstructionRate = cpuFreqHz / baseCpi;
+  const cpuMemoryRequestsPerSec = baselineInstructionRate / instructionsPerMemoryAccess;
+  const cpuBusUtilizationPercent = (cpuMemoryRequestsPerSec / busFreqHz) * 100;
+  const combinedBusDemandPercent = dmaBusUtilizationPercent + cpuBusUtilizationPercent;
+
+  const busCycleTimeSec = 1 / busFreqHz;
+  const cpuCycleTimeSec = 1 / cpuFreqHz;
+  const stallCyclesPerCollision = busCycleTimeSec / cpuCycleTimeSec;
+
+  const probMemoryAccess = 1 / instructionsPerMemoryAccess;
+  const averageStallCyclesPerInstruction =
+    probMemoryAccess * collisionProbability * stallCyclesPerCollision;
+  const effectiveCpi = baseCpi + averageStallCyclesPerInstruction;
+  const slowdownPercent = ((effectiveCpi - baseCpi) / baseCpi) * 100;
+
+  return {
+    maxBusThroughputBytesPerSec,
+    dmaBusUtilizationPercent,
+    cpuBusUtilizationPercent,
+    combinedBusDemandPercent,
+    stallCyclesPerCollision,
+    averageStallCyclesPerInstruction,
+    effectiveCpi,
+    slowdownPercent,
+  };
+}
+
 
 
 

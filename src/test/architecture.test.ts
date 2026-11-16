@@ -7,9 +7,12 @@ import {
   calculateBusClockSkewLimit,
   calculateCacheOverhead,
   calculateControlStoreSize,
+  calculateDaisyChainLatency,
+  calculateDmaCycleStealImpact,
   calculateDmaTransfer,
   calculateDramRefreshOverhead,
   calculateFifoOverrunMargin,
+  calculateMaxDaisyChainDevices,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
   calculatePageTableOverhead,
@@ -17,6 +20,7 @@ import {
   calculateRegisterWindows,
   calculateSplitTransactionThroughput,
   decodeCanonicalAddress48,
+  simulateDistributedArbitration,
   simulateTreePlru4Way,
   cpi,
   cpuTime,
@@ -277,6 +281,55 @@ describe("module 4 calculations", () => {
     expect(overrunRes.bytesArrivedDuringLatency).toBe(10);
     expect(overrunRes.isOverrun).toBe(true);
     expect(overrunRes.remainingMarginBytes).toBe(-2);
+  });
+
+  it("calculates daisy chain dispatch latency and maximum device scaling", () => {
+    // Problem 3 parameters:
+    // Device 3 (4th device, index 3)
+    // 12 ns instruction complete, 15 ns INTA assert, 6 ns prop delay per hop, 10 ns vector drive, 8 ns latch setup
+    const res = calculateDaisyChainLatency(3, 12, 15, 6, 10, 8);
+    expect(res.daisyChainPropagationNs).toBe(18);
+    expect(res.totalDispatchLatencyNs).toBe(63);
+
+    // Maximum devices within 75 ns acquisition budget (15 ns INTA + 10 ns drive + 8 ns setup = 33 ns overhead)
+    // 75 - 33 = 42 ns => 42 / 6 = 7 hops => 8 devices max
+    const maxDevs = calculateMaxDaisyChainDevices(75, 15, 6, 10, 8);
+    expect(maxDevs).toBe(8);
+  });
+
+  it("simulates distributed self-selection arbitration", () => {
+    // Problem 4 parameters:
+    // Device A = 10 (1010_2), Device B = 12 (1100_2), Device C = 9 (1001_2)
+    // 4-bit bus
+    const res = simulateDistributedArbitration([10, 12, 9], 4);
+    expect(res.winnerIndex).toBe(1); // Device B
+    expect(res.winnerPriority).toBe(12);
+
+    // Bit 3 (MSB): all devices have bit 3 = 1 => busValue = 1, all 3 remain active
+    expect(res.steps[0].bitIndex).toBe(3);
+    expect(res.steps[0].busValue).toBe(1);
+    expect(res.steps[0].activeDeviceIndices).toEqual([0, 1, 2]);
+
+    // Bit 2: A has 0, B has 1, C has 0 => busValue = 1 (B drives). A and C withdraw!
+    expect(res.steps[1].bitIndex).toBe(2);
+    expect(res.steps[1].busValue).toBe(1);
+    expect(res.steps[1].activeDeviceIndices).toEqual([1]);
+    expect(res.steps[1].withdrawnDeviceIndices).toEqual([0, 2]);
+  });
+
+  it("calculates DMA cycle stealing memory contention impact on effective CPI", () => {
+    // Problem 4 parameters:
+    // CPU 2.5 GHz, base CPI 1.4, Bus 200 MHz, 8 bytes wide
+    // DMA 400 MB/s, 1 memory request per 25 instructions, 20% collision probability
+    const res = calculateDmaCycleStealImpact(2.5e9, 1.4, 200e6, 8, 400e6, 25, 0.2);
+    expect(res.maxBusThroughputBytesPerSec).toBe(1600e6);
+    expect(res.dmaBusUtilizationPercent).toBe(25);
+    expect(res.cpuBusUtilizationPercent).toBeCloseTo(35.71, 2);
+    expect(res.combinedBusDemandPercent).toBeCloseTo(60.71, 2);
+    expect(res.stallCyclesPerCollision).toBe(12.5);
+    expect(res.averageStallCyclesPerInstruction).toBeCloseTo(0.1, 4);
+    expect(res.effectiveCpi).toBeCloseTo(1.5, 2);
+    expect(res.slowdownPercent).toBeCloseTo(7.14, 2);
   });
 });
 

@@ -38,7 +38,7 @@ To control a peripheral, the processor reads from and writes to dedicated regist
   - `IRQ`: Set to 1 when the controller asserts an interrupt request to get the processor's attention.
 - **Command / Control Register**: Accepts operational codes written by the CPU. These bits configure transfer modes, start media reads or writes, set baud rates, or enable interrupts.
 
-To access these registers, the CPU drives the address bus. An address decoder circuit on the motherboard matches the address bits and asserts the controller's **chip-select** ($\overline{\text{CS}}$) pin, an electrical line that enables the controller chip to read or drive the data bus.
+To access these registers, the CPU drives the address bus. An address decoder circuit on the motherboard matches the higher address bits and asserts the controller's **chip-select** ($\overline{\text{CS}}$) pin, an electrical line that enables the controller chip to read or drive the data bus. The lowest address bits (such as $A_1$ and $A_0$) connect to the controller's **register-select** ($RS$) inputs, determining which of the chip's internal registers (Data, Status, or Control) responds to the operation.
 
 ## I/O addressing: memory-mapped vs. port-mapped
 
@@ -84,7 +84,7 @@ When two hardware chips communicate across independent clock domains, synchronou
 
 In an open-loop **strobe**, the sender pulses a line and assumes the receiver is fast enough to sample the data. An asynchronous handshake avoids that assumption by waiting for an explicit acknowledgment at every step, working across any wire length or operating speed.
 
-A two-wire, four-phase asynchronous handshake uses two control signals: `READY` (asserted by the sender) and `ACK` (asserted by the receiver).
+A two-wire, four-phase asynchronous handshake uses two control signals: `READY` (asserted by the sender, also referred to as `REQ` or `Request`, or `MSYN` for master sync) and `ACK` (asserted by the receiver, also called `Acknowledge` or `SSYN` for slave sync).
 
 <Handshake />
 
@@ -92,9 +92,9 @@ The protocol completes a full data word transfer across four sequential phases:
 
 | Phase | Originator | Signal Action | Meaning |
 |---|---|---|---|
-| **Phase 1** | Sender | Drives data bus; asserts `READY` high | "Data bits are stable and valid on the bus lines." |
+| **Phase 1** | Sender | Drives data bus; asserts `READY` (`REQ`) high | "Data bits are stable and valid on the bus lines." |
 | **Phase 2** | Receiver | Detects rising edge of `READY`; latches data; asserts `ACK` high | "I have captured the data into my internal latch." |
-| **Phase 3** | Sender | Detects rising edge of `ACK`; releases data lines; deasserts `READY` low | "I see your acknowledgment; I am clearing the bus." |
+| **Phase 3** | Sender | Detects rising edge of `ACK`; releases data lines; deasserts `READY` (`REQ`) low | "I see your acknowledgment; I am clearing the bus." |
 | **Phase 4** | Receiver | Detects falling edge of `READY`; clears input latch; deasserts `ACK` low | "The lines are idle; I am ready for the next transfer." |
 
 Because each signal edge depends on the previous edge, this four-phase cycle operates reliably regardless of temperature changes, cable lengths, or clock differences between the two devices.
@@ -149,6 +149,12 @@ When the peripheral finishes gathering data or becomes ready for the next byte, 
 | **4. Jump to ISR** | Loads the address from the IVT entry into the Program Counter | CPU begins executing the first instruction of the handler |
 | **5. Service Routine** | Reads byte from controller data register, writes to RAM, resets `IRQ` | Peripheral controller clears its internal interrupt flag |
 | **6. Return (`IRET`)** | Pops saved PSW and Program Counter from the stack | CPU transparently resumes instruction $N+1$ in original program |
+
+<Callout tone="violet" label="Interrupts vs. exceptions: Which return address is saved?">
+An asynchronous I/O interrupt arrives from external hardware without regard to the instruction being processed. The CPU lets the current instruction $N$ complete, saves the address of the next instruction ($N+1$), and resumes at $N+1$ when the ISR executes `IRET`.
+
+A synchronous exception or fault (such as a [page fault](/courses/computer-architecture/virtual-memory#page-faults-and-thrashing) or divide by zero) happens because instruction $N$ itself could not finish. The CPU saves the address of instruction $N$, allowing the operating system to resolve the fault and re-execute instruction $N$.
+</Callout>
 
 The **Interrupt Service Routine** (**ISR**) is a privileged operating system function that handles the device request.
 
@@ -406,7 +412,7 @@ The hardware timing parameters are:
 
 1. If only Device 3 requests an interrupt, calculate the total vector dispatch latency from the moment Device 3 asserts $\overline{\text{INTR}}$ until the CPU successfully latches Device 3's vector into its internal register.
 2. Suppose Device 1 and Device 3 assert $\overline{\text{INTR}}$ simultaneously. Explain step by step how the daisy-chain hardware resolves this contention. Which device receives service first, what happens to the acknowledge signal, and when will Device 3 receive service?
-3. Calculate the maximum number of devices that can be supported in this daisy chain if the entire interrupt vector acquisition phase (from CPU assertion of $\overline{\text{INTA}}$ to vector latching) must complete within a strict bus budget of $75\text{ ns}$.
+3. Calculate the maximum number of devices that can be supported in this daisy chain if the entire interrupt vector acquisition phase (from the moment the CPU detects $\overline{\text{INTR}}$ and initiates the acknowledge cycle to vector latching) must complete within a strict bus budget of $75\text{ ns}$.
 
 ---
 
@@ -626,7 +632,7 @@ Because bytes arrive discretely:
 
 $$\lceil 5.18 \rceil = 6\text{ bytes}$$
 
-Up to 6 new bytes can arrive and enter the FIFO before the CPU executes the first read instruction of the ISR.
+Up to 6 new bytes can arrive and enter the FIFO before the CPU executes the first read instruction of the ISR. Because the CPU empties the FIFO at $1.5\ \mu\text{s}$ per byte once the ISR starts, which is nearly 58 times faster than the incoming arrival interval ($86.81\ \mu\text{s}$ per byte), no backlog builds up once servicing begins.
 
 **Part 3: Minimum FIFO capacity:**
 

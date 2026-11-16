@@ -60,7 +60,7 @@ Doubling bus width from 32 bits to 64 bits does not double data throughput in pr
 Modern computer architectures resolved these physical limits by replacing shared parallel buses with high-speed, point-to-point **switched serial fabrics**, exemplified by PCI Express (PCIe):
 
 - **Differential Signaling**: Instead of measuring a single voltage relative to a noisy motherboard ground, PCIe transmits each signal across a pair of complementary wires ($\text{Tx}^+$ and $\text{Tx}^-$). The receiver measures the voltage difference $(V^+ - V^-)$. External electromagnetic interference affects both wires identically, so the difference remains unaffected, canceling noise.
-- **Embedded Clocking and Line Coding**: PCIe eliminates the separate clock wire entirely. The transmitter uses **line coding** (such as 8b/10b in PCIe 1.0/2.0 or 128b/130b in PCIe 3.0+) to guarantee frequent voltage transitions in the data stream. The receiver uses an internal Phase-Locked Loop (PLL) to extract the clock directly from the data bitstream, eliminating clock skew completely.
+- **Embedded Clocking and Line Coding**: PCIe eliminates the separate clock wire entirely. The transmitter uses **line coding** (such as 8b/10b in PCIe 1.0/2.0 or 128b/130b in PCIe 3.0+) to guarantee frequent voltage transitions in the data stream. The receiver uses an internal Phase-Locked Loop (PLL) to extract the clock directly from the data bitstream, eliminating clock skew between clock and data within each serial lane. Across multi-lane links ($\times 4, \times 8, \times 16$), receiver elastic FIFO buffers deskew arrival variations between lanes automatically during link training.
 - **Lanes and Aggregation**: A single PCIe **lane** consists of two differential pairs (four wires total: transmit $\text{Tx}^+/\text{Tx}^-$ and receive $\text{Rx}^+/\text{Rx}^-$). Bandwidth scales linearly by aggregating lanes into links: $\times 1, \times 4, \times 8$, or $\times 16$.
 - **Packetized Switching**: Devices do not share physical wires. A central PCIe switch routes packetized messages directly between source and destination endpoints, enabling multiple devices to communicate simultaneously without bus contention.
 
@@ -166,14 +166,15 @@ Parallel arbitration completes decisions in a single clock cycle and isolates de
 
 **Distributed arbitration** eliminates the central arbiter chip entirely. All bus masters participate in the arbitration decision using shared control and priority identification lines.
 
-A classic implementation is **wired-OR self-selection** (used in SCSI and CAN bus architectures):
+A classic implementation is **distributed self-selection** (used in parallel SCSI and CAN bus architectures):
 
 - Each bus master is assigned a unique $k$-bit binary priority ID.
-- The arbitration lines use an **open-collector** (or open-drain) configuration with a **pull-up resistor**. Any device can pull a line to ground (logic 0), but when no device drives the line, the resistor pulls it to logic 1. Thus, a single 0 driven by any device overrides a 1.
-- When arbitration begins, each requesting master asserts its priority ID on the shared arbitration bus, bit by bit from most significant bit to least significant bit.
-- If Master A drives a 0 onto line $j$, but detects that line $j$ is currently held at 1 by another device, Master A realizes that a higher-priority master is also competing.
-- Master A immediately withdraws its lower-order priority bits and concedes the bus.
-- The highest-priority master sees its full ID intact on the bus lines and claims ownership.
+- The arbitration lines use a wired-logic configuration with pull-up or pull-down resistors where one binary level is **dominant** (actively driven) and the other is **recessive** (passively pulled):
+  - In **active-high wired-OR** (used in parallel SCSI and described below in Problem 4), lines float to logic 0 (recessive) through pull-down resistors. Any device driving a logic 1 pulls the line high (dominant), so logic 1 overrides logic 0.
+  - In **open-collector / open-drain wired-AND** (used in CAN bus and I2C), pull-up resistors pull lines to logic 1 (recessive). Any device driving ground (logic 0) pulls the line low (dominant), so logic 0 overrides logic 1.
+- When arbitration begins, each requesting master asserts its priority ID on the shared arbitration lines, evaluating bit by bit from most significant bit down to least significant bit.
+- Under active-high wired-OR, if Master A has a 0 at bit $j$ (recessive) but senses that line $j$ is held at 1 by a competitor (dominant), Master A realizes that a higher-priority master is competing. Master A immediately withdraws its remaining priority bits and concedes the bus.
+- The master with the highest numerical priority sees its complete ID intact across all bit stages and wins ownership of the bus.
 
 Distributed arbitration provides high reliability with zero single point of failure, but it requires arbitration logic in every device interface.
 
@@ -468,7 +469,7 @@ The bus arbitration completes in $40\text{ ns}$.
 **Part 4: Architectural comparison:**
 
 - **Fault Tolerance:** Distributed self-selection eliminates the centralized arbiter chip as a single point of failure. If an individual device fails or is removed from its chassis slot, the remaining devices continue to arbitrate normally. In contrast, in a daisy chain, any failed or physically unplugged device breaks the serial grant line, disabling all downstream slots.
-- **Wiring Overhead:** Centralized daisy chaining requires only two shared wires (`BREQ`, `BGNT`), regardless of device count. Distributed self-selection requires $k = \lceil \log_2 N \rceil$ shared parallel arbitration lines ($ARB_{k-1} \dots ARB_0$), increasing PCB trace routing density.
+- **Wiring Overhead:** Centralized daisy chaining requires only three shared control lines (`BR`, `BG`, `BBUSY`), regardless of device count. Distributed self-selection requires $k = \lceil \log_2 N \rceil$ shared parallel arbitration lines ($ARB_{k-1} \dots ARB_0$), increasing PCB trace routing density.
 </ModelAnswer>
 
 #### Problem 5: Split-transaction bus throughput under memory latency
@@ -602,11 +603,13 @@ Design 2 incurs a $33.33\%$ latency penalty on isolated single-word accesses bec
   $$T_{\text{burst2}} = 11 \times 20\text{ ns} = 220\text{ ns}$$
   $$\text{Bandwidth}_{\text{burst2}} = \frac{32\text{ bytes}}{220 \times 10^{-9}\text{ s}} \approx 145.45\text{ MB/s}$$
 
-Burst latency penalty:
+Burst latency penalty and bandwidth reduction:
 
-$$\text{Penalty}_{\text{burst}} = \frac{220\text{ ns} - 200\text{ ns}}{200\text{ ns}} \times 100\% = \frac{20}{200} \times 100\% = 10.0\%$$
+$$\text{Latency Penalty} = \frac{220\text{ ns} - 200\text{ ns}}{200\text{ ns}} \times 100\% = \frac{20}{200} \times 100\% = 10.0\%$$
 
-In burst mode, the addressing and turnaround overhead is amortized across 8 data cycles, diminishing the performance penalty from $33.33\%$ down to only $10.0\%$.
+$$\text{Bandwidth Reduction} = \frac{160.00\text{ MB/s} - 145.45\text{ MB/s}}{160.00\text{ MB/s}} \times 100\% \approx 9.09\%$$
+
+In burst mode, the addressing and turnaround overhead is amortized across 8 data cycles, diminishing the latency penalty from $33.33\%$ down to $10.0\%$ (and bandwidth reduction to $9.09\%$).
 </ModelAnswer>
 
 ---
