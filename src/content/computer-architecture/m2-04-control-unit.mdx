@@ -275,7 +275,7 @@ Total control store size:
 $$\text{Total bits}_{\text{vertical}} = 512 \text{ words} \times 36 \text{ bits/word} = 18{,}432\text{ bits}$$
 
 **Part 3: Percentage reduction:**
-$$\text{Reduction} = \frac{33{,}280 - 18{,}432}{33{,}280} \times 100\% = \frac{14{,}848}{33{,}280} \times 100\% \approx 44.62\%$$
+$$\text{Reduction} = \frac{33{,}280 - 18{,}432}{33{,}280} \times 100\text{\%} = \frac{14{,}848}{33{,}280} \times 100\text{\%} \approx 44.62\text{\%}$$
 
 Vertical microprogramming reduces the required control store memory capacity by 44.6%, requiring only four decoders ($5 \to 18$, $4 \to 12$, $3 \to 8$, $3 \to 6$) at the output of the microinstruction register.
 </ModelAnswer>
@@ -355,7 +355,7 @@ $$\text{Total bits}_{\text{single}} = 2{,}048\text{ words} \times 83\text{ bits/
   $$\text{Total bits}_{\text{nano}} = 36{,}864 + 9{,}216 = 46{,}080\text{ bits}$$
 
 **Part 3: Percentage reduction:**
-$$\text{Savings} = \frac{169{,}984 - 46{,}080}{169{,}984} \times 100\% = \frac{123{,}904}{169{,}984} \times 100\% \approx 72.89\%$$
+$$\text{Savings} = \frac{169{,}984 - 46{,}080}{169{,}984} \times 100\text{\%} = \frac{123{,}904}{169{,}984} \times 100\text{\%} \approx 72.89\text{\%}$$
 
 Nanoprogramming slashes the required silicon ROM capacity by nearly 73%. The trade-off is an extra memory read cycle: each micro-step must read Level 1 to obtain the nano-address, then read Level 2 to extract the physical control bits.
 </ModelAnswer>
