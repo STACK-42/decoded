@@ -3,6 +3,7 @@ import {
   amat,
   amdahl,
   calculateAmdahlRequiredSpeedup,
+  calculateAmdahlScaling,
   calculateBusBandwidth,
   calculateBusClockSkewLimit,
   calculateCacheOverhead,
@@ -12,15 +13,19 @@ import {
   calculateDmaTransfer,
   calculateDramRefreshOverhead,
   calculateFifoOverrunMargin,
+  calculateGustafsonSpeedup,
   calculateMaxDaisyChainDevices,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
   calculatePageTableOverhead,
+  calculatePipelineCpiWithHazards,
+  calculatePipelineSpeedup,
   calculatePollingOverhead,
   calculateRegisterWindows,
   calculateSplitTransactionThroughput,
   decodeCanonicalAddress48,
   simulateDistributedArbitration,
+  simulateMesiCoherence,
   simulateTreePlru4Way,
   cpi,
   cpuTime,
@@ -332,6 +337,94 @@ describe("module 4 calculations", () => {
     expect(res.slowdownPercent).toBeCloseTo(7.14, 2);
   });
 });
+
+describe("module 5: pipelining and parallelism", () => {
+  it("calculates pipeline speedup, imbalance and latch overhead", () => {
+    // 5 stages: IF = 200 ps, ID = 150 ps, EX = 250 ps, MEM = 220 ps, WB = 160 ps
+    // register delay = 20 ps, 1000 instructions
+    const res = calculatePipelineSpeedup([200, 150, 250, 220, 160], 20, 1000);
+    expect(res.numStages).toBe(5);
+    expect(res.unpipelinedCycleTimePs).toBe(980);
+    expect(res.pipelinedCycleTimePs).toBe(270);
+    expect(res.unpipelinedTotalTimePs).toBe(980000);
+    expect(res.pipelinedTotalTimePs).toBe(271080);
+    expect(res.speedup).toBeCloseTo(3.615, 3);
+    expect(res.asymptoticSpeedup).toBeCloseTo(3.63, 2);
+    expect(res.efficiencyPercent).toBeCloseTo(72.3, 1);
+    expect(res.throughputMips).toBeCloseTo(3688.95, 2);
+  });
+
+  it("calculates effective CPI with data hazards and branch mispredictions", () => {
+    // 25% loads with 50% load-use stall (1 cycle penalty)
+    // 20% branches with 15% mispredicted (2 cycle penalty)
+    const res = calculatePipelineCpiWithHazards({
+      loadFrequency: 0.25,
+      loadUseHazardFraction: 0.5,
+      branchFrequency: 0.2,
+      mispredictRate: 0.15,
+      branchPenaltyCycles: 2,
+    });
+    expect(res.idealCpi).toBe(1.0);
+    expect(res.dataStallCyclesPerInstruction).toBe(0.125);
+    expect(res.controlStallCyclesPerInstruction).toBe(0.06);
+    expect(res.effectiveCpi).toBe(1.185);
+    expect(res.pipelineEfficiencyPercent).toBeCloseTo(84.39, 2);
+  });
+
+  it("calculates Amdahl's Law scaling and asymptotic limits", () => {
+    // 85% parallel code (serial = 15%)
+    const res = calculateAmdahlScaling(0.85, [1, 2, 4, 8, 16, 64]);
+    expect(res.asymptoticSpeedup).toBeCloseTo(6.6667, 4);
+    expect(res.scaling[0].speedup).toBe(1.0);
+    expect(res.scaling[3].processors).toBe(8);
+    expect(res.scaling[3].speedup).toBeCloseTo(3.9024, 4);
+    expect(res.scaling[3].efficiencyPercent).toBeCloseTo(48.78, 2);
+    expect(res.scaling[5].processors).toBe(64);
+    expect(res.scaling[5].speedup).toBeCloseTo(6.1244, 4);
+    expect(res.scaling[5].efficiencyPercent).toBeCloseTo(9.57, 2);
+  });
+
+  it("calculates Gustafson's Law scaled speedup under weak scaling", () => {
+    // serial = 15%, 64 processors
+    const res = calculateGustafsonSpeedup(0.15, 64);
+    expect(res.scaledSpeedup).toBeCloseTo(54.55, 2);
+    expect(res.efficiencyPercent).toBeCloseTo(85.23, 2);
+  });
+
+  it("simulates MESI cache coherence protocol transitions", () => {
+    // 3 cores: Core 0, 1, 2
+    // Trace: Core 0 reads, Core 1 reads, Core 0 writes, Core 2 reads
+    const steps = simulateMesiCoherence(3, [
+      { coreId: 0, op: "read" },
+      { coreId: 1, op: "read" },
+      { coreId: 0, op: "write" },
+      { coreId: 2, op: "read" },
+    ]);
+
+    // Step 1: Core 0 reads from I => transitions to E (no other core has it), BusRd
+    expect(steps[0].priorStates).toEqual(["I", "I", "I"]);
+    expect(steps[0].nextStates).toEqual(["E", "I", "I"]);
+    expect(steps[0].busAction).toBe("BusRd");
+    expect(steps[0].dataSuppliedBy).toBe("Memory");
+
+    // Step 2: Core 1 reads from I => Core 0 downgrades E->S, Core 1 becomes S, BusRd
+    expect(steps[1].priorStates).toEqual(["E", "I", "I"]);
+    expect(steps[1].nextStates).toEqual(["S", "S", "I"]);
+    expect(steps[1].busAction).toBe("BusRd");
+
+    // Step 3: Core 0 writes while S => issues Invalidate, Core 1 S->I, Core 0 S->M
+    expect(steps[2].priorStates).toEqual(["S", "S", "I"]);
+    expect(steps[2].nextStates).toEqual(["M", "I", "I"]);
+    expect(steps[2].busAction).toBe("Invalidate");
+
+    // Step 4: Core 2 reads while Core 0 is M => Core 0 flushes to bus, transitions M->S, Core 2 becomes S
+    expect(steps[3].priorStates).toEqual(["M", "I", "I"]);
+    expect(steps[3].nextStates).toEqual(["S", "I", "S"]);
+    expect(steps[3].busAction).toBe("BusRd");
+    expect(steps[3].dataSuppliedBy).toBe("Core 0");
+  });
+});
+
 
 
 

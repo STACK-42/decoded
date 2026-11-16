@@ -795,6 +795,254 @@ export function calculateDmaCycleStealImpact(
   };
 }
 
+/* -------------------------------- parallelism -------------------------- */
+
+/** Calculates speedup, execution times, and efficiency for pipelined vs unpipelined execution. */
+export function calculatePipelineSpeedup(
+  stageDelaysPs: number[],
+  registerDelayPs: number,
+  numInstructions: number
+): {
+  numStages: number;
+  unpipelinedCycleTimePs: number;
+  pipelinedCycleTimePs: number;
+  unpipelinedTotalTimePs: number;
+  pipelinedTotalTimePs: number;
+  speedup: number;
+  asymptoticSpeedup: number;
+  efficiencyPercent: number;
+  throughputMips: number;
+} {
+  const numStages = stageDelaysPs.length;
+  const unpipelinedCycleTimePs = stageDelaysPs.reduce((sum, d) => sum + d, 0);
+  const maxStageDelayPs = Math.max(...stageDelaysPs);
+  const pipelinedCycleTimePs = maxStageDelayPs + registerDelayPs;
+
+  const unpipelinedTotalTimePs = numInstructions * unpipelinedCycleTimePs;
+  const pipelinedTotalTimePs = (numStages + numInstructions - 1) * pipelinedCycleTimePs;
+
+  const speedup = unpipelinedTotalTimePs / pipelinedTotalTimePs;
+  const asymptoticSpeedup = unpipelinedCycleTimePs / pipelinedCycleTimePs;
+  const efficiencyPercent = (speedup / numStages) * 100;
+  const throughputMips = numInstructions / (pipelinedTotalTimePs * 1e-12 * 1e6);
+
+  return {
+    numStages,
+    unpipelinedCycleTimePs,
+    pipelinedCycleTimePs,
+    unpipelinedTotalTimePs,
+    pipelinedTotalTimePs,
+    speedup,
+    asymptoticSpeedup,
+    efficiencyPercent,
+    throughputMips,
+  };
+}
+
+/** Evaluates effective CPI factoring in data hazard stalls, branch misprediction flushes, and structural stalls. */
+export function calculatePipelineCpiWithHazards(params: {
+  loadFrequency: number;
+  loadUseHazardFraction: number;
+  branchFrequency: number;
+  mispredictRate: number;
+  branchPenaltyCycles: number;
+  structuralStallPerInstruction?: number;
+}): {
+  idealCpi: number;
+  dataStallCyclesPerInstruction: number;
+  controlStallCyclesPerInstruction: number;
+  structuralStallCyclesPerInstruction: number;
+  effectiveCpi: number;
+  pipelineEfficiencyPercent: number;
+} {
+  const idealCpi = 1.0;
+  const dataStallCyclesPerInstruction =
+    params.loadFrequency * params.loadUseHazardFraction * 1.0;
+  const controlStallCyclesPerInstruction =
+    params.branchFrequency * params.mispredictRate * params.branchPenaltyCycles;
+  const structuralStallCyclesPerInstruction = params.structuralStallPerInstruction ?? 0;
+
+  const effectiveCpi =
+    idealCpi +
+    dataStallCyclesPerInstruction +
+    controlStallCyclesPerInstruction +
+    structuralStallCyclesPerInstruction;
+
+  const pipelineEfficiencyPercent = (idealCpi / effectiveCpi) * 100;
+
+  return {
+    idealCpi,
+    dataStallCyclesPerInstruction,
+    controlStallCyclesPerInstruction,
+    structuralStallCyclesPerInstruction,
+    effectiveCpi,
+    pipelineEfficiencyPercent,
+  };
+}
+
+/** Computes Amdahl's Law speedup and parallel efficiency across processor configurations. */
+export function calculateAmdahlScaling(
+  parallelFraction: number,
+  processorCounts: number[]
+): {
+  asymptoticSpeedup: number;
+  scaling: {
+    processors: number;
+    speedup: number;
+    efficiencyPercent: number;
+  }[];
+} {
+  const serialFraction = 1 - parallelFraction;
+  const asymptoticSpeedup = 1 / serialFraction;
+
+  const scaling = processorCounts.map((p) => {
+    const speedup = 1 / (serialFraction + parallelFraction / p);
+    const efficiencyPercent = (speedup / p) * 100;
+    return {
+      processors: p,
+      speedup,
+      efficiencyPercent,
+    };
+  });
+
+  return {
+    asymptoticSpeedup,
+    scaling,
+  };
+}
+
+/** Computes Gustafson's Law scaled speedup under weak scaling (problem size scales with processors). */
+export function calculateGustafsonSpeedup(
+  serialFraction: number,
+  processors: number
+): {
+  scaledSpeedup: number;
+  efficiencyPercent: number;
+} {
+  const scaledSpeedup = processors - serialFraction * (processors - 1);
+  const efficiencyPercent = (scaledSpeedup / processors) * 100;
+
+  return {
+    scaledSpeedup,
+    efficiencyPercent,
+  };
+}
+
+export type MesiState = "M" | "E" | "S" | "I";
+export type MesiBusAction = "BusRd" | "BusRdX" | "Invalidate" | "None" | "Flush";
+
+export interface MesiStep {
+  step: number;
+  coreId: number;
+  op: "read" | "write";
+  priorStates: MesiState[];
+  nextStates: MesiState[];
+  busAction: MesiBusAction;
+  dataSuppliedBy: "Memory" | `Core ${number}` | "Local Cache";
+}
+
+/** Simulates the MESI cache coherence protocol across multiple cores for a single cache line. */
+export function simulateMesiCoherence(
+  numCores: number,
+  operations: { coreId: number; op: "read" | "write" }[]
+): MesiStep[] {
+  let states: MesiState[] = Array(numCores).fill("I");
+  const steps: MesiStep[] = [];
+
+  operations.forEach((opRecord, idx) => {
+    const { coreId, op } = opRecord;
+    const priorStates = [...states];
+    const nextStates = [...states];
+    let busAction: MesiBusAction = "None";
+    let dataSuppliedBy: "Memory" | `Core ${number}` | "Local Cache" = "Memory";
+
+    const currentState = priorStates[coreId];
+
+    if (op === "read") {
+      if (currentState === "M" || currentState === "E" || currentState === "S") {
+        // Hit
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else {
+        // Miss: issue BusRd
+        busAction = "BusRd";
+        const modifiedOwner = priorStates.findIndex((s) => s === "M");
+        if (modifiedOwner !== -1) {
+          // Flush dirty block to memory/bus; modified owner transitions to S
+          nextStates[modifiedOwner] = "S";
+          dataSuppliedBy = `Core ${modifiedOwner}`;
+          nextStates[coreId] = "S";
+        } else {
+          const hasShared = priorStates.some((s) => s === "S" || s === "E");
+          if (hasShared) {
+            // Downgrade any E to S
+            for (let c = 0; c < numCores; c++) {
+              if (priorStates[c] === "E") nextStates[c] = "S";
+            }
+            nextStates[coreId] = "S";
+            dataSuppliedBy = "Memory";
+          } else {
+            // No other core has it: transitions to Exclusive
+            nextStates[coreId] = "E";
+            dataSuppliedBy = "Memory";
+          }
+        }
+      }
+    } else {
+      // op === "write"
+      if (currentState === "M") {
+        // Hit: already modified
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else if (currentState === "E") {
+        // Hit: silent upgrade to M
+        nextStates[coreId] = "M";
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else if (currentState === "S") {
+        // Write miss / upgrade: issue Invalidate
+        busAction = "Invalidate";
+        for (let c = 0; c < numCores; c++) {
+          if (c !== coreId && priorStates[c] === "S") {
+            nextStates[c] = "I";
+          }
+        }
+        nextStates[coreId] = "M";
+        dataSuppliedBy = "Local Cache";
+      } else {
+        // currentState === "I": write miss, issue BusRdX
+        busAction = "BusRdX";
+        const modifiedOwner = priorStates.findIndex((s) => s === "M");
+        if (modifiedOwner !== -1) {
+          dataSuppliedBy = `Core ${modifiedOwner}`;
+        } else {
+          dataSuppliedBy = "Memory";
+        }
+        for (let c = 0; c < numCores; c++) {
+          if (c !== coreId) {
+            nextStates[c] = "I";
+          }
+        }
+        nextStates[coreId] = "M";
+      }
+    }
+
+    states = nextStates;
+    steps.push({
+      step: idx + 1,
+      coreId,
+      op,
+      priorStates,
+      nextStates,
+      busAction,
+      dataSuppliedBy,
+    });
+  });
+
+  return steps;
+}
+
+
 
 
 

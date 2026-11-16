@@ -1,62 +1,423 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { HazardLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Pipeline Hazards
 
-A pipeline works wonderfully as long as each instruction is independent. Real programs aren't like that. A **hazard** is a situation that stops the next instruction from running in its turn. There are three kinds.
+A pipeline operates at peak efficiency when instructions flow through the datapath continuously without interruption. In real programs, however, instructions interact with each other and share underlying hardware. A **pipeline hazard** is any condition that prevents the next instruction in the stream from executing in its designated clock cycle.
 
-Try each type. Switch between "Just stall" and "With forwarding", and count the dashed bubbles.
+When a hazard occurs, the hardware or compiler must stall the pipeline, inserting empty cycle slots called **bubbles** (or **NOPs**). Hazards fall into three distinct architectural categories:
+
+1. **Structural hazards**: Hardware resource conflicts where multiple instructions require the same physical unit at the same time.
+2. **Data hazards**: Data dependencies where an instruction needs the result of a preceding instruction that has not yet completed.
+3. **Control hazards**: Branch decisions where the next instruction address depends on the outcome of a branch instruction that has not yet been resolved.
+
+Test each hazard type in the interactive lab below. Toggle between "Just stall" and "With forwarding", and observe how forwarding lines bypass data to eliminate dashed bubble slots.
 
 <HazardLab />
 
+## Structural hazards
+
+A **structural hazard** arises when the physical hardware cannot support all concurrent combinations of instructions in flight.
+
+The classic structural hazard occurs when a processor uses a single, unified memory for both instructions and data (a von Neumann memory structure). Consider the pipeline state at cycle 4:
+
+| Cycle | Instruction 1 | Instruction 2 | Instruction 3 | Instruction 4 |
+|---|---|---|---|---|
+| **Cycle 4** | `MEM` (accesses data) | `EX` (arithmetic) | `ID` (decode) | `IF` (fetches instruction) |
+
+At cycle 4, Instruction 1 is in the Memory Access (MEM) stage reading or writing a data word in memory, while Instruction 4 is in the Instruction Fetch (IF) stage reading an instruction word from memory. If the processor has only one physical memory port, it cannot service both requests simultaneously. One instruction must wait, forcing the pipeline to insert a structural bubble into the IF stage.
+
+### Architectural solutions to structural hazards
+
+Hardware designers eliminate structural hazards by adding hardware resources:
+
+1. **Separate instruction and data caches (Harvard architecture)**: Modern processors place independent Level 1 Instruction Caches (I-Cache) and Level 1 Data Caches (D-Cache) on the chip die. The IF stage reads from the I-Cache while the MEM stage accesses the D-Cache concurrently over separate physical buses.
+2. **Multi-ported register files**: To allow two instructions to access the 32-register file during the same cycle (ID reading two source registers while WB writes one destination register), the register file is built with three independent physical ports: two dedicated read ports and one dedicated write port.
+3. **Replicated functional units**: High-performance processors deploy multiple ALUs, dedicated integer multipliers, and independent load/store execution pipelines.
+
 ## Data hazards
 
+A **data hazard** occurs when the pipeline attempts to read an operand register before a preceding instruction has completed writing its result to that register.
+
+In 1966, computer scientist Arthur Bernstein formulated the conditions for deterministic parallel execution. In pipelined and superscalar processors, data dependencies follow three classical classifications:
+
+- **Read-After-Write (RAW) / True Dependency**: Instruction $j$ reads a register that is written by instruction $i$. Instruction $j$ must receive the updated value, not the stale contents. RAW is the primary data hazard in in-order pipelines.
+- **Write-After-Read (WAR) / Anti-Dependency**: Instruction $j$ writes a register before instruction $i$ reads it. In an in-order 5-stage pipeline, WAR cannot cause errors because instruction $i$ reads in stage 2 (ID) long before instruction $j$ writes in stage 5 (WB). However, WAR is a major hazard in out-of-order execution engines.
+- **Write-After-Write (WAW) / Output Dependency**: Instruction $j$ writes a register before an earlier instruction $i$ writes it. In a standard 5-stage in-order pipeline, writes occur in strict order in WB, but WAW can occur in pipelines with multiple functional units of variable latency (such as an integer ALU finishing in 1 cycle while a floating-point divider takes 15 cycles).
+
+Consider this RAW dependency sequence:
+
+```assembly
+ADD R1, R2, R3     ; R1 = R2 + R3 (writes R1 in stage 5: WB)
+SUB R4, R1, R5     ; R4 = R1 - R5 (reads R1 in stage 2: ID)
 ```
-ADD R1, R2, R3     ; writes R1 in stage 5
-SUB R4, R1, R5     ; wants R1 in stage 2. Too early!
+
+In an unassisted pipeline, `SUB` enters the ID stage at cycle 2 and reads $R_1$. However, `ADD` does not write its updated sum into $R_1$ until cycle 5 (WB). Without intervention, `SUB` computes with stale data.
+
+### Resolving RAW data hazards
+
+Hardware and software use three primary techniques to resolve RAW data hazards:
+
+#### 1. Hardware interlocking (stalling)
+
+A dedicated circuit called the **Hazard Detection Unit** monitors instruction register addresses in the ID stage. If it detects that a source register ($rs_1$ or $rs_2$) of the instruction in ID matches the destination register ($rd$) of an instruction in EX, MEM, or WB, the unit stalls the pipeline:
+
+- It deasserts the $PC$ write enable line, holding the $PC$ steady so the current instruction is refetched.
+- It deasserts the `IF/ID` pipeline register write enable line, preserving the waiting instruction in ID.
+- It asserts control multiplexers to inject zeros into the `ID/EX` register, sending a harmless NOP bubble through EX, MEM, and WB.
+
+Without forwarding, resolving the `ADD`/`SUB` dependency requires **two stall cycles**, wasting processor throughput.
+
+#### 2. Data forwarding (bypassing)
+
+The fundamental insight of **data forwarding** (or **bypassing**) is that the result of an arithmetic operation physically exists at the output of the ALU at the end of stage 3 (EX), two full cycles before it is written back into the register file in stage 5 (WB).
+
+Rather than waiting for the result to travel through MEM and WB into the register file, hardware designers add bypass buses and multiplexers at the ALU inputs. The **Forwarding Unit** compares register addresses:
+
+- **EX Hazard forwarding**: If `EX/MEM.RegisterRd == ID/EX.RegisterRs1`, the ALU result from the previous instruction is forwarded directly from the `EX/MEM` register to the ALU input for the current instruction. This eliminates the stall completely (**0 stall cycles**).
+- **MEM Hazard forwarding**: If `MEM/WB.RegisterRd == ID/EX.RegisterRs1`, the result is forwarded from the `MEM/WB` register to the ALU input.
+
+```
+Cycle 1:  [ADD: IF]
+Cycle 2:  [SUB: IF] [ADD: ID]
+Cycle 3:  [SUB: ID] [ADD: EX]  <-- Result generated at ALU output
+Cycle 4:            [SUB: EX]  <-- FORWARDED from EX/MEM to ALU input (0 stalls!)
 ```
 
-`SUB` reads its registers while `ADD` is still in the pipeline, so R1 still holds the old value.
+#### 3. The load-use hazard: the unavoidable stall
 
-**Fix 1, stalling.** Hold `SUB` back until the value is ready. The empty slot is called a **bubble**. It works, but it wastes two cycles here.
+Forwarding solves data hazards between back-to-back arithmetic instructions. However, there is one critical situation where forwarding cannot prevent a stall: a **load-use hazard**.
 
-**Fix 2, forwarding** (also called bypassing). Here's the key insight: the answer exists at the end of EX, long before it's written back in WB. So add extra wires and [multiplexers](/courses/logic-design/multiplexers) that take the result straight from the ALU's output to its input. No waiting at all.
+```assembly
+LW  R1, 0(R2)      ; Load R1 from memory (data arrives at end of stage 4: MEM)
+ADD R3, R1, R4     ; Needs R1 at the start of stage 3: EX
+```
 
-**The case forwarding can't fix.** A load gets its value only at the end of MEM. An instruction right after it wants that value at the start of EX, one cycle before it exists. So one stall remains. Compilers try to avoid it by moving an unrelated instruction into that slot.
+The data read from memory by `LW` only becomes available at the end of the MEM stage (cycle 4). The `ADD` instruction requires $R_1$ at the beginning of its EX stage (cycle 4). Forwarding the value would require sending data backward in time from cycle 4 to cycle 3, which is physically impossible.
+
+Therefore, the hardware must insert a mandatory **1-cycle load-use stall**. The Hazard Detection Unit holds `ADD` in ID for one cycle. In cycle 5, the loaded word is forwarded from the `MEM/WB` pipeline register directly into the ALU input:
+
+```
+Cycle 1: [LW:  IF]
+Cycle 2: [ADD: IF] [LW:  ID]
+Cycle 3: [ADD: ID] [LW:  EX]
+Cycle 4: [ADD: ID] [LW:  MEM]  <-- Bubble inserted; data read from cache
+Cycle 5:           [ADD: EX]   <-- FORWARDED from MEM/WB to ALU input (1 stall)
+```
+
+#### 4. Compiler instruction scheduling
+
+Optimizing compilers eliminate load-use stalls in software by reordering independent instructions. If the compiler identifies an unrelated instruction located later in the code, it moves that instruction into the slot immediately following the load:
+
+```assembly
+; Unoptimized (1 stall cycle):
+LW  R1, 0(R2)
+ADD R3, R1, R4     ; Stalls 1 cycle waiting for R1
+SUB R6, R7, R8     ; Independent instruction
+
+; Scheduled by compiler (0 stall cycles):
+LW  R1, 0(R2)
+SUB R6, R7, R8     ; Executes during load memory latency
+ADD R3, R1, R4     ; R1 is now ready in MEM/WB; forwarded with 0 stalls!
+```
 
 ## Control hazards
 
+A **control hazard** (or **branch hazard**) arises when the pipeline must make a decision about the instruction flow before the branch condition and target address are known.
+
+Consider a conditional branch:
+
+```assembly
+BEQ R1, R2, target ; If R1 == R2, branch to target
+ADD R4, R5, R6     ; Fetched in cycle 2: should this instruction execute?
 ```
-BEQ R1, R2, far    ; do we jump? Not known until EX
-ADD ...            ; already fetched. Was that right?
-SUB ...            ; this one too
-```
 
-The CPU has to keep fetching but doesn't yet know the way the branch will go. If it turns out to be taken, the instructions fetched after it are wrong, and they have to be **flushed**: thrown away, wasting those cycles.
+In a standard 5-stage pipeline, `BEQ` fetches in cycle 1, decodes in cycle 2, and evaluates the register comparison ($R_1 == R_2$) and target address calculation in cycle 3 (EX).
 
-There are a few ways to reduce the cost:
+If the processor simply waits until cycle 3 to discover whether the branch is taken, two instructions (`ADD` and the instruction after it) have already entered the pipeline. If the branch is taken, those two instructions were fetched erroneously and must be discarded (**flushed**), wasting 2 clock cycles.
 
-- **Stall** until the outcome is known. It's simple, but it costs on every branch.
-- **Predict** and carry on, flushing only when wrong. Assuming "not taken" is the simplest form.
-- **Dynamic branch prediction** records what each branch did in the past. Loops mostly repeat, so predicting from history is correct well over 90% of the time.
-- **Delayed branch**: the instruction after the branch always runs, and the compiler tries to put something useful there.
+### Moving branch resolution to the ID stage
 
-Since around one instruction in five is a branch and pipelines are long, good prediction is essential.
+Processors reduce branch penalty by moving the branch evaluation hardware earlier in the pipeline. By adding a dedicated register comparator and a target address adder into the ID stage (cycle 2), the decision is determined at the end of cycle 2. This reduces the branch penalty from 2 cycles to **1 cycle**.
 
-## Structural hazards
+### Branch handling strategies
 
-Two instructions need the same hardware at the same moment. For example, if there's only one memory, an instruction doing a load in MEM and another being fetched in IF will collide. Designers fix this with more hardware, which is the reason for having separate instruction and data caches.
+Hardware and software employ four primary mechanisms to mitigate control hazards:
+
+#### 1. Static branch prediction
+
+The hardware makes a fixed assumption that requires no runtime state:
+
+- **Predict Never Taken**: The CPU always fetches the sequential instruction ($PC + 4$). If the branch is not taken, execution proceeds with zero stall cycles. If the branch is taken, the fetched instruction in `IF/ID` is flushed, incurring a 1-cycle penalty.
+- **Directional prediction**: Backward branches (negative offsets, which typically form loops) are predicted taken; forward branches (positive offsets, which typically handle `if-else` blocks or error checks) are predicted not taken.
+
+#### 2. Delayed branching
+
+Used extensively in classic RISC architectures (MIPS, SPARC): the instruction located immediately after the branch in memory (the **branch delay slot**) is always executed, whether the branch is taken or not. The compiler schedules an independent instruction into the delay slot, transforming the wasted flush cycle into productive work.
+
+#### 3. Dynamic branch prediction
+
+Modern programs contain branches that alternate dynamically. **Dynamic branch prediction** uses runtime history tables to forecast branch directions:
+
+- **1-bit predictor**: Stores a single bit (Taken or Not Taken) at an entry indexed by the lower bits of the branch instruction $PC$. In a loop that executes 10 times, a 1-bit predictor mispredicts twice: once when exiting the loop (predicts taken, but loop terminates), and once on the first iteration when the loop is entered again (predicts not taken from the previous exit). Accuracy is only $80\%$.
+- **2-bit saturating counter**: Requires two consecutive mispredictions to change its prediction polarity. It operates as a 4-state finite state machine:
+
+| State | Name | Prediction | Next State if Taken | Next State if Not Taken |
+|---|---|---|---|---|
+| **11** | Strongly Taken | Taken | 11 | 10 (Weakly Taken) |
+| **10** | Weakly Taken | Taken | 11 (Strongly Taken) | 01 (Weakly Not Taken) |
+| **01** | Weakly Not Taken | Not Taken | 10 (Weakly Taken) | 00 (Strongly Not Taken) |
+| **00** | Strongly Not Taken | Not Taken | 01 (Weakly Not Taken) | 00 |
+
+When exiting a loop, the 2-bit counter moves from Strongly Taken (11) to Weakly Taken (10). When the loop runs again, it still predicts Taken, achieving over $90\%$ accuracy on loop-heavy workloads.
+
+#### 4. Branch Target Buffer (BTB)
+
+Even if a branch predictor correctly forecasts that a branch is taken during the IF stage, the processor still does not know the target address until it is decoded.
+
+A **Branch Target Buffer** (**BTB**) is a high-speed cache indexed by the current $PC$. Each entry stores the predicted target address and history bits. If the current instruction $PC$ hits in the BTB and is predicted taken, the processor fetches the target address on the very next clock cycle, achieving a **0-cycle branch penalty**.
 
 ## The real CPI
 
-Hazards are why a pipeline's CPI is above its ideal value of 1:
+In an ideal pipeline with no resource contention, no data stalls, and no mispredicted branches, the processor retires one instruction every clock cycle: $\text{CPI}_{\text{ideal}} = 1.0$.
+
+Pipeline hazards increase the actual Cycles Per Instruction ($\text{CPI}$):
 
 $$
-\text{CPI} = 1 + \text{stall cycles per instruction}
+\text{CPI} = \text{CPI}_{\text{ideal}} + \text{Stall}_{\text{structural}} + \text{Stall}_{\text{data}} + \text{Stall}_{\text{control}}
 $$
 
-Suppose 20% of instructions are branches costing 2 cycles when mispredicted, and 10% of those are mispredicted. That's $0.2 \times 0.1 \times 2 = 0.04$ extra cycles, for a CPI of 1.04.
+Let:
+- $f_{\text{load}}$ be the fraction of load instructions.
+- $p_{\text{load\_use}}$ be the probability that a load is followed immediately by a dependent instruction without compiler scheduling (each incurring a 1-cycle load-use stall).
+- $f_{\text{branch}}$ be the fraction of branch instructions.
+- $p_{\text{mispredict}}$ be the branch misprediction rate.
+- $c_{\text{penalty}}$ be the misprediction flush penalty in cycles.
 
-<Callout tone="violet" label="A real-world consequence">
-The famous Spectre security flaw (2018) comes from this. CPUs run predicted instructions before they know if the prediction was right. The results get flushed, but traces remain in the cache, and an attacker can measure those traces. One performance trick, taken together with another, leaked secrets.
+$$
+\text{CPI} = 1.0 + (f_{\text{load}} \times p_{\text{load\_use}} \times 1) + (f_{\text{branch}} \times p_{\text{mispredict}} \times c_{\text{penalty}})
+$$
+
+## Traps and pitfalls
+
+<Callout tone="orange" label="Trap: Forwarding does not eliminate the load-use hazard stall">
+Forwarding eliminates all stalls between back-to-back arithmetic instructions (`ADD` followed by `SUB`). However, forwarding cannot eliminate the stall between a memory load (`LW`) and its immediate dependent consumer because data from memory only becomes available at the end of the MEM stage. The hardware must insert at least one stall cycle unless the compiler separates the instructions.
 </Callout>
+
+<Callout tone="orange" label="Trap: 1-bit branch predictors thrash on loop boundaries">
+A 1-bit branch predictor changes its prediction on every single misprediction. For any loop, it mispredicts both on loop exit and on the first iteration of the subsequent execution. A 2-bit saturating counter prevents this thrashing by absorbing the loop termination misprediction without switching its prediction polarity.
+</Callout>
+
+<Callout tone="violet" label="Real-world consequence: Speculative execution and Spectre">
+To avoid control hazard stalls, modern processors perform **speculative execution**: they predict branch directions and execute dozens of subsequent instructions ahead of time. If the prediction proves wrong, the processor rolls back register changes. However, speculatively executed instructions leave microarchitectural footprints in the L1 cache. The famous **Spectre** vulnerability (2018) exploits this behavior: malicious code coaxes the CPU into speculatively accessing unauthorized memory, and the attacker measures cache access latency to infer secrets.
+</Callout>
+
+## Worked practice problems
+
+### Problem 1: Pipeline hazard identification and execution trace
+
+Consider the following MIPS assembly code sequence:
+
+```assembly
+I1: ADD R1, R2, R3     ; R1 = R2 + R3
+I2: LW  R4, 0(R1)      ; R4 = Memory[R1 + 0]
+I3: SUB R5, R4, R6     ; R5 = R4 - R6
+I4: OR  R7, R1, R8     ; R7 = R1 | R8
+I5: BEQ R5, R7, loop   ; If R5 == R7, branch to loop
+```
+
+For this sequence:
+1. Identify all data dependencies (RAW) and control dependencies between instructions.
+2. Determine the total number of clock cycles required to execute this sequence in a 5-stage pipeline **without forwarding** (hardware stalls only, assuming registers can be read and written in the same cycle via two-phase clocking).
+3. Determine the total number of clock cycles required to execute this sequence in a 5-stage pipeline **with full forwarding hardware** (assuming branch resolution occurs in stage 3, and the branch is not taken).
+4. Show how an optimizing compiler can reschedule these instructions to eliminate all data hazard stalls with forwarding.
+
+<ModelAnswer>
+**Part 1: Dependency analysis:**
+
+- **$I_1 \to I_2$ (RAW on $R_1$):** $I_1$ writes $R_1$; $I_2$ reads $R_1$ as the base address for memory load.
+- **$I_2 \to I_3$ (RAW on $R_4$):** $I_2$ loads $R_4$ from memory; $I_3$ reads $R_4$ as an ALU operand. This is a **load-use hazard**.
+- **$I_1 \to I_4$ (RAW on $R_1$):** $I_1$ writes $R_1$; $I_4$ reads $R_1$ as a logical operand.
+- **$I_3 \to I_5$ (RAW on $R_5$):** $I_3$ writes $R_5$; $I_5$ reads $R_5$ for branch comparison.
+- **$I_4 \to I_5$ (RAW on $R_7$):** $I_4$ writes $R_7$; $I_5$ reads $R_7$ for branch comparison.
+- **Control dependency:** Instructions following $I_5$ depend on the outcome of the branch.
+
+---
+
+**Part 2: Execution without forwarding (stalls only):**
+
+Without forwarding, an instruction cannot enter the ID stage to read an operand until the producing instruction completes WB in stage 5:
+
+- $I_1$ writes $R_1$ in cycle 5 (WB). With two-phase clocking, $I_2$ can read $R_1$ in ID during cycle 5. Thus, $I_2$ stalls in ID during cycles 3 and 4 (2 stall cycles).
+- $I_2$ writes $R_4$ in cycle 9 (WB). $I_3$ reads $R_4$ in ID during cycle 9, stalling in ID during cycles 7 and 8 (2 stall cycles).
+- $I_3$ writes $R_5$ in cycle 13 (WB). $I_5$ needs $R_5$, stalling in ID during cycles 11 and 12 (2 stall cycles).
+- Base unpipelined cycles for 5 instructions: $k + n - 1 = 5 + 5 - 1 = 9\text{ cycles}$.
+- Total stall bubbles added: $2 + 2 + 2 = 6\text{ stall cycles}$.
+- Total cycles without forwarding: $9 + 6 = 15\text{ clock cycles}$.
+
+---
+
+**Part 3: Execution with full forwarding:**
+
+With forwarding:
+- **$I_1 \to I_2$:** $I_1$ produces $R_1$ at the end of EX (cycle 3). $I_2$ needs $R_1$ in EX at cycle 4. Value is forwarded from `EX/MEM` to ALU input with **0 stalls**.
+- **$I_2 \to I_3$ (Load-use hazard):** $I_2$ receives $R_4$ from data memory at the end of MEM (cycle 5). $I_3$ needs $R_4$ at the start of EX (cycle 5). This requires a **1-cycle load-use stall**. In cycle 6, $R_4$ is forwarded from `MEM/WB` to the ALU input.
+- **$I_1 \to I_4$:** $I_1$ has already written back $R_1$; forwarded or read from register file with **0 stalls**.
+- **$I_3 \to I_5$:** $I_3$ produces $R_5$ in EX (cycle 6). $I_5$ enters EX in cycle 8 (due to $I_4$ executing in cycle 7). The value is forwarded from `MEM/WB` with **0 stalls**.
+- Total execution cycles: $5 + (5 - 1) + 1\text{ (load-use stall)} = 10\text{ clock cycles}$.
+
+---
+
+**Part 4: Compiler rescheduling:**
+
+Notice that $I_4$ (`OR R7, R1, R8`) depends only on $R_1$ (which is already ready after $I_1$) and is completely independent of $I_2$ and $I_3$. The compiler moves $I_4$ into the load delay slot between $I_2$ and $I_3$:
+
+```assembly
+I1: ADD R1, R2, R3     ; Writes R1
+I2: LW  R4, 0(R1)      ; Loads R4
+I4: OR  R7, R1, R8     ; Scheduled in load delay slot! Independent of R4
+I3: SUB R5, R4, R6     ; R4 is now available; forwarded with 0 stalls!
+I5: BEQ R5, R7, loop   ; Evaluates branch
+```
+
+By placing $I_4$ in the delay slot, $R_4$ completes its MEM stage while $I_4$ executes in EX. When $I_3$ arrives at EX, $R_4$ is already available in the `MEM/WB` register. The code executes in **9 clock cycles** with **0 stall cycles**.
+</ModelAnswer>
+
+---
+
+### Problem 2: Quantitative CPI evaluation with instruction mix and hazard stalls
+
+An architectural team evaluates a 5-stage pipelined processor running a scientific benchmark with the following instruction mix:
+
+- **ALU operations**: $45\%$ of all instructions (0 stalls with forwarding).
+- **Data Loads (`LW`)**: $25\%$ of all instructions. Profiling indicates that $50\%$ of all load instructions are followed immediately by an instruction that consumes the loaded register (causing a 1-cycle load-use hazard stall).
+- **Data Stores (`SW`)**: $10\%$ of all instructions (0 stalls).
+- **Conditional Branches (`BEQ`/`BNE`)**: $20\%$ of all instructions. The processor uses a 2-bit branch predictor that achieves an $85\%$ prediction accuracy ($15\%$ misprediction rate). Branch resolution occurs in stage 3 (EX), incurring a 2-cycle flush penalty on misprediction.
+- Assume structural stalls are 0 due to split L1 Harvard caches.
+
+Calculate:
+1. The average data hazard stall cycles per instruction.
+2. The average control hazard stall cycles per instruction.
+3. The effective CPI of the processor.
+4. The pipeline efficiency ($\text{CPI}_{\text{ideal}} / \text{CPI}_{\text{actual}} \times 100\%$).
+5. The speedup of this pipelined processor over an unpipelined multicycle implementation with an average CPI of $4.2$ running at the same clock frequency.
+
+<ModelAnswer>
+**Part 1: Average data hazard stall cycles per instruction:**
+
+Data stalls arise exclusively from unhidden load-use hazards:
+
+$$\text{Stall}_{\text{data}} = f_{\text{load}} \times p_{\text{load\_use}} \times \text{Stall Penalty}$$
+
+$$\text{Stall}_{\text{data}} = 0.25 \times 0.50 \times 1\text{ cycle} = 0.125\text{ stall cycles/instruction}$$
+
+---
+
+**Part 2: Average control hazard stall cycles per instruction:**
+
+Control stalls arise from branch mispredictions:
+
+$$\text{Mispredict Rate} = 1.0 - 0.85 = 0.15\ (15\%)$$
+
+$$\text{Stall}_{\text{control}} = f_{\text{branch}} \times p_{\text{mispredict}} \times \text{Mispredict Penalty}$$
+
+$$\text{Stall}_{\text{control}} = 0.20 \times 0.15 \times 2\text{ cycles} = 0.060\text{ stall cycles/instruction}$$
+
+---
+
+**Part 3: Effective CPI:**
+
+$$\text{CPI}_{\text{effective}} = \text{CPI}_{\text{ideal}} + \text{Stall}_{\text{data}} + \text{Stall}_{\text{control}} + \text{Stall}_{\text{structural}}$$
+
+$$\text{CPI}_{\text{effective}} = 1.0 + 0.125 + 0.060 + 0 = 1.185\text{ cycles/instruction}$$
+
+---
+
+**Part 4: Pipeline efficiency:**
+
+$$\text{Efficiency} = \frac{\text{CPI}_{\text{ideal}}}{\text{CPI}_{\text{effective}}} \times 100\% = \frac{1.0}{1.185} \times 100\% \approx 84.39\%$$
+
+The processor operates at approximately $84.4\%$ of its theoretical peak throughput.
+
+---
+
+**Part 5: Speedup over unpipelined multicycle processor:**
+
+At equal clock frequency, speedup is the ratio of CPIs:
+
+$$\text{Speedup} = \frac{\text{CPI}_{\text{unpipelined}}}{\text{CPI}_{\text{pipelined}}} = \frac{4.2}{1.185} \approx 3.544$$
+
+The pipelined processor achieves a $3.54\times$ speedup over the multicycle design.
+</ModelAnswer>
+
+---
+
+## Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="pipeline-hazards"
+  practice
+  questions={[
+    {
+      id: "haz-p1",
+      prompt: "Why does a unified (single-port) memory create a structural hazard in a 5-stage RISC pipeline?",
+      options: [
+        { id: "a", text: "A memory load or store in the MEM stage and an instruction fetch in the IF stage attempt to access memory simultaneously during the same cycle" },
+        { id: "b", text: "The memory bus voltage drops when two arithmetic instructions execute" },
+        { id: "c", text: "Registers cannot hold 32-bit values without memory refresh cycles" },
+        { id: "d", text: "The ALU requires memory access to evaluate branch conditions" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In cycle 4, an earlier instruction in the MEM stage accesses data memory while a later instruction in the IF stage fetches an instruction word. If memory has only one physical port, only one access can proceed, forcing an IF stall. Option (b) describes impossible electrical power sag. Option (c) describes DRAM refresh, not register file storage. Option (d) is false because branch conditions are evaluated inside the CPU datapath.",
+    },
+    {
+      id: "haz-p2",
+      prompt: "Which data hazard cannot be resolved with zero stall cycles by data forwarding alone in a standard 5-stage RISC pipeline?",
+      options: [
+        { id: "a", text: "A memory load immediately followed by an instruction that consumes the loaded register value" },
+        { id: "b", text: "An ADD instruction immediately followed by a SUB instruction reading the sum" },
+        { id: "c", text: "An AND instruction followed two cycles later by an OR instruction" },
+        { id: "d", text: "A store instruction writing data from an ALU result" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A load instruction reads data from memory at the end of the MEM stage (cycle 4). An immediately following instruction needs the operand at the beginning of its EX stage (cycle 4). Forwarding cannot send data backward in time, requiring a mandatory 1-cycle stall. Option (b) is resolved with 0 stalls via EX-to-EX forwarding. Option (c) is resolved with 0 stalls via MEM-to-EX forwarding. Option (d) can forward data directly to the memory data input register.",
+    },
+    {
+      id: "haz-p3",
+      prompt: "How does a 2-bit saturating counter branch predictor prevent the thrashing behavior typical of a 1-bit predictor on loops?",
+      options: [
+        { id: "a", text: "It requires two consecutive mispredictions to flip its prediction direction, so a single loop exit does not invert the prediction for the next run" },
+        { id: "b", text: "It stores two separate destination branch addresses in hardware" },
+        { id: "c", text: "It executes both branch paths simultaneously on dual ALUs" },
+        { id: "d", text: "It converts conditional branches into unconditional jumps" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A 1-bit predictor flips its prediction immediately on the single loop exit misprediction, causing an additional misprediction when the loop is entered next time. A 2-bit counter moves from Strongly Taken to Weakly Taken on loop exit, so it continues predicting Taken on the next loop entry. Option (b) describes a BTB target table, not counter state. Option (c) describes predicated execution or eager execution. Option (d) is impossible for conditional branches.",
+    },
+    {
+      id: "haz-p4",
+      prompt: "What action does a processor's Hazard Detection Unit take when it detects a load-use hazard in the ID stage?",
+      options: [
+        { id: "a", text: "It freezes the Program Counter and IF/ID register, and injects zeros into the ID/EX control signals to insert a bubble" },
+        { id: "b", text: "It resets the CPU and restarts execution from address 0x00000000" },
+        { id: "c", text: "It forces the memory controller to switch from DRAM to SRAM" },
+        { id: "d", text: "It modifies the assembly code in the instruction cache" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: To stall for 1 cycle, the hardware holds the PC and the fetched instruction in IF/ID steady, while inserting 0s (NOP) into ID/EX. This passes a bubble into the execution stage while keeping the dependent instruction waiting in ID. Options (b), (c), and (d) are completely fictitious.",
+    },
+    {
+      id: "haz-p5",
+      prompt: "A 5-stage pipeline has 20% branch instructions. 20% of branches are mispredicted, each incurring a 2-cycle penalty. What is the branch penalty contribution to CPI?",
+      options: [
+        { id: "a", text: "0.08 stall cycles per instruction" },
+        { id: "b", text: "0.40 stall cycles per instruction" },
+        { id: "c", text: "0.04 stall cycles per instruction" },
+        { id: "d", text: "1.08 stall cycles per instruction" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Branch stall cycles per instruction = Branch Frequency × Mispredict Rate × Penalty = 0.20 × 0.20 × 2 = 0.08. Option (b) ignores the 20% misprediction rate (0.20 × 2). Option (c) uses a 10% misprediction rate. Option (d) is the total CPI (1.0 + 0.08), not the branch penalty contribution alone.",
+    },
+  ]}
+/>
