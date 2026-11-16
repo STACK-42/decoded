@@ -23,7 +23,9 @@ import {
   calculatePollingOverhead,
   calculateRegisterWindows,
   calculateSplitTransactionThroughput,
+  checkBernsteinConditions,
   decodeCanonicalAddress48,
+  simulateBranchPredictors,
   simulateDistributedArbitration,
   simulateMesiCoherence,
   simulateTreePlru4Way,
@@ -422,6 +424,45 @@ describe("module 5: pipelining and parallelism", () => {
     expect(steps[3].nextStates).toEqual(["S", "I", "S"]);
     expect(steps[3].busAction).toBe("BusRd");
     expect(steps[3].dataSuppliedBy).toBe("Core 0");
+  });
+
+  it("checks Bernstein conditions for data dependencies", () => {
+    // Case 1: RAW dependency (ADD R1, R2, R3 -> SUB R4, R1, R5)
+    const rawCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R1", "R5"], ["R4"]);
+    expect(rawCheck.raw).toEqual(["R1"]);
+    expect(rawCheck.war).toEqual([]);
+    expect(rawCheck.waw).toEqual([]);
+    expect(rawCheck.canParallelize).toBe(false);
+
+    // Case 2: Independent instructions (ADD R1, R2, R3 and SUB R4, R5, R6)
+    const indepCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R5", "R6"], ["R4"]);
+    expect(indepCheck.raw).toEqual([]);
+    expect(indepCheck.war).toEqual([]);
+    expect(indepCheck.waw).toEqual([]);
+    expect(indepCheck.canParallelize).toBe(true);
+
+    // Case 3: WAR and WAW dependencies
+    const warCheck = checkBernsteinConditions(["R1", "R2"], ["R3"], ["R4", "R5"], ["R1"]);
+    expect(warCheck.war).toEqual(["R1"]);
+    expect(warCheck.canParallelize).toBe(false);
+
+    const wawCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R4", "R5"], ["R1"]);
+    expect(wawCheck.waw).toEqual(["R1"]);
+    expect(wawCheck.canParallelize).toBe(false);
+  });
+
+  it("simulates 1-bit and 2-bit branch predictor loop behavior", () => {
+    // 5 iterations taken, 1 exit (not taken), then another 5 iterations taken
+    const loopOutcomes = [
+      true, true, true, true, false, // loop 1: 4 taken, 1 exit
+      true, true, true, true, false, // loop 2: 4 taken, 1 exit
+    ];
+
+    const res = simulateBranchPredictors(loopOutcomes, 3); // starts strongly taken (11)
+
+    // 2-bit counter avoids flipping on the single loop exit, outperforming 1-bit predictor
+    expect(res.accuracy2BitPercent).toBeGreaterThanOrEqual(res.accuracy1BitPercent);
+    expect(res.steps).toHaveLength(10);
   });
 });
 

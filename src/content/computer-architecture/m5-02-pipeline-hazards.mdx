@@ -39,11 +39,15 @@ Hardware designers eliminate structural hazards by adding hardware resources:
 
 A **data hazard** occurs when the pipeline attempts to read an operand register before a preceding instruction has completed writing its result to that register.
 
-In 1966, computer scientist Arthur Bernstein formulated the conditions for deterministic parallel execution. In pipelined and superscalar processors, data dependencies follow three classical classifications:
+In 1966, computer scientist Arthur Bernstein formulated the conditions for deterministic parallel execution. Let $I_k$ represent an instruction, $R(I_k)$ be the set of registers read by $I_k$ (the input set), and $W(I_k)$ be the set of registers written by $I_k$ (the output set).
 
-- **Read-After-Write (RAW) / True Dependency**: Instruction $j$ reads a register that is written by instruction $i$. Instruction $j$ must receive the updated value, not the stale contents. RAW is the primary data hazard in in-order pipelines.
-- **Write-After-Read (WAR) / Anti-Dependency**: Instruction $j$ writes a register before instruction $i$ reads it. In an in-order 5-stage pipeline, WAR cannot cause errors because instruction $i$ reads in stage 2 (ID) long before instruction $j$ writes in stage 5 (WB). However, WAR is a major hazard in out-of-order execution engines.
-- **Write-After-Write (WAW) / Output Dependency**: Instruction $j$ writes a register before an earlier instruction $i$ writes it. In a standard 5-stage in-order pipeline, writes occur in strict order in WB, but WAW can occur in pipelines with multiple functional units of variable latency (such as an integer ALU finishing in 1 cycle while a floating-point divider takes 15 cycles).
+Two instructions $I_1$ and $I_2$ (where $I_1$ precedes $I_2$ in program order) can execute concurrently or out of order without changing program output if and only if all three of Bernstein's conditions hold:
+
+1. $W(I_1) \cap R(I_2) = \emptyset$ (**Read-After-Write / RAW / True Dependency**): Instruction $I_2$ must not read a register that is written by $I_1$. Instruction $I_2$ requires the computed result of $I_1$. RAW is a true data dependency representing actual data flow through the program; it cannot be eliminated by renaming registers.
+2. $R(I_1) \cap W(I_2) = \emptyset$ (**Write-After-Read / WAR / Anti-Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ has finished reading its prior contents. In an in-order 5-stage pipeline, WAR cannot cause errors because instruction $I_1$ reads operands in stage 2 (ID) long before instruction $I_2$ writes in stage 5 (WB). However, WAR is a serious hazard in out-of-order execution pipelines.
+3. $W(I_1) \cap W(I_2) = \emptyset$ (**Write-After-Write / WAW / Output Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ writes its result, which would leave stale data in the register. In a standard 5-stage in-order pipeline, writes occur in strict sequence during WB, but WAW hazards occur in pipelines with multiple functional units of variable latency (such as a 1-cycle integer ALU alongside a 15-cycle floating-point divider).
+
+WAR and WAW are termed **name dependencies** (or false dependencies). They arise only because the compiler or programmer reused the same register name ($R_1$). In modern out-of-order superscalar processors, the hardware eliminates WAR and WAW hazards entirely through **register renaming**, mapping architectural register names to a larger pool of physical registers.
 
 Consider this RAW dependency sequence:
 
@@ -56,11 +60,11 @@ In an unassisted pipeline, `SUB` enters the ID stage at cycle 2 and reads $R_1$.
 
 ### Resolving RAW data hazards
 
-Hardware and software use three primary techniques to resolve RAW data hazards:
+Hardware and software use four primary techniques to resolve RAW data hazards:
 
 #### 1. Hardware interlocking (stalling)
 
-A dedicated circuit called the **Hazard Detection Unit** monitors instruction register addresses in the ID stage. If it detects that a source register ($rs_1$ or $rs_2$) of the instruction in ID matches the destination register ($rd$) of an instruction in EX, MEM, or WB, the unit stalls the pipeline:
+A dedicated circuit called the **Hazard Detection Unit** monitors instruction register addresses in the ID stage. If it detects that a source register ($rs_1$ or $rs_2$) of the instruction in ID matches the destination register ($rd$) of an instruction currently executing in EX, MEM, or WB, the unit stalls the pipeline:
 
 - It deasserts the $PC$ write enable line, holding the $PC$ steady so the current instruction is refetched.
 - It deasserts the `IF/ID` pipeline register write enable line, preserving the waiting instruction in ID.
@@ -72,17 +76,19 @@ Without forwarding, resolving the `ADD`/`SUB` dependency requires **two stall cy
 
 The fundamental insight of **data forwarding** (or **bypassing**) is that the result of an arithmetic operation physically exists at the output of the ALU at the end of stage 3 (EX), two full cycles before it is written back into the register file in stage 5 (WB).
 
-Rather than waiting for the result to travel through MEM and WB into the register file, hardware designers add bypass buses and multiplexers at the ALU inputs. The **Forwarding Unit** compares register addresses:
+Rather than waiting for the result to travel through MEM and WB into the register file, hardware designers add bypass buses and multiplexers at the ALU inputs. The **Forwarding Unit** compares register addresses and drives the multiplexer select lines:
 
-- **EX Hazard forwarding**: If `EX/MEM.RegisterRd == ID/EX.RegisterRs1`, the ALU result from the previous instruction is forwarded directly from the `EX/MEM` register to the ALU input for the current instruction. This eliminates the stall completely (**0 stall cycles**).
-- **MEM Hazard forwarding**: If `MEM/WB.RegisterRd == ID/EX.RegisterRs1`, the result is forwarded from the `MEM/WB` register to the ALU input.
+- **EX Hazard forwarding**: If `EX/MEM.RegWrite` is asserted, `EX/MEM.RegisterRd != 0`, and `EX/MEM.RegisterRd == ID/EX.RegisterRs1`, the ALU result from the previous instruction is forwarded directly from the `EX/MEM` register to the ALU input for the current instruction. This eliminates the stall completely (**0 stall cycles**).
+- **MEM Hazard forwarding**: If `MEM/WB.RegWrite` is asserted, `MEM/WB.RegisterRd != 0`, and `MEM/WB.RegisterRd == ID/EX.RegisterRs1`, the result is forwarded from the `MEM/WB` register to the ALU input.
+- **Priority rule**: If both an EX hazard and a MEM hazard occur for the same operand (for instance, if two consecutive preceding instructions both update $R_1$), the Forwarding Unit must forward from `EX/MEM`, which contains the most recent value.
+- **Register 0 check**: The condition `RegisterRd != 0` ensures that writes to register 0 (which is hardwired to 0 in MIPS and RISC-V) never trigger false forwarding.
 
-```
-Cycle 1:  [ADD: IF]
-Cycle 2:  [SUB: IF] [ADD: ID]
-Cycle 3:  [SUB: ID] [ADD: EX]  <-- Result generated at ALU output
-Cycle 4:            [SUB: EX]  <-- FORWARDED from EX/MEM to ALU input (0 stalls!)
-```
+The cycle-by-cycle execution table below shows how forwarding eliminates stalls between arithmetic instructions:
+
+| Instruction | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 | Hardware Action |
+|---|---|---|---|---|---|---|
+| `ADD R1, R2, R3` | IF | ID | EX | MEM | WB | ALU generates sum at end of EX (cycle 3) |
+| `SUB R4, R1, R5` | | IF | ID | EX | MEM | Forwarded directly from `EX/MEM` to ALU input (0 stalls) |
 
 #### 3. The load-use hazard: the unavoidable stall
 
@@ -95,15 +101,18 @@ ADD R3, R1, R4     ; Needs R1 at the start of stage 3: EX
 
 The data read from memory by `LW` only becomes available at the end of the MEM stage (cycle 4). The `ADD` instruction requires $R_1$ at the beginning of its EX stage (cycle 4). Forwarding the value would require sending data backward in time from cycle 4 to cycle 3, which is physically impossible.
 
-Therefore, the hardware must insert a mandatory **1-cycle load-use stall**. The Hazard Detection Unit holds `ADD` in ID for one cycle. In cycle 5, the loaded word is forwarded from the `MEM/WB` pipeline register directly into the ALU input:
+Therefore, the hardware must insert a mandatory **1-cycle load-use stall**. The Hazard Detection Unit in the ID stage evaluates:
 
-```
-Cycle 1: [LW:  IF]
-Cycle 2: [ADD: IF] [LW:  ID]
-Cycle 3: [ADD: ID] [LW:  EX]
-Cycle 4: [ADD: ID] [LW:  MEM]  <-- Bubble inserted; data read from cache
-Cycle 5:           [ADD: EX]   <-- FORWARDED from MEM/WB to ALU input (1 stall)
-```
+$$
+\text{if } (\text{ID/EX.MemRead} \land ((\text{ID/EX.RegisterRd} == \text{IF/ID.RegisterRs1}) \lor (\text{ID/EX.RegisterRd} == \text{IF/ID.RegisterRs2})))
+$$
+
+When this condition is true, the Hazard Detection Unit holds `ADD` in ID for one cycle. In cycle 5, the loaded word is forwarded from the `MEM/WB` pipeline register directly into the ALU input:
+
+| Instruction | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 | Cycle 6 | Hardware Action |
+|---|---|---|---|---|---|---|---|
+| `LW R1, 0(R2)` | IF | ID | EX | MEM | WB | | Data read from cache available at end of MEM (cycle 4) |
+| `ADD R3, R1, R4` | | IF | ID | ID (stall) | EX | MEM | Stalls 1 cycle in ID; forwarded from `MEM/WB` to EX in cycle 5 |
 
 #### 4. Compiler instruction scheduling
 
@@ -171,11 +180,19 @@ Modern programs contain branches that alternate dynamically. **Dynamic branch pr
 
 When exiting a loop, the 2-bit counter moves from Strongly Taken (11) to Weakly Taken (10). When the loop runs again, it still predicts Taken, achieving over $90\%$ accuracy on loop-heavy workloads.
 
-#### 4. Branch Target Buffer (BTB)
+#### 4. Branch Target Buffer (BTB) and Return Address Stack (RAS)
 
-Even if a branch predictor correctly forecasts that a branch is taken during the IF stage, the processor still does not know the target address until it is decoded.
+Even if a branch predictor correctly forecasts that a branch is taken during the IF stage, the processor still does not know the target address until the instruction is decoded.
 
-A **Branch Target Buffer** (**BTB**) is a high-speed cache indexed by the current $PC$. Each entry stores the predicted target address and history bits. If the current instruction $PC$ hits in the BTB and is predicted taken, the processor fetches the target address on the very next clock cycle, achieving a **0-cycle branch penalty**.
+A **Branch Target Buffer** (**BTB**) is a high-speed cache indexed by the current instruction $PC$. Each entry stores the predicted target address and history bits. If the current $PC$ hits in the BTB and the branch is predicted taken, the processor fetches the target address on the very next clock cycle, achieving a **0-cycle branch penalty**.
+
+However, a BTB fails on subroutine return instructions (`RET` or `JR $ra`). A utility function like `strlen` or `memcpy` is called from hundreds of different program locations. A BTB entry caches only the return destination of the *most recent* caller. When alternating callers invoke the same function, a BTB mispredicts the return address almost 100% of the time.
+
+To solve this, processors implement a hardware **Return Address Stack** (**RAS**):
+- When a subroutine call instruction (`CALL` or `JAL`) is fetched in IF, the address of the next sequential instruction ($PC + 4$) is pushed onto the top of the RAS.
+- When a subroutine return instruction (`RET` or `JR $ra`) is fetched in IF, the hardware pops the predicted return address directly from the top of the RAS.
+
+Because subroutine calls and returns naturally follow Last-In, First-Out (LIFO) call nesting, a small 16-entry to 32-entry RAS predicts return addresses with over $99\%$ accuracy.
 
 ## The real CPI
 
@@ -206,6 +223,18 @@ Forwarding eliminates all stalls between back-to-back arithmetic instructions (`
 
 <Callout tone="orange" label="Trap: 1-bit branch predictors thrash on loop boundaries">
 A 1-bit branch predictor changes its prediction on every single misprediction. For any loop, it mispredicts both on loop exit and on the first iteration of the subsequent execution. A 2-bit saturating counter prevents this thrashing by absorbing the loop termination misprediction without switching its prediction polarity.
+</Callout>
+
+<Callout tone="orange" label="Trap: Confusing the BTB with the Branch History Table (BHT)">
+Students frequently confuse branch direction prediction with branch target calculation. The Branch History Table (BHT) or 2-bit saturating counter predicts the direction (whether the branch is taken or not taken). The Branch Target Buffer (BTB) predicts the target address (where the branch jumps if taken). To achieve a zero-cycle branch penalty in stage 1 (IF), both structures must work together: the BHT predicts whether to jump, and the BTB supplies the target address before the opcode is decoded.
+</Callout>
+
+<Callout tone="orange" label="Trap: Confusing structural hazards with data hazards">
+A structural hazard is a conflict over physical hardware resources (such as two instructions attempting to access a single memory port in the same cycle). A data hazard is a dependency between computed values (such as an instruction needing the result of an earlier calculation). Adding extra hardware units (like separate instruction and data caches) eliminates structural hazards, but can never eliminate true data dependencies (RAW).
+</Callout>
+
+<Callout tone="orange" label="Trap: Branch delay slot dependencies">
+In architectures with branch delay slots (such as classic MIPS), the instruction in the delay slot executes unconditionally. A frequent mistake is placing an instruction in the delay slot that modifies the registers being compared by the branch. The branch comparison uses the register values from before the branch executes; modifying those registers in the delay slot does not change the branch decision, which confuses developers debugging assembly code.
 </Callout>
 
 <Callout tone="violet" label="Real-world consequence: Speculative execution and Spectre">

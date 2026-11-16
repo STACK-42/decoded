@@ -147,6 +147,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q11",
     quiz: "final-quiz",
+    lesson: "pipelining",
+    section: "how-much-faster",
     prompt: "A 5-stage pipeline runs 20 instructions with no hazards. How many cycles does that take?",
     options: [
       { id: "a", text: "20" },
@@ -155,20 +157,22 @@ export const questions: Question[] = [
       { id: "d", text: "100" },
     ],
     correctOptionId: "b",
-    explanation: "k + n - 1 = 5 + 20 - 1 = 24. The first takes 5, and one finishes per cycle after that.",
+    explanation: "For k pipeline stages and n instructions, the cycle count is k + n - 1 = 5 + 20 - 1 = 24. The first instruction requires 5 cycles to traverse all stages and fill the pipeline; after that, exactly one instruction completes on every subsequent cycle. 20 (a) assumes zero pipeline fill latency, 25 (c) mistakenly adds k + n without subtracting 1, and 100 (d) is the unpipelined execution cost (20 × 5).",
   },
   {
     id: "computer-architecture/final-quiz/q12",
     quiz: "final-quiz",
+    lesson: "pipeline-hazards",
+    section: "2-data-forwarding-bypassing",
     prompt: "Which hazard does forwarding fix, and which remains?",
     options: [
       { id: "a", text: "It fixes all data hazards" },
-      { id: "b", text: "It fixes most data hazards, but a load followed at once by a use still needs one stall" },
+      { id: "b", text: "It fixes most data hazards, but a load followed immediately by a use still requires one stall" },
       { id: "c", text: "It fixes control hazards only" },
       { id: "d", text: "It fixes structural hazards only" },
     ],
     correctOptionId: "b",
-    explanation: "A loaded value only exists after MEM, which is one cycle too late for the next instruction's EX.",
+    explanation: "Data forwarding eliminates stalls between arithmetic instructions by bypassing results directly from the ALU output (EX/MEM) to the ALU input. However, a load instruction only receives data from memory at the end of the MEM stage, which is one cycle too late for an immediately following instruction entering EX. Even with forwarding, a load-use hazard requires a mandatory 1-cycle stall bubble. Forwarding does not eliminate all data hazards (disproving a), and does not resolve control (c) or structural (d) hazards.",
   },
   {
     id: "computer-architecture/final-quiz/q13",

@@ -1042,6 +1042,100 @@ export function simulateMesiCoherence(
   return steps;
 }
 
+/* ------------------- bernstein dependencies & branch prediction ----------- */
+
+export type BernsteinResult = {
+  raw: string[]; // Read-After-Write (true dependencies): i1 writes, i2 reads
+  war: string[]; // Write-After-Read (anti-dependencies): i1 reads, i2 writes
+  waw: string[]; // Write-After-Write (output dependencies): i1 writes, i2 writes
+  canParallelize: boolean;
+};
+
+/** Checks Bernstein's conditions for parallel/reordered execution between two instructions. */
+export function checkBernsteinConditions(
+  i1Reads: string[],
+  i1Writes: string[],
+  i2Reads: string[],
+  i2Writes: string[]
+): BernsteinResult {
+  const raw = i1Writes.filter((w) => i2Reads.includes(w));
+  const war = i1Reads.filter((r) => i2Writes.includes(r));
+  const waw = i1Writes.filter((w) => i2Writes.includes(w));
+  const canParallelize = raw.length === 0 && war.length === 0 && waw.length === 0;
+  return { raw, war, waw, canParallelize };
+}
+
+export type BranchPredictorTrace = {
+  step: number;
+  outcome: boolean; // true = taken, false = not taken
+  pred1Bit: boolean;
+  pred2Bit: boolean;
+  state1Bit: boolean; // true = taken, false = not taken
+  state2Bit: 0 | 1 | 2 | 3; // 00: Strongly Not Taken, 01: Weakly Not Taken, 10: Weakly Taken, 11: Strongly Taken
+  correct1Bit: boolean;
+  correct2Bit: boolean;
+};
+
+export type BranchPredictorResult = {
+  steps: BranchPredictorTrace[];
+  accuracy1BitPercent: number;
+  accuracy2BitPercent: number;
+};
+
+/** Simulates 1-bit and 2-bit saturating counter branch predictors on a sequence of branch outcomes. */
+export function simulateBranchPredictors(
+  outcomes: boolean[],
+  initial2BitState: 0 | 1 | 2 | 3 = 3 // 3 = Strongly Taken (11)
+): BranchPredictorResult {
+  let state1Bit = true; // initially Taken
+  let state2Bit = initial2BitState;
+
+  const steps: BranchPredictorTrace[] = [];
+  let correct1Bit = 0;
+  let correct2Bit = 0;
+
+  outcomes.forEach((outcome, idx) => {
+    const pred1 = state1Bit;
+    const pred2 = state2Bit >= 2; // 2 or 3 = Taken; 0 or 1 = Not Taken
+
+    const is1Correct = pred1 === outcome;
+    const is2Correct = pred2 === outcome;
+
+    if (is1Correct) correct1Bit++;
+    if (is2Correct) correct2Bit++;
+
+    // update 1-bit predictor
+    const priorState1 = state1Bit;
+    state1Bit = outcome;
+
+    // update 2-bit saturating counter
+    const priorState2 = state2Bit;
+    if (outcome) {
+      // taken: saturate toward 3
+      if (state2Bit < 3) (state2Bit as number)++;
+    } else {
+      // not taken: saturate toward 0
+      if (state2Bit > 0) (state2Bit as number)--;
+    }
+
+    steps.push({
+      step: idx + 1,
+      outcome,
+      pred1Bit: pred1,
+      pred2Bit: pred2,
+      state1Bit: priorState1,
+      state2Bit: priorState2,
+      correct1Bit: is1Correct,
+      correct2Bit: is2Correct,
+    });
+  });
+
+  const accuracy1BitPercent = (correct1Bit / outcomes.length) * 100;
+  const accuracy2BitPercent = (correct2Bit / outcomes.length) * 100;
+
+  return { steps, accuracy1BitPercent, accuracy2BitPercent };
+}
+
 
 
 
