@@ -492,6 +492,28 @@ describe("module 5: pipelining and parallelism", () => {
     expect(opt.optimalStages).toBeLessThan(45);
     expect(opt.optimalClockPeriodPs).toBeGreaterThan(20);
     expect(opt.optimalCpi).toBeGreaterThan(1.0);
+
+    // Problem 4 parameters: D = 1200 ps, Treg = 30 ps, branch = 20%, mispredict = 15%
+    const prob4 = calculateOptimalPipelineStages({
+      combinationalDelayPs: 1200,
+      registerDelayPs: 30,
+      branchFrequency: 0.20,
+      branchMispredictRate: 0.15,
+      penaltyFn: (k) => Math.max(1, Math.ceil(k / 2) - 1),
+      maxStagesToTest: 60,
+    });
+    // Integer minimum occurs at k = 50 stages
+    expect(prob4.optimalStages).toBe(50);
+    expect(prob4.optimalClockPeriodPs).toBe(54);
+    expect(prob4.optimalCpi).toBeCloseTo(1.72, 2);
+    expect(prob4.optimalTimePerInstructionPs).toBeCloseTo(92.88, 2);
+
+    // Stage 48 evaluation from problem table
+    const eval48 = prob4.stageEvaluations.find((e) => e.stages === 48);
+    expect(eval48).toBeDefined();
+    expect(eval48!.clockPeriodPs).toBe(55);
+    expect(eval48!.cpi).toBeCloseTo(1.69, 2);
+    expect(eval48!.timePerInstructionPs).toBeCloseTo(92.95, 2);
   });
 
   it("calculates forwarding unit multiplexer control signals and resolves double hazards", () => {

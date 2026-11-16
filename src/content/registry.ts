@@ -846,7 +846,7 @@ export const courses: Course[] = [
       "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
     accent: "violet",
     status: "available",
-    rounds: 4,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

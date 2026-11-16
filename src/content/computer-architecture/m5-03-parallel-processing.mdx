@@ -32,7 +32,7 @@ In 1974, Robert Dennard observed that as transistor dimensions shrink by a facto
 
 For thirty years, Dennard scaling let engineers increase clock speeds every generation without overheating chips.
 
-Around 2004, this rule broke down. Gate insulating layers had thinned to about $1.2\text{ nm}$ (only four or five atoms thick). Electrons began leaking through the thin gates even when turned off. Operating voltage could not safely drop below roughly $0.7\text{ V}$ without electrical noise corrupting logic levels.
+Around 2004, this rule broke down. Gate insulating layers had thinned to about $1.2\text{ nm}$ (only four or five atoms thick). Electrons began leaking through the thin gates even when turned off. Operating voltage could not safely drop below roughly $0.7\text{ V}$. Transistors require a minimum threshold voltage ($V_{th}$) to turn off cleanly. Lowering $V_{th}$ causes subthreshold leakage current to increase exponentially, consuming unacceptable standby power even when idle. Lowering supply voltage without lowering $V_{th}$ degrades switching speed and leaves logic signals vulnerable to electrical noise.
 
 With voltage stuck between $0.8\text{ V}$ and $1.1\text{ V}$, increasing clock frequency caused power and heat to climb sharply. Chips reached $100\text{ to }150\text{ W/cm}^2$, the cooling limit of copper heatsinks and air fans.
 
@@ -53,7 +53,7 @@ This classification produces four fundamental architectural categories:
 | **MISD** (Multiple Instruction, Single Data) | Multiple processors execute different instructions on the same data stream | Fault-tolerant redundant systems (Space Shuttle computers), systolic arrays | Spacecraft voting systems, experimental signal filtering |
 | **MIMD** (Multiple Instruction, Multiple Data) | Multiple autonomous processors execute distinct instructions on distinct data streams | Multicore PCs, multi-socket enterprise servers, cloud clusters | Operating systems, servers, general parallel workloads |
 
-MISD is rarely used in standard computing because executing multiple distinct instructions on a single stream of data is seldom useful. Its primary real-world application is fault-tolerant redundancy: in the Space Shuttle primary flight software, four independent computers executed different implementations of flight control logic on identical telemetry sensor data, voting on output actuator commands to survive software and hardware faults. Another example is systolic arrays, where data streams through an array of pipelined arithmetic cells that perform successive filtering stages.
+MISD is rarely used in standard computing because executing multiple distinct instructions on a single stream of data is seldom useful. Its primary real-world application is fault-tolerant redundancy: in the Space Shuttle primary flight software, four independent computers executed different implementations of flight control logic on identical telemetry sensor data, voting on output actuator commands to survive software and hardware faults (though physically each computer ran as an independent processor, conceptually they acted as multiple instruction streams processing a single telemetry stream). Another example is systolic arrays, where data streams through an array of pipelined arithmetic cells that perform successive filtering stages.
 
 ## SIMD: one instruction, many values
 
@@ -128,7 +128,7 @@ The industry-standard **MESI protocol** (also known as the Illinois protocol) as
 |---|---|---|---|---|
 | **M** | Modified | The cache block is present only in this cache and has been modified (dirty relative to DRAM). Must be written back to memory when evicted. | Yes | No |
 | **E** | Exclusive | The cache block is present only in this cache and is clean (matches DRAM). Can be written silently without bus activity. | No | No |
-| **S** | Shared | The cache block may be present in other CPU caches. It is clean (matches DRAM). Writing requires broadcasting an invalidation. | No | Yes |
+| **S** | Shared | The cache block may be present in other CPU caches. It is clean (matches DRAM). Writing requires broadcasting an invalidation. In standard MESI, evictions from state S are silent (no bus notification); a core still broadcasts an invalidation before writing to guarantee exclusive access. | No | Yes |
 | **I** | Invalid | The cache line does not contain valid data. Reading it causes a cache miss. | No | N/A |
 
 Some architectures (such as AMD Opteron/EPYC and ARM) extend MESI to **MOESI** by adding an **Owner (O)** state. In MOESI, a core holding a dirty line can share read-only copies with other caches without first writing the block back to slow DRAM; the Owner core retains responsibility for eventually writing the modified data back to memory when evicted.
@@ -358,9 +358,9 @@ Trace the state of block `X` in each core's cache and record the resulting bus t
 **Step 2: Core 1 reads address `X`**
 - Prior states: Core 0: `E`, Core 1: `I`, Core 2: `I`.
 - Action: Core 1 misses and broadcasts a `BusRd` transaction on the bus.
-- Snooping: Core 0 detects the read request for a block it holds in state `E`. Core 0 asserts the shared line on the bus and downgrades its state to **Shared (S)**.
+- Snooping: Core 0 detects the read request for a block it holds in state `E`. Core 0 asserts the dedicated wired-OR `SHARED` line on the snooping bus to signal that another cache holds the block, and downgrades its state to **Shared (S)**.
 - Data supplier: Main memory (or Core 0 via cache-to-cache transfer) supplies the block.
-- Transition: Core 1 loads the block and transitions to **Shared (S)**.
+- Transition: Because the `SHARED` bus wire is asserted, Core 1 loads the block and transitions to **Shared (S)** (instead of Exclusive).
 - Next states: Core 0: **`S`**, Core 1: **`S`**, Core 2: **`I`**.
 
 ---
@@ -456,7 +456,7 @@ A symmetric shared-bus snooping protocol cannot scale to a 16-node NUMA multipro
 
 Each cache block entry in a node's local directory contains:
 - **State**: `Uncached` (`U`), `Shared` (`S`), or `Exclusive` (`E`).
-- **Sharer Mask**: A 16-bit vector $\{b_{15}, \dots, b_0\}$ where bit $b_i = 1$ if Node $i$ currently caches a copy of the block.
+- **Sharer Mask**: A 16-bit vector $\{b_{15}, \dots, b_0\}$ where bit $b_i = 1$ (value $2^i$) if Node $i$ currently caches a copy of the block (e.g. Node 1 corresponds to $2^1 = 0\text{x}0002$, Node 4 to $2^4 = 0\text{x}0010$, and Node 7 to $2^7 = 0\text{x}0080$).
 
 Initially, cache block address `0x9000` belongs to **Node 0** (the home node), and its directory state is **`U`** with mask `0x0000`.
 
@@ -534,6 +534,8 @@ struct alignas(64) PaddedCounter {
 };
 PaddedCounter counters[4];
 ```
+*(In C++, `alignas(64)` forces the compiler to pad `sizeof(PaddedCounter)` to a multiple of 64 bytes, ensuring every element in an array begins on an independent 64-byte cache line. The explicit `padding[56]` illustrates the internal byte layout).*
+
 With padding, each thread writes exclusively to its private cache line (100% L1 cache hits after initial load).
 
 Calculate:
@@ -622,6 +624,8 @@ $$\text{Cycles}_{\text{scalar}} = 2048 + 1024 = 3,072\text{ clock cycles}$$
 
 Because divergence occurs in essentially $100\%$ of vectors, the SIMD unit must execute both Path A (4 cycles) with mask $M_1$ and Path B (2 cycles) with inverted mask $\neg M_1$:
 $$\text{Cycles per vector} = t_{\text{Path A}} + t_{\text{Path B}} = 4 + 2 = 6\text{ cycles}$$
+
+*(This model evaluates the floating-point arithmetic of the divergent execution paths under mask registers, omitting the single-cycle vector comparison instruction `vcmpps` and vector memory transfers to isolate the branch divergence serialization penalty).*
 
 Total SIMD execution cycles across all 64 vectors:
 $$\text{Cycles}_{\text{SIMD}} = 64\text{ vectors} \times 6\text{ cycles/vector} = 384\text{ clock cycles}$$

@@ -41,11 +41,11 @@ A **data hazard** occurs when the pipeline attempts to read an operand register 
 
 In 1966, computer scientist Arthur Bernstein formulated the conditions for deterministic parallel execution. Let $I_k$ represent an instruction, $R(I_k)$ be the set of registers read by $I_k$ (the input set), and $W(I_k)$ be the set of registers written by $I_k$ (the output set).
 
-Two instructions $I_1$ and $I_2$ (where $I_1$ comes before $I_2$ in program order) can run at the same time or out of order without altering the result if and only if all three of Bernstein's conditions hold:
+Two instructions $I_1$ and $I_2$ (where $I_1$ comes before $I_2$ in program order) can run at the same time or out of order without altering the result if and only if all three of Bernstein's conditions hold (all three intersections are empty):
 
-1. $W(I_1) \cap R(I_2) = \emptyset$ (**Read-After-Write / RAW / True Dependency**): Instruction $I_2$ must not read a register written by $I_1$. Instruction $I_2$ requires the computed result of $I_1$. This is a true data dependency: data flows from one instruction to the next, so renaming registers cannot eliminate it.
-2. $R(I_1) \cap W(I_2) = \emptyset$ (**Write-After-Read / WAR / Anti-Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ finishes reading it. In a simple in-order 5-stage pipeline, WAR never causes an error because $I_1$ reads in stage 2 (ID) before $I_2$ writes in stage 5 (WB). But WAR becomes a real hazard in processors that execute instructions out of order.
-3. $W(I_1) \cap W(I_2) = \emptyset$ (**Write-After-Write / WAW / Output Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ writes to it. In an in-order pipeline, writes always finish in program order. But WAW hazards occur when stages have different lengths (for example, a 1-cycle integer add next to a 15-cycle floating-point divide).
+1. $W(I_1) \cap R(I_2) = \emptyset$ (No **Read-After-Write / RAW / True Dependency**): Instruction $I_2$ must not read a register written by $I_1$. If $W(I_1) \cap R(I_2) \ne \emptyset$, a RAW hazard occurs: $I_2$ requires the computed value of $I_1$. This is a true data dependency: data flows from one instruction to the next, so renaming registers cannot eliminate it.
+2. $R(I_1) \cap W(I_2) = \emptyset$ (No **Write-After-Read / WAR / Anti-Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ finishes reading it. In a simple in-order 5-stage pipeline, WAR never causes an error because $I_1$ reads in stage 2 (ID) before $I_2$ writes in stage 5 (WB). But WAR becomes a real hazard in processors that execute instructions out of order.
+3. $W(I_1) \cap W(I_2) = \emptyset$ (No **Write-After-Write / WAW / Output Dependency**): Instruction $I_2$ must not overwrite a register before $I_1$ writes to it. In an in-order pipeline, writes always finish in program order. But WAW hazards occur when stages have different lengths (for example, a 1-cycle integer add next to a 15-cycle floating-point divide).
 
 WAR and WAW are **name dependencies** (or false dependencies). They exist only because the program reused a register name ($R_1$). Out-of-order processors eliminate them with **register renaming**, which maps program register names to a larger pool of physical registers.
 
@@ -82,6 +82,7 @@ Instead of waiting for write-back, the hardware adds bypass wires and multiplexe
 - **MEM Hazard forwarding**: If `MEM/WB.RegWrite` is true, `MEM/WB.RegisterRd != 0`, and `MEM/WB.RegisterRd == ID/EX.RegisterRs1`, the value is forwarded from `MEM/WB` to the ALU input.
 - **Priority rule**: If both an EX hazard and a MEM hazard involve the same register, the unit forwards from `EX/MEM`, which holds the newer value.
 - **Register 0 check**: Checking `RegisterRd != 0` ensures writes to register 0 (always zero in MIPS and RISC-V) do not trigger false forwards.
+- **Operand 2 symmetry**: Identical symmetric comparison logic checks `ID/EX.RegisterRs2` against `EX/MEM.RegisterRd` and `MEM/WB.RegisterRd` to control the second ALU input multiplexer (`ForwardB`).
 
 The cycle-by-cycle execution table below shows how forwarding eliminates stalls between arithmetic instructions:
 
@@ -106,6 +107,8 @@ So the processor must insert a **1-cycle load-use stall**. The Hazard Detection 
 $$
 \text{if } (\text{ID/EX.MemRead} \land ((\text{ID/EX.RegisterRd} == \text{IF/ID.RegisterRs1}) \lor (\text{ID/EX.RegisterRd} == \text{IF/ID.RegisterRs2})))
 $$
+
+*(In RISC-V notation, destination registers are always denoted `rd`. In MIPS notation, because `LW` is an I-type instruction whose destination register is stored in the `rt` field, textbooks write this condition as `ID/EX.RegisterRt == IF/ID.RegisterRs` or `ID/EX.RegisterRt == IF/ID.RegisterRt`. Both denote the same check: is the memory load destination register read by the instruction currently in decode?)*
 
 When this condition is true, the Hazard Detection Unit holds `ADD` in ID for one cycle. In cycle 5, the loaded word is forwarded from the `MEM/WB` pipeline register directly into the ALU input:
 
@@ -275,24 +278,28 @@ For this sequence:
 
 **Part 2: Execution without forwarding (stalls only):**
 
-Without forwarding, an instruction cannot enter the ID stage to read an operand until the producing instruction completes WB in stage 5:
+Without forwarding, an instruction cannot enter the ID stage to read an operand until the producing instruction completes WB in stage 5. With two-phase clocking, the writing instruction updates the register file during the first half of the cycle, and the reading instruction samples the updated value during the second half of that same cycle:
 
-- $I_1$ writes $R_1$ in cycle 5 (WB). With two-phase clocking, $I_2$ can read $R_1$ in ID during cycle 5. Thus, $I_2$ stalls in ID during cycles 3 and 4 (2 stall cycles).
-- $I_2$ writes $R_4$ in cycle 9 (WB). $I_3$ reads $R_4$ in ID during cycle 9, stalling in ID during cycles 7 and 8 (2 stall cycles).
-- $I_3$ writes $R_5$ in cycle 13 (WB). $I_5$ needs $R_5$, stalling in ID during cycles 11 and 12 (2 stall cycles).
-- Base unpipelined cycles for 5 instructions: $k + n - 1 = 5 + 5 - 1 = 9\text{ cycles}$.
-- Total stall bubbles added: $2 + 2 + 2 = 6\text{ stall cycles}$.
+- **$I_1$ (`ADD R1, R2, R3`)**: IF in cycle 1, ID in cycle 2, EX in cycle 3, MEM in cycle 4, WB in cycle 5 (writes $R_1$).
+- **$I_2$ (`LW R4, 0(R1)`)**: IF in cycle 2. Enters ID in cycle 3 but needs $R_1$, which is still in EX ($I_1$). Stalls in ID during cycles 3 and 4 (2 bubbles). In cycle 5, $I_1$ writes $R_1$ in the first half of the cycle, and $I_2$ reads $R_1$ in the second half. $I_2$ proceeds: EX in cycle 6, MEM in cycle 7, WB in cycle 8 (writes $R_4$).
+- **$I_3$ (`SUB R5, R4, R6`)**: IF in cycle 5. Enters ID in cycle 6 but needs $R_4$, which is still in EX ($I_2$). Stalls in ID during cycles 6 and 7 (2 bubbles). In cycle 8, $I_2$ writes $R_4$ in the first half of the cycle, and $I_3$ reads $R_4$ in the second half. $I_3$ proceeds: EX in cycle 9, MEM in cycle 10, WB in cycle 11 (writes $R_5$).
+- **$I_4$ (`OR R7, R1, R8`)**: IF in cycle 8, ID in cycle 9 (needs $R_1$, which was written in cycle 5; reads immediately with **0 stalls**), EX in cycle 10, MEM in cycle 11, WB in cycle 12 (writes $R_7$).
+- **$I_5$ (`BEQ R5, R7, loop`)**: IF in cycle 9. Enters ID in cycle 10 but needs $R_5$ (produced by $I_3$, currently in MEM) and $R_7$ (produced by $I_4$, currently in EX). Stalls in ID during cycles 10 and 11 (2 bubbles). In cycle 12, $I_4$ writes $R_7$, and $I_5$ reads both $R_5$ and $R_7$ in the second half of cycle 12. $I_5$ proceeds: EX in cycle 13, MEM in cycle 14, WB in cycle 15.
+
+Summary:
+- Base cycles for 5 instructions: $k + n - 1 = 5 + 5 - 1 = 9\text{ cycles}$.
+- Total stall bubbles added: $2\ (I_2) + 2\ (I_3) + 2\ (I_5) = 6\text{ stall cycles}$.
 - Total cycles without forwarding: $9 + 6 = 15\text{ clock cycles}$.
 
 ---
 
 **Part 3: Execution with full forwarding:**
 
-With forwarding:
-- **$I_1 \to I_2$:** $I_1$ produces $R_1$ at the end of EX (cycle 3). $I_2$ needs $R_1$ in EX at cycle 4. Value is forwarded from `EX/MEM` to ALU input with **0 stalls**.
-- **$I_2 \to I_3$ (Load-use hazard):** $I_2$ receives $R_4$ from data memory at the end of MEM (cycle 5). $I_3$ needs $R_4$ at the start of EX (cycle 5). This requires a **1-cycle load-use stall**. In cycle 6, $R_4$ is forwarded from `MEM/WB` to the ALU input.
-- **$I_1 \to I_4$:** $I_1$ has already written back $R_1$; forwarded or read from register file with **0 stalls**.
-- **$I_3 \to I_5$:** $I_3$ produces $R_5$ in EX (cycle 6). $I_5$ enters EX in cycle 8 (due to $I_4$ executing in cycle 7). The value is forwarded from `MEM/WB` with **0 stalls**.
+With forwarding hardware enabled:
+- **$I_1 \to I_2$ on $R_1$:** $I_1$ produces $R_1$ at the end of EX (cycle 3). In cycle 4, $I_2$ enters EX and receives $R_1$ forwarded directly from `EX/MEM` to the ALU input with **0 stalls**.
+- **$I_2 \to I_3$ on $R_4$ (Load-use hazard):** $I_2$ receives $R_4$ from data memory at the end of MEM (cycle 5). $I_3$ needs $R_4$ at the start of EX (cycle 5). Because data cannot travel backward in time, $I_3$ must stall in ID for **1 cycle** (cycle 5). In cycle 6, $I_3$ enters EX, and $R_4$ is forwarded directly from `MEM/WB` to the ALU input.
+- **$I_1 \to I_4$ on $R_1$:** $I_1$ wrote $R_1$ back to the register file in cycle 5; $I_4$ reads $R_1$ directly in ID (cycle 6) with **0 stalls**.
+- **$I_3 \to I_5$ (on $R_5$) and $I_4 \to I_5$ (on $R_7$):** $I_3$ computes $R_5$ in EX at cycle 6 (and traverses MEM at cycle 7). $I_4$ computes $R_7$ in EX at cycle 7. When $I_5$ enters EX in cycle 8 to evaluate the branch condition, $R_5$ is forwarded from `MEM/WB` and $R_7$ is forwarded from `EX/MEM` to the branch comparator with **0 stalls**.
 - Total execution cycles: $5 + (5 - 1) + 1\text{ (load-use stall)} = 10\text{ clock cycles}$.
 
 ---
@@ -594,20 +601,22 @@ In a strict in-order pipeline:
 
 **Part 3: Register renaming resolution:**
 
-The processor maintains a pool of physical registers ($P_0, P_1, P_2, \dots$). When instructions are decoded, the Register Alias Table (RAT) maps architectural registers to distinct physical registers:
+The processor maintains a pool of physical registers ($P_0, P_1, P_2, \dots$). Initially, architectural registers map 1-to-1 to base physical registers ($F_0 \to P_0, F_2 \to P_2, F_4 \to P_4, F_6 \to P_6, F_8 \to P_8, F_{10} \to P_{10}, F_{14} \to P_{14}$).
+
+When instructions are decoded, the Register Alias Table (RAT) allocates a fresh, unused physical register from the free pool for every destination register written:
 
 | Instruction | Architectural Code | Renamed Physical Instruction | Notes |
 | :--- | :--- | :--- | :--- |
-| **$I_1$** | `DIV.D F0, F2, F4` | `DIV.D P10, P2, P4` | `F0` mapped to $P_{10}$ |
-| **$I_2$** | `ADD.D F6, F0, F8` | `ADD.D P11, P10, P8` | `F6` mapped to $P_{11}$; reads $P_{10}$ and $P_8$ |
-| **$I_3$** | `SUB.D F8, F10, F14` | `SUB.D P12, P10_orig, P14` | `F8` mapped to **new** physical register $P_{12}$! |
-| **$I_4$** | `MUL.D F6, F10, F8` | `MUL.D P13, P10_orig, P12` | `F6` mapped to **new** physical register $P_{13}$! Reads $P_{12}$ |
+| **$I_1$** | `DIV.D F0, F2, F4` | `DIV.D P20, P2, P4` | Destination `F0` mapped to fresh physical register $P_{20}$ |
+| **$I_2$** | `ADD.D F6, F0, F8` | `ADD.D P21, P20, P8` | Destination `F6` mapped to $P_{21}$; reads $P_{20}$ and $P_8$ |
+| **$I_3$** | `SUB.D F8, F10, F14` | `SUB.D P22, P10, P14` | Destination `F8` mapped to fresh physical register $P_{22}$! Reads $P_{10}$ and $P_{14}$ |
+| **$I_4$** | `MUL.D F6, F10, F8` | `MUL.D P23, P10, P22` | Destination `F6` mapped to fresh physical register $P_{23}$! Reads $P_{10}$ and $P_{22}$ |
 
 **Resulting execution flow:**
-1. **WAR eliminated**: $I_3$ writes to physical register $P_{12}$, leaving $P_8$ undisturbed. $I_2$ will read the original value from $P_8$ whenever it executes, with zero conflict.
-2. **WAW eliminated**: $I_4$ writes to physical register $P_{13}$, while $I_2$ writes to $P_{11}$. Both results are preserved independently.
-3. **Out-of-order progress**: Because $I_3$ has its operands ready, it issues immediately to a reservation station on cycle 2, finishes in cycle 4, and forwards $P_{12}$ to $I_4$. $I_4$ finishes in cycle 8.
-4. Both $I_3$ and $I_4$ execute and complete entirely while $I_1$ is still computing its division in the floating-point unit, achieving near-optimal Instruction-Level Parallelism (ILP).
+1. **WAR eliminated**: $I_3$ writes to newly allocated physical register $P_{22}$, leaving physical register $P_8$ undisturbed. When $I_2$ eventually executes, it reads the original operand value from $P_8$ with zero conflict.
+2. **WAW eliminated**: $I_4$ writes to physical register $P_{23}$, while $I_2$ writes to $P_{21}$. Both results are preserved in their distinct physical registers without overwrite.
+3. **Out-of-order progress**: Because $I_3$'s operands ($P_{10}$ and $P_{14}$) are already available at decode time, $I_3$ does not wait for $I_1$ or $I_2$; it issues immediately to an available reservation station in cycle 2, finishes in cycle 4, and forwards $P_{22}$ directly to $I_4$. $I_4$ issues on cycle 4 and completes on cycle 8.
+4. Both $I_3$ and $I_4$ execute and finish entirely while $I_1$ is still computing its division in the floating-point divider, achieving near-optimal Instruction-Level Parallelism (ILP).
 </ModelAnswer>
 
 ---

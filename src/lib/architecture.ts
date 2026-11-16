@@ -1206,6 +1206,7 @@ export function calculateOptimalPipelineStages(params: {
   branchFrequency: number;
   branchMispredictRate: number;
   branchPenaltyRatio?: number; // stage penalty fraction (e.g. 0.4 means penalty = Math.round(0.4 * k))
+  penaltyFn?: (k: number) => number;
   maxStagesToTest?: number;
 }): {
   optimalStages: number;
@@ -1236,7 +1237,9 @@ export function calculateOptimalPipelineStages(params: {
   for (let k = 1; k <= maxStages; k++) {
     const clockPeriodPs = params.combinationalDelayPs / k + params.registerDelayPs;
     // Base CPI is 1.0. Branch penalty cycles scale roughly with pipeline depth to branch resolution stage
-    const penaltyCycles = Math.max(1, Math.round(penaltyRatio * (k - 1)));
+    const penaltyCycles = params.penaltyFn
+      ? params.penaltyFn(k)
+      : Math.max(1, Math.round(penaltyRatio * (k - 1)));
     const branchStall = params.branchFrequency * params.branchMispredictRate * penaltyCycles;
     const cpi = 1.0 + branchStall;
     const timePerInstructionPs = cpi * clockPeriodPs;
