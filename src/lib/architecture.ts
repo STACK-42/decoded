@@ -564,6 +564,93 @@ export function calculateBusBandwidth(
   };
 }
 
+/** Calculates maximum bus clock frequency constrained by propagation delay, setup time, clock-to-output, and clock skew. */
+export function calculateBusClockSkewLimit(
+  tPropNs: number,
+  tSetupNs: number,
+  tCoNs: number,
+  tSkewNs: number
+): {
+  minClockPeriodNs: number;
+  maxClockFrequencyMHz: number;
+} {
+  const minClockPeriodNs = tPropNs + tSetupNs + tCoNs + tSkewNs;
+  const maxClockFrequencyMHz = 1000 / minClockPeriodNs;
+  return {
+    minClockPeriodNs,
+    maxClockFrequencyMHz,
+  };
+}
+
+/** Calculates throughput and speedup for split-transaction (pipelined) bus vs conventional circuit-switched bus. */
+export function calculateSplitTransactionThroughput(
+  busWidthBytes: number,
+  busClockHz: number,
+  requestCycles: number,
+  responseCycles: number,
+  memoryLatencyCycles: number
+): {
+  circuitSwitchedCycles: number;
+  circuitSwitchedThroughputMBps: number;
+  circuitSwitchedEfficiencyPercent: number;
+  splitCycles: number;
+  splitThroughputMBps: number;
+  splitEfficiencyPercent: number;
+  speedup: number;
+} {
+  const dataBytes = busWidthBytes * responseCycles;
+  const circuitSwitchedCycles = requestCycles + memoryLatencyCycles + responseCycles;
+  const circuitSwitchedSec = circuitSwitchedCycles / busClockHz;
+  const circuitSwitchedThroughputMBps = dataBytes / 1e6 / circuitSwitchedSec;
+  const circuitSwitchedEfficiencyPercent = (responseCycles / circuitSwitchedCycles) * 100;
+
+  const splitCycles = requestCycles + responseCycles;
+  const splitSec = splitCycles / busClockHz;
+  const splitThroughputMBps = dataBytes / 1e6 / splitSec;
+  const splitEfficiencyPercent = (responseCycles / splitCycles) * 100;
+
+  const speedup = splitThroughputMBps / circuitSwitchedThroughputMBps;
+  return {
+    circuitSwitchedCycles,
+    circuitSwitchedThroughputMBps,
+    circuitSwitchedEfficiencyPercent,
+    splitCycles,
+    splitThroughputMBps,
+    splitEfficiencyPercent,
+    speedup,
+  };
+}
+
+/** Evaluates UART / I/O FIFO buffer overrun margin under maximum interrupt service latency. */
+export function calculateFifoOverrunMargin(
+  baudRate: number,
+  bitsPerByte: number,
+  maxLatencySec: number,
+  fifoCapacity: number,
+  triggerThreshold: number
+): {
+  byteArrivalIntervalSec: number;
+  bytesArrivedDuringLatency: number;
+  headroomBytes: number;
+  isOverrun: boolean;
+  remainingMarginBytes: number;
+} {
+  const byteRate = baudRate / bitsPerByte;
+  const byteArrivalIntervalSec = 1 / byteRate;
+  const bytesArrivedDuringLatency = Math.ceil(maxLatencySec * byteRate);
+  const headroomBytes = fifoCapacity - triggerThreshold;
+  const isOverrun = bytesArrivedDuringLatency > headroomBytes;
+  const remainingMarginBytes = headroomBytes - bytesArrivedDuringLatency;
+  return {
+    byteArrivalIntervalSec,
+    bytesArrivedDuringLatency,
+    headroomBytes,
+    isOverrun,
+    remainingMarginBytes,
+  };
+}
+
+
 
 
 

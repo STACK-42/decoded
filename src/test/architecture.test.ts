@@ -4,15 +4,18 @@ import {
   amdahl,
   calculateAmdahlRequiredSpeedup,
   calculateBusBandwidth,
+  calculateBusClockSkewLimit,
   calculateCacheOverhead,
   calculateControlStoreSize,
   calculateDmaTransfer,
   calculateDramRefreshOverhead,
+  calculateFifoOverrunMargin,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
   calculatePageTableOverhead,
   calculatePollingOverhead,
   calculateRegisterWindows,
+  calculateSplitTransactionThroughput,
   decodeCanonicalAddress48,
   simulateTreePlru4Way,
   cpi,
@@ -235,6 +238,45 @@ describe("module 4 calculations", () => {
     expect(res.peakBandwidthMBps).toBeCloseTo(264, 0); // 4 * 66 = 264 MB/s
     expect(res.effectiveBandwidthMBps).toBeCloseTo(66, 0); // 264 / 4 = 66 MB/s
     expect(res.efficiencyPercent).toBeCloseTo(25, 0); // 25% efficiency
+  });
+
+  it("calculates bus clock skew limits and maximum frequency", () => {
+    // tProp = 5.85 ns, tSetup = 3.5 ns, tCo = 4.0 ns, tSkew = 1.8 ns
+    const res = calculateBusClockSkewLimit(5.85, 3.5, 4.0, 1.8);
+    expect(res.minClockPeriodNs).toBeCloseTo(15.15, 2);
+    expect(res.maxClockFrequencyMHz).toBeCloseTo(66.0, 1);
+  });
+
+  it("calculates split-transaction bus throughput and speedup", () => {
+    // 64-bit (8-byte) bus at 200 MHz
+    // Request 2 cycles, response 4 cycles (32 bytes data)
+    // Memory latency 80 cycles
+    const res = calculateSplitTransactionThroughput(8, 200e6, 2, 4, 80);
+    expect(res.circuitSwitchedCycles).toBe(86);
+    expect(res.circuitSwitchedThroughputMBps).toBeCloseTo(74.42, 2);
+    expect(res.circuitSwitchedEfficiencyPercent).toBeCloseTo(4.65, 2);
+    expect(res.splitCycles).toBe(6);
+    expect(res.splitThroughputMBps).toBeCloseTo(1066.67, 2);
+    expect(res.splitEfficiencyPercent).toBeCloseTo(66.67, 2);
+    expect(res.speedup).toBeCloseTo(14.33, 2);
+  });
+
+  it("calculates FIFO overrun margin under interrupt latency jitter", () => {
+    // 115200 baud, 10 bits/byte (11520 bytes/sec)
+    // worst case latency 450 microseconds (0.00045 sec)
+    // 16-byte FIFO, half-full trigger (8 bytes threshold => 8 bytes headroom)
+    const res = calculateFifoOverrunMargin(115200, 10, 0.00045, 16, 8);
+    expect(res.byteArrivalIntervalSec).toBeCloseTo(0.0000868, 6);
+    expect(res.bytesArrivedDuringLatency).toBe(6);
+    expect(res.headroomBytes).toBe(8);
+    expect(res.isOverrun).toBe(false);
+    expect(res.remainingMarginBytes).toBe(2);
+
+    // Worse latency of 800 microseconds => 10 bytes arrive > 8 bytes headroom => overrun
+    const overrunRes = calculateFifoOverrunMargin(115200, 10, 0.0008, 16, 8);
+    expect(overrunRes.bytesArrivedDuringLatency).toBe(10);
+    expect(overrunRes.isOverrun).toBe(true);
+    expect(overrunRes.remainingMarginBytes).toBe(-2);
   });
 });
 

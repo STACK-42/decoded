@@ -132,6 +132,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q10",
     quiz: "final-quiz",
+    lesson: "io-methods",
+    section: "3-direct-memory-access-dma",
     prompt: "Which I/O method lets the CPU transfer a large block with just one interrupt?",
     options: [
       { id: "a", text: "Polling" },
@@ -140,7 +142,7 @@ export const questions: Question[] = [
       { id: "d", text: "Handshaking" },
     ],
     correctOptionId: "c",
-    explanation: "The DMA controller moves the whole block and interrupts when it's finished.",
+    explanation: "Direct Memory Access (DMA) delegates block transfers directly to a dedicated controller. The CPU programs the starting address and word count, and the DMA controller transfers the entire block directly to or from RAM across the system bus, generating a single interrupt only when the entire transfer finishes. Polling (a) continuously burns CPU cycles checking status flags without interrupts. Programmed interrupt-driven I/O (b) generates an interrupt for every single word or byte transferred, consuming substantial CPU overhead. Handshaking (d) is an electrical signal coordination protocol used between masters and slaves, not an independent block transfer mechanism.",
   },
   {
     id: "computer-architecture/final-quiz/q11",
@@ -167,6 +169,36 @@ export const questions: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "A loaded value only exists after MEM, which is one cycle too late for the next instruction's EX.",
+  },
+  {
+    id: "computer-architecture/final-quiz/q13",
+    quiz: "final-quiz",
+    lesson: "buses-and-arbitration",
+    section: "1-daisy-chaining-serial-grant",
+    prompt: "In a centralized daisy-chain bus arbitration scheme, which device has the highest priority?",
+    options: [
+      { id: "a", text: "The device physically closest to the bus arbiter on the grant line" },
+      { id: "b", text: "The device with the highest clock frequency" },
+      { id: "c", text: "The device with the lowest numerical interrupt vector" },
+      { id: "d", text: "The device physically farthest from the bus arbiter" },
+    ],
+    correctOptionId: "a",
+    explanation: "In a daisy chain, the grant signal originates at the arbiter and propagates serially through each device in physical order. The device closest to the arbiter inspects the grant line first and intercepts it if requesting, starving all downstream devices. Clock frequency (b) and vector numbers (c) play no role in daisy-chain physical grant propagation, and the farthest device (d) has the lowest priority.",
+  },
+  {
+    id: "computer-architecture/final-quiz/q14",
+    quiz: "final-quiz",
+    lesson: "buses-and-arbitration",
+    section: "split-transaction-protocols",
+    prompt: "What is the primary benefit of a split-transaction bus compared to a circuit-switched bus?",
+    options: [
+      { id: "a", text: "The bus is released during memory access latency, allowing other masters to use the bus while memory reads the data" },
+      { id: "b", text: "It eliminates the need for address lines entirely" },
+      { id: "c", text: "It doubles the physical clock frequency of the memory chips" },
+      { id: "d", text: "It prevents all possible cache coherence conflicts" },
+    ],
+    correctOptionId: "a",
+    explanation: "A split-transaction (pipelined) bus decouples memory requests from memory responses. The master issues a request and immediately releases the bus. While memory takes tens or hundreds of cycles to retrieve the data, other masters utilize the bus for unrelated transactions, dramatically improving overall bus utilization and throughput. Address lines are still required (disproving b), chip internal clock frequency is unchanged (disproving c), and cache coherence still requires snooping or directory tracking (disproving d).",
   },
   {
     id: "computer-architecture/hardware-datapath-quiz/q1",
