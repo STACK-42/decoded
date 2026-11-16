@@ -3,40 +3,40 @@ import { FlynnTaxonomy, SimdDemo, AmdahlLab } from "@/components/mdx/Architectur
 
 # Parallel Processing
 
-During the 1980s and 1990s, microprocessors gained speed primarily through higher clock frequencies and deeper instruction pipelines. A computer ran faster each year because its single processor ran at more gigahertz.
+During the 1980s and 1990s, processors grew faster mostly through higher clock speeds and deeper instruction pipelines. Computers sped up because single cores ran at higher frequencies.
 
-Around 2004, that path hit a hard physical boundary. The **power wall** arrived when chip temperatures threatened to melt the packaging. Yet semiconductor fabrication continued shrinking transistors according to Moore's law. Unable to build one chip that was twice as fast without drawing prohibitive electrical power, computer architects made a historic design pivot: they placed multiple complete processor cores onto the same silicon die.
+Around 2004, that approach hit a physical wall. Chips became too hot to cool with ordinary fans and heatsinks. Transistors kept shrinking under Moore's law, but running them faster drew too much power. Instead of pushing a single core to higher frequencies, chip designers placed multiple complete processor cores on the same chip die.
 
-**Parallel processing** decomposes a computation into discrete parts that execute simultaneously on multiple physical processing units. The opposite is **serial processing**, where one processor executes instructions one after another in strict sequence.
+**Parallel processing** breaks a program into separate pieces that run at the same time on multiple processing units. The alternative is **serial processing**, where one processor runs instructions one after another in order.
 
-### The physics behind the multicore turn
+### Why chips went multicore
 
-The power consumed by a complementary metal-oxide-semiconductor (CMOS) digital circuit is dominated by **dynamic power**, the energy required to charge and discharge capacitive gate nodes during switching:
+Most of the power consumed by CMOS digital circuits is **dynamic power**, the energy spent charging and discharging transistor gates each clock cycle:
 
 $$
 P_{\text{dynamic}} = \alpha \times C \times V^2 \times f
 $$
 
 Where:
-- $\alpha$ is the activity factor (fraction of gates switching per clock cycle).
+- $\alpha$ is the activity factor (fraction of gates switching each clock cycle).
 - $C$ is the capacitive load of the transistors and interconnect wires.
 - $V$ is the operating supply voltage.
 - $f$ is the clock frequency.
 
-In 1974, Robert Dennard observed that as transistor dimensions shrink by a scaling factor $s \approx 0.7 \approx 1/\sqrt{2}$ with each fabrication generation:
-- Transistor gate length and width scale by $s$, reducing transistor area to $s^2 \approx 0.5$ (doubling transistor density per unit area, the foundation of Moore's law).
-- Gate oxide thickness scales down by $s$, causing capacitance to scale as $C \to sC$.
-- Under **Dennard scaling**, operating voltage was scaled down proportionally ($V \to sV$), reducing circuit delay and allowing clock frequency to increase by $1/s$ ($f \to f/s$).
-- Calculating dynamic power per transistor: $P \to \alpha(sC)(sV)^2(f/s) = s^2 P$.
-- Power density (power per unit of silicon area) remained perfectly constant: $\frac{s^2 P}{s^2 A} = \frac{P}{A} = \text{constant}$.
+In 1974, Robert Dennard observed that as transistor dimensions shrink by a factor of $s \approx 0.7$ with each generation:
+- Gate length and width shrink by $s$, reducing area to $s^2 \approx 0.5$ (doubling transistor density per chip, the basis of Moore's law).
+- Capacitance shrinks to $sC$.
+- Under **Dennard scaling**, operating voltage could drop by the same factor ($V \to sV$), allowing clock frequency to increase ($f \to f/s$).
+- Power per transistor dropped by $s^2$: $P \to \alpha(sC)(sV)^2(f/s) = s^2 P$.
+- Power density (power per square millimeter) stayed constant: $\frac{s^2 P}{s^2 A} = \text{constant}$.
 
-For three decades, Dennard scaling allowed engineers to double clock frequencies with every chip generation without overheating the silicon.
+For thirty years, Dennard scaling let engineers increase clock speeds every generation without overheating chips.
 
-By 2004, this physical relationship collapsed. Transistor gate oxides had thinned to approximately $1.2\text{ nm}$ (only four to five atoms of silicon dioxide thick), causing quantum mechanical tunneling through the gate dielectric. Subthreshold leakage current exploded exponentially. Lowering operating voltage below $\approx 0.7\text{ V}$ caused thermal noise to corrupt logic levels, making further voltage scaling impossible.
+Around 2004, this rule broke down. Gate insulating layers had thinned to about $1.2\text{ nm}$ (only four or five atoms thick). Electrons began leaking through the thin gates even when turned off. Operating voltage could not safely drop below roughly $0.7\text{ V}$ without electrical noise corrupting logic levels.
 
-Because supply voltage $V$ was frozen at approximately $0.8\text{ V}$ to $1.1\text{ V}$, pushing clock frequency $f$ higher caused power density to explode as $f / s^2$. Heat dissipation exceeded $100\text{ to }150\text{ W/cm}^2$, reaching the cooling limit of copper heatsinks and forced air fans.
+With voltage stuck between $0.8\text{ V}$ and $1.1\text{ V}$, increasing clock frequency caused power and heat to climb sharply. Chips reached $100\text{ to }150\text{ W/cm}^2$, the cooling limit of copper heatsinks and air fans.
 
-This physical boundary, known as the **Power Wall**, halted uniprocessor frequency scaling. Architects responded by placing multiple complete processor cores on the silicon die: two cores clocked at $2.0\text{ GHz}$ deliver roughly the same aggregate throughput as a single core clocked at $4.0\text{ GHz}$, but operate at substantially lower voltage, cutting power dissipation by more than half.
+This limit is the **Power Wall**. Because a single core could no longer scale in frequency, designers added more cores. Two cores running at $2.0\text{ GHz}$ deliver roughly the same total throughput as a single core running at $4.0\text{ GHz}$, but operate at a lower voltage, cutting power by more than half.
 
 ## Flynn's taxonomy
 
@@ -75,18 +75,18 @@ SIMD architectures take three primary hardware forms:
 
 1. **Vector processors**: Pipelined vector arithmetic units that operate on continuous arrays streamed from memory or vector registers (such as the classic Cray-1).
 2. **Short-vector / Multimedia extensions**: Wide registers (128-bit, 256-bit, or 512-bit) embedded directly inside standard CPU cores. Examples include Intel AVX-512 (which operates on sixteen 32-bit floats in a single cycle) and ARM NEON.
-3. **Graphics Processing Units (GPUs)**: Massive SIMD arrays deployed under a Single Instruction, Multiple Threads (**SIMT**) execution model. A modern GPU integrates thousands of arithmetic cores organized into streaming multiprocessors. Hardware schedulers group threads into lockstep clusters (called **warps** of 32 threads on NVIDIA, or **wavefronts** of 64 threads on AMD), applying the same instruction across thousands of data points concurrently. This architectural alignment is why GPUs have become the computational engine for deep learning and matrix multiplication.
+3. **Graphics Processing Units (GPUs)**: Massive SIMD arrays deployed under a Single Instruction, Multiple Threads (**SIMT**) execution model. A modern GPU integrates thousands of arithmetic cores organized into streaming multiprocessors. Hardware schedulers group threads into lockstep clusters (called **warps** of 32 threads on NVIDIA, or **wavefronts** of 64 threads on AMD), applying the same instruction across thousands of data points concurrently. This makes GPUs well suited for deep learning and matrix multiplication.
 
 ### The penalties: memory stride and branch divergence
 
 SIMD hardware reaches peak efficiency only when code satisfies two architectural constraints:
 
-1. **Unit-stride memory access**: When vector elements reside in contiguous memory locations, the memory controller fetches an entire 64-byte cache line in a single burst, populating the vector register immediately. If data is stored with non-unit strides or scattered randomly in memory, the processor must execute hardware **gather** (loading individual addresses into a vector register) or **scatter** (writing vector elements to disparate addresses) instructions. Gather and scatter serialize memory operations into multiple separate cache lookups, destroying SIMD throughput.
+1. **Unit-stride memory access**: When vector elements reside in contiguous memory locations, the memory controller fetches an entire 64-byte cache line in a single burst, populating the vector register immediately. If data is stored with non-unit strides or scattered randomly in memory, the processor must execute hardware **gather** (loading individual addresses into a vector register) or **scatter** (writing vector elements to disparate addresses) instructions. Gather and scatter serialize memory operations into multiple separate cache lookups, which drops SIMD throughput.
 2. **Branch divergence**: Because all 32 threads in a warp share a single instruction decoder, they must execute identical instructions in lockstep. If threads evaluate an `if-else` condition with differing outcomes, the GPU cannot execute both paths simultaneously. Instead, the hardware serializes execution: it first runs the `if` body while deactivating threads whose condition was false using an execution mask, and then runs the `else` body while deactivating threads whose condition was true. If threads diverge evenly, execution throughput drops by half.
 
 ## MIMD: independent workers
 
-**MIMD** systems deploy multiple independent processor cores, each with its own program counter, instruction decoder, and execution datapath.
+**MIMD** systems use multiple independent processor cores, each with its own program counter, instruction decoder, and execution datapath.
 
 ### Shared memory vs. distributed memory
 
@@ -94,7 +94,7 @@ MIMD hardware falls into two main structural topologies:
 
 1. **Shared-memory systems**: All processors access a unified physical address space:
    - **Symmetric Multiprocessing (SMP) / Uniform Memory Access (UMA)**: Multiple processors connect to a centralized main memory through a shared system bus or crossbar switch. Access latency to any memory location is identical for every CPU (typically around $60\text{ ns}$).
-   - **Non-Uniform Memory Access (NUMA)**: Memory is physically partitioned among processor sockets, but remains unified under a single global address space. A CPU accesses its local socket memory rapidly ($\approx 60\text{ ns}$), while accessing remote memory across point-to-point coherent interconnects (such as Intel Ultra Path Interconnect [UPI] or AMD Infinity Fabric) incurs substantially higher latency ($\approx 140\text{ ns}$). Operating system thread schedulers must be NUMA-aware, pinning threads to the specific socket where their data structures reside.
+   - **Non-Uniform Memory Access (NUMA)**: Memory is physically partitioned among processor sockets, but remains unified under a single global address space. A CPU accesses its local socket memory rapidly ($\approx 60\text{ ns}$), while accessing remote memory across point-to-point coherent interconnects (such as Intel Ultra Path Interconnect [UPI] or AMD Infinity Fabric) takes longer ($\approx 140\text{ ns}$). Operating system thread schedulers must be NUMA-aware, pinning threads to the specific socket where their data structures reside.
 2. **Distributed-memory systems (clusters)**: Independent computers (nodes) connected over a high-speed network (such as InfiniBand or 100 GbE). Each node has its own private address space; processors coordinate exclusively by sending explicit messages across the network (using protocols like MPI).
 
 ### Hardware multithreading
@@ -107,7 +107,7 @@ To keep execution datapaths busy when an instruction stalls on memory latency, p
 
 ### Coherence vs. consistency
 
-Multiprocessor memory design separates two distinct concepts that students frequently confuse:
+Multiprocessor memory design separates two distinct concepts:
 
 - **Cache Coherence**: Guarantees that all processors observe a consistent view of writes to the **same memory address**. It answers: "What value does a read to address $X$ return after a write to address $X$?"
 - **Memory Consistency**: Defines the legal ordering of reads and writes across **different memory addresses**. It answers: "In what order do writes to address $X$ and address $Y$ become visible to other cores?" While cache coherence is enforced by hardware protocols like MESI, memory consistency requires memory models (such as Sequential Consistency, Total Store Ordering, or Weak Ordering) and explicit software fence instructions (`MFENCE` or `DMB`).
@@ -120,7 +120,7 @@ If Core A and Core B both cache address `0x1000` (value 42), and Core A writes v
 
 To maintain coherence, multicore processors use **bus snooping protocols**, where each cache controller continuously monitors ("snoops") the coherent bus for transactions involving memory blocks it holds.
 
-Modern processors use **write-invalidate** protocols: writing to a shared cache block invalidates other copies rather than updating them. This saves vast interconnect bandwidth because repeated writes to the same local variable do not flood the bus with data updates.
+Modern processors use **write-invalidate** protocols: writing to a shared cache block invalidates other copies rather than updating them. This saves interconnect bandwidth because repeated writes to the same local variable do not flood the bus with data updates.
 
 The industry-standard **MESI protocol** (also known as the Illinois protocol) assigns every cache block one of four states:
 
@@ -131,7 +131,7 @@ The industry-standard **MESI protocol** (also known as the Illinois protocol) as
 | **S** | Shared | The cache block may be present in other CPU caches. It is clean (matches DRAM). Writing requires broadcasting an invalidation. | No | Yes |
 | **I** | Invalid | The cache line does not contain valid data. Reading it causes a cache miss. | No | N/A |
 
-Some advanced architectures (such as AMD Opteron/EPYC and ARM) extend MESI to **MOESI** by adding an **Owner (O)** state. In MOESI, a core holding a dirty line can share read-only copies with other caches without first writing the block back to slow DRAM; the Owner core retains responsibility for eventually writing the modified data back to memory when evicted.
+Some architectures (such as AMD Opteron/EPYC and ARM) extend MESI to **MOESI** by adding an **Owner (O)** state. In MOESI, a core holding a dirty line can share read-only copies with other caches without first writing the block back to slow DRAM; the Owner core retains responsibility for eventually writing the modified data back to memory when evicted.
 
 ### MESI state transitions
 
@@ -197,7 +197,7 @@ $$
 \text{Speedup}_{\max} = \frac{1}{1 - 0.90} = \frac{1}{0.10} = 10\times
 $$
 
-Even with 10,000 cores, you cannot exceed a $10\times$ speedup. That small $10\%$ serial bottleneck sets an insurmountable ceiling.
+Even with 10,000 cores, speedup cannot exceed $10\times$ because the 10% sequential portion sets an upper limit.
 
 ### Gustafson's law: weak scaling
 
@@ -244,23 +244,23 @@ Amdahl's law governs execution when you want a fixed task completed as fast as p
 ## Traps and pitfalls
 
 <Callout tone="orange" label="Trap: Amdahl's law does not make parallel computing futile">
-Amdahl's law is sometimes misinterpreted as proof that large multicore systems are wasteful. In reality, Amdahl's law applies to fixed workloads (strong scaling). When the workload scales with hardware capability (weak scaling), Gustafson's law applies, and parallel efficiency remains remarkably high.
+Amdahl's law is sometimes seen as proof that large multicore systems are not worth building. But Amdahl's law applies to fixed problem sizes (strong scaling). When problem size grows along with core count (weak scaling), Gustafson's law applies, and efficiency stays high.
 </Callout>
 
 <Callout tone="orange" label="Trap: False sharing causes cache thrashing without shared data">
-**False sharing** occurs when two threads running on different CPU cores modify completely distinct, independent variables that happen to reside within the same 64-byte cache block. Even though the threads never access each other's data, the MESI protocol sees writes to that memory block and repeatedly invalidates the entire cache line across both cores, causing severe bus contention. Developers fix this by padding independent variables to separate 64-byte boundaries.
+**False sharing** happens when two threads on different cores update separate variables that sit inside the same 64-byte cache line. The threads never touch each other's data, but the coherence protocol invalidates the entire line on every write, creating bus contention. Programmers fix this by padding independent variables to separate 64-byte boundaries.
 </Callout>
 
 <Callout tone="orange" label="Trap: Confusing cache coherence with memory consistency">
-Students often assume that a multicore system implementing the MESI cache coherence protocol automatically executes multithreaded programs with sequential consistency. Cache coherence guarantees only that all cores agree on updates to each individual memory address. It provides zero guarantees about the observed ordering of updates across different memory addresses. Out-of-order execution, store buffers, and compiler optimizations can reorder memory operations, requiring explicit memory barrier instructions (`MFENCE` or `DMB`) to enforce ordering.
+A multicore chip with MESI cache coherence does not automatically run multithreaded programs in sequential order. Cache coherence guarantees only that all cores agree on updates to any single address. It gives no guarantee about the order of writes to different addresses. Memory barriers (`MFENCE` or `DMB`) are required to enforce cross-address ordering.
 </Callout>
 
 <Callout tone="orange" label="Trap: The GPU throughput trap">
-A common misconception is that running code on a GPU automatically makes it hundreds of times faster. GPUs achieve exceptional throughput only on massively parallel, branch-free workloads with high arithmetic density and contiguous memory access. For sequential code, pointer-chasing data structures, or code with severe branch divergence, a modern CPU core runs substantially faster than a GPU shader core.
+Running code on a GPU does not automatically make it faster. GPUs achieve high throughput on parallel, branch-free code with contiguous memory access. For sequential code, pointer-heavy data structures, or diverging branches, a modern CPU core runs faster than a GPU shader core.
 </Callout>
 
 <Callout tone="violet" label="Architectural synthesis: The unifying principle of computer design">
-Pipelining, caches, virtual memory, and multicore parallelism all address the same fundamental challenge: the speed of computation is bounded by the speed of communication. By overlapping operations, caching active data, and decomposing tasks across parallel hardware, computer architects transform physical latency into computational throughput.
+Pipelining, caches, virtual memory, and multicore parallelism all tackle the same issue: computation is faster than communication. By overlapping work, caching active data, and splitting tasks across cores, processor architectures turn memory latency into useful throughput.
 </Callout>
 
 ## Worked practice problems
@@ -451,7 +451,7 @@ Trace the state of block `X` in each core's cache and record the resulting bus t
         { id: "d", text: "NUMA machines cannot execute multithreaded software" },
       ],
       correctOptionId: "a",
-      explanation: "Option (a) is correct: In a NUMA architecture, physical DRAM is partitioned across processor sockets. Accessing local memory is faster than accessing remote memory across interconnect links. In UMA, all CPUs share a centralized memory bus with identical access latencies. Options (b), (c), and (d) are completely false.",
+      explanation: "Option (a) is correct: In a NUMA architecture, physical DRAM is partitioned across processor sockets. Accessing local memory is faster than accessing remote memory across interconnect links. In UMA, all CPUs share a centralized memory bus with identical access latencies. Options (b), (c), and (d) are incorrect.",
     },
   ]}
 />

@@ -7,11 +7,11 @@ Doing laundry involves four steps: wash, dry, fold, and store. If you finish one
 
 <LaundryPipeline />
 
-Each load still takes the same total time from dirty clothes to folded stack. The gain comes from overlap: loads finish much more often. That is the core idea of **pipelining**. It does not shorten the **latency** (the time needed to complete one individual instruction). Instead, it multiplies **throughput** (the number of instructions completed per second).
+Each load still takes the same total time from dirty clothes to folded stack. The gain comes from overlap: loads finish much more often. This technique is **pipelining**. Pipelining keeps the **latency** (the time to finish one instruction) roughly the same, but increases **throughput** (the number of instructions finished per second).
 
 ## The five classic stages
 
-In an unpipelined single-cycle processor, each instruction must crawl through the entire datapath before the next instruction can begin. The [machine cycle](/courses/computer-organization/machine-cycle) breaks naturally into five sequential steps:
+In an unpipelined single-cycle processor, each instruction must pass through the entire datapath before the next instruction can begin. The [machine cycle](/courses/computer-organization/machine-cycle) breaks naturally into five sequential steps:
 
 | Stage | Name | Functional Hardware | Primary Hardware Action |
 |---|---|---|---|
@@ -21,24 +21,24 @@ In an unpipelined single-cycle processor, each instruction must crawl through th
 | **MEM** | Memory Access | Data Memory / D-Cache | Reads data for `LOAD` or writes data for `STORE`; passes through ALU results |
 | **WB** | Write Back | Register File Write Port | Writes result from ALU or memory into destination register $rd$ |
 
-To understand how each stage operates, consider the hardware components that power them:
+Three circuits handle the core operations in these stages:
 
-- **Sign extender**: A combinational circuit in the ID stage that takes an immediate constant (such as a 16-bit offset in MIPS) and replicates its most significant bit (the sign bit) across all upper 16 bit positions. This converts a 16-bit signed integer into a 32-bit two's complement value without altering its numerical sign or magnitude.
-- **Branch comparator**: A dedicated comparison circuit that compares register values directly to determine whether a conditional jump is taken. While early designs used the main ALU for branch evaluation, modern pipelines evaluate branches using dedicated comparators to resolve decisions earlier in the datapath.
-- **Register file**: A centralized array of processor registers featuring multiple independent read and write ports. In a typical RISC core, the register file provides two 32-bit read ports (allowing simultaneous access to $rs_1$ and $rs_2$) and one 32-bit write port (updating destination register $rd$).
+- **Sign extender**: A combinational circuit in the ID stage. It takes an immediate constant, like a 16-bit offset in MIPS, and copies the sign bit across the top 16 bits. This turns a 16-bit signed integer into a 32-bit two's complement value without changing its sign or value.
+- **Branch comparator**: A dedicated circuit that compares two register values directly to check if a branch is taken. Modern pipelines use a dedicated comparator rather than the main ALU so the branch decision resolves earlier.
+- **Register file**: An on-chip array of processor registers with multiple read and write ports. A typical 32-bit RISC core provides two read ports, so it can read $rs_1$ and $rs_2$ at the same time, and one write port to update destination register $rd$.
 
-To overlap these operations, the processor places an edge-triggered **pipeline register** between every pair of stages: `IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB`.
+To overlap instructions, the processor places an edge-triggered **pipeline register** between each pair of stages: `IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB`.
 
-At each rising clock edge, every pipeline register captures the output data and control signals from the preceding stage. The next stage reads those values and performs its combinational work over the remainder of the clock cycle. The edge-triggered [flip-flops](/courses/logic-design/flip-flops) prevent signals from running into each other, isolating five separate instructions running concurrently on different hardware units.
+On each rising clock edge, every pipeline register captures the data and control signals from the stage before it. The next stage reads those values and processes them over the rest of the clock cycle. The edge-triggered [flip-flops](/courses/logic-design/flip-flops) prevent signals from mixing, keeping five separate instructions isolated on different hardware units at once.
 
 ### Inside the pipeline registers
 
-Pipeline registers do not just carry data words; they carry the instruction's identity and its dedicated control signals down the pipeline. Control signals generated by the control unit in the ID stage must travel synchronously alongside the data so each stage receives its specific commands during the exact clock cycle the instruction reaches that stage:
+Each pipeline register carries both data and control signals down the datapath. The control signals generated in the ID stage travel along with the data so each stage receives its commands at the exact cycle the instruction arrives:
 
-- **`IF/ID` register**: Holds the 32-bit fetched instruction word and the incremented $PC$ value ($PC + 4$), which is needed later if the instruction is a branch or subroutine jump.
-- **`ID/EX` register**: Holds the two operand values read from the register file, the 32-bit sign-extended immediate offset, the register addresses of source and destination registers, and the control lines for execution (`ALUOp`, `ALUSrc`, and destination register selector `RegDst`).
-- **`EX/MEM` register**: Holds the 32-bit ALU result (which serves as an arithmetic value or an effective memory address), the data word read from $rs_2$ (destined to be stored in memory during a `STORE`), the target branch address, the zero/condition flags, and memory control signals (`MemRead`, `MemWrite`, `Branch`).
-- **`MEM/WB` register**: Holds the data word read from data memory (if a `LOAD`), the ALU result (if an arithmetic instruction), the destination register address $rd$, and write-back control signals (`RegWrite`, `MemtoReg`).
+- **`IF/ID` register**: Holds the 32-bit instruction word and the incremented program counter ($PC + 4$), which is needed later for branches and jumps.
+- **`ID/EX` register**: Holds the two operand values from the register file, the 32-bit sign-extended immediate offset, the register numbers for source and destination, and the control signals for execution (`ALUOp`, `ALUSrc`, and destination selector `RegDst`).
+- **`EX/MEM` register**: Holds the 32-bit ALU result (either an arithmetic value or a memory address), the data word read from $rs_2$ for a `STORE`, the target branch address, the condition flags, and memory control signals (`MemRead`, `MemWrite`, `Branch`).
+- **`MEM/WB` register**: Holds the data word read from memory for a `LOAD`, the ALU result for an arithmetic instruction, the destination register number $rd$, and write-back control signals (`RegWrite`, `MemtoReg`).
 
 ### Resolving the register file access conflict
 
@@ -49,7 +49,7 @@ Processors solve this without pipeline stalls through **two-phase clocking**:
 1. **First half-cycle (falling edge or high phase)**: The write-back stage updates the destination register.
 2. **Second half-cycle (rising edge or low phase)**: The decode stage reads the source registers.
 
-Because writes happen before reads within the same clock period, the instruction in ID reads the freshly updated value rather than the old one. If two-phase clocking is unavailable, hardware designers implement internal register write-to-read forwarding multiplexers directly inside the register file, routing the incoming write bus directly to the read output ports whenever the read address matches the write address.
+Because writes happen before reads within the same clock period, the instruction in ID reads the freshly updated value rather than the old one. If two-phase clocking is not used, designers place bypass multiplexers inside the register file. When a read address matches the write address in the same cycle, the multiplexer routes the incoming write data straight to the read output.
 
 Step through the pipeline execution below. Read horizontally along a row to follow the progress of one instruction across time, or read vertically down a column to inspect what all five pipeline stages are doing during a single clock cycle.
 
@@ -99,15 +99,15 @@ $$
 
 ### Clock period: stage imbalance and register overhead
 
-In a physical silicon chip, actual speedup does not equal the theoretical stage count $k$ because the clock period of a pipelined processor is constrained by two physical factors:
+In real hardware, the speedup is always less than the stage count $k$ for two reasons:
 
-1. **Stage imbalance**: The clock cycle must be long enough to accommodate the **slowest stage**. If four stages take 150 picoseconds and one stage takes 250 picoseconds, the clock period must be at least 250 picoseconds. The faster stages finish early and sit idle for the remaining padding time ($\Delta t_i = \max(t_j) - t_i = 100\text{ ps}$), wasting throughput.
-2. **Register overhead**: The interstage pipeline registers add physical delays that do not exist in an unpipelined datapath. The total register overhead $t_{\text{reg}}$ combines three physical metrics:
-   - **Setup time** ($t_{\text{setup}}$): The minimum duration the input signal must remain steady and valid before the clock edge arrives.
-   - **Clock-to-Q delay** ($t_{\text{cq}}$): The propagation delay between the active clock edge and the moment the flip-flop output stabilizes with the new data word.
-   - **Clock skew** ($t_{\text{skew}}$): The spatial arrival time variation of the clock signal across different physical flip-flops on the silicon die, caused by wire resistance, parasitic capacitance, and on-chip thermal variations.
+1. **Stage imbalance**: The clock cycle must be long enough for the **slowest stage**. If four stages take 150 picoseconds and one stage takes 250 picoseconds, the clock cycle must be at least 250 picoseconds. The faster stages finish early and wait idle for the rest of the cycle ($\Delta t_i = \max(t_j) - t_i = 100\text{ ps}$).
+2. **Register overhead**: The registers between stages add delays that do not exist in an unpipelined circuit. The total register delay $t_{\text{reg}}$ combines three parts:
+   - **Setup time** ($t_{\text{setup}}$): How long input signals must stay steady before the clock edge arrives.
+   - **Clock-to-Q delay** ($t_{\text{cq}}$): The time from the clock edge until the flip-flop output settles with the new data.
+   - **Clock skew** ($t_{\text{skew}}$): Slight differences in when the clock edge reaches different flip-flops across the chip, caused by wire resistance and temperature variations.
 
-Thus, the total register delay added to each stage is $t_{\text{reg}} = t_{\text{setup}} + t_{\text{cq}} + t_{\text{skew}}$.
+The total register delay added to each stage is $t_{\text{reg}} = t_{\text{setup}} + t_{\text{cq}} + t_{\text{skew}}$.
 
 Let $t_i$ be the combinational logic delay of stage $i$. The unpipelined clock period is the sum of all stage delays:
 
@@ -141,35 +141,35 @@ $$
 
 ## Why not 100 stages?
 
-If dividing execution into 5 stages gives a nearly 5-fold speedup, dividing into 100 stages should yield a 100-fold speedup. High-frequency designs in the early 2000s (such as the Intel Pentium 4 Prescott with 31 stages) pursued deep pipelining, known as **superpipelining**. However, several physical boundaries restrict pipeline depth:
+If 5 stages give roughly a 5-fold speedup, 100 stages might sound like a 100-fold speedup. Early 2000s designs pursued deep pipelines, known as **superpipelining** (the Intel Pentium 4 Prescott had 31 stages). But four physical limits set a practical ceiling on depth:
 
-1. **Unbalanced logic partitioning**: You cannot divide digital logic arbitrarily. A 32-bit carry-lookahead adder, an ALU shifter, or a cache address decoder requires a minimum tree of gate levels (typically 4 to 6 gate delays). Slicing logic finer than this requires inserting flip-flops inside atomic arithmetic units, which introduces synchronization overhead and worsens stage imbalance.
-2. **Accumulating register overhead**: As the clock period shrinks into tens of picoseconds, fixed register delay $t_{\text{reg}}$ (typically 15 to 30 ps) consumes an increasing percentage of each cycle. With a 200 ps clock, a 25 ps register overhead represents 12.5% waste. With a 50 ps clock, that same 25 ps overhead wastes 50% of the entire cycle. Beyond a certain depth, adding another pipeline register increases total execution time rather than reducing it.
-3. **Hazard penalties multiply**: When a branch is mispredicted or a data dependency forces a stall, the CPU flushes all instructions currently in flight. In a 5-stage pipeline, resolving a branch in stage 3 costs 2 wasted cycles. In a 30-stage pipeline, resolving a branch in stage 15 flushes 14 cycles of work.
-4. **Clock skew and power dissipation**: Distributing a gigahertz clock signal across millions of interstage flip-flops without phase distortion (skew) requires massive clock tree buffers that consume huge electrical power ($P = \alpha C V^2 f$) and generate intense localized heat.
+1. **Logic cannot be split into tiny pieces**: A 32-bit adder, barrel shifter, or cache decoder needs a minimum number of gate levels (often 4 to 6 gate delays). Cutting circuits finer requires placing registers inside arithmetic blocks, which adds synchronization overhead and worsens stage imbalance.
+2. **Register delays add up**: As the clock period shrinks to tens of picoseconds, the fixed register delay $t_{\text{reg}}$ (around 15 to 30 ps) takes up a larger fraction of every cycle. At a 200 ps clock, 25 ps of overhead wastes 12.5% of the cycle. At a 50 ps clock, that same 25 ps overhead wastes 50%. Past a certain point, adding another stage slows the processor down.
+3. **Hazard penalties grow**: When a branch prediction fails or a dependency causes a stall, the processor must discard every instruction currently in the pipe. In a 5-stage pipeline, resolving a branch in stage 3 wastes 2 cycles. In a 30-stage pipeline, resolving a branch in stage 15 throws away 14 cycles of work.
+4. **Clock distribution and power**: Sending a high-frequency clock to millions of flip-flops without timing errors requires large clock buffers. These buffers burn substantial power ($P = \alpha C V^2 f$) and generate heat.
 
-Modern high-performance cores (such as ARM Cortex-A78, Apple M-series, and AMD Zen 4) balance these trade-offs by choosing moderate pipeline depths between 12 and 19 stages.
+Modern processors (like ARM Cortex cores, Apple M-series, and AMD Zen) balance these factors with pipelines between 12 and 19 stages.
 
 ## Traps and pitfalls
 
 <Callout tone="orange" label="Trap: Pipelining does not reduce individual instruction latency">
-Pipelining increases instruction throughput, not individual execution speed. In fact, an individual instruction takes slightly longer to complete in a pipelined processor than in an unpipelined multicycle processor because each stage duration is padded to match the slowest stage, and interstage register latch delays add overhead.
+Pipelining increases throughput, not individual speed. An instruction takes slightly longer to complete in a pipelined processor than in an unpipelined one because each stage is padded to match the slowest stage and pipeline registers add small delays.
 </Callout>
 
 <Callout tone="orange" label="Trap: Assuming registers write and read simultaneously without circuit support">
-A common misconception is that the WB stage and ID stage can share the register file simultaneously without special hardware. Without dual-phase clocking or internal write-to-read forwarding inside the register file, reading a register being written in the same cycle produces stale data.
+The WB and ID stages cannot share the register file at the same instant without hardware support. Without two-phase clocking or bypass multiplexers inside the register file, reading a register that is being written in the same cycle returns old data.
 </Callout>
 
 <Callout tone="orange" label="Trap: The k-fold speedup myth">
-Students often assume that dividing a CPU into $k$ pipeline stages makes programs run $k$ times faster. In practice, speedup is substantially lower due to three compounding factors: stage imbalance forces all stages to wait for the slowest stage, pipeline register setup and propagation delays add fixed overhead to every cycle, and pipeline hazard stalls (data dependencies, branch mispredictions, and cache misses) inject idle bubble cycles.
+Dividing a CPU into $k$ stages rarely gives a $k$-fold speedup in practice. Stages are never perfectly balanced, pipeline registers add delay to every cycle, and stalls from branches, data dependencies, and cache misses waste cycles.
 </Callout>
 
 <Callout tone="orange" label="Trap: Pipelining short programs yields negligible speedup">
-The formula $\text{Cycles} = k + n - 1$ shows that for small instruction counts ($n \le k$), the pipeline fill time dominates. For $n = 5$ instructions on a 5-stage pipeline, execution takes $5 + 5 - 1 = 9$ cycles compared to $5 \times 5 = 25$ cycles unpipelined, achieving only a $2.78\times$ speedup rather than $5\times$. Pipelining requires large instruction streams ($n \gg k$) to approach theoretical efficiency.
+For short programs ($n \le k$), the time spent filling the pipeline dominates. Running $n = 5$ instructions on a 5-stage pipeline takes $5 + 5 - 1 = 9$ cycles instead of 25 unpipelined, giving a $2.78\times$ speedup instead of $5\times$. Pipelining needs many instructions ($n \gg k$) to reach full speed.
 </Callout>
 
 <Callout tone="violet" label="Historical context: From 8086 queues to modern superscalar pipelines">
-The Intel 8086 used a primitive two-stage pipeline: a Bus Interface Unit prefetching bytes into a 6-byte queue while an Execution Unit executed instructions. The RISC revolution (Patterson's Berkeley RISC and Hennessy's Stanford MIPS) proved that streamlining instructions to equal lengths allowed uniform 5-stage pipelines. Modern **superscalar** processors replicate these pipelines, issuing 4 to 8 instructions every cycle into parallel execution units.
+The Intel 8086 used an early two-stage pipeline: a Bus Interface Unit prefetched bytes into a 6-byte queue while an Execution Unit ran instructions. Berkeley RISC and Stanford MIPS then showed that fixed-length instructions allowed uniform 5-stage pipelines. Modern **superscalar** chips duplicate these pipelines, issuing 4 to 8 instructions every cycle across parallel units.
 </Callout>
 
 ## Worked practice problems
@@ -237,7 +237,7 @@ Pipeline efficiency:
 
 $$\text{Efficiency} = \frac{\text{Speedup}}{k} \times 100\% = \frac{3.615}{5} \times 100\% \approx 72.3\%$$
 
-The efficiency is below 100% due to two factors: stage imbalance (the other four stages sit idle for part of each 270 ps cycle) and the 20 ps register overhead added to each stage.
+The efficiency is below 100% because the faster stages sit idle waiting for the slowest stage, and each stage pays a 20 ps register overhead.
 
 ---
 
@@ -294,7 +294,7 @@ $$\text{Time}_8 = \text{CPI}_8 \times T_{\text{clk8}} = 1.08 \times 160\text{ ps
 
 $$\text{Speedup} = \frac{\text{Time}_5}{\text{Time}_8} = \frac{280.8\text{ ps}}{172.8\text{ ps}} \approx 1.625$$
 
-The 8-stage superpipeline is approximately $62.5\%$ faster. Even though the branch misprediction penalty doubled from 2 cycles to 4 cycles (raising CPI from 1.04 to 1.08), the clock frequency increased significantly (clock period dropped from 270 ps to 160 ps, a 40.7% reduction). The higher clock speed easily offsets the modest increase in branch stall cycles.
+The 8-stage superpipeline is about $62.5\%$ faster. Although the branch misprediction penalty doubled from 2 cycles to 4 cycles (raising CPI from 1.04 to 1.08), the clock period dropped from 270 ps to 160 ps. That higher clock speed easily offsets the extra branch stall cycles.
 </ModelAnswer>
 
 ---
@@ -364,7 +364,7 @@ The 8-stage superpipeline is approximately $62.5\%$ faster. Even though the bran
         { id: "d", text: "ALUs cannot execute addition operations in deeply pipelined machines" },
       ],
       correctOptionId: "a",
-      explanation: "Option (a) is correct: In superpipelined designs, the clock period becomes very short, so fixed flip-flop delays (setup and clock-to-Q) consume a large fraction of each cycle. Furthermore, logic cannot be divided completely evenly, and branch misprediction flushes discard dozens of in-flight instructions, causing substantial CPI loss. Options (b), (c), and (d) are completely fictitious.",
+      explanation: "Option (a) is correct: In superpipelined designs, the clock period becomes very short, so fixed flip-flop delays (setup and clock-to-Q) consume a large fraction of each cycle. Furthermore, logic cannot be divided completely evenly, and branch misprediction flushes discard dozens of in-flight instructions, causing substantial CPI loss. Options (b), (c), and (d) are incorrect.",
     },
   ]}
 />
