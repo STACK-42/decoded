@@ -323,7 +323,8 @@ export const questions: Question[] = [
       { id: "d", text: "-30" },
     ],
     correctOptionId: "c",
-    explanation: "(H − 1) − y = 99 − 30 = 69. Rows run from 0 to 99.",
+    explanation:
+      "Converting vertical coordinates from top-left to bottom-left follows y_up = (H - 1) - y_down. In an image 100 rows tall, row indices range from 0 to 99, giving (100 - 1) - 30 = 99 - 30 = 69. 70 mistakenly computes 100 - 30 without accounting for 0-based indexing, 30 assumes the vertical index does not change, and -30 merely negates the coordinate.",
   },
   {
     id: "computer-graphics/lines-quiz/q2",
@@ -336,7 +337,8 @@ export const questions: Question[] = [
       { id: "d", text: "Vector images" },
     ],
     correctOptionId: "b",
-    explanation: "That's aliasing. Antialiasing shades partly covered pixels to hide the steps.",
+    explanation:
+      "Jaggies (aliasing) result from discrete binary sampling: evaluating pixels on an all-or-nothing basis forces non-horizontal edges to jump by whole row or column steps. Refresh rate affects flicker rather than geometric edges, color depth does not cause edge stepping, and vector files contain continuous mathematical formulas that produce jaggies only when rasterized.",
   },
   {
     id: "computer-graphics/lines-quiz/q3",
@@ -349,7 +351,8 @@ export const questions: Question[] = [
       { id: "d", text: "A dark gray, 75% of the way to black" },
     ],
     correctOptionId: "c",
-    explanation: "The pixel's color mixes the two in proportion to coverage: 25% black, 75% white.",
+    explanation:
+      "Antialiasing blends foreground and background shades in proportion to coverage. With 25% coverage of a black stroke on a white background, the pixel receives 25% black and 75% white, creating a light gray (brightness 255 × 0.75 ≈ 191). Solid white or black ignores partial coverage, while dark gray corresponds to 75% coverage rather than 25%.",
   },
   {
     id: "computer-graphics/lines-quiz/q4",
@@ -362,7 +365,8 @@ export const questions: Question[] = [
       { id: "d", text: "8" },
     ],
     correctOptionId: "b",
-    explanation: "m = (11 − 3) / (6 − 2) = 8 / 4 = 2.",
+    explanation:
+      "Slope is vertical change divided by horizontal change: m = (y2 - y1) / (x2 - x1) = (11 - 3) / (6 - 2) = 8 / 4 = 2. 0.5 inverts the ratio by computing run over rise (4 / 8), while 4 and 8 are the individual displacements Δx and Δy rather than their quotient.",
   },
   {
     id: "computer-graphics/lines-quiz/q5",
@@ -375,7 +379,8 @@ export const questions: Question[] = [
       { id: "d", text: "It uses whole numbers only" },
     ],
     correctOptionId: "b",
-    explanation: "For |m| > 1 you must step along y instead, which is what DDA does automatically.",
+    explanation:
+      "Stepping sequentially along x lights exactly one pixel per column. When a line is steep (|m| > 1), the path rises multiple rows per column, leaving empty vertical rows between successive plotted points. Gaps stem from stepping along the wrong axis rather than rounding slope, negative coordinates, or integer arithmetic.",
   },
   {
     id: "computer-graphics/lines-quiz/q6",
@@ -388,7 +393,8 @@ export const questions: Question[] = [
       { id: "d", text: "14 steps, x increment 0.4" },
     ],
     correctOptionId: "b",
-    explanation: "Δx = 4, Δy = 10, so steps = max(4, 10) = 10 and x increment = 4/10 = 0.4. y goes up by 1 each step.",
+    explanation:
+      "Coordinate differences are Δx = 5 - 1 = 4 and Δy = 11 - 1 = 10. The number of steps is max(|Δx|, |Δy|) = max(4, 10) = 10. Because y is the dominant axis, y steps by 1 while x advances by Δx / steps = 4 / 10 = 0.4. 4 steps traverses only Δx, 2.5 inverts the increment by computing Δy / Δx, and 14 sums the coordinate spans instead of taking the maximum.",
   },
   {
     id: "computer-graphics/lines-quiz/q7",
@@ -401,7 +407,8 @@ export const questions: Question[] = [
       { id: "d", text: "It isn't a mistake; the pixels come out the same" },
     ],
     correctOptionId: "b",
-    explanation: "With 0.4 the line ends at 6.8 instead of 7, and the pixel at x = 11 comes out as 6 instead of 7.",
+    explanation:
+      "DDA is an incremental algorithm where the increment is added repeatedly on every step. Truncating 3/7 ≈ 0.4286 to 0.4 introduces a truncation error of nearly 0.029 per step that compounds across iterations, causing computed positions to drift away from the true line and miss terminating coordinates. Pre-rounding does not improve speed, DDA supports fractional numbers, and cumulative drift produces incorrect pixel selections.",
   },
   {
     id: "computer-graphics/lines-quiz/q8",
@@ -414,7 +421,8 @@ export const questions: Question[] = [
       { id: "d", text: "6" },
     ],
     correctOptionId: "a",
-    explanation: "p₀ = 2Δy − Δx = 2 × 3 − 8 = −2.",
+    explanation:
+      "With Δx = 8 - 0 = 8 and Δy = 3 - 0 = 3, the initial decision parameter is p₀ = 2Δy - Δx = 2(3) - 8 = 6 - 8 = -2. 2 reverses the subtraction (8 - 6), -5 calculates Δy - Δx, and 6 computes 2Δy without subtracting Δx.",
   },
   {
     id: "computer-graphics/lines-quiz/q9",
@@ -427,7 +435,8 @@ export const questions: Question[] = [
       { id: "d", text: "The algorithm stops" },
     ],
     correctOptionId: "b",
-    explanation: "p ≥ 0 means the line has passed the midpoint, so the next pixel is one row up.",
+    explanation:
+      "When p ≥ 0, the true line has reached or crossed the midpoint between the candidate pixels, indicating the upper pixel is closer. The algorithm moves up to row y + 1 and updates the decision parameter as p + 2Δy - 2Δx. Staying on the current row and adding 2Δy applies only when p < 0, x always advances by 1 on gentle lines, and the algorithm continues until the endpoint is reached.",
   },
   {
     id: "computer-graphics/lines-quiz/q10",
@@ -440,6 +449,7 @@ export const questions: Question[] = [
       { id: "d", text: "It can draw curves directly" },
     ],
     correctOptionId: "c",
-    explanation: "Each step is one comparison and one addition on integers.",
+    explanation:
+      "Bresenham's algorithm operates entirely in integer arithmetic, using only additions, subtractions, and bit shifts. This eliminates floating-point calculation costs and avoids cumulative fractional rounding drift. It does not alter line stroke width, base Bresenham does not antialias, and it is tailored specifically for rasterizing straight line segments.",
   },
 ];

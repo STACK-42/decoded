@@ -3,79 +3,77 @@ import { LineStepper, SlopeExplorer } from "@/components/mdx/GraphicsVisualizers
 
 # Slope and the Line Equation
 
-A **line-drawing algorithm** answers one question: given two endpoints, which pixels should be lit so the result looks like a straight line between them? Every one of them is built on the equation of a straight line, so start there.
+A **line-drawing algorithm** determines which pixels in a discrete grid to illuminate so that the resulting pattern best approximates a continuous straight line between two specified endpoints. Every raster line algorithm is derived from the mathematical equation of a line.
 
 ## Slope
 
-Walk up a hill and you feel its steepness: the steeper it is, the more you rise for every step forward. **Slope** puts a number on that. It's how far the line goes up for each step to the right, written $m$:
+A straight line has a constant rate of change called its **slope**, denoted by $m$. Slope measures vertical displacement (rise) divided by horizontal displacement (run) between two points $P_1(x_1, y_1)$ and $P_2(x_2, y_2)$:
 
 $$
 m = \frac{\text{rise}}{\text{run}} = \frac{\Delta y}{\Delta x} = \frac{y_2 - y_1}{x_2 - x_1}
 $$
 
-$\Delta$ (delta) just means "change in". For the points $P_1(5, 10)$ and $P_2(11, 14)$:
+The symbol $\Delta$ (delta) represents change. For example, given the endpoints $P_1(5, 10)$ and $P_2(11, 14)$:
 
 $$
 m = \frac{14 - 10}{11 - 5} = \frac{4}{6} = \frac{2}{3} \approx 0.667
 $$
 
-So this line rises two-thirds of a pixel for every pixel it moves right.
+This line rises two-thirds of a pixel vertically for every single pixel it advances horizontally to the right.
 
-<Callout tone="orange" label="Up over across, same order on top and bottom">
-Slope is the change in y divided by the change in x, never the other way round: $4/6$ here, not $6/4$. And subtract the points in the same order on top and bottom. $(14 - 10)/(11 - 5)$ and $(10 - 14)/(5 - 11)$ both give $2/3$, but mixing them, $(14 - 10)/(5 - 11)$, gives $-2/3$, a line sloping the wrong way.
+<Callout tone="orange" label="Order of coordinates in slope calculation">
+Slope is always the change in $y$ divided by the change in $x$, never the reverse. Furthermore, subtract the coordinates in consistent order in both numerator and denominator: $(14 - 10) / (11 - 5)$ and $(10 - 14) / (5 - 11)$ both correctly evaluate to $2/3$, but reversing the order in only one term, such as $(14 - 10) / (5 - 11)$, yields $-2/3$, inverting the slope.
 </Callout>
 
 ## What the slope tells you
 
-| Slope | The line | Angle with the x-axis |
+| Slope | Line behavior | Angle with x-axis |
 |---|---|---|
-| $m > 0$ | rises left to right | between 0° and 90° |
-| $m < 0$ | falls left to right | between 90° and 180° |
-| $m = 0$ | horizontal ($\Delta y = 0$): y never changes | 0° |
-| undefined | vertical ($\Delta x = 0$): x never changes, and you can't divide by 0 | 90° |
-| $\lvert m \rvert < 1$ | gentle: moves more across than up | under 45° |
-| $\lvert m \rvert = 1$ | exactly diagonal | 45° |
-| $\lvert m \rvert > 1$ | steep: moves more up than across | over 45° |
+| $m > 0$ | Rises from left to right | Between 0° and 90° |
+| $m < 0$ | Falls from left to right | Between 90° and 180° |
+| $m = 0$ | Purely horizontal ($\Delta y = 0$): $y$ remains constant | 0° |
+| Undefined | Purely vertical ($\Delta x = 0$): division by zero | 90° |
+| $\lvert m \rvert < 1$ | Gentle: horizontal run exceeds vertical rise | Less than 45° |
+| $\lvert m \rvert = 1$ | Perfect diagonal | Exactly 45° |
+| $\lvert m \rvert > 1$ | Steep: vertical rise exceeds horizontal run | Greater than 45° |
 
-The slope is also the tangent of the line's angle with the x-axis: $m = \tan\theta$. A 45° line has slope $\tan 45° = 1$. Going the other way, the line above has $\theta = \tan^{-1}(2/3) \approx 33.7°$, under 45° because its slope is under 1.
+The slope corresponds to the trigonometric tangent of the angle $\theta$ that the line forms with the positive x-axis: $m = \tan\theta$. A 45° diagonal line has a slope of $\tan 45° = 1$. For the example above, $\theta = \tan^{-1}(2/3) \approx 33.7°$, which is below 45° because its slope is less than 1.
 
-Move the endpoints and watch the rise, the run and the slope change. Try a horizontal line, a vertical one and a 45° one:
+Drag the endpoints in the visualizer below to observe how rise, run, and slope behave across gentle, steep, horizontal, and vertical lines:
 
 <SlopeExplorer />
 
-<Callout tone="sky" label="The number that matters">
-For drawing lines, the most important row is the 1 boundary. Whether $\lvert m \rvert$ is below or above 1 decides which direction the algorithm should step in, as you'll see shortly.
+<Callout tone="sky" label="The unit slope boundary">
+The threshold $\lvert m \rvert = 1$ is critical for raster line algorithms. Whether the absolute slope is less than or greater than 1 determines whether the algorithm must step along the x-axis or the y-axis to avoid leaving gaps in the rendered line.
 </Callout>
 
 ## The slope-intercept equation
 
-Every non-vertical line can be written as
+Any non-vertical straight line can be expressed in slope-intercept form:
 
 $$
 y = mx + c
 $$
 
-where $m$ is the slope and $c$ is the **y-intercept**, the y-value where the line crosses the y-axis (at $x = 0$). Once you know $m$, find $c$ by putting either endpoint into the equation and solving:
+Here $m$ is the slope and $c$ is the **y-intercept**, the value of $y$ where the line crosses the y-axis (at $x = 0$). Given slope $m$ and endpoint $P_1(x_1, y_1)$, solve for $c$:
 
 $$
 c = y_1 - m x_1 = 10 - \frac{2}{3} \times 5 = 10 - 3.333 = 6.667
 $$
 
-So the line through $P_1$ and $P_2$ is $y = 0.667x + 6.667$. Check it with the other endpoint: $0.667 \times 11 + 6.667 = 14$. ✓
+The line passing through $P_1(5, 10)$ and $P_2(11, 14)$ is defined by $y = 0.667x + 6.667$. Evaluating this equation at the second endpoint confirms the formulation: $0.667 \times 11 + 6.667 = 14$.
 
 ## The naive algorithm: just use the equation
 
-The most direct way to draw a line follows straight from this. (Some notes use the name "naive" for a different method, the one that divides by the number of steps. That one is DDA, and it's covered, with its examples, in the [next lesson](/courses/computer-graphics/dda#example-5-2-2-to-8-5-and-a-homework-line).)
+The most direct line-drawing approach evaluates this equation directly at each integer step:
 
-1. Compute $m$ and $c$ from the endpoints.
-2. For every whole x from $x_1$ to $x_2$, compute $y = mx + c$.
-3. Pixels only exist at whole coordinates, so **round** y and light the pixel $(x, \text{round}(y))$.
+1. Calculate slope $m$ and intercept $c$ from the given endpoints.
+2. For each integer $x$ from $x_1$ to $x_2$, calculate continuous $y = mx + c$.
+3. Because raster displays contain pixels only at discrete coordinates, **round** $y$ to the nearest integer and plot pixel $(x, \text{round}(y))$.
 
-Step through it on $P_1(5, 10)$ to $P_2(11, 14)$. The blue dot is the exact point on the line; the pixel lit is the one it rounds to:
+Step through the calculation for $P_1(5, 10)$ to $P_2(11, 14)$. The blue indicator shows the continuous position along the line, while the highlighted square marks the plotted pixel:
 
 <LineStepper algorithm="naive" from={[5, 10]} to={[11, 14]} />
-
-The result:
 
 | x | y = 0.667x + 6.667 | rounded | pixel |
 |---|---|---|---|
@@ -87,13 +85,13 @@ The result:
 | 10 | 13.333 | 13 | (10, 13) |
 | 11 | 14 | 14 | (11, 14) |
 
-<Callout tone="orange" label="Don't round the intercept">
-It's tempting to round $c = 6.667$ to 7 "since pixels are whole numbers". Don't. That moves the entire line up by a third of a pixel, and with $y = 0.666x + 7$ you get pixels (7, 12) and (10, 14) instead of (7, 11) and (10, 13), and the line doesn't even start at (5, 10) exactly. Keep $m$ and $c$ as exact as you can, and round only y, only at the moment you light the pixel.
+<Callout tone="orange" label="Do not round the intercept">
+Rounding the intercept $c = 6.667$ to $7$ before plotting shifts the entire line upwards by a third of a pixel. Evaluating $y = 0.667x + 7$ yields pixels $(7, 12)$ and $(10, 14)$ instead of $(7, 11)$ and $(10, 13)$, and the line misses the starting endpoint $(5, 10)$. Maintain full numerical precision for $m$ and $c$, and round only when converting the final $y$ coordinate to a pixel index.
 </Callout>
 
-### Rounding or truncating?
+### Rounding vs truncation
 
-Some worked solutions don't round y at all. They store it in a C++ `int`, which **truncates**: it drops the fraction instead of going to the nearest whole number, so 10.996 becomes 10 and 13.66 becomes 13. Truncating this line gives:
+Some software implementations cast floating-point coordinates to integer types, which **truncates** rather than rounds: it discards the fractional portion, converting both 10.99 and 10.01 to 10. Truncating this sample line yields:
 
 | x | exact y | rounded | truncated |
 |---|---|---|---|
@@ -105,16 +103,14 @@ Some worked solutions don't round y at all. They store it in a C++ `int`, which 
 | 10 | 13.333 | 13 | 13 |
 | 11 | 14 | 14 | 14 |
 
-Truncating always goes down, so its pixels sit up to a whole pixel below the true line; rounding keeps every pixel within half a pixel of it. Both draw a connected line, but they light different pixels at x = 6 and x = 9. If a question or a program truncates, follow it, and say which you're doing. In C++, `(int)(y + 0.5)` or `round(y)` rounds a positive y instead of truncating it.
+Truncation consistently rounds downward, causing plotted pixels to deviate up to nearly a full pixel below the mathematical line. True rounding keeps every plotted pixel within half a pixel of the continuous line. In C and C++, `round(y)` or `static_cast<int>(y + 0.5)` implements symmetric nearest-integer rounding for non-negative coordinates.
 
 ## Where the naive algorithm breaks
 
-Now try a steep line. Enter `2 1 4 9` (from (2, 1) to (4, 9)) in the boxes above and press **Draw**.
+Evaluating $y = mx + c$ sequentially across $x$ fails under two conditions:
 
-The line rises 8 rows but only crosses 3 columns. The algorithm lights exactly one pixel per column, so it lights 3 pixels for a line that should be 9 long, leaving big gaps. That's the first problem: **stepping along x only works when $\lvert m \rvert \le 1$**. For a steep line, you have to step along y instead and compute x, which means rewriting the equation as $x = (y - c)/m$.
+1. **Steep lines ($\lvert m \rvert > 1$)**: For a line rising 8 rows while spanning only 3 columns (such as from $(2, 1)$ to $(4, 9)$), stepping along $x$ plots only 3 pixels. The resulting line has large vertical gaps between rows. To render steep lines without gaps, the algorithm must step along $y$ by single units and solve for $x = (y - c) / m$.
+2. **Vertical lines**: When a line is purely vertical ($\Delta x = 0$), the slope $m = \Delta y / \Delta x$ requires division by zero, making the formulation undefined.
+3. **Computational overhead**: Every pixel calculation requires a floating-point multiplication ($m \cdot x$), a floating-point addition, and a rounding operation. On graphics hardware rendering thousands of lines per frame, repetitive floating-point multiplication creates a performance bottleneck.
 
-Enter `3 1 3 6` for a vertical line, and the algorithm can't even start, because $\Delta x = 0$ makes the slope a division by zero.
-
-There's a second, quieter problem: **speed**. Every pixel costs a [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) multiplication ($m \times x$) and an addition, plus a rounding. Floating-point numbers are the ones with a fractional part, like 0.667, and processors handle them more slowly than whole numbers. Multiplication used to be expensive, and a screen draws an enormous number of line pixels.
-
-The [next lesson](/courses/computer-graphics/dda) fixes both problems with one idea.
+The [next lesson](/courses/computer-graphics/dda) introduces the Digital Differential Analyzer, resolving these limitations through incremental arithmetic.
