@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { TgRunner, StateEliminator } from "@/components/mdx/TocVisualizers";
 
@@ -8,13 +8,13 @@ A [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) is 
 
 ## What changes
 
-A transition graph has:
+Even an [NFA](/courses/theory-of-computation/nfa) keeps two strict rules: every edge still reads at most one letter (or $\varepsilon$), and there is only one start state. A **transition graph** drops both rules as well, so it has:
 
-- a finite set of states, **at least one** of which is a start state (marked $-$), and some final states (marked $+$);
+- a finite set of states, **at least one** of which is a start state (marked $-$ in textbook diagrams, or labeled `start` below), and a set of final states (marked $+$, or double circles labeled `final` below; the set can even be empty);
 - an [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$;
-- edges labelled with **words** over $\Sigma$, not just single letters. A label can also be $\Lambda$, the empty word, which lets the machine move without reading anything.
+- edges labeled with **words** over $\Sigma$ instead of single letters. A label can also be $\Lambda$ (capital lambda, the same [empty word](/courses/theory-of-computation/language-of-languages#string-word) written $\varepsilon$ in earlier lessons), which lets the machine move without reading anything.
 
-A word is **accepted** if you can cut it into pieces, $w = w_1 w_2 \ldots w_k$, so that some path from a start state to a final state has edges labelled $w_1$, $w_2$, ..., $w_k$ in that order. If no such cut and path exist, the word is rejected.
+A word $w$ is **accepted** if you can cut it into pieces, $w = w_1 w_2 \ldots w_k$, so that some path from a start state to a final state has edges labeled $w_1$, $w_2$, ..., $w_k$ in that order (where any $\Lambda$-edge contributes $\Lambda$ without consuming letters from $w$). If no such cut and path exist, the word is rejected.
 
 Nothing else is required. A state can have no edge for some letter, two edges with the same label, or both. The machine doesn't have to be told which path to take; a word is in the language as long as **some** path works.
 
@@ -24,7 +24,7 @@ Nothing else is required. A state can have no edge for some letter, two edges wi
 
 ## Words on edges
 
-Here is a TG for all words over $\{a, b\}$ that end in $bb$. State 1 loops on $a$ and on $b$, and one edge labelled with the whole word $bb$ leads to the final state.
+Here is a TG for all words over $\{a, b\}$ that end in $bb$. State 1 loops on $a$ and on $b$, and one edge labeled with the whole word $bb$ leads to the final state.
 
 <TgRunner
   tg={{
@@ -41,7 +41,12 @@ Here is a TG for all words over $\{a, b\}$ that end in $bb$. State 1 loops on $a
   initial="abbabb"
 />
 
-Try `abbabb`, then `abba` and `bb`. For an accepted word the runner shows the cut: `abbabb` becomes a | b | b | a | bb, four trips around the loop and then the $bb$ edge. The DFA for the same language needs three states and has to remember "I've just seen one $b$". The TG doesn't have to, because the edge reads both $b$'s at once.
+Try `abbabb`, then `bb` and `abba`:
+- **`abbabb` (accepted):** Cut it as `a | b | b | a | bb`, taking four trips around the self-loop at state 1 and then the `bb` edge into final state 2.
+- **`bb` (accepted):** Cut it as one piece `bb` and jump straight from 1 to 2.
+- **`abba` (rejected):** Taking `a | b | b | a` keeps you at state 1 (not final). If instead you try `a | bb` to reach state 2 early, there is still a trailing `a` left to read and state 2 has no outgoing edges at all, so that path dies. Every path fails.
+
+The DFA for the same language needs three states and has to remember "I've just seen one $b$". The TG doesn't have to, because the edge reads both $b$'s at once.
 
 ## Several starts and free moves
 
@@ -63,22 +68,30 @@ This TG has two start states, $x$ and $y$, and a $\Lambda$-edge from $y$ to $z$:
   initial="bbaa"
 />
 
-From $y$, the machine reads any number of $b$'s, slips to $z$ for free, and then reads $aa$ any number of times. From $x$, it reads $ab$ once and then the same $aa$ loop. So the language is $(ab + b^*)(aa)^*$. Check that the empty word is accepted (start at $y$, take the $\Lambda$-edge) and that `ba` isn't.
+To find its language, trace what each start state can reach:
+- **Start at $x$:** The only path out reads $ab$ to reach $z$, then loops at $z$ zero or more times on $aa$, giving $ab(aa)^*$.
+- **Start at $y$:** Loop on $b$ zero or more times ($b^*$), slip to $z$ on $\Lambda$ without reading anything, then loop at $z$ zero or more times on $aa$, giving $b^*(aa)^*$.
 
-<Callout tone="orange" label="Λ is not a letter">
-  An edge labelled $\Lambda$ consumes nothing. It's a free move, not an edge that reads some symbol called lambda. In exam drawings, don't confuse it with a missing label.
+Because you may start at either $x$ or $y$, the full language is their union: $ab(aa)^* + b^*(aa)^* = (ab + b^*)(aa)^*$.
+
+Check two edge cases by hand:
+- **$\Lambda$ (accepted):** Start at $y$, take $y \xrightarrow{\Lambda} z$ (zero characters consumed), and take zero $aa$-loops to finish at final state $z$.
+- **`ba` (rejected):** Starting at $x$ fails immediately because $x$'s only edge needs `ab`. Starting at $y$, reading `b` keeps you at $y$ with `a` left; taking $\Lambda$ to $z$ still leaves `a`, and $z$'s only loop needs two `a`'s (`aa`), not one.
+
+<Callout tone="orange" label="Λ is not a letter, and reaching + mid-word isn't enough">
+  An edge labeled $\Lambda$ consumes nothing: it's a free move, not a literal symbol called lambda (don't confuse it with an unlabeled edge in exam drawings). Also, reaching a final state mid-word does not accept immediately. As with a DFA or NFA, the whole word must be consumed when the path ends at $+$.
 </Callout>
 
 ## From a TG to a regular expression
 
-Exams often draw a TG and ask for its [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter). The method is **state elimination**: replace the TG by a *generalized* transition graph, where edges are labelled with regular expressions instead of words, and remove states one at a time until a single edge is left.
+Exams often draw a TG and ask for its [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter). The method is **state elimination**: replace the TG by a **generalized transition graph** (GTG), where edges can be labeled with full regular expressions instead of just words, and remove states one at a time until a single edge is left.
 
-1. Add a new start state $-$ with $\Lambda$-edges into every old start state, and a new final state $+$ with $\Lambda$-edges out of every old final state. Now the machine has one way in and one way out.
-2. If two edges join the same pair of states, merge them: labels $r_1$ and $r_2$ become one edge labelled $r_1 + r_2$.
-3. Pick a state $q$ to remove. For every path $p \rightarrow q \rightarrow s$ through it, add an edge $p \rightarrow s$ labelled with the incoming label, then the loop on $q$ starred, then the outgoing label. If $p \rightarrow s$ already had an edge, join the two with $+$.
-4. Repeat until only $-$ and $+$ are left. The label on the edge between them is the answer.
+1. Add a new start state $-$ with $\Lambda$-edges into every old start state, and a new final state $+$ with $\Lambda$-edges out of every old final state. (Note: $-$ and $+$ are state names here, distinct from the union operator $+$ inside edge labels.) Why? Old start states often have incoming arrows (like state 1 below) and old final states can have outgoing arrows or multiple copies. Fresh $-$ and $+$ states guarantee one clean entry with no incoming arrows and one clean exit with no outgoing arrows.
+2. If two edges join the same pair of states (including two self-loops on the same state), merge them: labels $r_1$ and $r_2$ become one edge labeled $r_1 + r_2$.
+3. Pick an interior state $q$ to remove (never $-$ or $+$). For every pair of distinct edges entering and leaving $q$, namely $p \rightarrow q$ ($p \neq q$) labeled $r_1$ and $q \rightarrow s$ ($s \neq q$) labeled $r_3$ (including when $p = s$), add a shortcut edge $p \rightarrow s$ labeled $r_1 r_2^* r_3$, where $r_2$ is the self-loop on $q$. If $q$ has no self-loop, omit the middle starred part and just write $r_1 r_3$. If $p \rightarrow s$ already had an edge, join the two with $+$. Then delete $q$ and its edges.
+4. Repeat steps 2 and 3 until only $-$ and $+$ are left. The label on the single edge $-\rightarrow +$ is the answer (or $\emptyset$ if no edge connects $-$ to $+$).
 
-Step 3 is the one to understand. If you could go from $p$ to $q$ on $r_1$, circle around $q$ any number of times on $r_2$, and leave to $s$ on $r_3$, then the new edge $p \rightarrow s$ is $r_1 r_2^* r_3$.
+Step 3 is the one to understand. If you could go from $p$ to $q$ on $r_1$, circle around $q$ any number of times on $r_2$, and leave to $s$ on $r_3$, then bypassing $q$ does all of that in one step: $r_1 r_2^* r_3$.
 
 Here is the finite automaton for "an even number of $a$'s" over $\{a, b\}$. State 1 is both the start and the only final state.
 
@@ -98,23 +111,46 @@ Here is the finite automaton for "an even number of $a$'s" over $\{a, b\}$. Stat
   order={["2", "1"]}
 />
 
-Removing state 2 first turns the path $1 \rightarrow 2 \rightarrow 1$ into a loop on 1 labelled $ab^*a$, which merges with the existing loop $b$. Removing state 1 then gives $(b + ab^*a)^*$: any mix of single $b$'s and blocks that start and end with an $a$. Every word it generates has an even number of $a$'s.
+Follow the algorithm on this machine step by step:
+1. **Add $-$ and $+$:** Connect $-\xrightarrow{\Lambda} 1$ and $1 \xrightarrow{\Lambda} +$ (the old start/final markers on 1 are now replaced by $-$ and $+$).
+2. **Eliminate state 2:** State 2 has one incoming edge ($1 \xrightarrow{a} 2$), a self-loop ($2 \xrightarrow{b} 2$), and one outgoing edge ($2 \xrightarrow{a} 1$). Here $p = s = 1$, so the shortcut creates a new self-loop $1 \rightarrow 1$ labeled $ab^*a$. Merge it with the existing loop $1 \xrightarrow{b} 1$ to get a single loop on state 1 labeled $b + ab^*a$.
+3. **Eliminate state 1:** Now state 1 has one incoming edge ($-\xrightarrow{\Lambda} 1$), one self-loop ($b + ab^*a$), and one outgoing edge ($1 \xrightarrow{\Lambda} +$). Bypassing state 1 gives $-\rightarrow +$ labeled $\Lambda (b + ab^*a)^* \Lambda = (b + ab^*a)^*$ (because $\Lambda$ is the empty word, concatenating it on either side drops out: $\Lambda r = r \Lambda = r$).
+
+Every word it generates is a mix of single $b$'s and blocks $ab^*a$ that start and end with an $a$, so every word has an even number of $a$'s (for instance, $\varepsilon$ takes zero repetitions, and `aba` comes from one pass through $ab^*a$).
+
+<Callout tone="orange" label="Two state-elimination traps">
+  When eliminating a state $q$ by hand, two mistakes come up repeatedly:
+  - **Missing a $(p, s)$ pair:** If $q$ has $2$ incoming edges and $2$ outgoing edges, there are $2 \times 2 = 4$ paths through $q$, and every pair needs a shortcut edge before you delete $q$.
+  - **Dropping parentheses:** When you merge $b$ and $ab^*a$ into $b + ab^*a$ and then star that loop, you must write $(b + ab^*a)^*$, not $b + ab^*a^*$. Whenever you substitute an edge label containing `+` into $r_1 r_2^* r_3$, wrap it in parentheses first.
+</Callout>
 
 <Callout tone="sky" label="Order changes the expression, not the language">
   Eliminating states in a different order usually gives a different-looking expression. Both are correct, because they describe the same language. If your answer doesn't match the solution sheet letter for letter, list the first few words of each before deciding you're wrong.
 </Callout>
 
+**Practice (state elimination by hand):** Use state elimination on the 2-state machine with start state $1$, final state $2$, and edges $1 \xrightarrow{a} 1$, $1 \xrightarrow{b} 2$, $2 \xrightarrow{b} 2$, and $2 \xrightarrow{a} 1$. Eliminate state $1$ first, then state $2$.
+
+<ModelAnswer>
+1. **Add $-$ and $+$:** Connect $-\xrightarrow{\Lambda} 1$ and $2 \xrightarrow{\Lambda} +$.
+2. **Eliminate state $1$:** Incoming edges to $1$ are $-\xrightarrow{\Lambda} 1$ and $2 \xrightarrow{a} 1$; the self-loop on $1$ is $a$; the outgoing edge is $1 \xrightarrow{b} 2$.
+   - Pair $(-, 2)$ adds $-\xrightarrow{\Lambda a^* b} 2$, which simplifies to $a^*b$.
+   - Pair $(2, 2)$ adds a self-loop $2 \xrightarrow{a a^* b} 2$. Merging it with the existing loop $2 \xrightarrow{b} 2$ gives $b + aa^*b$.
+3. **Eliminate state $2$:** Now $2$ has incoming $-\xrightarrow{a^*b} 2$, loop $b + aa^*b$, and outgoing $2 \xrightarrow{\Lambda} +$. Bypassing $2$ yields:
+   $$a^*b(b + aa^*b)^*$$
+   Every word in this language ends in $b$ (for instance `b`, `ab`, `bb`, `bab`), matching the machine.
+</ModelAnswer>
+
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Literal prefilters" tool="RIPGREP">
-    Fast search tools pull literal strings out of a pattern and scan for those first, only running the full automaton near a hit. Treating a fixed word as one step, like a TG edge labelled $bb$, is the same idea.
+    Fast search tools pull literal strings out of a pattern and scan for those first, only running the full automaton near a hit. Treating a fixed word as one step, like a TG edge labeled $bb$, is the same idea.
   </PracticalApplication>
   <PracticalApplication title="Lexer generators" tool="LEX / FLEX">
     A lexer generator joins one automaton per token type under a single new start state with $\Lambda$-edges, exactly like step 1 of state elimination, then converts the combined machine into one DFA.
   </PracticalApplication>
   <PracticalApplication title="Word segmentation" tool="TEXT">
-    Splitting "thisisatest" into dictionary words is acceptance in a TG whose edges are labelled with dictionary words. Search engines and input methods for languages written without spaces do this constantly.
+    Splitting "thisisatest" into dictionary words is acceptance in a TG whose edges are labeled with dictionary words. Search engines and input methods for languages written without spaces do this constantly.
   </PracticalApplication>
 </ApplicationsGrid>
 

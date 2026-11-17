@@ -1,14 +1,14 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 
 # The Language of Languages
 
-Before any CPU or GPU was built, and before any automaton or algorithm, mathematicians needed to agree on what they were talking about. They kept running into the same problem: how do you precisely describe an infinite collection of strings with a finite set of rules?
+Before anyone built a CPU, an automaton, or an algorithm, mathematicians had to agree on the objects they were studying. The problem they kept hitting was simple: how do you describe an infinite collection of strings with a finite set of rules?
 
-Natural language fails here. "All strings that start with *a* and end with *b*" describes a language well enough for a person, but a machine needs something it can check mechanically. Every symbol in the notation you're about to learn exists to remove that vagueness. In short, we need a precise language for describing languages.
+Natural language fails here. "All strings that start with *a* and end with *b*" works for a person, but a machine needs a rule it can check mechanically. Every symbol in the notation below removes that vagueness.
 
 ## The Three-Level Hierarchy
 
-Everything in [formal language theory](https://en.wikipedia.org/wiki/Formal_language) is built on three linked concepts, and the rest of the course rests on them.
+[Formal language theory](https://en.wikipedia.org/wiki/Formal_language) rests on three connected concepts, and the rest of the course builds on them.
 
 ### Alphabet: $\Sigma$
 
@@ -26,31 +26,37 @@ $$
 \Sigma = \{x\}
 $$
 
-The symbol $\Sigma$ (sigma) is just the conventional name. The alphabet is the raw material: the only symbols your machine is allowed to see. Think of it as the keys on a keyboard. If your keyboard only has two keys, those are the only characters you can type.
+The symbol $\Sigma$ (sigma) is the conventional name. The alphabet is the raw material: the only symbols your machine is allowed to see. Think of it as the keys on a keyboard. If your keyboard has only two keys, those are the only characters you can type.
+
+Two restrictions matter in that definition. First, $\Sigma$ must be **finite**, because a machine can only store rules for a finite list of symbols. Second, $\Sigma$ must be **non-empty**, because an alphabet with zero symbols can never build any non-empty strings. A symbol does not have to be a single letter: in a vending machine, a coin like `$5` or a token like `if` in a compiler can act as one single symbol in $\Sigma$.
 
 ### String (Word)
 
-A string is a **finite sequence of symbols drawn from the alphabet**. You concatenate letters, left to right, and you get a string.
+A **string** (also called a **word**) is a **finite sequence of symbols from the alphabet**. You join letters left to right to form a string. Unlike a set, order and repeats *do* matter in a string: $ab$ is different from $ba$, and $aa$ is different from $a$.
 
 $$
-\Sigma = \{a, b\} \implies ab,\ bba,\ aaab\ \text{ are all valid strings}
+\Sigma = \{a, b\} \implies ab,\ bba,\ aaab,\ \varepsilon\ \text{ are all valid strings}
 $$
 
-Two things to know right away. The length of a string $w$ is written $|w|$, so $|abb| = 3$ and $|a| = 1$.
+The **length** of a string $w$, written $|w|$, is the number of symbols in it, so $|abb| = 3$ and $|a| = 1$.
 
-The other is the string that confuses everyone: the **empty string** $\varepsilon$ (epsilon), a string of zero symbols. Be careful, because it isn't "nothing". It exists, it has length zero, and it will show up constantly.
+The **empty string** $\varepsilon$ (epsilon) is the string with zero symbols. (Some textbooks write $\Lambda$, capital lambda, for the same string; Module 0 uses $\varepsilon$ everywhere, and Module 2 switches to $\Lambda$ in grammar derivations.) Do not treat $\varepsilon$ as "nothing". It exists, it is a valid string over every alphabet, and its length is zero:
 
 $$
 |\varepsilon| = 0
 $$
 
 <Callout tone="orange" label="The ε mistake">
-  The empty string $\varepsilon$ is not the empty set $\emptyset$. The empty set contains nothing. The empty string is a real string that happens to contain no symbols. A language that contains $\varepsilon$ is different from a language that does not. This distinction will matter in every module that follows.
+  Students often confuse the empty string $\varepsilon$ with the empty set $\emptyset$, and the language $\{\varepsilon\}$ with $\emptyset$. We also write $|L|$ for the **size** (cardinality) of a language $L$, meaning how many strings it holds:
+  - $\varepsilon$ is a **string** of length $0$. $\emptyset$ is a **set** containing zero strings.
+  - $\{\varepsilon\}$ is a **language with one string in it** ($\lvert\{\varepsilon\}\rvert = 1$), whereas $\emptyset = \{\}$ is the **empty language with zero strings** ($\lvert\emptyset\rvert = 0$).
+
+  A language that contains $\varepsilon$ behaves very differently from one that does not. This distinction will matter in every module that follows.
 </Callout>
 
 ### Language: $L$
 
-A language is a **set of strings** over some alphabet.
+A **language** is a **set of strings** over some alphabet. Because a language is a set, the order you list its strings in and duplicate copies do not change the language: $\{ab, ba\}$ and $\{ba, ab\}$ are the same language.
 
 $$
 L = \{ab,\ ba,\ aba\}
@@ -60,7 +66,7 @@ $$
 L = \{w \in \Sigma^* \mid w \text{ starts with } a\}
 $$
 
-Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule. Since you can't list an infinite language, formal language theory is almost entirely about finding compact, mechanical rules that describe one.
+Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule (read $\in$ as "in", the vertical bar $\mid$ as "such that", and $\Sigma^*$ as every possible string over $\Sigma$, defined in the next section). Since you can't list an infinite language, formal language theory is mostly about finding short, exact rules that describe one.
 
 <table>
   <thead>
@@ -93,64 +99,91 @@ Both of those are valid languages. One is finite and listed explicitly. The othe
 
 You'll see this operator more than any other in the course.
 
-$\Sigma^*$ means **all possible strings over $\Sigma$, including the empty string**: every string of every length, made from any combination of the alphabet's symbols.
+The **Kleene star** $\Sigma^*$ means **all possible strings over $\Sigma$, including the empty string**: every string of every length, made from any combination of the alphabet's symbols.
+
+You can build $\Sigma^*$ step by step by listing strings one length at a time for $\Sigma = \{a, b\}$:
+
+- Length 0: $\varepsilon$
+- Length 1: $a,\ b$
+- Length 2: $aa,\ ab,\ ba,\ bb$
+- Length 3: $aaa,\ aab,\ aba,\ abb,\ baa,\ bab,\ bba,\ bbb$
+
+Combining every length gives the infinite universe of strings:
 
 $$
 \Sigma = \{a, b\} \implies \Sigma^* = \{\varepsilon,\ a,\ b,\ aa,\ ab,\ ba,\ bb,\ aaa,\ aab,\ \ldots\}
 $$
 
-$\Sigma^*$ is always infinite (unless $\Sigma$ itself is empty). It is the universe of all strings your alphabet can produce.
+$\Sigma^*$ is always infinite (because $\Sigma$ is non-empty, you can keep making longer strings forever). It is the universe of all strings your alphabet can produce.
 
-The $+$ variant, $\Sigma^+$, is the same thing **without** $\varepsilon$:
+The $+$ variant, **positive closure** $\Sigma^+$, is the same set **without** $\varepsilon$ (strings of length 1 or more):
 
 $$
 \Sigma^+ = \Sigma^* - \{\varepsilon\}
 $$
 
-So every language $L$ you will ever study is a subset of $\Sigma^*$:
+<Callout tone="orange" label="What is ∅*?">
+  The Kleene star also applies to any language $L$, writing $L^*$ for zero or more strings from $L$ placed side by side. Students often guess that $\emptyset^* = \emptyset$, assuming "repeating nothing gives nothing". In fact, picking **zero** strings always produces the empty string $\varepsilon$ (just as $L^0 = \{\varepsilon\}$ below), so:
+  $$\emptyset^* = \{\varepsilon\} \qquad \text{while} \qquad \emptyset^+ = \emptyset$$
+  $\emptyset^*$ has one element ($\varepsilon$), whereas $\emptyset^+$ requires picking at least one string from an empty set and has none.
+</Callout>
+
+So every language $L$ you will ever study is a [subset](/courses/discrete-mathematics/sets#subsets) of $\Sigma^*$:
 
 $$
 L \subseteq \Sigma^*
 $$
 
-That sums up the whole hierarchy: a language is a subset of the universe of possible strings.
-
 <Callout tone="violet" label="Why Σ* exists">
-  Think of $\Sigma^*$ as your entire string universe. Without it, you would have to define what a valid string is every single time you create a language. With it, you just write $L \subseteq \Sigma^*$, and everyone instantly knows your language is a piece of that universe.
+  Think of $\Sigma^*$ as your entire string universe. Without it, you would have to define what counts as a valid string every time you introduce a language. Writing $L \subseteq \Sigma^*$ settles that in one line.
 </Callout>
 
 
 ## Concatenation
 
-Concatenation is the operation of joining two strings end-to-end. If $u = ab$ and $v = ba$, then:
+Joining two strings end-to-end is called **concatenation**. If $u = ab$ and $v = ba$, then:
 
 $$
 uv = abba
 $$
 
-This extends to languages. The **concatenation of two languages** $X$ and $Y$ is:
+Notice that order matters: $vu = baab$, which is not the same string as $uv$. Joining any string $w$ with the empty string $\varepsilon$ leaves $w$ unchanged: $w\varepsilon = \varepsilon w = w$.
+
+This extends to languages. The **concatenation of two languages** $X$ and $Y$ pairs every string in $X$ with every string in $Y$:
 
 $$
 XY = \{uv \mid u \in X \text{ and } v \in Y\}
 $$
 
-Every string from $X$ paired with every string from $Y$, joined together. If $X = \{a,\ bb\}$ and $Y = \{c,\ dd\}$:
+Here is a step-by-step example with $X = \{a,\ bb\}$ and $Y = \{c,\ dd\}$:
+
+1. Take the first string from $X$, which is $a$, and join it with each string in $Y$: $a \cdot c = ac$ and $a \cdot dd = add$.
+2. Take the second string from $X$, which is $bb$, and join it with each string in $Y$: $bb \cdot c = bbc$ and $bb \cdot dd = bbdd$.
+3. Collect the results into a set:
 
 $$
 XY = \{ac,\ add,\ bbc,\ bbdd\}
 $$
 
-Exponents abbreviate repeated concatenation:
+If two pairs produce the same string, the set keeps only one copy. For example, if $X = \{a, aa\}$ and $Y = \{a, aa\}$, the pairs give $aa, aaa, aaa, aaaa$, so $XY = \{aa, aaa, aaaa\}$ (three strings, not four).
+
+Exponents abbreviate repeated concatenation ($L^k$ concatenates $k$ copies of $L$, so for $\Sigma = \{a, b\}$, $\Sigma^2 = \Sigma \cdot \Sigma$):
 
 $$
 a^3 = aaa \qquad \Sigma^2 = \{aa,\ ab,\ ba,\ bb\}
 $$
 
-And $w^0 = \varepsilon$ for any string $w$, since concatenating zero times gives you the empty string.
+And $w^0 = \varepsilon$ for any string $w$, and $L^0 = \{\varepsilon\}$ for any language $L$ (even $L = \emptyset$), since concatenating zero strings gives the empty string.
+
+<Callout tone="orange" label="L · ∅ is not L">
+  Students often treat $\emptyset$ like $0$ in addition and write $L \cdot \emptyset = L$. Concatenation works like multiplication by zero, not addition: you have to pick one string from $L$ and one string from $\emptyset$ to form every pair. Since $\emptyset$ has no strings to pair with, no pairs can be formed:
+  $$L \cdot \emptyset = \emptyset \qquad \text{whereas} \qquad L \cdot \{\varepsilon\} = L$$
+  The identity element for language concatenation is $\{\varepsilon\}$, not $\emptyset$.
+</Callout>
 
 ## Regular Expressions: The First Compact Notation
 
-You've probably met [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) through `grep`. They are also a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and based on exactly the three operations you just learned.
+You may know [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) from `grep`. In math, a **regular expression** is a formal notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and built from three operations: union, concatenation, and Kleene star. (Unlike `grep` or JavaScript, where `+` means "one or more", textbook notation uses `+` for **union**, meaning "or".)
 
 A regular expression over $\Sigma$ is defined by three rules:
 
@@ -160,27 +193,49 @@ A regular expression over $\Sigma$ is defined by three rules:
 - Any single symbol $a \in \Sigma$ is a regular expression, describing $\{a\}$
 
 **Recursion.** If $r_1$ and $r_2$ are regular expressions, so are:
-- $r_1 r_2$: concatenation
-- $r_1 + r_2$: union (either $r_1$ or $r_2$)
-- $r_1^*$: Kleene star (zero or more repetitions of $r_1$)
+- $r_1 r_2$: concatenation (a string from $r_1$'s language followed by one from $r_2$'s language)
+- $r_1 + r_2$: union (any string in $r_1$'s language or in $r_2$'s language)
+- $r_1^*$: Kleene star (zero or more strings from $r_1$'s language concatenated together)
 
-**Closure.** Nothing else is a regular expression.
+**Completeness.** Nothing else is a regular expression.
 
-Those three rules generate every regular expression ever written. The regex in your editor, the pattern in your validation code and the search in your terminal are all instances of this recursive definition.
+Those three rules generate every regular expression, from a search pattern in your terminal to an input check in your code.
 
-Here's a worked example. Given $\Sigma = \{a, b\}$:
-
-$$
-L = \text{language}(a^*b^*) = \{\varepsilon,\ a,\ b,\ aa,\ ab,\ bb,\ aaa,\ aab,\ abb,\ bbb,\ \ldots\}
-$$
-
-All strings of zero or more $a$'s followed by zero or more $b$'s. The regular expression $a^*b^*$ describes this infinite language in five characters.
+Write $L(r)$ for the language described by a regular expression $r$. Here is a worked example over $\Sigma = \{a, b\}$:
 
 $$
-L = \text{language}((a+b)^*) = \Sigma^*
+r = a^*b^*
 $$
 
-That's every possible string over $\{a, b\}$. The $(a+b)^*$ pattern, which you may have seen in real regex, is the formal way of writing the entire universe of strings.
+To list $L(a^*b^*)$, pick how many $a$'s you want ($0, 1, 2, \ldots$) and how many $b$'s you want ($0, 1, 2, \ldots$):
+- $0$ $a$'s and $0$ $b$'s gives $\varepsilon$
+- $1$ $a$ and $0$ $b$'s gives $a$; $0$ $a$'s and $1$ $b$ gives $b$
+- $2$ symbols total gives $aa, ab, bb$ (notice $ba$ is impossible, because all $a$'s must come before all $b$'s)
+
+$$
+L(a^*b^*) = \{\varepsilon,\ a,\ b,\ aa,\ ab,\ bb,\ aaa,\ aab,\ abb,\ bbb,\ \ldots\}
+$$
+
+Compare that with $(ab)^*$, where parentheses group $ab$ before applying the star:
+
+$$
+L((ab)^*) = \{\varepsilon,\ ab,\ abab,\ ababab,\ \ldots\}
+$$
+
+And with union inside the parentheses, $(a+b)^*$ chooses either $a$ or $b$ at each repetition, producing every possible string over $\{a, b\}$:
+
+$$
+L((a+b)^*) = \Sigma^*
+$$
+
+<Callout tone="orange" label="Order of operations in regular expressions">
+  Kleene star ($^*$) binds tightest, then concatenation, then union ($+$). Students often misread $ab^*$ as "repeat $ab$ zero or more times". Without parentheses, the star applies only to $b$:
+  - $ab^*$ means $a(b^*) = \{a, ab, abb, abbb, \ldots\}$
+  - $(ab)^*$ means $\{\varepsilon, ab, abab, \ldots\}$
+  - $a + bc^*$ means $a + (b(c^*))$
+
+  Whenever you are unsure, add parentheses first.
+</Callout>
 
 > **Note:** Throughout this course, $\Sigma = \{a, b\}$ and $\Sigma = \{0, 1\}$ are interchangeable examples, since both are just two-symbol alphabets. Do not read meaning into the symbols themselves. $a$ and $b$ are placeholders, exactly like $0$ and $1$.
 
@@ -197,14 +252,39 @@ That's every possible string over $\{a, b\}$. The $(a+b)^*$ pattern, which you m
 | $XY$           | Concatenation     | $\{uv \mid u \in X,\ v \in Y\}$                          |
 
 <Callout tone="mint" label="What you just built">
-  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different mechanism for deciding which strings belong to a language and which don't.
+  You now have the three building blocks that the rest of this course uses: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different way to decide which strings belong to a language.
 </Callout>
+
+## Practice by hand
+
+Work these out on paper before revealing the answers.
+
+**1. Language concatenation:** Let $X = \{\varepsilon, a, ab\}$ and $Y = \{b, bb\}$. List every string in $XY$, then give $\lvert XY \rvert$.
+
+<ModelAnswer>
+Pair each string in $X$ with each string in $Y$:
+- From $\varepsilon$: $\varepsilon \cdot b = b$ and $\varepsilon \cdot bb = bb$.
+- From $a$: $a \cdot b = ab$ and $a \cdot bb = abb$.
+- From $ab$: $ab \cdot b = abb$ and $ab \cdot bb = abbb$.
+
+Because a language is a set, the duplicate $abb$ appears once:
+$$XY = \{b,\ bb,\ ab,\ abb,\ abbb\} \qquad \lvert XY \rvert = 5$$
+</ModelAnswer>
+
+**2. Empty string vs empty set:** Evaluate $\lvert\{\varepsilon\}\rvert$, $\lvert\emptyset\rvert$, $\emptyset^*$, and $\{a, ab\} \cdot \emptyset$.
+
+<ModelAnswer>
+- $\lvert\{\varepsilon\}\rvert = 1$: the set holds one string, the empty string $\varepsilon$.
+- $\lvert\emptyset\rvert = 0$: the empty set holds zero strings.
+- $\emptyset^* = \{\varepsilon\}$: picking zero strings from $\emptyset$ produces $\varepsilon$.
+- $\{a, ab\} \cdot \emptyset = \emptyset$: there is no string in $\emptyset$ to pair with $a$ or $ab$, so zero pairs exist.
+</ModelAnswer>
 
 ## Optional Further Reading
 
 <ApplicationsGrid>
-  <PracticalApplication title="Why does the empty string exist?" tool="Search →">
-    Search "why does the empty string exist in formal languages". Knowing why $\varepsilon$ exists makes every definition that follows clearer.
+  <PracticalApplication title="Why does the empty string exist?" tool="IDENTITY">
+    Just as `0` acts as the identity for addition ($x + 0 = x$), $\varepsilon$ acts as the identity for string concatenation ($w\varepsilon = \varepsilon w = w$) and gives Kleene star a way to represent zero repetitions. Without $\varepsilon$, simple languages like "optional sign" or "zero or more digits" would need awkward special cases.
   </PracticalApplication>
   <PracticalApplication title="Regular Expressions" tool="Watch Video →">
     Chris Marriott's video on regular expressions is a clear visual walkthrough that lines up well with what you just read. [Watch on YouTube](https://youtu.be/h___LthS3QQ?si=rTELcV9rGt8ZN3ij).

@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { KleeneBuilder } from "@/components/mdx/TocVisualizers";
 
@@ -8,7 +8,7 @@ You've now met three ways to define a language: [regular expressions](/courses/t
 
 > **Kleene's theorem.** Any language that can be defined by a regular expression, a finite automaton or a transition graph can be defined by all three.
 
-The languages they define are the **regular languages**. The proof is a cycle of three conversions. If you can always get from each model to the next, and the last one leads back to the first, the three must describe exactly the same languages.
+The languages they define are the **regular languages**. The proof is a cycle of three conversions. If you can always convert each model into the next, and the last one converts back to the first, then you can get from any model to any other. All three must describe the exact same languages.
 
 $$
 \text{FA} \;\Rightarrow\; \text{TG} \;\Rightarrow\; \text{RE} \;\Rightarrow\; \text{FA}
@@ -20,7 +20,7 @@ $$
 
 ## Building an FA from a regular expression
 
-A regular expression is built from letters and $\Lambda$ using union, concatenation and star (see The Language of Languages). So it's enough to show two things: there are FAs for the smallest pieces, and if you have FAs for $r_1$ and $r_2$, you can build FAs for $r_1 + r_2$, $r_1 r_2$ and $r_1^*$. Then any expression can be built up piece by piece, following the way it was written.
+A regular expression is built from single letters, $\Lambda$, and $\emptyset$ using union, concatenation and star (see [The Language of Languages](/courses/theory-of-computation/language-of-languages#regular-expressions-the-first-compact-notation)). Throughout this construction, "FA" means a **complete DFA** (every state has one transition per letter in $\Sigma$). So it's enough to show two things: there are complete DFAs for those smallest pieces, and if you already have complete DFAs for $r_1$ and $r_2$, you can build complete DFAs for $r_1 + r_2$, $r_1 r_2$ and $r_1^*$. Then any expression can be built up piece by piece, following the way it was written. (Instead of chaining $\varepsilon$-NFAs and converting afterwards, building the DFA tables directly keeps every step deterministic.)
 
 The smallest pieces are easy. Here is an FA for the single letter $a$: it accepts $a$ and sends everything else to a dead state.
 
@@ -39,19 +39,19 @@ The smallest pieces are easy. Here is an FA for the single letter $a$: it accept
   accepting={["q1"]}
 />
 
-For $\Lambda$, make the start state final and send every letter to the dead state.
+For $\Lambda$ (the language $\{\Lambda\}$, written $\{\varepsilon\}$ earlier), use two states: make the start state final and send every letter to the dead state (which loops back to itself on every letter), so only the empty word is accepted. For $\emptyset$ (the empty language), use a single start state that is **not** final and loops back to itself on every letter, so no word is accepted.
 
 ## The three rules
 
-Each rule builds the new machine as a table of new states $z_1, z_2, \ldots$, where every $z$ stands for a combination of old states. You start from the combination for the start, fill in where each letter leads, and give a name to every combination you haven't seen before. You stop when every row is filled.
+Each rule builds the new machine as a table of new states $z_1, z_2, \ldots$, where every $z$ stands for a combination of old states. You start at $z_1$ (the combination for the start), compute where each letter in $\Sigma$ sends that combination, give a new name $z_k$ to every combination you haven't seen before, and add a row for it. You stop when every row you created has all its columns filled.
 
-**Union, $r_1 + r_2$.** Run both machines side by side. Each new state is a pair, "$x_i$ or $y_j$": FA1 is in $x_i$ and FA2 is in $y_j$. On a letter, both halves move. A pair is final if **either** half is final.
+**Union, $r_1 + r_2$.** Run both machines side by side. Each new state tracks the simultaneous pair $(x_i, y_j)$ (traditionally written "$x_i$ or $y_j$" in the table below): FA1 is in $x_i$ while FA2 is in $y_j$. On a letter, move both halves using their own transition tables. A pair is final if **either** half is final (because a word only needs to be accepted by one of the two machines).
 
-**Concatenation, $r_1 r_2$.** The word has to finish a run of FA1 and then start a run of FA2, but the machine can't know where the split is. So each new state holds FA1's state plus a *set* of FA2 states that are running in parallel. Whenever FA1 reaches a final state, FA2's start joins the set, because a split could happen there. A new state is final if its set contains a final state of FA2.
+**Concatenation, $r_1 r_2$.** The word has to finish a run of FA1 and then start a run of FA2, but the machine can't know ahead of time where the split happens. So each new state holds FA1's current state plus a *set* of active FA2 states running in parallel (the table prints all currently tracked states separated by `or`). Whenever FA1 reaches a final state (including at the start, if FA1's start is final), FA2's start joins the set, because a split into $r_2$ could happen right there. A new state is final if its set contains a final state of FA2.
 
-**Star, $r_1^*$.** The word is several runs of FA1 back to back. Each new state is a set of FA1 states. Whenever a move lands on a final state of FA1, FA1's start joins the set, because a new repetition could begin there. A set containing a final state of FA1 is final.
+**Star, $r_1^*$.** The word is zero or more runs of FA1 back to back. Make a brand-new final start state $z_1$ (representing FA1's start $x_1$, kept separate and final so $\Lambda$ is accepted without letting later loops return to it). Every later state is a set of FA1 states. On a letter, move every state in the set; whenever any move lands on a final state of FA1, FA1's start joins the set, because a new repetition could begin right there. A set containing a final state of FA1 is final.
 
-Try all three on $r_1 = (a + b)^*a$ (words ending in $a$) and $r_2 = ((a + b)(a + b))^*$ (words of even length). Step through the table for each, then run words on the finished machine below it.
+Let's walk through all three on $r_1 = (a + b)^*a$ (words ending in $a$) and $r_2 = ((a + b)(a + b))^*$ (words of even length). Step through the builder below alongside the hand traces:
 
 <KleeneBuilder
   r1="(a+b)*a"
@@ -72,10 +72,13 @@ Try all three on $r_1 = (a + b)^*a$ (words ending in $a$) and $r_2 = ((a + b)(a 
   }}
 />
 
-For the union, $z_1$ = "$x_1$ or $y_1$" is final already, because $y_1$ is: the empty word has even length. The table ends with four states, one for each combination of "last letter was $a$?" and "length so far is even?".
+Look at how each table unfolds by hand:
+- **Union ($r_1 + r_2$):** Start with $z_1 = (x_1, y_1)$ (final, because $y_1$ is final in FA2: $\Lambda$ has even length). From $z_1$, reading $a$ moves $x_1 \rightarrow x_2$ and $y_1 \rightarrow y_2$, creating $z_2 = (x_2, y_2)$ (final because $x_2$ is final); reading $b$ moves $x_1 \rightarrow x_1$ and $y_1 \rightarrow y_2$, creating $z_3 = (x_1, y_2)$ (not final). Filling rows $z_2$ and $z_3$ reveals one more pair, $z_4 = (x_2, y_1)$ (final), and every arrow from $z_4$ lands back on $z_2$ or $z_3$. The table closes with four states, one for each combination of "last letter was $a$?" and "length so far is even?".
+- **Concatenation ($r_1 r_2$):** Since $x_1$ is not final in FA1, $z_1 = \{x_1\}$ (not final). On $a$, $x_1$ moves to $x_2$; because $x_2$ *is* final in FA1, FA2's start $y_1$ joins the tracked states, giving $z_2 = \{x_2, y_1\}$ (final because $y_1$ is final in FA2, meaning the single letter $a = a \cdot \Lambda$ is accepted). From $z_2$ on $a$, move both $x_2 \rightarrow x_2$ (still final, so $y_1$ joins again) and $y_1 \rightarrow y_2$, giving $z_3 = \{x_2, y_1, y_2\}$ (final). From $z_2$ on $b$, move $x_2 \rightarrow x_1$ (not final) and $y_1 \rightarrow y_2$, giving $z_4 = \{x_1, y_2\}$ (not final, so $ab$ is rejected: the split after $a$ leaves $b$, which has odd length).
+- **Star ($r_1^*$):** Start with the special final state $z_1$ (representing $x_1$ on startup only). On $a$, $x_1 \rightarrow x_2$ (final in FA1), so $x_1$ joins to let another copy of $r_1$ start, giving $z_2 = \{x_1, x_2\}$ (final). On $b$, $x_1 \rightarrow x_1$ (not final), giving a *different* state $z_3 = \{x_1\}$ that is **not** final. That's why $b$ is rejected while $a$ and $ba$ are accepted.
 
 <Callout tone="orange" label="Why star needs a new start state">
-  $r_1^*$ always contains $\Lambda$, so the start must be final. The tempting shortcut is to mark FA1's own start state as final. Try it on $r_1 = (a + b)^*a$: in FA1, the word $b$ leads from $x_1$ back to $x_1$, so the shortcut would accept $b$. But $b$ is not in $r_1^*$, since every repetition of $r_1$ ends in $a$. The construction avoids this by making a **new** start state $z_1$ that is final and that nothing ever returns to.
+  $r_1^*$ always contains $\Lambda$, so the start must be final. The tempting shortcut is to mark FA1's own start state as final. Try it on $r_1 = (a + b)^*a$: in FA1, the word $b$ leads from $x_1$ back to $x_1$, so the shortcut would accept $b$. But $b$ is not in $r_1^*$, since every non-empty repetition of $r_1$ ends in $a$. Making a **new** final start state $z_1$ that nothing ever returns to keeps $z_1$ separate from $z_3 = x_1$.
 </Callout>
 
 <Callout tone="violet" label="You've seen the concatenation trick before">
@@ -84,7 +87,22 @@ For the union, $z_1$ = "$x_1$ or $y_1$" is final already, because $y_1$ is: the 
 
 ## What else follows
 
-The union rule works with any combining condition. Mark a pair final when **both** halves are final, and you get an FA for the **intersection** of two regular languages. Swap final and non-final states in one complete [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), and you get its **complement**. So regular languages are closed under union, concatenation, star, intersection and complement: none of these operations can take you outside the regular languages.
+The union rule works with any combining condition, which shows that regular languages are **closed** under more operations (meaning applying the operation never produces a non-regular language). Mark a pair final when **both** halves are final, and you get an FA for the [**intersection**](/courses/discrete-mathematics/sets#set-operations) of two regular languages. Swap final and non-final states in one complete [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), and you get its [**complement**](/courses/discrete-mathematics/sets#set-operations) (all strings in $\Sigma^*$ that the original DFA rejected). So regular languages are closed under union, concatenation, star, intersection and complement.
+
+<Callout tone="orange" label="Flipping final states only works on a complete DFA">
+  Two conditions must hold before you flip final and non-final states to build a complement:
+  - **Every transition must be drawn:** If you omit a dead state, a rejected string that gets stuck mid-word never reaches a state you can flip. Add the dead state first, then flip.
+  - **The machine must be deterministic:** Flipping final states on an NFA does **not** give its complement. If a string has one accepting path and one non-accepting path in the NFA, flipping final states leaves the non-accepting path ending in a newly final state, so the flipped NFA would accept that string too. Convert the NFA to a complete DFA first.
+</Callout>
+
+**Practice (intersection and complement):** Using FA1 ($r_1 = (a + b)^*a$, start $x_1$, final $x_2$) and FA2 ($r_2 = ((a+b)(a+b))^*$, start $y_1$, final $y_1$) from `KleeneBuilder` above:
+1. In the 4-state product machine ($z_1 = (x_1, y_1)$, $z_2 = (x_2, y_2)$, $z_3 = (x_1, y_2)$, $z_4 = (x_2, y_1)$), which states are final for the **intersection** $L(r_1) \cap L(r_2)$?
+2. Build the DFA for the **complement** of FA1 (all strings over $\{a, b\}$ that do *not* end in $a$).
+
+<ModelAnswer>
+1. For intersection, a pair is final only when **both** halves are final ($x_2$ in FA1 and $y_1$ in FA2). Only $z_4 = (x_2, y_1)$ satisfies both, so $F_{\cap} = \{z_4\}$ (words of even length that end in $a$).
+2. FA1 is already a complete DFA ($x_1$ and $x_2$ both have transitions for $a$ and $b$), so flip its accept set from $\{x_2\}$ to $\{x_1\}$. The complement accepts $\varepsilon$ (since $x_1$ is now final) and every string ending in $b$, rejecting every string ending in $a$.
+</ModelAnswer>
 
 ## Where this shows up today
 

@@ -1,13 +1,26 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Jumps and Loops
 
-Assembly has no `if`, `else`, `while` or `for`. It has only one thing: a **jump**, which [overwrites the instruction pointer](/courses/computer-organization/machine-cycle). Every control structure you've ever written comes down to that.
+Assembly language contains no high-level keywords like `if`, `else`, `while`, or `for`. Instead, the microprocessor controls execution using a single core mechanism: a branch instruction that [overwrites the instruction pointer](/courses/computer-organization/machine-cycle) to divert program flow to a different memory address.
+
+Branches come in two forms:
+
+- An **unconditional jump (JMP)** forces the processor to branch to a target address every time without checking any flags.
+- A **conditional jump** instructs the processor to inspect status flags in the flags register and branch only when specific arithmetic or comparison criteria are met.
+
+When encoding jumps, the machine instruction rarely stores an absolute 16-bit memory address. Instead, it stores a **relative displacement**, which is a signed offset specifying how many bytes forward or backward to move relative to the instruction following the jump.
+
+The 8086 classifies jumps by distance:
+
+- A **short jump (-128 to +127 bytes)** stores an 8-bit signed relative displacement. All conditional jumps on the 8086 processor are strictly short jumps.
+- A **near jump** reaches any address within the current 64 KB code segment using a 16-bit signed relative displacement (-32,768 to +32,767 bytes).
+- A **far jump** transfers control across segments to a completely different code segment by updating both the code segment register (`CS`) and the instruction pointer (`IP`).
 
 ## An if statement
 
-The pattern takes two instructions: `CMP` sets the [flags](/courses/microprocessors/flags), and a conditional jump reads them. Here's `if (AL == 5) BL = 1; else BL = 2;`.
+The standard decision pattern takes two instructions: `CMP` sets the [flags](/courses/microprocessors/flags), and a conditional jump reads them. Here is how assembly implements `if (AL == 5) BL = 1; else BL = 2;`:
 
 <AsmRunner source={`MOV AL, 5
 CMP AL, 5       ; works out AL - 5 and keeps only the flags
@@ -19,22 +32,35 @@ MOV BL, 1       ; the if part
 done:
 NOP`} />
 
-Edit the first line to `MOV AL, 7` and step through it again. Notice how a different path gets taken.
+The `CMP` instruction performs an internal subtraction $AL - 5$. Because $5 - 5 = 0$, it sets the zero flag (`ZF = 1`). The subsequent `JE` (Jump if Equal) instruction tests `ZF`. Seeing `ZF = 1`, it adds the relative displacement of `equal` to the instruction pointer, skipping the `else` branch entirely.
+
+Edit the first line to `MOV AL, 7` and step through it again. With $7 - 5 = 2$, `ZF` remains 0, `JE` falls through to the next instruction, and the program executes the `else` branch.
 
 ## Which jump to use
 
-There are separate jumps for signed and unsigned numbers. **A**bove and **B**elow are for unsigned, while **G**reater and **L**ess are for signed.
+The 8086 provides distinct conditional jumps for unsigned numbers and signed numbers. The hardware treats numbers as unsigned or signed based entirely on which conditional jump instruction you choose:
 
-| Meaning | Unsigned | Signed |
-|---|---|---|
-| Greater | `JA` | `JG` |
-| Greater or equal | `JAE` | `JGE` |
-| Less | `JB` | `JL` |
-| Less or equal | `JBE` | `JLE` |
-| Equal | `JE` | `JE` |
-| Not equal | `JNE` | `JNE` |
+- **Unsigned comparison jumps (JA/JB/JAE/JBE)** evaluate the carry flag (CF) and zero flag (ZF). The mnemonics use the terms **Above** and **Below**.
+- **Signed comparison jumps (JG/JL/JGE/JLE)** evaluate the sign flag (SF), overflow flag (OF), and zero flag (ZF). The mnemonics use the terms **Greater** and **Less**.
 
-The bits `11001000` compared with `01100100` are above it as unsigned (200 is more than 100), but less than it as signed (-56 is less than 100). Try that in the editor by swapping `JA` for `JG`:
+| Meaning | Unsigned mnemonic | Flags evaluated | Signed mnemonic | Flags evaluated |
+|---|---|---|---|---|
+| Greater / Above | `JA` | $\text{CF} = 0 \text{ and } \text{ZF} = 0$ | `JG` | $\text{ZF} = 0 \text{ and } \text{SF} = \text{OF}$ |
+| Greater or equal | `JAE` | $\text{CF} = 0$ | `JGE` | $\text{SF} = \text{OF}$ |
+| Less / Below | `JB` | $\text{CF} = 1$ | `JL` | $\text{SF} \ne \text{OF}$ |
+| Less or equal | `JBE` | $\text{CF} = 1 \text{ or } \text{ZF} = 1$ | `JLE` | $\text{ZF} = 1 \text{ or } \text{SF} \ne \text{OF}$ |
+| Equal | `JE` | $\text{ZF} = 1$ | `JE` | $\text{ZF} = 1$ |
+| Not equal | `JNE` | $\text{ZF} = 0$ | `JNE` | $\text{ZF} = 0$ |
+
+Consider comparing `AL = 0C8h` with `BL = 64h` (100 decimal).
+- As an unsigned number, `0C8h` is 200. Because $200 > 100$, `0C8h` is **above** `64h`.
+- As a signed two's complement number, `0C8h` has bit 7 set, representing -56. Because $-56 < 100$, `0C8h` is **less** than `64h`.
+
+When `CMP AL, 100` executes:
+1. Subtraction: $0\text{C8h} - 64\text{h} = 64\text{h}$ ($200 - 100 = 100$).
+2. Unsigned flags: No borrow is needed, so $\text{CF} = 0$ and $\text{ZF} = 0$. The unsigned condition for `JA` ($\text{CF} = 0 \text{ and } \text{ZF} = 0$) is satisfied, so `JA` branches.
+3. Signed flags: The mathematical operation is $-56 - 100 = -156$. Because -156 falls outside the valid 8-bit signed range ($-128$ to $+127$), signed overflow occurs: $\text{OF} = 1$. The stored result $64\text{h}$ has bit 7 equal to 0, so $\text{SF} = 0$.
+4. The signed condition for `JL` is $\text{SF} \ne \text{OF}$. Here $\text{SF} = 0$ and $\text{OF} = 1$, so $0 \ne 1$ is true. Therefore `JL` branches, while `JG` ($\text{SF} = \text{OF}$) falls through.
 
 <AsmRunner source={`MOV AL, 200     ; or -56, depending on how you read it
 CMP AL, 100
@@ -46,11 +72,30 @@ MOV BL, 1
 done:
 NOP`} />
 
-Others test one flag directly: `JC`/`JNC` (carry), `JZ`/`JNZ` (zero), `JS`/`JNS` (sign), `JO`/`JNO` (overflow), `JP`/`JNP` (parity).
+Other conditional jumps inspect single flags directly: `JC` / `JNC` (carry), `JZ` / `JNZ` (zero), `JS` / `JNS` (sign), `JO` / `JNO` (overflow), and `JP` / `JNP` (parity).
+
+<Callout tone="orange" label="Trap: using signed jumps on unsigned addresses">
+Memory offsets and pointers in the 8086 are unsigned 16-bit integers ranging from `0000h` to `FFFFh`. If you compare memory addresses with `CMP` and then branch using a signed jump like `JG` or `JL`, any address with the highest bit set (such as `8000h` through `FFFFh`) will be treated as a negative number. An address at `9000h` would be evaluated as smaller than `1000h`, producing corrupted pointer lookups. Always use unsigned jumps (`JA`, `JB`, `JAE`, `JBE`) when comparing memory addresses or pointers.
+</Callout>
+
+<Callout tone="orange" label="Trap: short jump branch distance exceeded">
+On the 8086 processor, every conditional jump (`JE`, `JNE`, `JA`, etc.) is strictly a short jump limited to an 8-bit signed relative displacement (-128 to +127 bytes). If the target label is 150 bytes away, the assembler generates a relative jump out of range error. To jump farther, invert the conditional jump to branch over an unconditional near `JMP`:
+```nasm
+    ; Instead of: JE far_target (causes error if > 127 bytes)
+    JNE skip_jump
+    JMP far_target   ; 16-bit near jump reaches anywhere in 64 KB segment
+skip_jump:
+```
+</Callout>
 
 ## Loops
 
-The `LOOP` instruction does three things at once: it subtracts 1 from CX, checks whether CX is 0, and jumps back if it isn't. So you set the count in CX first. This adds 5 + 4 + 3 + 2 + 1:
+Repeating a block of instructions is so fundamental that the 8086 provides a dedicated **loop instruction (LOOP)**. The processor architecture assigns register `CX` as the hardware **loop counter**. When the CPU encounters `LOOP label`, it performs two actions in hardware without modifying any status flags:
+
+1. It automatically decrements `CX` by 1: $CX = CX - 1$.
+2. It tests whether $CX \ne 0$. If `CX` is not zero, it executes a short jump back to `label`. When `CX` reaches zero, execution falls through to the next instruction.
+
+This program computes the sum $5 + 4 + 3 + 2 + 1$:
 
 <AsmRunner source={`MOV AX, 0
 MOV CX, 5       ; loop 5 times
@@ -58,9 +103,13 @@ again:
 ADD AX, CX
 LOOP again      ; CX = CX - 1, repeat until it's 0`} />
 
+<Callout tone="orange" label="Trap: entering LOOP with CX set to zero">
+The `LOOP` instruction decrements `CX` before testing whether it is zero. If `CX` is already 0 when entering a loop, the first execution of `LOOP` decrements `CX` from `0000h` to `0FFFFh` (65,535 in decimal). Because `0FFFFh` is not zero, the loop will repeat 65,535 times instead of terminating immediately. If a loop count can potentially be zero, test it before entering using `JCXZ label` (Jump if CX is Zero).
+</Callout>
+
 ## Walking an array
 
-Put it together with [addressing modes](/courses/microprocessors/addressing-modes). This finds the largest number in an array, using SI to step through it.
+Combining jumps and loops with [addressing modes](/courses/microprocessors/addressing-modes) allows you to process memory structures. This program scans an array to find the largest unsigned byte value:
 
 <AsmRunner watch source={`nums db 12, 45, 7, 88, 23
 LEA SI, nums
@@ -74,10 +123,123 @@ keep:
 INC SI          ; move to the next element
 LOOP next`} />
 
-<Callout tone="orange" label="An exercise">
-Use the editor to change this program so that it finds the smallest number. You'll need to change the starting value and one jump.
-</Callout>
+Tracing through the 5 iterations step by step:
+
+1. **Iteration 1**: `SI` points to `nums[0]` (12). `CMP AL, [SI]` evaluates $0 - 12$. Because $0 < 12$, `JAE` falls through and `MOV AL, [SI]` loads 12 into `AL`. `INC SI` moves to offset 1, and `LOOP` decrements `CX` to 4.
+2. **Iteration 2**: `SI` points to `nums[1]` (45). `CMP AL, [SI]` evaluates $12 - 45$. Because $12 < 45$, `AL` receives 45. `INC SI` advances `SI`, and `LOOP` decrements `CX` to 3.
+3. **Iteration 3**: `SI` points to `nums[2]` (7). `CMP AL, [SI]` evaluates $45 - 7$. Because $45 \ge 7$, `JAE keep` branches, skipping the update to `AL`. `INC SI` advances `SI`, and `LOOP` decrements `CX` to 2.
+4. **Iteration 4**: `SI` points to `nums[3]` (88). `CMP AL, [SI]` evaluates $45 - 88$. Because $45 < 88$, `AL` receives 88. `INC SI` advances `SI`, and `LOOP` decrements `CX` to 1.
+5. **Iteration 5**: `SI` points to `nums[4]` (23). `CMP AL, [SI]` evaluates $88 - 23$. Because $88 \ge 23$, `JAE keep` branches. `INC SI` advances `SI`, and `LOOP` decrements `CX` to 0. With `CX = 0`, the loop terminates. The maximum value, 88, remains in `AL`.
 
 ## String instructions
 
-Moving through memory is so common that the 8086 has special instructions for it. They use SI and DI automatically, adjust them afterward (forward or backward according to [DF](/courses/microprocessors/flags)), and repeat with a `REP` prefix, using CX as the count. For example, `REP MOVSB` copies CX bytes from DS:SI to ES:DI. `CMPSB` compares strings and `SCASB` searches for the value in AL.
+Moving and searching through sequential memory blocks is so common that the 8086 microarchitecture includes specialized **string primitive instructions (MOVSB, CMPSB, SCASB, LODSB, STOSB)**:
+
+- `MOVSB` (Move String Byte): Copies a byte from source `DS:SI` to destination `ES:DI`.
+- `CMPSB` (Compare String Byte): Compares a byte at `DS:SI` with `ES:DI` and sets status flags.
+- `SCASB` (Scan String Byte): Compares the byte in register `AL` against the byte in memory at `ES:DI`.
+- `LODSB` (Load String Byte): Loads the byte at `DS:SI` into `AL`.
+- `STOSB` (Store String Byte): Stores the byte from `AL` into memory at `ES:DI`.
+
+After each operation, the CPU automatically increments (if direction flag `DF = 0`) or decrements (if `DF = 1`) both `SI` and `DI` by 1 (or by 2 for 16-bit word variants like `MOVSW`).
+
+To execute these operations over entire blocks, the instruction is paired with a **repeat prefix (REP, REPE, REPNE)**. A repeat prefix precedes the string primitive in machine code. While `CX != 0`, the processor executes the primitive instruction, updates the pointers, and decrements `CX`. For example, `REP MOVSB` copies an entire memory block of `CX` bytes from `DS:SI` to `ES:DI` in a single high-speed hardware operation. `REPE CMPSB` compares strings until a mismatch occurs or `CX` reaches zero.
+
+## Practice by hand
+
+Test your ability to trace conditional branches and loop mechanics by solving these hand-tracing problems.
+
+### Problem 1: Signed versus unsigned jump branch analysis
+
+An 8086 CPU executes the following instructions:
+
+```nasm
+MOV AL, 85h
+MOV BL, 30h
+CMP AL, BL
+```
+
+1. Express both operands in decimal under unsigned interpretation and signed two's complement interpretation.
+2. Carry out the subtraction $AL - BL$ in 8-bit binary and find the values of status flags CF, ZF, SF, and OF.
+3. For each of the following conditional jumps placed immediately after `CMP AL, BL`, state whether the jump is TAKEN (branches) or NOT TAKEN (falls through), and explain why based on flag conditions:
+   - `JA`
+   - `JB`
+   - `JG`
+   - `JL`
+
+<ModelAnswer>
+1. **Operand values**:
+   - `AL = 85h = 1000 0101b`.
+     - Unsigned: $8 \times 16 + 5 = 133$.
+     - Signed: Bit 7 is 1 (negative). Inverting bits and adding 1 gives $0111 1010b + 1 = 0111 1011b = 123$, so $AL = -123$.
+   - `BL = 30h = 0011 0000b`.
+     - Unsigned: $3 \times 16 = 48$.
+     - Signed: $+48$.
+
+2. **Subtraction and flags**:
+   - Compute $AL - BL = 85\text{h} - 30\text{h}$:
+     ```
+         1000 0101b   (85h)
+       - 0011 0000b   (30h)
+       ------------
+         0101 0101b   (55h)
+     ```
+   - **CF = 0**: In unsigned math, $133 \ge 48$, so no borrow was needed.
+   - **ZF = 0**: The result `55h` is non-zero.
+   - **SF = 0**: The most significant bit of the result (`55h`) is 0.
+   - **OF = 1**: In signed math, $-123 - 48 = -171$. Because $-171 < -128$, the signed result underflows the 8-bit range. Subtracting a positive number from a negative number yielded a positive result (`55h`), which indicates signed overflow.
+
+3. **Jump decisions**:
+   - **`JA` (Jump if Above / unsigned greater than)**: Condition is $\text{CF} = 0 \text{ and } \text{ZF} = 0$. Since both are 0, the jump is **TAKEN** ($133 > 48$ is true).
+   - **`JB` (Jump if Below / unsigned less than)**: Condition is $\text{CF} = 1$. Since $\text{CF} = 0$, the jump is **NOT TAKEN**.
+   - **`JG` (Jump if Greater / signed greater than)**: Condition is $\text{ZF} = 0 \text{ and } \text{SF} = \text{OF}$. Here $\text{SF} = 0$ and $\text{OF} = 1$, so $\text{SF} \ne \text{OF}$. The jump is **NOT TAKEN** ($-123 > 48$ is false).
+   - **`JL` (Jump if Less / signed less than)**: Condition is $\text{SF} \ne \text{OF}$. Since $0 \ne 1$, the condition is true. The jump is **TAKEN** ($-123 < 48$ is true).
+</ModelAnswer>
+
+### Problem 2: Linear array search with early exit
+
+The following routine searches an array of 4 bytes for the value `15h`:
+
+```nasm
+    LEA SI, array
+    MOV CX, 4
+    MOV AL, 15h
+search:
+    CMP [SI], AL
+    JE  found
+    INC SI
+    LOOP search
+    MOV DX, 0FFFFh   ; not found indicator
+    JMP finish
+found:
+    MOV DX, SI       ; found: DX holds matching address
+finish:
+    NOP
+```
+
+Given memory contents starting at `array`: `0Ah, 15h, 30h, 45h`.
+
+1. Trace each iteration of the loop until termination, recording the values of `SI`, `[SI]`, `ZF`, and `CX` at the moment `LOOP` or `JE` executes.
+2. State the final value stored in `DX`.
+3. How many total iterations did the loop execute, and what did `CX` contain upon termination?
+
+<ModelAnswer>
+1. **Execution trace**:
+   - Initial state: `SI = array`, `CX = 4`, `AL = 15h`.
+   - **Iteration 1**:
+     - `SI` points to `array[0]` containing `0Ah`.
+     - `CMP [SI], AL` compares `0Ah` with `15h`. Result is non-zero, so $\text{ZF} = 0$.
+     - `JE found` is NOT taken because $\text{ZF} = 0$.
+     - `INC SI` advances `SI` to point to `array[1]`.
+     - `LOOP search` decrements `CX` from 4 to 3. Because $CX = 3 \ne 0$, it jumps back to `search`.
+   - **Iteration 2**:
+     - `SI` points to `array[1]` containing `15h`.
+     - `CMP [SI], AL` compares `15h` with `15h`. Difference is 0, so $\text{ZF} = 1$.
+     - `JE found` tests `ZF`. Seeing $\text{ZF} = 1$, the jump is **TAKEN**, breaking out of the loop early.
+
+2. **Final value in DX**:
+   Because the program jumped directly to `found`, it executed `MOV DX, SI`. `DX` holds the memory offset of `array[1]`.
+
+3. **Iterations and counter state**:
+   The loop executed **2 iterations**. Register `CX` was decremented once (during iteration 1) to **3**, and remained at 3 because iteration 2 exited before reaching the `LOOP` instruction.
+</ModelAnswer>

@@ -3,36 +3,36 @@ import { BitDepthExplorer, IndexedPalette } from "@/components/mdx/GraphicsVisua
 
 # Bit Depth: How Many Shades a Pixel Holds
 
-A pixel stores its color as a number, and a number in a computer is a fixed count of [bits](/courses/computer-organization/bits-and-bytes). The number of bits used for each pixel is called the **bit depth** (or **color depth**), measured in **bits per pixel (bpp)**. It decides how many different colors or shades the image can use. The usual kinds, 1-bit, 8-bit, 16-bit, 24-bit and 32-bit, are sometimes called the **image data types** or image color formats.
+A pixel stores its color as a number, and a number inside a computer is a fixed collection of [bits](/courses/computer-organization/bits-and-bytes). The number of bits allocated to each pixel is called the **bit depth** (or **color depth**), measured in **bits per pixel (bpp)**. Bit depth determines how many different colors or brightness levels an image can display. Common formats include 1-bit, 8-bit, 16-bit, 24-bit, and 32-bit representations, sometimes called **image data types** or image color formats.
 
 ## The rule: n bits give 2ⁿ values
 
-Each bit doubles the number of patterns. One bit has 2 patterns (0, 1). Two bits have 4 (00, 01, 10, 11). Three bits have 8. In general:
+Each bit added to a pixel doubles the number of possible binary patterns. One bit provides two patterns (0 and 1). Two bits provide four patterns (00, 01, 10, 11). Three bits provide eight. In general:
 
 $$
 \text{number of colors} = 2^{\,\text{bits per pixel}}
 $$
 
-That one formula answers most bit-depth questions. To go the other way, from a number of colors to the bits needed, find the smallest power of 2 that's big enough: 256 colors need 8 bits ($2^8 = 256$), and 100 colors also need 7 bits, because $2^6 = 64$ is too few and $2^7 = 128$ is enough.
+This formula answers most questions about bit depth. To calculate the bits needed for a specific number of colors, find the smallest power of 2 that is large enough: 256 colors need 8 bits ($2^8 = 256$). A palette (list) of 100 colors requires 7 bits, because $2^6 = 64$ is too small and $2^7 = 128$ is sufficient.
 
 <Callout tone="orange" label="Bits are not colors">
-"8-bit" means 8 bits per pixel, which is 256 colors, not 8. And each extra bit doubles the colors, so they grow far faster than the bits: 24 bits is three times as many bits as 8, but $2^{24} \div 2^8 = 2^{16} = 65{,}536$ times as many colors.
+An "8-bit image" has 8 bits per pixel, which yields 256 colors, not 8. Because each bit doubles the count of combinations, color capacity grows exponentially: 24 bits uses three times the storage of 8 bits, but provides $2^{24} \div 2^8 = 2^{16} = 65{,}536$ times as many colors.
 </Callout>
 
-The common depths:
+Common bit depths:
 
 | Bits per pixel | Colors | Usually called |
 |---|---|---|
 | 1 | $2^1 = 2$ | binary, monochrome |
-| 2 | $2^2 = 4$ | |
-| 4 | $2^4 = 16$ | |
+| 2 | $2^2 = 4$ | four-color (CGA) |
+| 4 | $2^4 = 16$ | 16-color (EGA) |
 | 8 | $2^8 = 256$ | grayscale, or indexed color |
 | 16 | $2^{16} = 65{,}536$ | high color |
 | 24 | $2^{24} = 16{,}777{,}216$ | true color |
-| 32 | $2^{32} = 4{,}294{,}967{,}296$ combinations: 16,777,216 colors × 256 levels of transparency | true color with alpha |
-| 48 | $2^{48} \approx 281$ trillion | high dynamic range (16 bits each for red, green and blue) |
+| 32 | $2^{32} = 4{,}294{,}967{,}296$ combinations: the same 16,777,216 colors × 256 opacity levels (alpha) | true color with alpha |
+| 48 | $2^{48} \approx 281$ trillion | high dynamic range (16 bits each for red, green, and blue to capture extreme bright and dark details) |
 
-Early PCs climbed this table one row at a time as memory got cheaper. Each step came with a new **graphics adapter**, the card inside the computer that holds the [frame buffer](/courses/computer-graphics/crt-and-raster-scan#the-frame-buffer), the memory with the color of every pixel on screen, and sends the picture to the monitor. Each card was a standard with its own name:
+Early personal computers progressed through this table step by step as semiconductor memory prices fell. Each advancement was introduced by a new **graphics adapter**, the expansion card containing the [frame buffer](/courses/computer-graphics/crt-and-raster-scan#the-frame-buffer) (the dedicated video memory holding pixel values) that generated output signals for the display. Each card established an industry hardware standard:
 
 | Name | Stands for | Bits per pixel | Colors at once |
 |---|---|---|---|
@@ -43,48 +43,48 @@ Early PCs climbed this table one row at a time as memory got cheaper. Each step 
 | XGA | Extended Graphics Array | 16 | 65,536 |
 | SVGA | Super VGA | 24 | 16,777,216 |
 
-Some of these names outlived the cards. "VGA" still means a 640 × 480 resolution, and the blue 15-pin monitor plug on older laptops and projectors is called a VGA port. Today almost everything uses 24 or 32 bits.
+Several of these names persisted long after the original graphics cards disappeared. "VGA" is still used today to mean the 640 × 480 screen dimensions that standard VGA cards popularized, and the classic blue 15-pin connector on older monitors and projectors is called a VGA port. Modern computer displays and graphics cards operate primarily in 24-bit or 32-bit color (the next lesson explains how those bits split into red, green, blue, and alpha channels).
 
 ## 1-bit images: binary
 
-With 1 bit per pixel, each pixel is 0 or 1, off or on, usually black or white. Such an image is called a **binary image** or **1-bit monochrome**. The house in the [last lesson](/courses/computer-graphics/pixels-and-the-image-grid) was one. Binary images are tiny, but they can't show shading at all. Fax machines and scanned text documents still use them, because text only needs ink or no ink.
+With 1 bit per pixel, each pixel stores either 0 or 1, off or on, typically displayed as black or white. This format is called a **binary image** or **1-bit monochrome**. The house illustration in the [previous lesson](/courses/computer-graphics/pixels-and-the-image-grid) was a binary image. Binary images use very little memory, but they cannot display shading or midtones. Scanners and fax machines continue to use binary formats for printed text documents, where every location on the page is either ink or paper.
 
 ## 8-bit images: grayscale
 
-Give each pixel one whole [byte](/courses/computer-organization/bits-and-bytes#the-byte), 8 bits, and it can hold $2^8 = 256$ values, from 0 to 255. In a **grayscale** (or **gray-level**) image, that value is a brightness: 0 is black (no light), 255 is white (full light), and everything between is a shade of gray. A dark pixel might be 15; a bright one 240.
+Giving each pixel one full [byte](/courses/computer-organization/bits-and-bytes#the-byte) (8 bits) allows $2^8 = 256$ possible values, from 0 to 255. In a **grayscale** (or **gray-level**) image, this value indicates brightness: 0 is black (no light emission), 255 is white (full light intensity), and intermediate values represent shades of gray. A dark shadow pixel might store 15, while a bright highlight stores 240.
 
-For example, a pixel stored as the byte `01000011` has the value
+For example, a pixel stored as the binary byte `01000011` represents the decimal value:
 
 $$
 0\cdot128 + 1\cdot64 + 0\cdot32 + 0\cdot16 + 0\cdot8 + 0\cdot4 + 1\cdot2 + 1\cdot1 = 67
 $$
 
-out of 255, which is a fairly dark gray. (If converting binary to decimal is new, [Number Systems](/courses/logic-design/number-systems#binary-to-decimal) walks through it.)
+On a scale of 0 to 255, a value of 67 produces a dark gray. (The [Number Systems](/courses/logic-design/number-systems#binary-to-decimal) lesson covers binary-to-decimal arithmetic in detail.)
 
 ## See it: fewer bits, fewer shades
 
-The bar below fades smoothly from black to white. Its top half is the brightness the picture wants; its bottom half is what survives at the chosen bit depth. Drop to 1 or 2 bits and the smooth fade breaks into visible steps:
+The interactive gradient below fades continuously from black to white. Its upper half displays the target smooth transition; its lower half displays what is preserved at the chosen bit depth. Reduce the depth to 1 or 2 bits, and the smooth transition separates into noticeable bands:
 
 <BitDepthExplorer />
 
-Each brightness has to snap to the nearest level the bits can store. With 2 bits there are 4 levels, spread evenly from 0 to 255, so each step is $255 \div 3 = 85$ and the levels are 0, 85, 170 and 255. A brightness of 67 is $67 \div 85 \approx 0.79$ steps up, which rounds to level 1. That's stored as the bits `01`, and it comes back as $1 \times 85 = 85$. With 8 bits there's a level for every value, so 67 stays exactly 67. Those stripes in a low-depth image are called **banding**, and you'll spot them in skies of heavily compressed photos and old GIFs.
+Each 8-bit brightness value must snap to the nearest level supported by the bit depth. With 2 bits, four levels sit evenly across the range from 0 to 255. Four levels have three gaps between them, so the interval between steps is $255 \div 3 = 85$, placing the levels at 0, 85, 170, and 255. A brightness of 67 is $67 \div 85 \approx 0.79$ of a step, which rounds to level 1 (binary `01`) and displays as $1 \times 85 = 85$. With 8 bits, an exact integer level exists for every brightness from 0 to 255, so 67 stays 67. The artificial bands that appear in low-depth images are called **banding**, frequently seen in compressed photos of clear skies.
 
 ## Indexed color: 256 colors from a bigger palette
 
-8 bits can also mean something else. In **indexed color**, the image stores a **palette**, a table of up to 256 full colors, and each pixel holds a number from 0 to 255 that says which palette entry to use. The pixel isn't a color; it's a page number in a color book. GIF files work this way, which is why a GIF can be colorful yet limited to 256 different colors at once.
+An 8-bit value can also be used as a table reference. In **indexed color**, the image file includes a **palette** (a color lookup table) containing up to 256 distinct red-green-blue (RGB) colors. Each pixel stores an integer from 0 to 255 specifying which palette entry to display. The pixel does not contain color components directly; it functions like an index into a catalog of swatches. The GIF format uses indexed color, which allows an image to display vivid colors while restricting the total palette to 256 distinct colors at any one time.
 
-Click a pixel to see the number it stores, then swap the palette:
+Select a pixel in the interactive tool below to inspect the index value it holds, then switch the active palette:
 
 <IndexedPalette />
 
 <Callout tone="orange" label="Same 8 bits, two meanings">
-In a grayscale image, pixel value 200 means "bright gray". In an indexed image, it means "whatever color sits at row 200 of the palette", which could be bright red. The bits alone don't tell you which. That's more metadata the file has to carry.
+In a grayscale image, a pixel value of 200 represents bright gray. In an indexed image, 200 points to row 200 in the color palette, which could be bright red or forest green. The raw pixel values alone do not distinguish grayscale from indexed color; the file header must provide that metadata.
 </Callout>
 
 ## More depth costs more memory
 
-More bits per pixel give more accurate color and smoother **gradients** (gradual changes from one color to another), but every pixel gets bigger, so the whole image does too. A document of black text gains nothing from 24-bit color, so storing it at 1 bit per pixel saves a lot of space. Bigger images also take longer to send over a network, which is why images with a high bit depth are usually **compressed**: stored in a cleverer, smaller form that is unpacked again before display. Choosing the depth is a trade between quality and size, and the [image size lesson](/courses/computer-graphics/image-size) puts numbers on it.
+Higher bit depths produce smoother **gradients** (gradual transitions between colors) and better image quality, but each pixel consumes more memory, increasing overall file size. A scanned black-and-white text document gains no visual clarity from 24-bit color, so storing it as a 1-bit binary image saves substantial storage and transmission time. Large image files are often **compressed** into formats like PNG or JPEG, which pack pixel data efficiently. Choosing a bit depth balances image quality against storage requirements, as calculated in the [image size lesson](/courses/computer-graphics/image-size).
 
-People can tell apart roughly ten million colors, which is why 24-bit true color, at about 16.7 million, is enough for almost any picture and gets called "true".
+Human vision can distinguish approximately ten million colors. For this reason, 24-bit color (providing 16.7 million combinations) is enough for realistic photographs, earning the name "true color".
 
-The [next lesson](/courses/computer-graphics/color-pixels) splits a pixel into red, green and blue.
+The [next lesson](/courses/computer-graphics/color-pixels) splits a color pixel into its red, green and blue components.

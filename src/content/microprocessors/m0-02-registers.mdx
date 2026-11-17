@@ -1,28 +1,60 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RegisterSplit, AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # The 8086's Registers
 
-Assembly programming is mostly moving numbers in and out of **registers**, so you need to get to know them. A [register](/courses/logic-design/registers) is a 16-bit row of [flip-flops](/courses/logic-design/flip-flops) inside the chip. The 8086 has 14 of them in four groups.
+Every time a processor reaches out to system memory across the external bus, it wastes time waiting for electrical signals to travel across the circuit board. To calculate at full speed, a CPU needs tiny storage cells sitting directly on the silicon die next to the arithmetic circuits. These internal scratchpad locations are **registers**.
+
+A register is built from high-speed [flip-flops](/courses/logic-design/flip-flops) inside the processor. Accessing memory takes multiple clock cycles over external buses, but accessing a register happens in a fraction of a clock cycle.
+
+The 8086 contains fourteen 16-bit registers organized into four distinct functional groups:
+
+1. **General-purpose registers**: AX, BX, CX, DX
+2. **Pointer and index registers**: SP, BP, SI, DI
+3. **Segment registers**: CS, DS, SS, ES
+4. **Instruction and status registers**: IP, FLAGS
 
 ## General purpose: AX, BX, CX, DX
 
-These hold your working values. Each is 16 bits, and each splits into two 8-bit halves you can use separately. A value can be seen in three ways, using a high byte (H) and a low byte (L). Click some bits.
+A **general-purpose register** is a storage slot that programmer instructions can freely use to hold numbers, addresses, and intermediate calculation results. Each of the four general-purpose registers is 16 bits wide.
+
+A unique feature of these four registers is that each one can also be addressed as two independent 8-bit registers:
+
+- The **high byte** consists of the upper 8 bits (bits 15 to 8), denoted by the letter **H**: AH, BH, CH, DH.
+- The **low byte** consists of the lower 8 bits (bits 7 to 0), denoted by the letter **L**: AL, BL, CL, DL.
+
+Writing to an 8-bit half changes only those 8 bits. The other half remains completely undisturbed.
 
 <RegisterSplit />
 
-Each one also has a speciality, which its name helps you remember:
+### Step-by-step trace: register splitting in action
 
-| Register | Name | Special job |
+To see how the 16-bit whole and the two 8-bit halves interact, trace this sequence of assignments:
+
+1. **Start**: The register contains `AX = 1234h`. In binary, this is `0001 0010 0011 0100b`.
+   - High byte: `AH = 12h` (`0001 0010b`)
+   - Low byte: `AL = 34h` (`0011 0100b`)
+2. **Modify the low byte**: Run `MOV AL, 56h`.
+   - AL updates to `56h`. AH is untouched and stays `12h`.
+   - The full register is now `AX = 1256h`.
+3. **Modify the high byte**: Run `MOV AH, 78h`.
+   - AH updates to `78h`. AL is untouched and stays `56h`.
+   - The full register is now `AX = 7856h`.
+
+Each general-purpose register also has a specialized hardware role that its name reflects:
+
+| Register | Name | Hardware role |
 |---|---|---|
-| AX | **A**ccumulator | Arithmetic and input/output |
-| BX | **B**ase | Pointing to data in memory |
-| CX | **C**ount | Loop counter |
-| DX | **D**ata | Big multiply and divide results, I/O ports |
+| AX | **Accumulator** | Primary register for arithmetic, multiplication, division, and I/O port transfers |
+| BX | **Base** | Holds base memory addresses for calculating data offsets in RAM |
+| CX | **Count** | Acts as an automatic counter for loops, string repeats, and bit shifts |
+| DX | **Data** | Holds high-order bits of 32-bit math results, and specifies 16-bit I/O port addresses |
+
+The **accumulator (AX)** is central: instructions like `MUL` and `DIV` implicitly require AX, and several instructions execute in fewer clock cycles or occupy fewer instruction bytes when using AX compared to other registers. The **base (BX)** register is the only general-purpose register that can be enclosed in brackets (such as `[BX]`) to read or write memory. The **count (CX)** register automatically decrements during `LOOP` instructions, and the **data (DX)** register pairs with AX to hold large arithmetic values.
 
 ## MOV: the instruction you'll use most
 
-`MOV destination, source` copies the source into the destination. It's a copy, despite the name. The source keeps its value. Press Step and watch the registers that light up.
+The most frequent instruction in assembly is `MOV destination, source`. Despite the name "move", it actually copies: the source retains its original value, and only the destination changes.
 
 <AsmRunner source={`MOV AX, 1234h   ; a 16-bit value
 MOV BL, AH      ; copy just the high half of AX
@@ -30,28 +62,154 @@ MOV BH, AL      ; and the low half
 MOV CX, BX      ; registers can copy to registers
 MOV AL, 0FFh    ; changes only part of AX`} />
 
-A leading 0 on a hex number (`0FFh`) tells the assembler it's a number, not a name. The `h` means hex, `b` means binary and no suffix means decimal.
+In assembly notation, a leading zero before a hexadecimal letter (`0FFh`) tells the assembler that the token is a number rather than a variable or register name. The suffix `h` denotes hexadecimal, `b` denotes binary, and numbers without a suffix are treated as decimal.
 
-Try the editor. Write `MOV AX, BL` and see what happens: the sizes have to match.
+### Why MOV AX, BL is illegal
+
+Try writing `MOV AX, BL` into the simulator editor. The assembler immediately rejects it.
+
+This fails because of an **operand size mismatch**. `AX` is a 16-bit register, while `BL` is an 8-bit register. The 8086 processor requires both operands in a `MOV` instruction to be the exact same size: either both 8-bit or both 16-bit. The hardware has no built-in instruction to automatically guess whether you want to pad the missing upper byte with zeros or with the sign bit.
+
+To copy an 8-bit value into a 16-bit register safely:
+
+```x86
+MOV AL, BL      ; copy 8-bit value into the low half of AX
+MOV AH, 00h     ; explicitly zero the upper half of AX
+```
+
+### Why memory-to-memory moves are not allowed
+
+Another common mistake is attempting to copy data directly from one memory location to another, such as `MOV [BX], [SI]`.
+
+The 8086 instruction set does not support memory-to-memory `MOV`. The processor has only one external memory bus interface and instruction encodings allocate room for at most one memory address descriptor per instruction. A memory-to-memory transfer requires two separate bus cycles: reading the source and writing to the destination. You must route the data through an intermediate CPU register:
+
+```x86
+MOV AL, [SI]    ; Cycle 1: read from source memory location into register AL
+MOV [BX], AL    ; Cycle 2: write from register AL into destination memory location
+```
+
+<Callout tone="orange" label="Trap: size mismatch in MOV">
+Both operands of a `MOV` instruction must have identical width. An instruction like `MOV AX, CL` or `MOV DH, BX` produces an assembly error. Always match 8-bit registers with 8-bit operands, and 16-bit registers with 16-bit operands.
+</Callout>
 
 ## Pointers and indexes: SP, BP, SI, DI
 
-These usually hold addresses, or more exactly, [offsets](/courses/microprocessors/segments-and-addresses).
+**Pointer registers** and **index registers** are 16-bit registers that hold memory offsets rather than raw data values.
 
-- **SP** (stack pointer): the top of the [stack](/courses/microprocessors/stack-and-procedures).
-- **BP** (base pointer): a fixed reference point inside the stack.
-- **SI** (source index) and **DI** (destination index): where you are in an array or string.
+The pointer registers navigate the stack segment:
+
+- The **stack pointer (SP)** always contains the offset address pointing to the current top of the [stack](/courses/microprocessors/stack-and-procedures). When data is pushed onto the stack, the hardware decrements SP automatically.
+- The **base pointer (BP)** provides a stable reference point inside the stack segment. Unlike SP, which shifts whenever values are pushed or popped, BP stays fixed to locate subroutine parameters and local variables on the stack frame.
+
+The index registers navigate linear data structures such as arrays and text strings:
+
+- The **source index (SI)** holds the memory offset pointing to source data in string operations and indexed memory lookups.
+- The **destination index (DI)** holds the memory offset pointing to destination buffers in string and memory-copy operations.
+
+<Callout tone="orange" label="Trap: pointer and index registers cannot split">
+Unlike the general-purpose registers (AX, BX, CX, DX), pointer and index registers (SP, BP, SI, DI) cannot be split into 8-bit halves. Names like `SPL`, `SPH`, `SIL`, or `DIH` do not exist in the 8086 instruction set. Instructions like `MOV SPL, 10h` are syntax errors. Pointers and indexes must always be manipulated as full 16-bit words.
+</Callout>
 
 ## Segment registers: CS, DS, SS, ES
 
-These say where the four areas of a program start in memory. They need a lesson of their own, [coming soon](/courses/microprocessors/segments-and-addresses).
+The 8086 partitions its 1 MB memory space into distinct logical blocks called segments. The four **segment registers** are 16-bit registers that hold the base addresses of these regions:
+
+- **CS** (Code Segment): Holds the base address of the memory area containing running program instructions.
+- **DS** (Data Segment): Holds the base address of global and static program variables.
+- **SS** (Stack Segment): Holds the base address of the system stack used for return addresses, parameters, and local variables.
+- **ES** (Extra Segment): Holds an auxiliary base address, frequently used alongside DS as the destination buffer for string copy and comparison operations.
+
+How the 8086 combines a 16-bit segment register with a 16-bit offset register to generate a 20-bit physical address is explored in depth in [segments and addresses](/courses/microprocessors/segments-and-addresses).
 
 ## IP and FLAGS
 
-**IP** (instruction pointer) is the 8086's name for the [Program Counter](/courses/computer-organization/inside-the-cpu). It holds the offset of the next instruction, and you can't `MOV` to it directly. It only changes when instructions run or jump.
+The final two registers control program flow and track execution state:
 
-**FLAGS** holds single-bit results, and it's the subject of the next lesson.
+The **instruction pointer (IP)** is the 8086's name for the Program Counter. It holds the 16-bit offset of the next instruction byte to fetch from the Code Segment (CS:IP).
 
-<Callout tone="orange" label="Later processors">
-The 32-bit x86 chips extended these registers to EAX, EBX and so on, and the 64-bit ones to RAX, RBX and so on. AX is still the lower half of EAX, and AH and AL still work. Code you write here still makes sense on a modern PC.
+<Callout tone="orange" label="Trap: IP cannot be written with MOV">
+You cannot modify the instruction pointer directly using a `MOV` instruction. Writing `MOV IP, 0200h` is illegal and rejected by the assembler. If code could freely overwrite IP with `MOV`, it would bypass the instruction pipeline and prefetch mechanism. IP can only be changed indirectly through control-transfer instructions: jumps (`JMP`), subroutine calls (`CALL`), returns (`RET`), and software or hardware interrupts.
 </Callout>
+
+The **flags register** is a 16-bit register containing individual 1-bit indicators. Six status flags reflect the outcome of recent arithmetic and logic calculations, while three control flags direct CPU operating behavior.
+
+<Callout tone="violet" label="Later processors: 32-bit and 64-bit expansion">
+When Intel created the 32-bit 80386 processor, it widened all general-purpose, pointer, and index registers to 32 bits, prefixing their names with **E** (Extended): EAX, EBX, ECX, EDX, ESP, EBP, ESI, EDI, and EIP. The 64-bit x86-64 architecture widened them again to 64 bits, using the prefix **R**: RAX, RBX, and so on. In modern processors, AX remains the lowest 16 bits of EAX and RAX, and AH and AL still refer to its lowest two bytes.
+</Callout>
+
+## Practice by hand
+
+Trace register state and evaluate instruction legality to test your understanding of 8086 registers.
+
+### Problem 1: Register tracing
+
+A program starts with registers initialized to:
+- `AX = 0A1Bh`
+- `BX = 4F20h`
+
+Trace the values of AX and BX (in hexadecimal) after each of the following instructions executes in order:
+
+```x86
+MOV AL, BL
+MOV BH, AH
+MOV AH, 0FFh
+MOV BL, 7Ch
+```
+
+<ModelAnswer>
+Follow each instruction step by step:
+
+1. **Initial state**:
+   - `AX = 0A1Bh` (`AH = 0Ah`, `AL = 1Bh`)
+   - `BX = 4F20h` (`BH = 4Fh`, `BL = 20h`)
+
+2. **`MOV AL, BL`**:
+   - Copies `BL` (`20h`) into `AL`.
+   - `AH` is unchanged (`0Ah`).
+   - `AX` becomes **`0A20h`**. `BX` remains **`4F20h`**.
+
+3. **`MOV BH, AH`**:
+   - Copies `AH` (`0Ah`) into `BH`.
+   - `BL` is unchanged (`20h`).
+   - `BX` becomes **`0A20h`**. `AX` remains **`0A20h`**.
+
+4. **`MOV AH, 0FFh`**:
+   - Replaces `AH` with `FFh`. `AL` is unchanged (`20h`).
+   - `AX` becomes **`FF20h`**. `BX` remains **`0A20h`**.
+
+5. **`MOV BL, 7Ch`**:
+   - Replaces `BL` with `7Ch`. `BH` is unchanged (`0Ah`).
+   - `BX` becomes **`0A7Ch`**. `AX` remains **`FF20h`**.
+
+**Final values**: `AX = FF20h`, `BX = 0A7Ch`.
+</ModelAnswer>
+
+### Problem 2: Analyzing illegal instructions
+
+Examine each of the following four 8086 assembly instructions. State whether the instruction is valid or invalid, explain the exact architectural reason, and provide the correct assembly equivalent if invalid:
+
+1. `MOV AX, CL`
+2. `MOV [DI], [SI]`
+3. `MOV IP, 0500h`
+4. `MOV SP, 8000h`
+
+<ModelAnswer>
+1. **`MOV AX, CL`: Invalid.**
+   - **Reason**: Operand size mismatch. `AX` is a 16-bit register, while `CL` is an 8-bit register. Operands must be the same size.
+   - **Correction**: `MOV AL, CL` followed by `MOV AH, 00h` (or `CBW` if sign-extending).
+
+2. **`MOV [DI], [SI]`: Invalid.**
+   - **Reason**: Memory-to-memory moves are not supported. The processor architecture allows at most one memory operand per standard data movement instruction.
+   - **Correction**: Use a register as an intermediate step:
+     ```x86
+     MOV AL, [SI]
+     MOV [DI], AL
+     ```
+
+3. **`MOV IP, 0500h`: Invalid.**
+   - **Reason**: The instruction pointer (IP) cannot be written directly by a `MOV` instruction. Direct writes would corrupt pipelined prefetching.
+   - **Correction**: Use a jump instruction: `JMP 0500h`.
+
+4. **`MOV SP, 8000h`: Valid.**
+   - **Reason**: `SP` is a 16-bit register and `8000h` is a 16-bit immediate value. Loading an immediate address into `SP` is the standard method for initializing the stack pointer at program startup.
+</ModelAnswer>

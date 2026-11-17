@@ -1,49 +1,106 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { AddressingModes, AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Addressing Modes
 
-Every instruction that uses data must say where the data is. An **addressing mode** is one way of saying it. Why have more than one? Because data shows up in different forms: a constant, a variable, an element of an array or a cell in a table. Each mode suits one of those.
+A program rarely keeps all its data in simple isolated variables. Sometimes a number is hardcoded in the instruction, sometimes it sits in a register, sometimes it belongs to an array, and sometimes it hides inside a record behind a pointer. To fetch any of these without inventing a separate instruction for every data structure, a CPU provides different ways to locate operands. Each method is an **addressing mode**.
 
-Think of different ways to find a house. "It's number 25" is direct. "The number's on this note" is indirect. "Three doors past the corner shop" is base plus displacement.
+When an operand is located in memory, the processor must determine its 16-bit offset within the current segment before accessing RAM. This computed offset is called the **effective address** (EA). The Bus Interface Unit then combines the effective address with the appropriate segment register to generate the 20-bit [physical address](/courses/microprocessors/segments-and-addresses).
 
-Pick each mode, then move the sliders and watch which memory cell it reads.
+Select each mode in the visualizer below, then move the sliders to see how the processor calculates the target address and reads the corresponding memory cell.
 
 <AddressingModes />
 
 ## The eight modes
 
-| Mode | Example | Where the data is |
-|---|---|---|
-| Immediate | `MOV AL, 25h` | In the instruction |
-| Register | `MOV AL, BL` | In a register |
-| Direct | `MOV AL, [0300h]` | At a fixed address |
-| Register indirect | `MOV AL, [BX]` | At the address in a register |
-| Based | `MOV AL, [BX+4]` | Base register + displacement |
-| Indexed | `MOV AL, [SI+4]` | Index register + displacement |
-| Based-indexed | `MOV AL, [BX+SI]` | Base + index |
-| Based-indexed with displacement | `MOV AL, [BX+SI+4]` | Base + index + displacement |
+The 8086 microarchitecture provides eight primary addressing modes:
 
-The **displacement** is a constant, 8 or 16 bits, written inside the instruction. The number the CPU works out from these parts is the **effective address** (EA), and that's the offset used to form the [physical address](/courses/microprocessors/segments-and-addresses):
+1. **Immediate addressing**: the operand is an explicit constant value encoded directly into the bytes of the instruction itself. No memory address is computed and no registers are read for the source operand.
+   - Example: `MOV AL, 25h` (loads the immediate byte value `25h` directly into register `AL`).
+
+2. **Register addressing**: the operand is stored inside one of the processor's internal 8-bit or 16-bit registers. The operation takes place entirely inside the CPU without accessing system memory.
+   - Example: `MOV AL, BL` (copies the 8-bit contents of register `BL` into register `AL`).
+
+3. **Direct addressing**: the effective address of the memory operand is an explicit 16-bit constant stored directly inside the instruction bytes.
+   - Example: `MOV AL, [0300h]` (reads the byte at offset `0300h` within the data segment).
+
+4. **Register indirect addressing**: the effective address is held inside a base register (`BX` or `BP`) or an index register (`SI` or `DI`). The square brackets indicate that the register contents serve as a memory pointer rather than data.
+   - Example: `MOV AL, [BX]` (reads the byte located at the offset stored in `BX`).
+
+5. **Based addressing**: the effective address is computed by adding an explicit constant offset to the contents of a base register (`BX` or `BP`).
+   - Formula: $\text{EA} = \text{base} + \text{disp}$
+   - Example: `MOV AL, [BX+4]` (adds 4 to the base address in `BX` and reads the byte at that offset).
+
+6. **Indexed addressing**: the effective address is computed by adding an explicit constant offset to the contents of an index register (`SI` or `DI`).
+   - Formula: $\text{EA} = \text{index} + \text{disp}$
+   - Example: `MOV AL, [SI+4]` (adds 4 to the index in `SI` and reads the byte at that offset).
+
+7. **Based-indexed addressing**: the effective address is computed by adding the contents of one base register (`BX` or `BP`) to the contents of one index register (`SI` or `DI`).
+   - Formula: $\text{EA} = \text{base} + \text{index}$
+   - Example: `MOV AL, [BX+SI]` (sums `BX` and `SI` to form the offset).
+
+8. **Based-indexed with displacement addressing**: the effective address is computed by summing one base register, one index register, and an explicit constant displacement.
+   - Formula: $\text{EA} = \text{base} + \text{index} + \text{disp}$
+   - Example: `MOV AL, [BX+SI+4]` (sums `BX`, `SI`, and the constant 4 to form the offset).
+
+The **displacement** is a signed 8-bit or 16-bit numeric constant embedded in the machine instruction. Combining these terms yields the general formula for any memory offset in the 8086:
 
 $$
 \text{EA} = \text{base} + \text{index} + \text{displacement}
 $$
 
+### Computing offsets: LEA versus MOV
+
+The 8086 includes a dedicated instruction called **Load Effective Address** (LEA). `LEA` and `MOV` differ in whether they access memory:
+
+- `MOV AX, [BX+SI+4]` calculates the effective address ($\text{BX} + \text{SI} + 4$), combines it with the data segment register (`DS`) to form a 20-bit physical address, accesses system RAM, and copies the 16-bit word stored at that memory location into register `AX`.
+- `LEA AX, [BX+SI+4]` calculates the effective address ($\text{BX} + \text{SI} + 4$) using the processor's internal address generation hardware and writes that calculated offset directly into register `AX`. It never accesses memory and never reads data from RAM.
+
+Assembly programmers frequently use `LEA` as a fast arithmetic instruction for adding two registers and a constant together in a single clock cycle without altering processor status flags.
+
 ## The rules
 
-The hardware has only so many ways to add these parts, so there are strict limits. All of these are real assembler errors, and the simulator will reject them too:
+The 8086 address generation hardware implements strict architectural constraints on memory operands:
 
-- Only **BX, BP, SI and DI** can hold an address. `[AX]`, `[CX]` and `[DX]` aren't allowed.
-- At most one base and one index. `[BX+BP]` and `[SI+DI]` aren't allowed.
-- **No memory-to-memory moves.** To copy between locations, go through a register.
-- The destination can't be an immediate number.
-- When nothing shows the size, you must state it: `MOV BYTE PTR [BX], 5`. Otherwise, the CPU can't tell if you mean one byte or two.
-- Segment registers can't take immediate values, so load them through another register: `MOV AX, 2000h`, then `MOV DS, AX`. CS can't be a `MOV` destination at all.
+1. **Allowed pointer registers**: only four registers can appear inside memory brackets: the two base registers (**BX** and **BP**) and the two index registers (**SI** and **DI**). General data registers (`AX`, `CX`, `DX`) and segment registers cannot hold memory offsets in bracket notation.
+2. **At most one base and one index**: an effective address may combine at most one base register (`BX` or `BP`) and at most one index register (`SI` or `DI`). Instructions like `MOV AL, [BX+BP]` (two base registers) or `MOV AL, [SI+DI]` (two index registers) are illegal in 8086 hardware.
+3. **No memory-to-memory operations**: a single 8086 instruction cannot specify two memory operands. To transfer data from one memory location to another, you must first read the value into a CPU register and then store it back to memory.
+4. **Immediate destination is prohibited**: an immediate value cannot serve as the destination operand of an instruction (`MOV 10h, AL` is illegal).
+5. **Segment register restrictions**: immediate constants cannot be moved directly into segment registers (`MOV DS, 1000h` is illegal). The segment address must be loaded through a general-purpose register first. The code segment register (`CS`) cannot be modified by `MOV` under any circumstance; jumps and calls manage `CS`.
+
+### Default segment rules for pointer registers
+
+When an instruction computes an effective address, the Bus Interface Unit chooses which segment register to pair with that offset based on which pointer registers appear in the instruction:
+
+- If the base register is **BX**, or if only index registers (**SI** or **DI**) appear, the processor defaults to the **Data Segment (DS)**.
+- If the base register is **BP**, the processor defaults to the **Stack Segment (SS)**!
+
+This rule exists because `BP` (the base pointer) is designed specifically to navigate stack frames. In high-level languages, function arguments and local variables are pushed onto the stack; `BP` points to the base of the active stack frame so code can read local variables with positive or negative displacements.
+
+<Callout tone="orange" label="Trap: BP defaults to the stack segment">
+When you write `MOV AX, [BP+4]`, the physical address is calculated using `SS:BP`, not `DS:BP`. If your data resides in the data segment rather than on the stack, you must explicitly supply a segment override prefix: `MOV AX, DS:[BP+4]`.
+</Callout>
+
+<Callout tone="orange" label="Trap: using invalid pointer registers">
+Instructions like `MOV AL, [AX]` or `MOV CL, [DX]` cause assembler syntax errors. In 16-bit 8086 assembly, only four registers can form memory addresses: `BX`, `BP`, `SI`, and `DI`. If a variable address sits in `AX` or `DX`, transfer it into `BX`, `SI`, or `DI` before dereferencing it.
+</Callout>
+
+### Ambiguous memory operands and size directives
+
+When copying an immediate number directly into memory, such as `MOV [BX], 5`, the instruction contains an ambiguity. The literal value `5` fits into an 8-bit byte (`05h`) as well as a 16-bit word (`0005h`), and the pointer `[BX]` points to an unformatted byte in memory without declaring a size.
+
+To resolve this ambiguity, you must provide a **size directive**:
+
+- **BYTE PTR**: informs the assembler to treat the destination address as an 8-bit byte. `MOV BYTE PTR [BX], 5` writes the single byte `05h` into address `DS:BX`.
+- **WORD PTR**: informs the assembler to treat the destination address as a 16-bit word. `MOV WORD PTR [BX], 5` writes the two-byte word `0005h` into memory (`05h` at address `DS:BX` and `00h` at address `DS:BX+1`, according to little-endian byte ordering).
+
+<Callout tone="orange" label="Trap: ambiguous operand size without PTR">
+Leaving the size directive off an instruction with an immediate source and a memory destination (`MOV [BX], 5`) results in an assembler error ("operation size not specified"). When neither operand specifies the operand width, you must explicitly write `BYTE PTR` or `WORD PTR`.
+</Callout>
 
 ## See them work
 
-This program walks an array in several ways. Note that a `db` line reserves bytes in memory, and that `LEA` loads an address, not the value at it.
+This assembly program demonstrates several addressing modes walking through an array. Notice how `db` reserves consecutive bytes in memory, and how `LEA` loads an address rather than reading data:
 
 <AsmRunner watch source={`table db 10, 20, 30, 40, 50
 LEA BX, table         ; BX = where the table starts
@@ -54,6 +111,100 @@ MOV AL, [BX+SI]       ; based-indexed: fourth item
 MOV AL, [BX+SI+1]     ; with displacement: fifth item
 MOV BYTE PTR [BX], 99 ; write through a pointer`} />
 
-<Callout tone="orange" label="Where you've seen this">
-When C code does `a[i]` or `rec.age`, the [compiler](/courses/theory-of-computation/context-free-grammars#where-this-shows-up-today) picks these modes. `a[i]` is base plus index, `rec.age` is base plus displacement, and `grid[i].y` uses all three. Modes like these are also a key difference between [RISC and CISC](/courses/computer-architecture/risc-and-cisc).
+<Callout tone="violet" label="Why addressing modes match high-level languages">
+Compilers rely directly on these addressing modes to translate common programming idioms into machine instructions:
+- Array indexing `a[i]` maps to based-indexed addressing (`[BX+SI]`), where `BX` points to the array start and `SI` holds the index offset.
+- Struct or record field access `rec.age` maps to based addressing (`[BX+disp]`), where `BX` points to the structure and `disp` is the fixed byte offset of the field.
+- An array of records `grid[i].y` maps to based-indexed with displacement (`[BX+SI+disp]`), resolving the array base, element index, and field offset in a single instruction.
 </Callout>
+
+## Practice by hand
+
+### Problem 1: Calculating EA and physical addresses with DS and SS
+
+An 8086 system has the following register values:
+- `DS = 2000h`
+- `SS = 3000h`
+- `BX = 0100h`
+- `BP = 0200h`
+- `SI = 0040h`
+
+For each of the following two instructions, determine:
+1. Which segment register is used by default.
+2. The 16-bit effective address (EA).
+3. The 20-bit physical address accessed by the processor.
+
+- Instruction A: `MOV AX, [BX+SI+10h]`
+- Instruction B: `MOV AX, [BP+SI+10h]`
+
+<ModelAnswer>
+Follow the segment pairing rules and the effective address formula:
+
+1. **Instruction A: `MOV AX, [BX+SI+10h]`**:
+   - **Default segment**: Because the base register is `BX`, the processor defaults to the Data Segment (**DS**).
+   - **Effective address**:
+     $$\text{EA} = \text{BX} + \text{SI} + 10_h = 0100_h + 0040_h + 0010_h = 0150_h$$
+   - **Physical address**:
+     Shift `DS` (`2000h`) left 4 bits to obtain base address `20000h`, then add the effective address:
+     $$\text{Physical Address} = 2000_h \times 10_h + 0150_h = 20000_h + 0150_h = 20150_h$$
+   - Result: EA is **`0150h`**; physical address is **`20150h`**.
+
+2. **Instruction B: `MOV AX, [BP+SI+10h]`**:
+   - **Default segment**: Because the base register is `BP`, the processor defaults to the Stack Segment (**SS**), not DS!
+   - **Effective address**:
+     $$\text{EA} = \text{BP} + \text{SI} + 10_h = 0200_h + 0040_h + 0010_h = 0250_h$$
+   - **Physical address**:
+     Shift `SS` (`3000h`) left 4 bits to obtain base address `30000h`, then add the effective address:
+     $$\text{Physical Address} = 3000_h \times 10_h + 0250_h = 30000_h + 0250_h = 30250_h$$
+   - Result: EA is **`0250h`**; physical address is **`30250h`**.
+</ModelAnswer>
+
+### Problem 2: Diagnosing illegal 8086 assembly instructions
+
+Analyze each of the following five 8086 assembly instructions. State whether the instruction is valid or illegal, state the exact architectural reason, and show how to write the corrected code:
+
+1. `MOV [BX], 10`
+2. `MOV [AX], CX`
+3. `MOV [BX+BP], AL`
+4. `MOV [BX+SI], [DI]`
+5. `MOV ES, 1000h`
+
+<ModelAnswer>
+1. **`MOV [BX], 10`: Illegal.**
+   - **Reason**: Ambiguous memory operand size. The assembler cannot determine whether `10` should be stored as an 8-bit byte (`0Ah`) or a 16-bit word (`000Ah`), because neither operand indicates a size.
+   - **Correction**: Specify the size with a directive:
+     - For a byte: `MOV BYTE PTR [BX], 10`
+     - For a word: `MOV WORD PTR [BX], 10`
+
+2. **`MOV [AX], CX`: Illegal.**
+   - **Reason**: Invalid base register. The 8086 microarchitecture allows only `BX`, `BP`, `SI`, and `DI` as pointer registers inside memory brackets. General data register `AX` cannot hold a memory offset in this format.
+   - **Correction**: Transfer the address to an allowable pointer register first:
+     ```x86
+     MOV BX, AX
+     MOV [BX], CX
+     ```
+
+3. **`MOV [BX+BP], AL`: Illegal.**
+   - **Reason**: Two base registers combined in a single memory operand. The 8086 address generation logic allows at most one base register (`BX` or `BP`) and at most one index register (`SI` or `DI`).
+   - **Correction**: Pair a base register with an index register (`MOV [BX+SI], AL`), or precalculate the combined offset in software:
+     ```x86
+     ADD BX, BP
+     MOV [BX], AL
+     ```
+
+4. **`MOV [BX+SI], [DI]`: Illegal.**
+   - **Reason**: Memory-to-memory data transfer. 8086 instructions cannot access two memory operands simultaneously in a standard `MOV` instruction.
+   - **Correction**: Transfer the data through an intermediate CPU register:
+     ```x86
+     MOV AL, [DI]
+     MOV [BX+SI], AL
+     ```
+
+5. **`MOV ES, 1000h`: Illegal.**
+   - **Reason**: Immediate value loaded directly into a segment register. The 8086 instruction set does not have an opcode for moving an immediate constant directly into `CS`, `DS`, `SS`, or `ES`.
+   - **Correction**: Load the immediate value into a general-purpose register first:
+     ```x86
+     MOV AX, 1000h
+     MOV ES, AX
+     ```
+</ModelAnswer>

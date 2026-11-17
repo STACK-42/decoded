@@ -1,25 +1,109 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 
 # The Systems Layer
 
-The third layer is understanding what is actually happening underneath. It's the layer that turns frustration into diagnosis.
+You press Save on a train, close your laptop, and open your desktop computer at home to find your latest edits missing. Or a script prints twenty lines of red text and stops. Without knowing what the machine is doing underneath, you are left guessing or restarting. Building on the [physical layer](/courses/computer-literacy/physical-layer) and the [language layer](/courses/computer-literacy/language-layer), the **systems layer** turns that frustration into **diagnosis**: working backward from what failed on screen to the part of the system that caused it.
 
 ## Reading error messages
 
-One of the most important skills here is reading error messages. What looks like noise is usually structured information: codes, patterns and hints about what went wrong. Instead of getting frustrated or handing the problem off right away, you start treating errors as signals. Over time you build intuition, and problems get easier to diagnose.
+One of the most useful skills here is reading **error messages**: the report a program prints when an operation fails. At first, an error message can look like noise, but it is structured information with up to three parts:
+
+- An **error type or code**: a short label for what went wrong, such as a web error like [HTTP](/courses/computer-networks/http-and-https#requests-and-responses) `404 Not Found` for a missing web page, or `PermissionError` when access is blocked.
+- A plain-text message explaining what failed.
+- A **stack trace** (also called a **traceback**): the list of active [function calls](/courses/data-structures/stacks#the-call-stack) (the chain of steps the program was running), file names, and line numbers at the moment the program stopped.
+
+Trace a real Python error step by step, where your script `report.py` tries to read `data/scores.csv` using Python's built-in file library (`pathlib.py`):
+
+```text
+Traceback (most recent call last):
+  File "report.py", line 4, in <module>
+    text = Path("data/scores.csv").read_text()
+  File "/usr/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+  File "/usr/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+FileNotFoundError: [Errno 2] No such file or directory: 'data/scores.csv'
+```
+
+1. **Read the error summary first.** In Python, the error type and reason sit on the *last* line: `FileNotFoundError`, `[Errno 2]` (operating system error code 2, meaning the path was not found), and the exact path `'data/scores.csv'` it failed to open. (In languages such as Java and JavaScript, the summary is usually at the *top* with the call chain below it.)
+2. **Find your own file and line number.** Reading up from the bottom, ignore built-in library files like `/usr/lib/python3.12/pathlib.py` at first and stop at your own code: `File "report.py", line 4` points directly to the line in your script (`Path("data/scores.csv").read_text()`) that asked for the file.
+3. **Check what the program expected.** The script looked for `data/scores.csv` relative to your [current working directory](/courses/computer-literacy/language-layer#the-file-system). From there you have three checks: does the `data` directory exist here, is the filename spelled the exact same way, and did you run the command from the directory that holds `data`?
+
+Each time you read an error as a clue, the next failure gets easier to diagnose.
+
+<Callout tone="orange" label="Usual mistake: closing the message or skipping the summary">
+Closing an error popup without reading it, or searching "my code crashed" instead of the error text, throws away the exact clue the machine gave you. Even when a traceback is twenty lines long, start by reading the error summary line and the first file path that belongs to you.
+</Callout>
 
 ## Knowing where things run
 
-Is it local or in the cloud? An app or a browser tab? Saved, or synced? These distinctions matter more than people realize. A lot of frustration comes from not knowing where your data lives or how your actions spread. Once you see those boundaries, your mental model of the system holds steady, and you stop feeling lost when something behaves unexpectedly.
+Many everyday computer problems happen when people mix up three boundaries:
 
-The program managing all of this is the [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system), which has its own course.
+- **Local vs. in the cloud:** **local** software runs on your own computer's [processor](/courses/computer-organization/inside-the-cpu) and stores data on your own drive, so it works offline and stays on that device. Software **in the cloud** runs on **remote servers** (other computers reached over the internet); your screen shows the interface while the work and data live somewhere else.
+- **App vs. browser tab:** a **native app** (a desktop or mobile application) is installed directly on your operating system and can access local directories you approve, even when it also syncs copies to a remote server. A **web app** runs inside a **browser tab** under strict security limits called a **sandbox**, so it cannot read your drive unless you explicitly pick or upload a file.
+- **Saved vs. synced:** **saved** means your changes have been written to storage on the machine in front of you. **Synced** means those saved changes have also been uploaded to a remote server and copied down to your other devices.
+
+Walk through a situation where mixing these up causes panic: you edit a document in a desktop app on a train with no internet connection, press `Ctrl+S`, see "Saved," and close your laptop. When you open your desktop computer at home, the new paragraphs are gone. Nothing was deleted. Your edits were **saved** locally on the laptop's disk, while the **sync** step waited for an internet connection.
+
+Once you see those boundaries, you stop feeling lost when something behaves strangely, because you know where your data lives. The program managing files, memory, permissions, and running apps on your device is the [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system), which has its own course.
+
+<Callout tone="orange" label="Usual mistake: treating saved and synced as the same thing">
+Assuming that pressing Save puts your file everywhere leads to missing work and duplicate "conflicted copy" files when you switch devices offline, because editing on two devices before syncing leaves two different versions that the sync tool refuses to overwrite.
+</Callout>
 
 ## Visual interface grammar
 
-Written language has rules for how sentences are formed, and interfaces have **patterns** in the same way. Navigation bars, sidebars, menus and breadcrumbs are signals that tell you where you are and what you can do next.
+Written language has rules for how sentences are built, and interfaces have **patterns** (sometimes called **visual interface grammar** or **UI (user interface) patterns**) in the same way. Four shared elements tell you where you are and what you can do next:
 
-Most people approach a new application as if it were completely unfamiliar. They lean on tutorials or trial and error because they don't recognize the structure underneath. Once you know these patterns, every new tool feels like a variation of one you already know, and you start *translating* instead of learning from scratch.
+- **Navigation bar:** a strip across the top or edge holding links to the main sections of an app or site, or menus such as `File`, `Edit`, and `View` for saving, undoing, and showing hidden panels.
+- **Sidebar:** a vertical panel showing a nested list, such as folders in VS Code, design layers in Figma, or document sections in Google Docs.
+- **Menu (and context menu):** a drop-down or right-click list of actions for the current screen or the item you selected.
+- **Breadcrumbs:** a trail such as `Courses > Computer Literacy > The Systems Layer` that shows where you are in a nested path and lets you step up a level in one click.
 
-<Callout tone="mint" label="The end state">
-None of these layers are learned in a day. Over months your skill grows, and so does your relationship with the machine: it stops feeling external and unpredictable and starts to feel like an extension of your thinking.
+Shared icons follow the same grammar across nearly all software: a gear opens settings, a magnifying glass opens search, three dots (`...`) hide extra actions, and grayed-out buttons tell you an action is not allowed right now.
+
+Most people approach a new application as if it were completely unfamiliar. They rely on tutorials or trial and error because they do not recognize the structure underneath. Once you know these patterns, you can translate from tools you already know, such as VS Code, Figma, or Google Docs, in three steps:
+
+1. Check the top navigation or menu bar (`File`, `Edit`, `View`) for global actions and hidden panels.
+2. Check the left sidebar for your files, layers, or document sections.
+3. Select an item in the main workspace and check the right-click context menu or properties panel for actions tied to that item.
+
+Every new tool then feels like a variation of one you already know, and you start *translating* instead of learning from scratch.
+
+<Callout tone="orange" label="Usual mistake: memorizing click paths instead of structure">
+Learning an app as a fixed recipe ("click the blue icon third from the left") breaks the moment an update moves a button or you switch to another program. Learn what each part of the screen does instead, and your habits will carry over to new tools.
 </Callout>
+
+## Practice by hand
+
+**1. Read a Python traceback step by step:** Running a Python script prints this error, where `int(cells[1])` tries to convert the second column of a row from text into a whole number (base 10):
+
+```text
+Traceback (most recent call last):
+  File "main.py", line 12, in <module>
+    total = parse_row(line)
+  File "csv_loader.py", line 27, in parse_row
+    return int(cells[1])
+ValueError: invalid literal for int() with base 10: 'N/A'
+```
+
+Which line tells you what failed, which file and line in your code threw the error, and what should you check next?
+
+<ModelAnswer>
+- Read the last line first: `ValueError: invalid literal for int() with base 10: 'N/A'` tells you `int(...)` received the text `'N/A'` instead of digits.
+- The failure happened inside `File "csv_loader.py", line 27`, in `parse_row`, which was called from `File "main.py", line 12`.
+- Next, inspect the input data around the row where `cells[1]` is `'N/A'` (such as a header row or blank field) and decide how `parse_row` should handle non-numeric cells.
+</ModelAnswer>
+
+**2. Separate saved vs. synced and local vs. browser tab:** You edit a report in a desktop text editor on a train with Wi-Fi off, press `Ctrl+S`, and see "Saved" in the title bar. When you open a web browser on your phone at the station while the laptop is still closed, the new edits are missing. Later, on your laptop, a web app asks you to pick a file through a dialog instead of browsing your folders directly. Explain both situations.
+
+<ModelAnswer>
+- Pressing `Ctrl+S` **saved** your edits to the laptop's local drive, which works without an internet connection. The **sync** step that uploads those edits to the remote server could not run until the laptop connected again, so your phone saw the older cloud copy.
+- The web app runs inside a **browser tab** sandbox, separated from your disk for security. Unlike a native app installed on your operating system, it cannot read local folders unless you choose or upload a file.
+</ModelAnswer>
+
+<Callout tone="mint" label="What you now have">
+Across these three lessons you built one working loop: touch typing and shortcuts keep your hands out of your way (**physical layer**), exact search queries, paths, terminal commands, regex patterns, and structured prompts tell software what you want (**language layer**), and tracebacks, local-versus-cloud boundaries, and shared UI patterns let you diagnose failures and pick up new tools quickly (**systems layer**).
+</Callout>
+
+To turn these digital workflows into reliable long-term study and exam habits, continue to [The Exam Mind](/courses/the-exam-mind/the-problem-with-how-you-study), which applies cognitive science to memory consolidation, retrieval practice, and exam pressure.

@@ -4,7 +4,7 @@ import { RegexWords, ReChallenge } from "@/components/mdx/TocVisualizers";
 
 # Reading and Writing Regular Expressions
 
-The Language of Languages defined regular expressions with three rules: union, concatenation and star. This lesson is about using them. Exams ask three kinds of question about regular expressions, and you'll practice all three here:
+[The Language of Languages](/courses/theory-of-computation/language-of-languages#regular-expressions-the-first-compact-notation) defined regular expressions with three rules: union, concatenation, and star. Exams ask three questions about them:
 
 1. **Describe the language** of a given expression in words.
 2. **List the first words** of its language.
@@ -21,24 +21,34 @@ Course notes and exams use textbook notation, which differs from the regex in yo
 | $r_1 + r_2$ | union: $r_1$ or $r_2$ | $a + b$ | $\{a, b\}$ |
 | $r_1 r_2$ | concatenation: $r_1$ then $r_2$ | $ab$ | $\{ab\}$ |
 | $r^*$ | zero or more repetitions of $r$ | $a^*$ | $\{\varepsilon, a, aa, \ldots\}$ |
-| $\varepsilon$ (or $\lambda$, $\Lambda$) | the empty string | $a + \varepsilon$ | $\{\varepsilon, a\}$ |
+| $\varepsilon$ (or $\Lambda$, $\lambda$ in some books) | the empty string | $a + \varepsilon$ | $\{\varepsilon, a\}$ |
+| $\emptyset$ | the empty language (zero strings) | $\emptyset$ | $\{\}$ |
 
-Star binds tightest, then concatenation, then union. So $ab^*$ is $a$ followed by any number of $b$'s, while $(ab)^*$ repeats the pair. And $a + bc$ is $\{a, bc\}$, not $\{ac, bc\}$. When in doubt, add brackets.
+Star binds tightest, then concatenation, then union. So $ab^*$ means $a(b^*)$, which is one $a$ followed by any number of $b$'s ($\{a, ab, abb, \ldots\}$), while $(ab)^*$ repeats the whole pair ($\{\varepsilon, ab, abab, \ldots\}$). Likewise, $a + bc$ means $a + (bc) = \{a, bc\}$, whereas $(a + b)c = \{ac, bc\}$. When in doubt, add brackets.
 
 ## Reading an expression
 
-Read from the outside in. Find the top-level operator, say what each part contributes, then combine. Some examples from past exercise sheets:
+Read from the outside in. Find the top-level operator (the last operation applied, usually union `+` outside parentheses, or concatenation if there is no unparenthesized `+`), say what each part contributes, then combine. Four examples:
 
-- $a^* + b^*$ is "only $a$'s, or only $b$'s": $\varepsilon$, $a$, $b$, $aa$, $bb$, and so on. A word like $ab$ mixes the two, so it's **not** in the language. This is the most common trap: $a^* + b^*$ is not $(a + b)^*$.
-- $a^*ab^*$ forces at least one $a$ (the one in the middle), followed by any number of $b$'s: $a$, $aa$, $ab$, $aaa$, $aab$, $abb$...
-- $(a + b)^*ba(a + b)^*$ is "anything, then $ba$, then anything", so every word that **contains** $ba$ somewhere.
-- $ab^*ab^*a$ has exactly three $a$'s, starts and ends with $a$, and allows any number of $b$'s in the two gaps.
+- **$a^* + b^*$:** The top-level operator is `+` (union), joining $a^*$ and $b^*$. Every word comes entirely from $a^*$ or entirely from $b^*$: "only $a$'s, or only $b$'s" ($\varepsilon$, $a$, $b$, $aa$, $bb$, and so on). Both halves allow zero repetitions, so $\varepsilon$ is in the language, while a word like $ab$ mixes the two and is **not** in the language.
+- **$a^*ab^*$:** There is no top-level `+`, so the expression is a concatenation of three pieces: $a^*$, then $a$, then $b^*$. Because $a^*$ can contribute $\varepsilon$, the shortest word is $a$. The required middle $a$ guarantees at least one $a$, followed by zero or more $b$'s: $a$, $aa$, $ab$, $aaa$, $aab$, $abb$, and so on. Every $a$ must appear before every $b$, so $ba$ is not in the language.
+- **$(a + b)^*ba(a + b)^*$:** Since $(a + b)^*$ matches any string over $\{a, b\}$ (the [Kleene star](/courses/theory-of-computation/language-of-languages#kleene-star-sigma) of the alphabet), this concatenation reads as "anything, then $ba$, then anything": every word that **contains** $ba$ somewhere.
+- **$ab^*ab^*a$:** Concatenation of five pieces ($a$, $b^*$, $a$, $b^*$, $a$). That fixes three $a$'s (at the start, somewhere in the middle, and at the end) with zero or more $b$'s in the two gaps: every word over $\{a, b\}$ that starts with $a$, ends with $a$, and has **exactly three** $a$'s.
+
+<Callout tone="orange" label="Two reading traps: a* + b* and (a + b)*">
+  Students often confuse $a^* + b^*$ with $(a + b)^*$. In $a^* + b^*$, the choice between $a$ and $b$ happens **once** at the start, so you never switch letters ($ab$ is rejected). In $(a + b)^*$, the choice happens on **every step**, so any mix of $a$'s and $b$'s is allowed.
+</Callout>
 
 ## Listing the first words
 
-When a question asks for "the first 10 words", list them **shortest first, and alphabetically within the same length**. To find them, choose the cheapest option at every part of the expression, then make one part longer at a time.
+When a question asks for "the first 10 words", list them **shortest first, and alphabetically within the same length** (often called **shortlex order** or **length-lexicographical order**). If the empty word $\varepsilon$ is in the language, it always comes first because it has length $0$. To generate words systematically, pick the shortest option at every part of the expression, then increase the repetition count one step at a time.
 
-For $(ab + ba)^*aa$: the star can repeat zero times, which gives the shortest word, $aa$. One repetition gives $abaa$ and $baaa$. Two repetitions give four words of length 6. Check that against the tool below, then try the other exercise expressions: `ab*ab*a`, `(ab)*+(ba)*`, `bb(a+b)*aa`, `(ab+ba)*(bb+aa)`.
+Walk through $(ab + ba)^*aa$ step by step:
+1. **0 repetitions** of $(ab + ba)$: $\varepsilon \cdot aa = aa$ (1 word of length 2).
+2. **1 repetition** of $(ab + ba)$: choose either $ab$ or $ba$, then append $aa$, giving $abaa$ and $baaa$ (2 words of length 4, already in alphabetical order).
+3. **2 repetitions** of $(ab + ba)$: choose from $\{ab, ba\}$ twice, then append $aa$, giving four combinations: $ababaa$, $abbaaa$, $baabaa$, and $babaaa$ (4 words of length 6, sorted alphabetically).
+
+That puts the first seven words in exact order: $aa$, $abaa$, $baaa$, $ababaa$, $abbaaa$, $baabaa$, $babaaa$. Check that against the tool below, then try the other exercise expressions: `ab*ab*a`, `(ab)*+(ba)*`, `bb(a+b)*aa`, `(ab+ba)*(bb+aa)`.
 
 <RegexWords initial="(ab+ba)*aa" count={14} />
 
@@ -56,7 +66,12 @@ Most exam languages are built from a handful of patterns over $\Sigma = \{a, b\}
 | Words with **exactly one** $a$ | $b^*ab^*$ |
 | Words of **even length** | $((a + b)(a + b))^*$ |
 
-When two different shapes are allowed, write each as its own expression and join them with $+$. Then test your answer from both sides: list a few words it generates and check each belongs, and think of a word that belongs and check your expression generates it. The checker below does the second half for you by trying every word up to length 8 and reporting the shortest one where your answer and the language disagree.
+Notice why "exactly one $a$" uses $b^*ab^*$ while "contains $a$" uses $(a + b)^*a(a + b)^*$: around the fixed $a$, $b^*$ allows only $b$'s, blocking any second $a$ from sneaking into the gaps.
+
+When writing an expression from a word description, work in three steps:
+1. **Split into cases** if several shapes are allowed, and join them with $+$.
+2. **Place the required parts** in order, and fill each gap with $(a + b)^*$ if anything is allowed there, or with only the non-forbidden letters (like $b^*$) if a symbol is banned.
+3. **Test from both sides:** list a few short words your expression generates and verify each belongs, then think of edge-case words (especially $\varepsilon$ and single-letter words) and verify your expression handles them. The checker below does the second half for you by trying every word up to length 8 and reporting the shortest one where your answer and the language disagree.
 
 <ReChallenge
   prompt="Every word ends with triple b (bbb)."
@@ -75,6 +90,8 @@ When two different shapes are allowed, write each as its own expression and join
   answer="a(a+b)*b+b(a+b)*a"
   hint="Two shapes, joined with +. Each shape fixes the first and last letter and allows anything between."
 />
+
+To express an **optional** symbol in textbook notation, write $(\varepsilon + a)$ (either the empty string or $a$). When typing into the fourth challenge below, paste `ε` (or `Λ`) directly into the box, since typing letters like `e` treats them as symbols in the alphabet.
 
 <ReChallenge
   prompt="No word has a double letter (no aa and no bb anywhere). The empty word counts."
@@ -96,8 +113,10 @@ When two different shapes are allowed, write each as its own expression and join
   hint="The a can come before the b or after it, so you need two shapes joined with +."
 />
 
-<Callout tone="orange" label="Check the empty word">
-  Most wrong answers fail on the shortest words. Before you submit, ask whether $\varepsilon$ belongs to the language, and whether your expression generates it. "No double letters" includes $\varepsilon$; "ends with $bbb$" does not.
+<Callout tone="orange" label="Check the empty word and 'exactly' vs 'at least'">
+  Most wrong answers fail on the shortest words or on gaps between required letters:
+  - **Check $\varepsilon$ first:** "No double letters" includes $\varepsilon$; "ends with $bbb$" does not.
+  - **"Exactly" vs "at least":** Writing $(a+b)^*a(a+b)^*a(a+b)^*$ for "exactly two $a$'s" is wrong because $(a+b)^*$ lets extra $a$'s into the gaps, matching *at least* two $a$'s instead. To lock in an exact count, use $b^*$ in the gaps ($b^*ab^*ab^*$).
 </Callout>
 
 ## Where this shows up today

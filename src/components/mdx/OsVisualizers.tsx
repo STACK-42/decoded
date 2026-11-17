@@ -1296,9 +1296,10 @@ export function ContextSwitch() {
       codeLabel="What happens"
       legend={[["bg-sky", "executing"], ["bg-muted", "idle (OS working)"]]}
       render={(s: SwitchState) => (
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center min-w-[420px]">
+        // on phones the two PCBs stack above and below the CPU, and the arrows point up and down
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-center sm:min-w-[420px]">
           <PcbCard p={s.pcb[0]} hot={s.touch === 0} />
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex sm:flex-col items-center justify-center gap-3 sm:gap-2">
             <div className={`rounded-sm border-2 px-4 py-3 text-center transition-all duration-300 ${s.running === null ? "border-dashed border-muted-foreground" : "border-sky bg-sky/20"}`}>
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">CPU</div>
               <div className="font-display font-bold">{s.running === null ? "OS" : `P${s.running}`}</div>
@@ -1307,7 +1308,8 @@ export function ContextSwitch() {
             <div className="font-mono text-lg h-6">
               {s.phase !== "exec" && (
                 <span key={`${s.phase}${s.touch}`} className="animate-in fade-in duration-300">
-                  {s.phase === "save" ? (s.touch === 0 ? "← save" : "save →") : s.touch === 0 ? "reload →" : "← reload"}
+                  <span className="hidden sm:inline">{s.phase === "save" ? (s.touch === 0 ? "← save" : "save →") : s.touch === 0 ? "reload →" : "← reload"}</span>
+                  <span className="sm:hidden">{s.phase === "save" ? (s.touch === 0 ? "↑ save" : "save ↓") : s.touch === 0 ? "↓ reload" : "↑ reload"}</span>
                 </span>
               )}
               {s.phase === "exec" && s.running !== null && <span className="animate-spin inline-block">⚙</span>}
