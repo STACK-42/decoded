@@ -1,7 +1,9 @@
 import { LessonImage } from "@/components/mdx/LessonImage";
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph } from "@/components/mdx/MdxComponents";
 
-# The Problem With How You Study
+# The Problem with How You Study
+
+<Epigraph quote="The art of being wise is the art of knowing what to overlook." by="William James" source="The Principles of Psychology, 1890" />
 
 ## On the Memory of This Course
 
@@ -19,11 +21,15 @@ That realization is part of what made me want to write this course.
 
 ## Studying That Feels Productive
 
-You probably already know how to study. Read the material. Make notes. Highlight. Maybe re-read. Maybe make a summary. Repeat until the exam.
+You probably already know how to study. Read the material. Make notes. Highlight. Re-read. Make a summary. Repeat until the exam.
 
 This is what I like to call studying that "feels productive." It mostly isn't.
 
-That has nothing to do with you being lazy or doing it wrong in some obvious way. The way most students study is built around a feeling more than a result. The feeling is *familiarity*. The result you actually need is *recall*. Confusing the two is where most exam performance is lost.
+That has nothing to do with you being lazy or doing it wrong in some obvious way. The way most students study is built around a feeling rather than a result. The feeling comes from **recognition**: seeing material in front of you and noticing that it looks right because you have seen it before. When you read through a solved example in your notes and think "yes, that makes sense," your brain builds a sense of **familiarity**.
+
+Exams ask for **recall**, which is the ability to pull an answer, formula, or argument out of memory when the page in front of you is blank.
+
+Look at a concrete example. If you flip through a slide deck on how computers store lookup tables and spot two method names, you will recognize them right away and feel ready. Sit in an exam room with a blank box asking you to explain how each method handles two keys landing in the same slot, with no slides in front of you, and recognition gives you nothing to write down. Confusing familiarity with recall is where most exam performance is lost.
 
 ## The Asset (Memory)
 
@@ -35,26 +41,43 @@ A German psychologist named [Hermann Ebbinghaus](https://en.wikipedia.org/wiki/H
 
 Without any review, you forget roughly half of what you learned within the first hour. By the next day, you remember maybe 30%. Within a week, almost nothing.
 
+The curve drops steepest right away because of how new memories sit in the brain. Right after a lecture or a first reading, the new information exists only as a fragile, temporary trace with weak links to anything else you know. Every new conversation, slide, or chapter you take in over the next few hours competes with it. Without a reason to pull that trace back up, most of it clears out within hours. What little survives past the first day has begun to settle, so the decline slows down after that.
+
+Each time you retrieve that memory after a gap, you interrupt the drop and flatten the curve. Instead of falling back to 30% overnight, the next decline is slower and shallower, so you keep more of the material for days or weeks instead of hours.
+
 It surprises me that this was in 1885. We have known it for over a century, and people still do the same exam preparation, reading everything the night before, as if this curve did not exist.
 
 <Callout tone="orange" label="The core problem">
-Re-reading feels like studying because the material looks familiar. Being able to retrieve something under pressure is a different skill. When you re-read, your brain is recognizing, and the exam asks you to recall.
+Re-reading feels like studying because the material looks familiar. When your notes are open in front of you, your brain uses **recognition**, while the exam paper tests **recall** with nothing in front of you.
 </Callout>
 
 ## How Memory Actually Works
 
-Your memory is not a storage room where you put things and later take them out **unchanged**. It's closer to a muscle: it gets stronger the more you *use* it, and weaker when you only *look* at it.
+Your memory is not a storage room where you put things and later take them out *unchanged*. It works more like a muscle: it gets stronger when you pull information out of it, and weaker when you only look at the page.
 
-Every time you successfully recall something, pulling it out of your memory without seeing it in front of you, you strengthen the connection. Every time you simply re-read it, you strengthen nothing, because the information is right there and your brain does not need to do the work. It just scans.
+Every time you force yourself to pull an answer out of memory without looking, you strengthen the connection that stores it. Every time you simply re-read a sentence, the answer is already sitting in front of your eyes, so your brain skips the effort of searching and strengthens almost nothing.
 
-This is called **[retrieval practice](https://psychology.ucsd.edu/undergraduate-program/undergraduate-resources/academic-writing-resources/effective-studying/retrieval-practice.html)**, and the research on it is overwhelming. We were taught that testing yourself is a way to check what you know, but testing yourself is also how you learn. The effort of reaching for an answer, even when you get it wrong, is what makes it stick.
+Pulling information out of memory without looking at your notes is called **retrieval practice** ([read UCSD's guide](https://psychology.ucsd.edu/undergraduate-program/undergraduate-resources/academic-writing-resources/effective-studying/retrieval-practice.html)). We were taught that testing yourself is just a way to check what you already know, yet testing yourself is also how you learn.
 
-There is a second mechanism too: **spacing**. Reviewing material across several sessions, with time between them, works far better than spending the same total time on it in one sitting. I do this a lot and it makes my life ten times easier. The explanation is that your brain consolidates memory during rest, and cramming the night before skips that consolidation entirely.
+Even getting an answer wrong during self-testing helps you remember it later. When you reach for an answer and come up empty, your brain activates the surrounding concepts and marks the exact gap where the link broke. Checking the real answer right after attaches the correction to that active search, so it sticks far better than if you had read the same paragraph passively from the start.
+
+Here is what turning passive review into active recall looks like in a real 15-minute session, say on a 20-slide lecture about how search works:
+
+1. **Minutes 1 to 2:** Close the slides and take a blank sheet of paper. Write the topic name at the top and list every rule, term, or step you can pull from memory.
+2. **Minutes 3 to 9:** Trace an example by hand or explain how two methods differ in plain words without peeking. When you forget a step, write a question mark and keep going through the rest.
+3. **Minutes 10 to 12:** Open the slides only to check your sheet. Mark what you missed or got wrong in another color.
+4. **Minutes 13 to 15:** Close the slides again and rewrite only the parts you missed from scratch.
+
+Compare that with 15 minutes of passive review: clicking through slides 1 to 20, highlighting three lines, nodding because every sentence sounds familiar, and closing your laptop without retrieving a single step on your own. Both take 15 minutes. Only the first builds recall.
+
+There is a second mechanism too: **spacing** (also called **spaced repetition**). Reviewing material across several sessions, with time between them, works far better than spending the same total time on it in one sitting. I do this a lot and it makes my life ten times easier.
+
+To see why, you need **memory consolidation**: the biological process where your brain stabilizes fragile new memory traces and moves them into longer-term storage, mostly during rest and deep sleep. When you read a chapter six times in one afternoon, it stays parked in short-term memory, so each pass feels effortless and does almost no work. When you wait a day or two before reviewing, the memory starts to fade just enough that recalling it takes real effort. That effort signals to your brain that the material is worth keeping, and the sleep between sessions lets consolidation lock each pass in before the next one. Cramming the night before skips that consolidation cycle completely.
 
 <Callout tone="violet" label="The two mechanisms that actually work">
-**Retrieval practice:** test yourself instead of rereading.
+**Retrieval practice:** test yourself from a blank page instead of re-reading.
 
-**Spaced repetition:** spread your sessions over days, not hours.
+**Spaced repetition:** spread your sessions over days so sleep can consolidate each pass.
 
 Together, these two are the most researched study interventions in educational psychology.
 </Callout>
@@ -65,9 +88,13 @@ Together, these two are the most researched study interventions in educational p
 
 Don't take this as a character flaw. There is a reason it keeps happening.
 
-When you reread a chapter and it feels familiar, your brain sends a signal that says *I know this*. You know that signal well, and it feels good, like progress. It has a name: **the fluency illusion**. The easier information is to process, the more confident you feel that you know it, even when that confidence has nothing to do with what you will actually retain.
+When you re-read a chapter and it feels familiar, your brain sends a signal that says *I know this*. You know that signal well, and it feels good, like progress. It has a name: **the fluency illusion**. The easier information is to read and process, the more confident you feel that you know it, even when that confidence has nothing to do with what you will retain a week later.
 
-Testing yourself is uncomfortable by comparison. You reach for something and it is not there, and you feel like you do not know the material, with all the frustration that comes with it. That feeling is the learning happening, but it feels like failure, so students avoid it. I did too.
+Testing yourself is uncomfortable by comparison. You reach for a formula or an explanation and it is not there, so you stare at blanks and feel behind. That struggle is the learning happening, yet because it feels slow and discouraging, students quit retrieval practice and go back to highlighting. I did too.
+
+<Callout tone="orange" label="Quitting when recall feels slow">
+When self-testing feels awkward and you keep getting stuck, the usual mistake is concluding the method is failing and switching back to re-reading notes. Slow, difficult recall builds durable memory, while smooth re-reading only feeds **the fluency illusion**.
+</Callout>
 
 <Callout tone="mint" label="What this course is really about">
 For a long time I thought exam performance came down to how much you study. It turns out to depend on how you study, when you study, and, just as much, what happens in your mind the moment the exam is in front of you. The next lessons cover all three.
