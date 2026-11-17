@@ -4,7 +4,7 @@ import { RegexWords, ReChallenge } from "@/components/mdx/TocVisualizers";
 
 # Reading and Writing Regular Expressions
 
-[The Language of Languages](/courses/theory-of-computation/language-of-languages#regular-expressions-the-first-compact-notation) defined regular expressions with three rules: union, concatenation and star. This lesson is about using them. Exams ask three kinds of question about regular expressions, and you'll practice all three here:
+[The Language of Languages](/courses/theory-of-computation/language-of-languages#regular-expressions-the-first-compact-notation) defined regular expressions with three rules: union, concatenation, and star. Exams ask three questions about them:
 
 1. **Describe the language** of a given expression in words.
 2. **List the first words** of its language.
@@ -27,7 +27,7 @@ Star binds tightest, then concatenation, then union. So $ab^*$ means $a(b^*)$, w
 
 ## Reading an expression
 
-Read from the outside in. Find the top-level operator (the last operation applied, usually union `+` outside parentheses, or concatenation if there is no unparenthesized `+`), say what each part contributes, then combine. Some examples from past exercise sheets:
+Read from the outside in. Find the top-level operator (the last operation applied, usually union `+` outside parentheses, or concatenation if there is no unparenthesized `+`), say what each part contributes, then combine. Four examples:
 
 - **$a^* + b^*$:** The top-level operator is `+` (union), joining $a^*$ and $b^*$. Every word comes entirely from $a^*$ or entirely from $b^*$: "only $a$'s, or only $b$'s" ($\varepsilon$, $a$, $b$, $aa$, $bb$, and so on). Both halves allow zero repetitions, so $\varepsilon$ is in the language, while a word like $ab$ mixes the two and is **not** in the language.
 - **$a^*ab^*$:** There is no top-level `+`, so the expression is a concatenation of three pieces: $a^*$, then $a$, then $b^*$. Because $a^*$ can contribute $\varepsilon$, the shortest word is $a$. The required middle $a$ guarantees at least one $a$, followed by zero or more $b$'s: $a$, $aa$, $ab$, $aaa$, $aab$, $abb$, and so on (in tool syntax, `a+b*`). Every $a$ must appear before every $b$, so $ba$ is not in the language.

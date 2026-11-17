@@ -67,12 +67,12 @@ export const questions: Question[] = [
       { id: "d", text: "Finite automata can't match balanced parentheses" },
     ],
     correctOptionId: "b",
-    explanation: "Rabin–Scott proved that every NFA can be converted to an equivalent DFA via subset construction. They have the exact same computational power.",
+    explanation: "Rabin and Scott proved that every NFA can be converted to an equivalent DFA via subset construction. They have the exact same computational power.",
   },
   {
     id: "theory-of-computation/finite-automata-quiz/q6",
     quiz: "finite-automata-quiz",
-    prompt: "Production regex engines like ripgrep often compile user patterns to a DFA, even though NFAs are arguably easier to design. Why?",
+    prompt: "Production regex engines like ripgrep often compile user patterns to a DFA, even though NFAs are easier to design. Why?",
     options: [
       { id: "a", text: "DFAs use less memory" },
       { id: "b", text: "DFAs run in linear time; NFAs can backtrack exponentially" },
@@ -80,12 +80,12 @@ export const questions: Question[] = [
       { id: "d", text: "Users prefer DFAs" },
     ],
     correctOptionId: "b",
-    explanation: "Simulation of an NFA over n symbols on a string of length m costs O(nm) in the worst case (tracking all active states). A DFA costs O(m). For high-volume text processing (logs, networking), this difference matters.",
+    explanation: "Simulating an NFA with n states on a string of length m costs O(nm) in the worst case (tracking all active states). A DFA costs O(m). For high-volume text processing (logs, networking), this difference matters.",
   },
   {
     id: "theory-of-computation/finite-automata-quiz/q7",
     quiz: "finite-automata-quiz",
-    prompt: "A regex pattern froze production for 30 seconds on a specific input. What's the most likely cause, and how would you theoretically fix it?",
+    prompt: "A regex pattern froze production for 30 seconds on a specific input. What is the most likely cause, and how do you fix it?",
     options: [
       { id: "a", text: "The engine ran out of memory; add more RAM" },
       { id: "b", text: "Catastrophic backtracking in an NFA-like pattern; rewrite for a DFA-compilable form" },
@@ -154,7 +154,7 @@ export const questions: Question[] = [
     options: [
       { id: "a", text: "A state that is both a start state and a final state" },
       { id: "b", text: "A loop from a state back to itself" },
-      { id: "c", text: "An edge labelled with the whole word bb" },
+      { id: "c", text: "An edge labeled with the whole word bb" },
       { id: "d", text: "A state with more incoming edges than outgoing ones" },
     ],
     correctOptionId: "c",
@@ -163,7 +163,7 @@ export const questions: Question[] = [
   {
     id: "theory-of-computation/finite-automata-quiz/q13",
     quiz: "finite-automata-quiz",
-    prompt: "During state elimination you remove state q. There's an edge p → q labelled r1, a loop on q labelled r2, and an edge q → s labelled r3. What label does the new edge p → s get?",
+    prompt: "During state elimination you remove state q. There's an edge p → q labeled r1, a loop on q labeled r2, and an edge q → s labeled r3. What label does the new edge p → s get?",
     options: [
       { id: "a", text: "r1 + r2 + r3" },
       { id: "b", text: "r1 r2 r3" },

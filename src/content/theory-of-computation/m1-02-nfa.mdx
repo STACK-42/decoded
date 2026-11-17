@@ -2,11 +2,9 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } fro
 
 # NFA: Nondeterministic Automata
 
-In a DFA, every state has exactly one arrow out for every symbol: one input, one output.
+In a DFA, every state has one outgoing arrow per symbol. An **NFA** (nondeterministic finite automaton) relaxes three rules at once: a state can have multiple arrows for the same symbol, it can have arrows that move without reading any symbol, or it can leave some symbols out altogether.
 
-Now remove that constraint. What if a state could have two arrows for the same symbol, and the machine took both paths at once? What if an arrow could fire without consuming any symbol? What if some states had no arrow for a given symbol, and the machine simply stopped there?
-
-That is an **NFA**, a nondeterministic finite automaton. It looks like a DFA with the rules loosened. Even so, Rabin and Scott proved in 1959 that NFAs recognize exactly the same class of languages as DFAs, even though the two can look completely different.
+Even with that extra freedom, Rabin and Scott proved in 1959 that NFAs recognize the exact same class of languages as DFAs.
 
 ## What Changes
 
@@ -16,9 +14,9 @@ An NFA is still a five-tuple $(Q, \Sigma, \delta, q_0, F)$. Only the transition 
 
 **An NFA:** $\delta : Q \times \Sigma_\varepsilon \rightarrow \mathcal{P}(Q)$
 
-The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can also transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
+The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can also transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol.
 
-Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states (including the empty set $\emptyset$ and $Q$ itself). For example, if $Q = \{q_0, q_1\}$, then $\mathcal{P}(Q) = \{\emptyset, \{q_0\}, \{q_1\}, \{q_0, q_1\}\}$, which has $2^2 = 4$ subsets. So $\delta$ no longer returns a single next state. It returns a *set* of possible next states, which may be $\emptyset$, meaning there's no transition at all.
+Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states (including the empty set $\emptyset$ and $Q$ itself). For example, if $Q = \{q_0, q_1\}$, then $\mathcal{P}(Q) = \{\emptyset, \{q_0\}, \{q_1\}, \{q_0, q_1\}\}$, which has $2^2 = 4$ subsets. So $\delta$ returns a *set* of possible next states, which may be $\emptyset$ when there is no transition.
 
 Everything else ($Q$, $\Sigma$, $q_0$, $F$) means exactly what it meant for a DFA.
 
@@ -51,7 +49,7 @@ From a DFA's point of view, something is wrong here: $q_0$ has *two* arrows labe
 
 Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition returns $\emptyset$, meaning that copy dies while the others keep going.
 
-Let's trace the string $aab$:
+Trace the string $aab$:
 
 | Step | Read | Active states |
 | --- | --- | --- |
@@ -122,7 +120,7 @@ The idea: if an NFA can be in several states at once, build a DFA where each sta
 
 For an NFA with $n$ states, the DFA has at most $2^n$ states, one per subset of $Q$. In practice most subsets are unreachable from the start state and the DFA ends up much smaller, but the worst case is exponential.
 
-Let's convert the ends-in-$ab$ NFA above to a DFA.
+Convert the ends-in-$ab$ NFA above to a DFA step by step.
 
 NFA states: $Q = \{q_0, q_1, q_2\}$, with no $\varepsilon$-transitions. DFA states are subsets of $Q$. Start: $\{q_0\}$.
 
@@ -163,7 +161,7 @@ Two extra cases show up on other NFAs when you do subset construction by hand:
 </Callout>
 
 <Callout tone="sky" label="Why this matters in tools you already use">
-  Regex engines convert your pattern into an NFA first, because NFAs map onto regex syntax one piece at a time. Then they either simulate the NFA by tracking the set of active states, or convert it to a DFA for faster repeated matching. Both are direct applications of Rabin and Scott's result, running in tools you use every day, like your terminal.
+  Regex engines convert your pattern into an NFA first, because NFAs map onto regex syntax one piece at a time. Then they either simulate the NFA by tracking the set of active states, or convert it to a DFA for faster repeated matching. Both approaches are direct applications of Rabin and Scott's theorem.
 </Callout>
 
 ## NFA vs DFA: Which One to Use When
@@ -171,7 +169,7 @@ Two extra cases show up on other NFAs when you do subset construction by hand:
 Because of the equivalence theorem, you can use whichever representation is more convenient. In practice it depends on the task:
 
 **Design in NFA:**
-- When describing patterns like "strings containing `aba` as a substring," an NFA is natural. You guess when the pattern starts and verify the rest.
+- When describing patterns like "strings containing `aba` as a substring", an NFA is natural. You guess when the pattern starts and verify the rest.
 - Building the equivalent DFA directly forces you to track multiple conditions in one state, which can be harder to reason about from scratch.
 
 **Execute as DFA:**
@@ -186,10 +184,10 @@ The standard pipeline followed by most serious regex engines:
 4. Minimize the DFA (merge states that behave identically to shrink the table)
 5. Simulate
 
-This is what tools like `lex`, `flex` and `ripgrep`'s regex engine do, so the theory here is also the pipeline inside your toolchain.
+Tools like `lex`, `flex`, and `ripgrep`'s regex engine follow this exact pipeline.
 
 <Callout tone="mint" label="Where you stand">
-  NFAs and DFAs are two faces of the same model. The NFA is the design tool: compact, readable, and close to regex syntax. The DFA is the execution tool: deterministic, fast, and implementable as a lookup table. The subset construction converts one into the other mechanically. Next, you'll practice [reading and writing regular expressions](/courses/theory-of-computation/regular-expressions) directly before proving in [Kleene's Theorem](/courses/theory-of-computation/kleenes-theorem) that expressions and automata define the exact same languages.
+  NFAs and DFAs recognize the exact same languages, but each fits a different job. An NFA is compact and easy to write from a regex. A DFA runs in one pass using a lookup table, and the subset construction converts any NFA into a DFA mechanically. Next, you'll practice [reading and writing regular expressions](/courses/theory-of-computation/regular-expressions) directly before proving in [Kleene's Theorem](/courses/theory-of-computation/kleenes-theorem) that expressions and automata define the exact same languages.
 </Callout>
 
 ## Optional Further Reading

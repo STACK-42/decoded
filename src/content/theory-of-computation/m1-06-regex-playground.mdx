@@ -2,9 +2,9 @@ import { Callout, PracticalApplication, ApplicationsGrid, RegexPlayground } from
 
 # Practical: Building Regex from Automata
 
-A **regular expression** is a human-readable way of writing down a finite automaton. When you write something like `\d{3}-\d{4}`, the computer turns it into a set of instructions it can follow, then goes through your input one character at a time to check whether it matches. Regular expressions can seem magical because they do this so efficiently.
+A **regular expression** is a compact notation for a finite automaton. When you write `\d{3}-\d{4}`, the engine turns it into a machine and scans your input one character at a time to check whether it matches.
 
-In this practical lesson, you'll write regex patterns that match the same languages as the automata you just learned to trace.
+Translate the automata from this module into working regex patterns below, and test where real engines differ from textbook theory.
 
 ## Where this shows up today
 
@@ -16,7 +16,7 @@ In this practical lesson, you'll write regex patterns that match the same langua
     The first phase of every compiler, turning characters into tokens, is a finite automaton.
   </PracticalApplication>
   <PracticalApplication title="Form validation" tool="WEB">
-    Email, phone, postal code patterns in your sign-up forms.
+    Sign-up forms check email addresses, phone numbers, and postal codes with regex patterns.
   </PracticalApplication>
   <PracticalApplication title="Network intrusion detection" tool="SECURITY">
     Snort and Suricata match thousands of attack patterns against packets at line rate using compiled automata.
@@ -76,7 +76,7 @@ Phone extensions in your company's system follow the format `DDD-DDDD` (three di
 
 ## Exercise C: The ReDoS trap
 
-This exercise shows **catastrophic backtracking** (**ReDoS**, Regular Expression Denial of Service) by example. The pattern `(a+)+$` is deliberately pathological.
+This exercise shows **catastrophic backtracking** (**ReDoS**, Regular Expression Denial of Service) by example. The pattern `(a+)+$` triggers it on purpose.
 
 Why does it blow up on `"aaaa...!"`? Look at just three `a`'s followed by `!` (`"aaa!"`): the inner `a+` and outer `+` can split three `a`'s in $2^{3-1} = 4$ ways, namely `(aaa)`, `(aa)(a)`, `(a)(aa)`, or `(a)(a)(a)`. Each way fails at `$` when it hits `!`, so a **backtracking engine** (like JavaScript's `RegExp` or Python's `re`) rewinds and tries the next split. For $n$ `a`'s, each of the $n - 1$ gaps between letters can split or stay merged, giving $2^{n-1}$ paths. At $n = 25$, that is $2^{24} = 16,777,216$ failed attempts before the engine gives up, hanging your application. Removing the nested quantifier (writing `^a+$`, which matches the exact same strings) eliminates the ambiguity immediately.
 
@@ -93,5 +93,5 @@ Why does it blow up on `"aaaa...!"`? Look at just three `a`'s followed by `!` (`
 />
 
 <Callout tone="sky" label="Why DFAs don't hang on ReDoS">
-  Knowing automata changes how you read regex. When catastrophic backtracking takes down production, you can explain *why*: someone wrote an ambiguous nested quantifier that a backtracking NFA engine had to explore along exponentially many paths. By contrast, a DFA engine (like `ripgrep` or Go's `regexp`) tracks all active states in one pass in $O(n)$ time, or you rewrite the pattern without nested ambiguity (`a+$`).
+  Knowing automata changes how you read regex. When catastrophic backtracking takes down production, you can explain *why*: someone wrote an ambiguous nested quantifier that a backtracking NFA engine had to explore along exponentially many paths. By contrast, a DFA engine (like `ripgrep` or Go's `regexp`) tracks all active states in one pass in $O(n)$ time. If you are stuck on a backtracking engine, you can fix the bug by rewriting the pattern without nested ambiguity (`^a+$`).
 </Callout>

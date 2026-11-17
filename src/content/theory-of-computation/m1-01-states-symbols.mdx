@@ -2,9 +2,9 @@ import { Callout, AutomatonDiagram } from "@/components/mdx/MdxComponents";
 
 # States, Symbols, and Transitions
 
-In Module 0 you learned to read machines by looking at them. You could trace a string through a diagram and tell whether it gets **accepted** or **rejected**. That's a useful skill, but it isn't mathematics yet: two people looking at two different diagrams have no shared language for comparing them, proving things about them, or building on them.
+In Module 0 you traced strings through diagrams to tell whether a machine accepts or rejects them. Pictures are easy to read, yet two people looking at different diagrams still need a shared notation to compare machines, prove facts about them, or combine them.
 
-The formal definition fixes that. It's a precise notation that lets you reason about machines the way you reason about equations.
+The formal definition gives you that notation, letting you reason about machines the way you reason about equations.
 
 ## Deterministic Finite Automaton Definition
 
@@ -28,13 +28,13 @@ $$
 \Sigma = \{a,\ b\}
 $$
 
-**$\delta$** is the **transition function**, meaning the arrows. Here $Q \times \Sigma$ is the set of all pairs $(q, a)$ built from one state $q \in Q$ and one symbol $a \in \Sigma$. The function takes one such pair and returns the single next state:
+**$\delta$** is the **transition function** (the arrows). Here $Q \times \Sigma$ is the set of all pairs $(q, a)$ built from one state $q \in Q$ and one symbol $a \in \Sigma$. The function takes one such pair and returns the single next state:
 
 $$
 \delta : Q \times \Sigma \rightarrow Q
 $$
 
-Read that as: given any state in $Q$ and any symbol in $\Sigma$, $\delta$ tells you exactly which state to move to. One input pair, one output state, no ambiguity. That's what *deterministic* means.
+Given any state in $Q$ and any symbol in $\Sigma$, $\delta$ returns one next state with no ambiguity. That single-output rule is what makes the machine *deterministic*.
 
 **$q_0$** is the **initial state** (also called the **start state**), where computation always begins. $q_0 \in Q$.
 
@@ -91,7 +91,7 @@ q_2 & q_1 & q_0 \\
 \end{array}
 $$
 
-Each row is a state, each column a symbol, and each cell is where $\delta$ sends you: for instance, row $q_1$ and column $b$ holds $q_2$, meaning $\delta(q_1, b) = q_2$. The table and the diagram hold identical information; they're two representations of the same machine.
+Each row is a state, each column a symbol, and each cell is where $\delta$ sends you: for instance, row $q_1$ and column $b$ holds $q_2$, meaning $\delta(q_1, b) = q_2$. The table and the diagram describe the same machine in two ways.
 
 <Callout tone="orange" label="The transition table must be complete">
   Every cell in the table must be filled, because every state needs a transition for every symbol in $\Sigma$. With $3$ states and $2$ symbols, the table has $3 \times 2 = 6$ cells and none can be left blank. A machine with a missing transition is no longer a DFA. This is one of the differences between a DFA and an [NFA](/courses/theory-of-computation/nfa), which you'll meet in the next lesson.
@@ -163,17 +163,17 @@ $$
 \delta : Q \times \Sigma \rightarrow Q
 $$
 
-The codomain is $Q$, not the power set of $Q$, so one input pair always returns one state. All of determinism is in that function type.
+The return type is $Q$, not the power set of $Q$, so one input pair always gives one state, which is the entire rule of determinism.
 
-Two consequences follow. First, a DFA simulator is a tight loop: read one character, do one table lookup, never backtrack. That's why regex engines built on DFAs run in time linear in the length of the input. Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
+Two consequences follow. First, a DFA simulator is a simple loop: read one character, look up the next state in a table, and never backtrack. That's why regex engines built on DFAs run in time linear in the length of the input. Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
 
 <Callout tone="sky" label="Historical note">
-  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire rather than as a computing model. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The [parking meter](/courses/theory-of-computation/how-to-read-a-machine#a-first-example-a-parking-meter), the regex engine, and the original neuron model are all instances of the same five-tuple.
+  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire, before it was used to describe computation. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The [parking meter](/courses/theory-of-computation/how-to-read-a-machine#a-first-example-a-parking-meter), the regex engine, and the original neuron model are all instances of the same five-tuple.
 </Callout>
 
 ## Building Your First DFA
 
-Knowing the definition isn't enough; you also need to build machines. The process always follows the same steps:
+To build a DFA from a language description, follow four steps:
 
 **Step 1: Identify the conditions.** What does the machine need to remember to make the right decision at the end? Each distinct condition becomes a state. Track only the conditions that affect the final answer, not the full history of what it has seen.
 
@@ -233,5 +233,5 @@ Try `a`, `ba`, `bbb`, `bab` in the diagram above too. The machine should accept 
 </Callout>
 
 <Callout tone="mint" label="What you now have">
-  A DFA is now a mathematical object with a precise definition, as well as a picture you can trace. You can write one as a five-tuple, read its [transition table](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), apply $\hat{\delta}$ to compute what any string does, and build one from scratch by identifying the conditions your language needs to track. The next lesson introduces NFAs, machines where $\delta$ returns a set of states, and the surprising theorem that they recognize exactly the same languages as DFAs.
+  You can now write a DFA as a five-tuple, read its [transition table](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), apply $\hat{\delta}$ to trace any string, and build a new DFA from the conditions your language needs to track. Next, you'll see NFAs, where $\delta$ returns a set of states instead of one, and learn why they still recognize the exact same languages as DFAs.
 </Callout>
