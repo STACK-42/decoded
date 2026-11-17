@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
-import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/components/mdx/LogicVisualizers";
+import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # The Memory Unit: Putting It All Together
 
@@ -50,29 +50,12 @@ In **Random-Access Memory (RAM)**, the word "random" means that **any arbitrary 
 
 At the intersection of each word row and bit column sits an elementary 1-bit **Binary Cell (BC)**:
 
-```
-                      Data In (I)
-                           |
-                           v
-                     +-----------+
-                     | Steering  |
-      Select ------->|   Gates   |
-                     +-----------+
-                           |
-                           v
-                     +-----------+
-                     |  D Latch  |
-                     +-----------+
-                           |
-                           v
-                     +-----------+
-  Read/Write ------->| Tri-State |
-                     |  Buffer   |
-                     +-----------+
-                           |
-                           v
-                      Data Out (Y)
-```
+| Port / Signal | Direction | Function |
+| :--- | :---: | :--- |
+| **Data In ($I$)** | Input | Data bit to be written into the storage latch |
+| **Select ($Sel$)** | Input | Word line activation signal from the address decoder |
+| **Read/Write ($R/W'$)** | Input | Control line ($0 = \text{Write}$ via steering gates, $1 = \text{Read}$ via tri-state buffer) |
+| **Data Out ($Y$)** | Output | Stored bit driven onto the bit line when $Sel = 1$ and $R/W' = 1$ |
 
 The binary cell contains three primary functions:
 1. **Bistable Storage:** A cross-coupled latch or flip-flop that stores the bit.
@@ -98,28 +81,7 @@ The routing congestion and silicon area make 1D decoding impossible for large me
 
 ### 2D (Coincident) Decoding: The Grid Matrix
 
-To solve this scaling bottleneck, commercial RAM chips organize storage cells into a two-dimensional square matrix:
-
-```
-                       Column Address (A9..A5)
-                                 |
-                                 v
-                        +-----------------+
-                        | 5-to-32 Column  |
-                        |     Decoder     |
-                        +-----------------+
-                                 |
-                                 | 32 Column Lines
-                                 v
-     Row Address       +--------------------+
-      (A4..A0)  -----> | 32 x 32 Array      |
-                       | of Binary Cells    |
-        5-to-32        | (1024 Total Cells) |
-      Row Decoder      +--------------------+
-                                 |
-                                 v
-                            Data Output
-```
+To solve this scaling bottleneck, commercial RAM chips organize storage cells into a two-dimensional square matrix.
 
 For a 1024-word memory ($k = 10$ address lines):
 1. The 10 address bits are split into two 5-bit halves:
@@ -143,12 +105,11 @@ If two conventional logic gates were connected to the same wire, and one tried t
 
 To share a bus safely, circuits use **tri-state buffers** (three-state logic):
 
-```
-       Input (A) -----[ > ]-----+----- Output (Y)
-                        ^
-                        |
-                    Enable (EN)
-```
+| Enable ($EN$) | Input ($A$) | Output ($Y$) | Electrical State |
+| :---: | :---: | :---: | :--- |
+| 1 | 0 | 0 | Driven Low ($0\text{ V}$) |
+| 1 | 1 | 1 | Driven High ($+V_{DD}$) |
+| 0 | $\times$ | $\text{Hi-Z}$ | High-Impedance (Open Circuit / Disconnected) |
 
 A tri-state buffer has three possible electrical output states:
 1. **Logic 0:** Low voltage ($0\text{ V}$).
@@ -166,15 +127,14 @@ Communication between a processor and a RAM chip is governed by three primary ac
 - **/WE (Write Enable):** Commands a Write when LOW (0) and a Read when HIGH (1).
 - **/OE (Output Enable):** Controls the tri-state output buffers during a read operation, preventing bus contention during address changes.
 
-```
-Read Cycle Timing:
-Addresses    ----+=========================+----------------
-                 |<----- Access Time t_AA ------>|
-                 |                         |
-/CS, /OE     ----+-------------------------+----------------
-                                           |
-Data Out     ------------------------------+======= Valid ==
-```
+<TimingDiagram
+  signals={[
+    { name: "Address", bits: [0, 1, 1, 1, 1, 1, 1, 0], tone: "stroke-mint" },
+    { name: "/CS, /OE", bits: [1, 0, 0, 0, 0, 0, 0, 1], tone: "stroke-foreground" },
+    { name: "Data Out", bits: [0, 0, 0, 0, 1, 1, 1, 0], tone: "stroke-orange" },
+  ]}
+  marks={[1, 4]}
+/>
 
 - **Read Access Time ($t_{AA}$):** The maximum time interval from the moment stable addresses appear on the bus until valid data emerges at the data output pins.
 - **Write Pulse Width ($t_W$):** The minimum duration /WE must be held LOW to guarantee data is permanently captured by the internal cells.
@@ -226,30 +186,6 @@ Engineers routinely combine standard commercial memory ICs to build memory modul
     - Address range `0xC00` to `0xFFF`: Decoder selects Chip 3 (/CS3 = 0).
   - All four chips connect their 8 data pins directly to the shared 8-bit system data bus ($D_7 \dots D_0$).
   - Because only the single selected chip enables its tri-state buffers, **bus contention is completely avoided**.
-
-```
-                           A11, A10 (High Address Bits)
-                              |
-                              v
-                     +-----------------+
-                     | 2-to-4 Decoder  |
-                     +-----------------+
-                       |    |    |    |
-           /CS0 -------+    |    |    |
-           /CS1 ------------+    |    |
-           /CS2 -----------------+    |
-           /CS3 ----------------------+
-                       |    |    |    |
-                       v    v    v    v
-                    +----+----+----+----+
-                    |RAM0|RAM1|RAM2|RAM3|  (Four 1K x 8 Chips)
-                    +----+----+----+----+
-                       |    |    |    |
-                       +----+----+----+-----> Shared 8-Bit Data Bus (D7..D0)
-                       ^
-                       |
-     A9..A0 -----------+ (Parallel to All Chips)
-```
 
 <MemoryExpansionLab />
 

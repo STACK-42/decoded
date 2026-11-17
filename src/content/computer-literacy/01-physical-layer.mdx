@@ -1,43 +1,82 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 
 # The Physical Layer
 
-Computing is interaction. You do something, the machine responds, and the loop continues. The machine has no intention and no awareness; it only reacts to structured input, so the quality of your input decides the quality of what you get back.
+<Epigraph quote="Computer literacy is a contact with the activity of computing deep enough to make the computational equivalent of reading and writing fluent and enjoyable." by="Alan Kay" source="Computer Software, Scientific American, 1984" />
 
-Most people never take this in. They treat computers as tools that sometimes work and sometimes don't, without realizing that **fluency** matters. Each layer of fluency removes friction between what you intend and what happens. The first layer is physical: where your hands meet the machine.
+When you use a computer, every task is a loop: you send an instruction, and the machine responds. A person listening to you can guess what you meant from context. A computer cannot. It only reacts to **structured input**: exact signals such as keypresses, mouse clicks, search box terms, or menu choices. Because the machine works only with what you give it, the clarity and speed of your input decide what you get back.
 
-To see what the machine does with each keypress, [Letters are numbers](/courses/computer-organization/bits-and-bytes#letters-are-numbers) shows how a letter is stored.
+Most people never stop to look at that loop. They treat computers as tools that sometimes cooperate and sometimes fight back, without noticing how much **fluency** matters. Fluency means expressing what you want smoothly, without fighting the keyboard, guessing how to ask, or getting lost when something fails. Each layer of fluency removes a different kind of slowdown: first the **physical layer** (how your hands use the hardware), then the [language layer](/courses/computer-literacy/language-layer) (how you tell software what you want), and finally the [systems layer](/courses/computer-literacy/systems-layer) (how you read what the machine is doing underneath).
+
+Every keypress becomes a stored number in a shared character table; [Letters are numbers](/courses/computer-organization/bits-and-bytes#letters-are-numbers) shows how characters map to 0s and 1s.
 
 ## Typing
 
-Typing sits at the center of this layer, and it matters more than it seems. When you type slowly, the mechanics of getting words out keep interrupting your thoughts, and that gets frustrating. At around 60 words per minute you start to think and write at almost the same time, and at around ninety the keyboard stops being a barrier at all.
+Typing is the main part of the physical layer. Most beginners rely on **hunt-and-peck** typing: looking down at the keyboard to spot each key and pressing it with one or two fingers. The alternative is **touch typing**, where your eight main fingers rest on assigned keys, your thumbs rest on the Spacebar, and every key is pressed by muscle memory (remembering key positions by feel) without looking down.
 
-Speed is only part of it. What you really gain is that you no longer spend attention hunting for keys, so your brain stays with the idea instead of the tool.
+Typing speed is measured in **words per minute (WPM)**, where one standard "word" is five characters (including spaces and punctuation). Standard net WPM subtracts one standard word for each uncorrected error before dividing by the minutes. When you type by looking at the keys, searching interrupts your [**working memory**](/courses/the-exam-mind/the-one-week-plan#before-you-plan-anything-build-the-map), the small mental scratchpad that holds only a few pieces of an idea at once. Trace what happens when you try to write a single line of code like `total = price * count` while hunting for keys:
 
-<Callout tone="orange" label="The test">
-You are fluent enough when you can finish typing a sentence whose end you had not yet planned when you started.
+1. You hold the full expression in your head.
+2. You look down to find `=` and `*`, taking your eyes off the screen.
+3. When you look back up, you have to re-read the line to remember what you meant to write next.
+
+At around 60 WPM, your hands keep pace with steady thinking, so you can write prose or simple code while you form the thought. Around 90 WPM, you have enough headroom for bursts of fast ideas and punctuation-heavy code without holding unfinished lines in your head. Saving a few seconds is only part of it. The bigger gain is that you stop spending attention hunting for keys, so your focus stays on the idea.
+
+<Callout tone="neon" label="The test">
+You are fluent enough when you can start typing a sentence before you know how it will end.
 </Callout>
 
 ### Building the muscle
 
-The path is mechanical. Learn the home row (index fingers on F and J; feel for the bumps), train accuracy first, and let speed follow. Stop looking at the keyboard. It will feel slow for about two weeks, and then the slowness goes away.
+Touch typing starts from the **home row**: the middle row of letter keys (`A S D F` for your left hand, `J K L ;` for your right hand) where your eight main fingers rest between keypresses, with both thumbs resting lightly over the Spacebar. Feel the small raised bumps on the `F` and `J` keys. Those bumps exist so your index fingers can find the home row by touch alone; every letter key is at most one row up, one row down, or one key sideways from a resting finger, with the number and symbol row sitting just above them.
+
+To train it, put your index fingers on `F` and `J`, aim for accuracy first so each finger learns its reach, keep your eyes off the keyboard, and let speed come later. Your typing speed will drop for about two weeks while old habits break, and then the slowness goes away.
+
+<Callout tone="orange" label="Usual mistake: chasing speed and peeking">
+Two habits slow beginners down. First, pushing for high WPM while making constant typos forces you to hit Backspace and trains your fingers to repeat the wrong motion. Clean accuracy at 30 WPM builds real speed faster than sloppy bursts at 50. Second, glancing down whenever you forget a symbol like `{` or `=` keeps your fingers from learning where that key sits, which can turn a two-week change into months.
+</Callout>
 
 <ApplicationsGrid>
   <PracticalApplication title="Learn the fundamentals" tool="TypingClub →">
-    Structured lessons from zero. It teaches finger positions and builds muscle memory step by step. My go-to since 2022. [typingclub.com](https://www.typingclub.com/)
+    Structured lessons from zero. It teaches finger positions and builds muscle memory step by step, with clear progress tracking from your first home-row drills to full sentences. [typingclub.com](https://www.typingclub.com/)
   </PracticalApplication>
 
   <PracticalApplication title="Train daily speed" tool="Monkeytype →">
-    Minimal, fast and easy to get hooked on. Once you know the keys, this is where you build raw WPM, with customizable tests and clean stats. [monkeytype.com](https://monkeytype.com/)
+    Simple, fast, and easy to keep coming back to. Once you know the keys, this is where you build raw WPM, with customizable tests and clean stats. [monkeytype.com](https://monkeytype.com/)
   </PracticalApplication>
 
   <PracticalApplication title="Race for fun" tool="TypeRacer →">
-    Live races against other people, typing quotes from books and movies. The pressure makes the practice stick. [play.typeracer.com](https://play.typeracer.com/)
+    Live races against other people, typing quotes from books and movies. Competing on a timer helps the practice stick. [play.typeracer.com](https://play.typeracer.com/)
   </PracticalApplication>
 </ApplicationsGrid>
 
 ## Shortcuts
 
-I remember a stretch when my mouse kept lagging and I was forced onto the keyboard. That taught me that almost everything on a computer can be done without leaving the keyboard, and once you take that in, the way you work changes.
+A **keyboard shortcut** (also called a **hotkey** or **keybinding**) is a key combination, usually a **modifier key** such as `Ctrl` (Control), `Cmd` (Command on macOS), `Alt` (`Option` on macOS), or `Shift` held down with a letter or symbol, that triggers an action directly without touching the mouse. Try working for an hour without touching your mouse and you quickly see that almost any program can be driven from the keyboard alone. Once you notice that, you stop reaching for the mouse.
 
-You stop breaking off your thinking to navigate, and you move through tasks without pausing. People who live in shortcuts are faster, and they also think more coherently while they work, because their tools stop interrupting the thought.
+Compare copying a line from a web page into a text editor step by step:
+
+- **With the mouse:** lift your right hand off the home row, find the pointer, drag across the line, right-click, click *Copy*, move to the other window, click the target line, right-click, click *Paste*, and move your hand back to the keyboard.
+- **With shortcuts:** keep both hands on the keyboard, press `Ctrl+C` (`Cmd+C` on macOS) to copy, `Alt+Tab` (`Cmd+Tab` on macOS) to switch windows, and `Ctrl+V` (`Cmd+V` on macOS) to paste.
+
+A few everyday shortcuts remove dozens of these breaks per hour: `Ctrl+L` (`Cmd+L` on macOS) jumps straight to a browser's address bar, `Ctrl+F` (`Cmd+F` on macOS) searches inside almost any window, and `Ctrl+Shift+T` (`Cmd+Shift+T` on macOS) reopens a tab you closed by accident. People who use shortcuts work faster, and they think more clearly while they work because their tools stop interrupting the thought.
+
+<Callout tone="orange" label="Usual mistake: memorizing a full list at once">
+Printing a list of 40 shortcuts and trying to memorize them in one sitting rarely works. Wait until you catch yourself reaching for the mouse for the same action three times in one day, look up the single shortcut for it, and use it until it feels automatic before adding the next.
+</Callout>
+
+## Practice by hand
+
+**1. Calculate WPM from characters:** One standard word is five characters, including spaces and punctuation, and each uncorrected error subtracts one word before dividing by the minutes. Suppose you type 300 characters in 1 minute and 30 seconds (1.5 minutes) with zero uncorrected errors. How many standard words did you type, and what is your WPM? Then suppose on a second run you type 200 characters in 1 minute, leaving 5 uncorrected errors behind: what are your raw WPM and net WPM?
+
+<ModelAnswer>
+- **First run:** Divide characters by 5 to get standard words: $300 \div 5 = 60$ words. Divide by 1.5 minutes: $60 \div 1.5 = 40\text{ WPM}$.
+- **Second run:** $200 \div 5 = 40$ raw words in 1 minute, so the raw speed is $40\text{ WPM}$. Subtracting 1 word for each of the 5 uncorrected errors leaves $40 - 5 = 35$ net words, giving a net speed of $35\text{ WPM}$. Pushing faster while leaving errors trains your fingers to repeat mistakes and forces constant Backspace corrections later.
+</ModelAnswer>
+
+**2. Replace repeated mouse trips with shortcuts:** You are reading a long documentation page in a browser and want to jump to the address bar for a new page, search the page for the word `timeout`, copy one line, switch to your editor, paste it, and reopen a browser tab you closed by accident. Which shortcuts replace those mouse actions, and how should you build the habit?
+
+<ModelAnswer>
+- Use `Ctrl+L` (`Cmd+L` on macOS) to jump to the address bar, `Ctrl+F` (`Cmd+F`) to search the page, `Ctrl+C` (`Cmd+C`) to copy the line, `Alt+Tab` (`Cmd+Tab`) to switch to the editor, `Ctrl+V` (`Cmd+V`) to paste, and `Ctrl+Shift+T` (`Cmd+Shift+T`) to reopen the closed tab.
+- Build the habit one shortcut at a time: notice when you reach for the mouse three times in one day for the same task, learn that single shortcut, and repeat it until it feels automatic before adding another.
+</ModelAnswer>

@@ -3,62 +3,62 @@ import { RowWidth } from "@/components/mdx/GraphicsVisualizers";
 
 # Pixels and the Image Grid
 
-A digital image is a rectangle of pixels, arranged in rows and columns like squares on graph paper. Each pixel holds a number (or a few numbers) that says what color it is. That's the whole idea. This lesson is about the two questions it raises: how big is the grid, and how does a computer know where one row ends?
+A digital image is a rectangle of pixels, arranged in rows and columns like squares on graph paper. Each pixel holds a numerical value specifying its color. Storing this grid in memory raises two practical questions: how big is the grid, and how does a computer know where one row ends and the next begins?
 
 ## Dimensions: width × height
 
-An image's size in pixels is written **width × height**, columns first. A 640 × 480 image has 640 pixels in every row and 480 rows. Multiply them to get the total:
+An image's size in pixels is written **width × height**, columns first. A 640 × 480 image has 640 pixels in every row and 480 rows. Multiply them to find the total pixel count:
 
 $$
 640 \times 480 = 307{,}200 \text{ pixels}
 $$
 
-Cameras quote the total in **megapixels**, millions of pixels. A 2048 × 1536 photo has $2048 \times 1536 = 3{,}145{,}728$ pixels, and $3{,}145{,}728 \div 1{,}000{,}000 \approx 3.1$, so it's sold as 3.1 megapixels.
+Camera sensors state their total pixel count in **megapixels**, where one megapixel equals one million pixels. A photograph measuring 2048 × 1536 contains $2048 \times 1536 = 3{,}145{,}728$ pixels. Dividing by one million yields $3{,}145{,}728 \div 1{,}000{,}000 \approx 3.1$, so it is marketed as a 3.1 megapixel camera.
 
 <Callout tone="orange" label="Two easy slips">
-Width always comes first. 1920 × 1080 means 1920 columns and 1080 rows; written the other way round, it would describe a tall, narrow picture. And a megapixel is an ordinary million, 1,000,000, not $2^{20}$: memory sizes use powers of two, pixel counts don't.
+Width always comes first in image dimension pairs. Dimensions of 1920 × 1080 mean 1920 columns across and 1080 rows down. Written backwards, it would describe a tall vertical frame. Also, megapixels use ordinary decimal millions (1,000,000), not powers of two ($2^{20} = 1{,}048{,}576$): computer memory capacities use powers of two, whereas pixel counts always use decimal notation.
 </Callout>
 
-<Callout tone="sky" label="Pixels don't have a size">
-A pixel is a position in a grid, not a length. A 640 × 480 image looks small on a sharp phone and big on an old monitor, because each device draws its pixels at a different size. How many pixels fit in an inch is called resolution, and it gets [its own lesson](/courses/computer-graphics/ppi-and-dpi).
+<Callout tone="sky" label="Pixels don't have a fixed size">
+A pixel in an image file is a slot in a grid, not a physical length like a millimeter. A 640 × 480 image looks small on a high-density smartphone screen and large on an older desktop monitor, because each display manufactures its physical pixel cells at a different size. The number of pixels packed into one physical inch is **pixel density** (image resolution), covered in the [resolution lesson](/courses/computer-graphics/ppi-and-dpi).
 </Callout>
 
 ## A bitmap
 
-The simplest way to store an image is to write down the value of every pixel in order. This is called a **bitmap** (or **raster image**): a matrix of tiny dots, one entry per pixel. The name comes from the first images, where every pixel was a single bit, so the image was literally a map of bits. Today it means a grid of pixels at any depth. A grayscale photo is literally a [matrix](/courses/computational-mathematics/matrices-and-matlab) of brightness numbers.
+The simplest way to store an image is to record the numerical value of each pixel in sequence. This representation is called a **bitmap** (or **raster image**): a grid of tiny dots with one entry per pixel. The name originated with early computer systems where each pixel was a single bit (0 or 1), making the file a literal map of bits. Today the term describes any pixel grid regardless of how many bits each pixel uses (its **bit depth**, covered in the next lesson). A grayscale (shades-of-gray) photo is stored as a [matrix](/courses/computational-mathematics/matrices-and-matlab) of brightness values.
 
-Memory, though, isn't a grid. It's [one long row of bytes](/courses/data-structures/arrays-and-memory#memory-is-one-long-array). So the grid gets flattened: the first row of pixels, then the second row straight after it, and so on. This is **row-major order**, the same layout a [two-dimensional array](/courses/data-structures/arrays-and-memory#two-dimensional-arrays) uses.
+Computer memory is not a two-dimensional grid; it is [one continuous row of bytes](/courses/data-structures/arrays-and-memory#memory-is-one-long-array) (groups of 8 bits). To store the grid, software flattens the image into a sequence: row 0 first, row 1 immediately after it, and so on. This layout is called **row-major order**, the same arrangement a [two-dimensional array](/courses/data-structures/arrays-and-memory#two-dimensional-arrays) uses in memory.
 
-Write a pixel's place as (x, y): x is its column and y is its row, both counted from 0, starting at the top-left corner. (The [coordinates lesson](/courses/computer-graphics/pixel-coordinates) has more on this.) To find pixel (x, y) in the long line, skip y whole rows and then x more pixels:
+Locate a pixel by its coordinates $(x, y)$: $x$ is the column index and $y$ is the row index, both counted from 0 starting at the top-left corner, just as Western text reads from top-left downwards. (The [coordinates lesson](/courses/computer-graphics/pixel-coordinates) compares this with bottom-left coordinate systems.) To find pixel $(x, y)$ in the flattened array, skip $y$ complete rows and then advance $x$ pixels:
 
 $$
 \text{position} = y \times \text{width} + x
 $$
 
-For example, in an image 640 pixels wide, pixel (3, 2) is in row 2, the third row. Skip the two full rows before it, $2 \times 640 = 1280$ pixels, then 3 more:
+For example, in an image 640 pixels wide, consider pixel $(3, 2)$. The $y$-coordinate is 2, so two full rows precede it ($2 \times 640 = 1280$ pixels). Then add the $x$-offset of 3:
 
 $$
 2 \times 640 + 3 = 1283
 $$
 
-Positions count from 0 too, so that's the 1,284th pixel in the file.
+Because array indexing starts at 0, position 1283 is the 1,284th pixel in the grid.
 
 ## Why the file must store its dimensions
 
-Here's the catch. Once the grid is flattened, the pixel values alone don't say where each row ends. The file needs extra information about itself, called **metadata** ("data about data"): at least the width and height, and also the format and the number of bits per pixel.
+Once the pixel grid is flattened into a single sequence of numbers, the values themselves do not reveal where each row ends. A list of 144 values could represent a 12 × 12 square, a 16 × 9 rectangle, or a 144 × 1 strip. An image file must therefore begin with a descriptive header block called **metadata** (data about data): at minimum the image width and height, along with the color format and how many bits each pixel uses.
 
-Without the right width, the picture still has all the right pixels, just in the wrong places. Below is a one-bit image of a house, stored as 144 bits. Change the width and watch what happens to the same bits:
+Without the correct width, the reading software loads the right pixel values into the wrong rows. The interactive demo below stores a 144-pixel binary (on-or-off) image of a house. Move the slider to see how changing the assumed row width alters the image:
 
 <RowWidth />
 
-At 12 pixels per row, the true width, the house appears. At 11, each row takes one pixel too few, so every row starts one pixel earlier than it should, and the picture leans over to one side. At 13 it leans the other way. Nothing in the data changed. Only the instruction for reading it did.
+At 12 pixels per row (the intended width), the house appears upright and clear. At 11 pixels per row, each row stops one pixel too early. Every following row shifts left, tilting the image diagonally. At 13 pixels per row, each row runs too far, leaning the image the other way. The stored pixel values never changed; only the decoding row length changed.
 
 <Callout tone="orange" label="You've seen this bug">
-A video or image that shows up as diagonal stripes or a tilted, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also add **padding**: a few unused bytes at the end of each row, so every row starts at a tidy place in memory. BMP files pad each row to a multiple of 4 bytes, so a 24-bit row 3 pixels wide takes 9 bytes plus 3 bytes of padding, 12 in all. A program that forgets the padding reads those 3 bytes as the start of the next row, and the picture leans the same way.
+When an image or video appears as slanted stripes or a sheared, garbled mosaic, the software is reading the pixel **buffer** (the memory block holding the pixels) with the wrong **row stride** (byte width per row). Some file formats also add **padding**: unused filler bytes at the end of each row so that every row starts at a memory address divisible by 4 bytes (standard in Windows BMP files). For instance, in 24-bit color (where each pixel takes $24 \div 8 = 3$ bytes), an image 3 pixels wide uses $3 \times 3 = 9$ bytes of pixel data per row, plus 3 bytes of padding to reach the next multiple of 4 (12 bytes). If a parser ignores the padding, it interprets padding bytes as pixel data for the next row, causing the image to slant diagonally.
 </Callout>
 
 <PracticalApplication title="Image editing" tool="Every image library">
-When code asks for `image[y][x]` or `pixels[y * width + x]`, it's doing the row-major arithmetic above. Filters like blur or brightness are loops over that array.
+When image processing code accesses `image[y][x]` (putting the row index `y` first because each row is stored together) or `pixels[y * width + x]`, it evaluates the row-major formula above. Filters such as blurs or color adjustments loop over this flattened buffer.
 </PracticalApplication>
 
-So far each pixel has been on or off. The [next lesson](/courses/computer-graphics/bit-depth) asks how many shades a pixel can hold, and what that costs.
+In the house example above, each pixel was either on or off. The [next lesson](/courses/computer-graphics/bit-depth) examines how many shades a pixel can represent, and the memory required to store them.

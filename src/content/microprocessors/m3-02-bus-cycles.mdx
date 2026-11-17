@@ -1,40 +1,179 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MemoryReadCycle } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Reading from Memory: The Bus Cycle
 
-You've written `MOV AX, [BX]` and it seemed to take no time. In the hardware, several things have to happen in the right order across the [buses](/courses/computer-organization/buses), with each step tied to the clock. Here's a read, the way a logic analyser would show it.
+When you write `MOV AX, [BX]`, the processor appears to fetch the value instantly. Inside the hardware, reading a word from RAM requires several coordinated electrical steps across the system [buses](/courses/computer-organization/buses), with every phase strictly timed to the system clock.
 
-Step through it. Then add some wait states.
+A single transfer of data between the processor and memory or an I/O device is called a **bus cycle**. Each individual clock period of the system clock driving the microprocessor is called a **T-state**, labeled consecutively as $T_1$, $T_2$, $T_3$, and $T_4$. A standard 8086 bus cycle requires four T-states.
+
+Step through the read cycle in the visualizer below, then add wait states to see how the processor pauses when memory is slow:
 
 <MemoryReadCycle />
 
-Each line is a signal over time: the same [timing diagram](/courses/logic-design/flip-flops) you saw with flip-flops. RD is [active low](/courses/logic-design/sr-latch#the-nand-version), so it means "read" when it's at 0.
+Each line in the diagram represents a physical pin on the chip monitored over time, creating a [timing diagram](/courses/logic-design/flip-flops).
+
+Notice that control lines like $\overline{\text{RD}}$ are **active-low signals**, designated with an overbar or a leading slash. An active-low signal performs its intended action when its voltage drops to logic 0 (ground, 0 V), rather than logic 1 (+5 V).
+
+### Multiplexing and the four T-states
+
+To fit within a compact 40-pin package, the 8086 uses a **multiplexed bus**. Instead of dedicating separate pins for address and data, the processor shares the same physical lines for different signals at different points in time:
+
+- Pins $AD_{15}\text{--}AD_0$ carry memory or I/O address bits during the first clock period, then switch to carry 16 bits of data during subsequent periods.
+- Pins $A_{19}/S_6\text{--}A_{16}/S_3$ carry the upper four address bits during the first clock period, then switch to carry processor status signals ($S_6$ through $S_3$).
+
+Because memory chips expect a stable address throughout the entire read operation, external circuitry must perform **bus demultiplexing**: capturing the address during the first clock tick and holding it steady on dedicated address lines. The CPU coordinates this with the **Address Latch Enable (ALE)** pin, an active-high pulse that commands external transparent latches (such as the 74LS373) to lock in the address.
+
+The processor also drives the **Bus High Enable (BHE)** pin ($\overline{\text{BHE}}$), an active-low signal used alongside address line $A_0$ to determine whether a memory transfer involves the lower byte ($D_7\text{--}D_0$), the upper byte ($D_{15}\text{--}D_8$), or a full 16-bit word.
+
+A complete memory read cycle unfolds across four sequential T-states:
+
+1. **$T_1$ (Address output)**: The CPU places the 20-bit physical address onto pins $AD_{15}\text{--}AD_0$ and $A_{19}/S_6\text{--}A_{16}/S_3$. It asserts $\text{M}/\overline{\text{IO}}$ high to signal a memory operation rather than an I/O port transfer. The CPU pulses `ALE` high and then low. External latches capture the address on the falling edge of `ALE`.
+2. **$T_2$ (Bus turnaround)**: The CPU stops driving the lower address lines $AD_{15}\text{--}AD_0$, putting them into a high-impedance (floating) state so the memory chip can drive them without causing electrical bus contention. The upper lines switch to output status signals $S_6\text{--}S_3$. The CPU drives $\overline{\text{RD}}$ low to inform memory that a read operation has begun.
+3. **$T_3$ (Data access and wait check)**: The external memory chip decodes the latched address, accesses its storage matrix, and begins driving data onto lines $AD_{15}\text{--}AD_0$. At the transition from high to low during $T_3$, the CPU samples its **READY pin**. If external memory has asserted `READY` high, the CPU advances to $T_4$. If `READY` is low, the CPU inserts an idle clock tick called a **wait state (Tw)** and continues checking `READY` on every subsequent cycle.
+4. **$T_4$ (Data sampling and cleanup)**: The CPU samples the valid data on lines $AD_{15}\text{--}AD_0$ and latches the bits into its internal registers. The CPU then raises $\overline{\text{RD}}$ back to logic 1, completing the bus cycle and returning the bus to an idle condition.
+
+<Callout tone="sky" label="Sharing the pins: why the 8086 multiplexes the bus">
+In 1978, dual in-line package (DIP) chips were economically limited to 40 pins. Providing separate physical pins for a 20-bit address bus and a 16-bit data bus would require $20 + 16 = 36$ pins just for addressing and data. That would leave only 4 pins for power, ground, clock, reset, interrupts, and read/write control lines. By multiplexing address and data over the same 16 pins, Intel saved 16 physical pins, fitting the processor into standard manufacturing packages.
+</Callout>
+
+<Callout tone="orange" label="Trap: confusing clock cycle with bus cycle">
+A clock cycle (a single T-state) is one period of the crystal oscillator, such as 200 ns on a 5 MHz processor. A bus cycle is a multi-step hardware protocol composed of at least four T-states ($T_1$ through $T_4$), taking 800 ns. Furthermore, executing an instruction like `MOV AX, [BX]` requires multiple bus cycles: one or more to fetch the instruction bytes from memory, and another full bus cycle to read the data operand at `[BX]`.
+</Callout>
+
+<Callout tone="orange" label="Trap: floating data lines when ALE is missed">
+External memory chips rely completely on external latches to hold the address stable while data is transferred. If the circuit misses the falling edge of `ALE`, the address vanishes from the pins during $T_2$ when the lines enter high-impedance mode. The memory chip loses its address and outputs open-bus noise (typically all 1s, `0FFh`) into the processor.
+</Callout>
 
 ## The memory wall
 
-CPUs have become far faster than memory. A CPU clock can run at several GHz, but it reaches memory over a much slower system bus. Whenever a value isn't ready, the CPU simply has to wait. Those wasted ticks are called **wait states**.
+Over the past four decades, CPU clock speeds improved at a much faster rate than dynamic RAM access latencies. This growing performance disparity is known as the **memory wall**.
 
-So a program's speed depends heavily on how often it goes to memory. Reducing that is the reason for having [registers](/courses/microprocessors/registers) and [cache](/courses/computer-organization/memory-hierarchy).
+In the original 8086 running at 5 MHz, clock period $T$ is:
 
-<Callout tone="orange" label="Sharing the pins">
-A chip has only so many pins. To save some, the 8086 uses the same 16 pins for both address and data at different moments: an address during the first clock cycle, and data after that. The ALE signal tells outside circuits when the pins hold an address, so they can latch it in. Another signal, M/IO, tells memory and I/O devices which of them the bus cycle is for.
-</Callout>
+$$T = \frac{1}{f} = \frac{1}{5 \times 10^6\text{ Hz}} = 200\text{ ns}$$
+
+A standard 4-state bus cycle takes:
+
+$$T_{\text{bus}} = 4 \times 200\text{ ns} = 800\text{ ns}$$
+
+If memory needs 850 ns to find a byte, it cannot respond by the end of $T_3$. The memory interface pulls the `READY` pin low. The processor inserts an extra clock period ($T_w = 200\text{ ns}$), stretching the bus cycle to $5 \times 200\text{ ns} = 1000\text{ ns} = 1.0\ \mu\text{s}$.
+
+Because every wait state burns processor time without doing useful work, hardware architects minimize memory trips by adding high-speed on-chip [registers](/courses/microprocessors/registers) and multi-level [cache](/courses/computer-organization/memory-hierarchy).
 
 ## Minimum and maximum mode
 
-A pin called MN/MX sets up the chip in one of two ways:
+The 8086 can operate in two distinct electrical configurations, selected by strapping the $\text{MN}/\overline{\text{MX}}$ pin (pin 33):
 
-- **Minimum mode** is for a system with one processor. The 8086 produces all of the bus control signals itself.
-- **Maximum mode** is for systems with several processors, such as an 8086 with a maths coprocessor. A separate bus controller chip produces the control signals, and the freed-up pins are used to coordinate the processors.
+| Configuration | Pin strap | Target system | Control signal source |
+|---|---|---|---|
+| Minimum mode | $\text{MN}/\overline{\text{MX}} = +5\text{ V}$ | Single-processor computers | 8086 generates $\overline{\text{RD}}$, $\overline{\text{WR}}$, $\text{M}/\overline{\text{IO}}$, `ALE`, $\overline{\text{INTA}}$ directly |
+| Maximum mode | $\text{MN}/\overline{\text{MX}} = 0\text{ V}$ (GND) | Multi-processor computers (with 8087 coprocessor) | External Intel 8288 bus controller decodes status pins $\overline{S_2}, \overline{S_1}, \overline{S_0}$ |
 
-That's all you need of the chip's pin layout. The two groups of pins worth remembering are the ones that carry signals you've already met: the buses, and the interrupt pins INTR and NMI.
+In **minimum mode (MN/MX = 5V)**, designed for low-cost single-processor systems, the 8086 generates all bus control strobes directly on its own pins. External circuits connect directly to the CPU's read, write, and latch enable lines without extra interface silicon.
+
+In **maximum mode (MN/MX = GND)**, designed for systems with arithmetic coprocessors (such as the Intel 8087 numeric data processor), the CPU reassigns eight of its control pins to output status codes and bus arbitration signals ($\overline{\text{LOCK}}$, $\overline{\text{RQ}}/\overline{\text{GT}}$).
+
+An external companion chip, the **bus controller (Intel 8288)**, monitors the CPU's three status output lines ($\overline{S_2}, \overline{S_1}, \overline{S_0}$) and decodes them to generate the system bus commands ($\overline{\text{MRDC}}$ for memory read, $\overline{\text{MWTC}}$ for memory write, $\overline{\text{IORC}}$ for I/O read, $\overline{\text{IOWC}}$ for I/O write, and `ALE`). This offloads signal driving and coordinates multiple processors sharing the same system bus.
 
 ## From the 8086 to today
 
-Every later x86 chip kept this programming model and added to it: wider registers (EAX, RAX), more cores, more cache. A modern chip runs in several **modes**:
+Every x86 and x86-64 processor preserves backward compatibility with the original 8086 bus and execution model. A modern processor supports several operational modes:
 
-- **Real mode** behaves like an 8086, with the 1 MB limit and no protection. A PC still starts up this way.
-- **Protected mode** gives each program its own memory area, so one crash can't take down the others. This is normal operation.
-- **Virtual-8086 mode** runs real-mode programs safely inside protected mode.
-- **System management mode** is a hidden mode for firmware tasks such as power management.
+- **Real mode**: The chip powers up behaving like an original 8086, limited to 1 MB of physical memory with no memory protection and 16-bit registers. Firmware and bootloaders execute in real mode before transitioning to modern operating systems.
+- **Protected mode**: Introduced in the 80286 and expanded to 32 bits in the 80386, this mode introduces hardware memory paging, virtual memory, and four privilege levels (rings 0 through 3). The operating system isolates programs into private address spaces, preventing one faulty application from corrupting system memory.
+- **Virtual-8086 mode**: A sub-mode of 32-bit protected mode that allows legacy real-mode software to run inside an isolated virtual machine container under a protected operating system.
+- **System management mode**: A high-privilege execution environment independent of the operating system, used by motherboard firmware to manage low-level hardware events such as thermal throttling, power states, and hardware security.
+
+## Practice by hand
+
+### Problem 1: Bus cycle duration and bandwidth calculations
+
+An engineer evaluates two versions of an 8086 microprocessor system:
+- **System A**: Operates at a clock frequency of $f = 5\text{ MHz}$.
+- **System B**: Operates at a clock frequency of $f = 10\text{ MHz}$.
+
+Both systems read 16-bit aligned words from memory over the 16-bit data bus (2 bytes transferred per bus cycle).
+
+1. Calculate the clock period ($T$-state duration) in nanoseconds for System A and System B.
+2. Calculate the bus cycle duration for each system when accessing fast zero-wait-state memory ($4$ T-states).
+3. Calculate the bus cycle duration for each system when accessing slower memory that requires one wait state ($1\ T_w$).
+4. Compute the maximum theoretical data transfer bandwidth in megabytes per second (MB/s) for both systems under zero-wait-state and one-wait-state conditions.
+
+<ModelAnswer>
+1. **Clock period ($T$-state duration)**:
+   The duration of one clock cycle is $T = \frac{1}{f}$.
+   - System A ($5\text{ MHz}$):
+     $$T_A = \frac{1}{5 \times 10^6\text{ Hz}} = 0.20 \times 10^{-6}\text{ s} = 200\text{ ns}$$
+   - System B ($10\text{ MHz}$):
+     $$T_B = \frac{1}{10 \times 10^6\text{ Hz}} = 0.10 \times 10^{-6}\text{ s} = 100\text{ ns}$$
+
+2. **Bus cycle duration with 0 wait states ($4$ T-states)**:
+   A standard bus cycle without wait states consists of four T-states ($T_{\text{bus}} = 4 \times T$).
+   - System A:
+     $$T_{\text{bus, A}} = 4 \times 200\text{ ns} = 800\text{ ns}$$
+   - System B:
+     $$T_{\text{bus, B}} = 4 \times 100\text{ ns} = 400\text{ ns}$$
+
+3. **Bus cycle duration with 1 wait state ($4 + 1 = 5$ T-states)**:
+   Inserting one wait state ($T_w$) adds one clock period to the cycle ($T_{\text{bus}} = 5 \times T$).
+   - System A:
+     $$T_{\text{bus, A, wait}} = 5 \times 200\text{ ns} = 1000\text{ ns} = 1.0\ \mu\text{s}$$
+   - System B:
+     $$T_{\text{bus, B, wait}} = 5 \times 100\text{ ns} = 500\text{ ns} = 0.5\ \mu\text{s}$$
+
+4. **Maximum theoretical data transfer bandwidth**:
+   Each bus cycle transfers a 16-bit word (2 bytes). Bandwidth is calculated as $\text{Bandwidth} = \frac{\text{Bytes transferred}}{T_{\text{bus}}}$.
+   - System A ($5\text{ MHz}$):
+     - Zero wait states:
+       $$\text{Bandwidth} = \frac{2\text{ bytes}}{800 \times 10^{-9}\text{ s}} = 2.50 \times 10^6\text{ bytes/s} = 2.50\text{ MB/s}$$
+     - One wait state:
+       $$\text{Bandwidth} = \frac{2\text{ bytes}}{1000 \times 10^{-9}\text{ s}} = 2.00 \times 10^6\text{ bytes/s} = 2.00\text{ MB/s}$$
+   - System B ($10\text{ MHz}$):
+     - Zero wait states:
+       $$\text{Bandwidth} = \frac{2\text{ bytes}}{400 \times 10^{-9}\text{ s}} = 5.00 \times 10^6\text{ bytes/s} = 5.00\text{ MB/s}$$
+     - One wait state:
+       $$\text{Bandwidth} = \frac{2\text{ bytes}}{500 \times 10^{-9}\text{ s}} = 4.00 \times 10^6\text{ bytes/s} = 4.00\text{ MB/s}$$
+
+   Doubling the clock frequency doubles memory bandwidth, while adding a single wait state reduces throughput by 20 percent.
+</ModelAnswer>
+
+### Problem 2: Signal tracing during a memory read cycle
+
+An 8086 processor running in minimum mode executes a memory read instruction to fetch data from physical address `03F20h`.
+
+1. Complete the following timing trace table by specifying the logic level or state for each signal line during each clock period of the 4-state bus cycle. Use `1` (high), `0` (low), `Pulse` (temporary high pulse), `Float` (high-impedance/tri-state), `Address`, `Data`, or `Status`.
+
+| Signal Line | Description | $T_1$ | $T_2$ | $T_3$ | $T_4$ |
+|---|---|---|---|---|---|
+| `ALE` | Address Latch Enable | | | | |
+| $\text{M}/\overline{\text{IO}}$ | Memory vs I/O select | | | | |
+| $\overline{\text{RD}}$ | Read strobe (active low) | | | | |
+| `READY` | Device ready input | | | | |
+| $AD_{15}\text{--}AD_0$ | Multiplexed address/data | | | | |
+| $A_{19}/S_6\text{--}A_{16}/S_3$ | Upper address/status | | | | |
+
+2. Explain why line $AD_{15}\text{--}AD_0$ must float during $T_2$. What electrical problem would occur if the CPU drove this line continuously?
+3. At what precise moment does the processor sample the `READY` input pin, and what action does the CPU take if `READY` is measured at logic 0?
+
+<ModelAnswer>
+1. **Signal tracing table**:
+
+| Signal Line | Description | $T_1$ | $T_2$ | $T_3$ | $T_4$ |
+|---|---|---|---|---|---|
+| `ALE` | Address Latch Enable | Pulse (High then Low) | 0 | 0 | 0 |
+| $\text{M}/\overline{\text{IO}}$ | Memory vs I/O select | 1 (Memory) | 1 | 1 | 1 |
+| $\overline{\text{RD}}$ | Read strobe (active low) | 1 (Inactive) | 0 (Active) | 0 (Active) | 1 (Inactive at end) |
+| `READY` | Device ready input | Don't care | Don't care | 1 (Sampled) | Don't care |
+| $AD_{15}\text{--}AD_0$ | Multiplexed address/data | Address (`3F20h`) | Float (High-Z) | Valid Data from RAM | Valid Data latched |
+| $A_{19}/S_6\text{--}A_{16}/S_3$ | Upper address/status | Address (`0h`) | Status ($S_6\text{--}S_3$) | Status ($S_6\text{--}S_3$) | Status ($S_6\text{--}S_3$) |
+
+2. **Why $AD_{15}\text{--}AD_0$ floats during $T_2$**:
+   During $T_1$, the CPU's internal output drivers actively drive the address bits onto $AD_{15}\text{--}AD_0$. During $T_3$, the external memory chip must drive its stored data bits onto those exact same electrical wires.
+   $T_2$ serves as a **bus turnaround** state. The CPU disconnects its output drivers and places the pins into a high-impedance (tri-state/float) mode. If the CPU continued driving the bus at logic 1 while the memory chip tried to drive logic 0, a direct power-to-ground short circuit would occur. This condition, called **bus contention**, draws excessive current, corrupts the transmitted data, and can permanently damage the silicon transceivers.
+
+3. **Sampling the `READY` input pin**:
+   The 8086 samples the `READY` input pin at the trailing (falling) edge of clock period $T_3$.
+   - If `READY` is logic 1 (high), memory has accessed the requested byte and placed it on the bus. The processor proceeds immediately to $T_4$ and latches the data.
+   - If `READY` is logic 0 (low), memory is not yet ready. The processor inserts an idle clock period, a wait state ($T_w$), immediately after $T_3$. During $T_w$, all control strobes ($\overline{\text{RD}}$ low, status lines active) remain frozen in place. The CPU samples `READY` again at the end of each $T_w$, repeating wait states until `READY` rises to logic 1.
+</ModelAnswer>

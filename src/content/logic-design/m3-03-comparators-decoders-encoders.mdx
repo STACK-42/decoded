@@ -155,19 +155,12 @@ $$
 \text{Enable} = G_1 \cdot \overline{G_{2A}}' \cdot \overline{G_{2B}}'
 $$
 
-```
-            ┌────────────────────────┐
-   A ───────┤ A (LSB)                │
-   B ───────┤ B                      ├─── Y0' = (C' B' A')'  [m0']
-   C ───────┤ C (MSB)                ├─── Y1' = (C' B' A )'  [m1']
-            │                        ├─── Y2' = (C' B  A')'  [m2']
-  G1 ───────┤ G1       74LS138       ├─── Y3' = (C' B  A )'  [m3']
-G2A' ───────┤ G2A'                   ├─── Y4' = (C  B' A')'  [m4']
-G2B' ───────┤ G2B'                   ├─── Y5' = (C  B' A )'  [m5']
-            │                        ├─── Y6' = (C  B  A')'  [m6']
-            │                        ├─── Y7' = (C  B  A )'  [m7']
-            └────────────────────────┘
-```
+| Pin / Signal | Direction | Logic Level | Function |
+| :--- | :---: | :---: | :--- |
+| **$A, B, C$** | Input | Active-HIGH | Select inputs ($A = \text{LSB}, C = \text{MSB}$) |
+| **$G_1$** | Input | Active-HIGH | Chip enable 1 |
+| **$\overline{G_{2A}}, \overline{G_{2B}}$** | Input | Active-LOW | Chip enables 2A and 2B |
+| **$\overline{Y_0}\dots\overline{Y_7}$** | Output | Active-LOW | Decoded minterm outputs ($\overline{Y_i} = m_i'$) |
 
 ### Decoder expansion: Building a 4-to-16 decoder
 
@@ -200,17 +193,7 @@ Connecting the active-LOW outputs of a 74LS138 directly to a NAND gate synthesiz
 
 A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47** or **74LS48**).
 
-It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a, b, c, d, e, f, g$) arranged in a figure-eight:
-
-```
-        a
-      ┌───┐
-    f │   │ b
-      ├───┤ ◄── g
-    e │   │ c
-      └───┘
-        d
-```
+It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a$ top, $b$ top-right, $c$ bottom-right, $d$ bottom, $e$ bottom-left, $f$ top-left, and $g$ middle) arranged in a figure-eight:
 
 For example, to display decimal digit `0`, segments $a, b, c, d, e, f$ are illuminated, while segment $g$ remains dark.
 

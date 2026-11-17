@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import type { Frame } from "@/lib/algorithms";
 import { bitString } from "@/lib/logic";
@@ -91,13 +91,18 @@ const UNITS: [string, number, string][] = [
 export function UnitLadder() {
   return (
     <Panel title="Each step up is 1024 times bigger">
-      <div className="flex flex-col gap-1.5 font-mono text-[13px]">
+      {/* the name in one column; the bar and its caption share the other, so long captions wrap under their bar at any width */}
+      <div className="grid grid-cols-[2.5rem_1fr] gap-x-3 gap-y-2 items-start font-mono text-[13px]">
         {UNITS.map(([u, n, ex], i) => (
-          <div key={u} className="flex items-center gap-3">
-            <span className="w-10 font-bold">{u}</span>
-            <span className="h-4 bg-sky/60 rounded-[1px]" style={{ width: `${8 + i * 15}%` }} />
-            <span className="text-[11px] text-muted-foreground whitespace-nowrap">2^{i * 10} = {n.toLocaleString("en-US")} bytes · {ex}</span>
-          </div>
+          <Fragment key={u}>
+            <span className="font-bold leading-4">{u}</span>
+            <div className="flex flex-col gap-1">
+              <span className="h-4 bg-sky/60 rounded-[1px]" style={{ width: `${8 + i * 15}%` }} />
+              <span className="text-[11px] text-muted-foreground">
+                2^{i * 10} = {n.toLocaleString("en-US")} {n === 1 ? "byte" : "bytes"} · {ex}
+              </span>
+            </div>
+          </Fragment>
         ))}
       </div>
     </Panel>

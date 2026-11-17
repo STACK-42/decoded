@@ -1,52 +1,657 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { LaundryPipeline, PipelineStepper } from "@/components/mdx/ArchitectureVisualizers";
 
 # Pipelining
 
-Doing laundry has four steps: wash, dry, fold and put away. If you finish one load completely before starting the next, the washer sits idle for most of the time. The obvious improvement: as soon as the first load goes in the dryer, start the second in the washer.
+Doing laundry involves four steps: wash, dry, fold, and store. If you finish one load completely before starting the next, the washing machine sits idle for most of the afternoon. A better workflow starts the second load in the washer the moment the first load moves to the dryer.
 
 <LaundryPipeline />
 
-Each load takes just as long as before. But loads finish far more often. That's the central idea: **pipelining** doesn't make any one instruction faster, it raises **throughput**, the number finished per second.
+Each load still takes the same total time from dirty clothes to folded stack. The gain comes from overlap: loads finish much more often. This technique is **pipelining**. Pipelining keeps the **latency** (the time to finish one instruction) roughly the same, but increases **throughput** (the number of instructions finished per second).
 
 ## The five classic stages
 
-The [machine cycle](/courses/computer-organization/machine-cycle) splits naturally into stages:
+In an unpipelined single-cycle processor, each instruction must pass through the entire datapath before the next instruction can begin. The [machine cycle](/courses/computer-organization/machine-cycle) breaks naturally into five sequential steps:
 
-| Stage | Name | What happens |
-|---|---|---|
-| **IF** | Instruction fetch | Read the instruction at the PC |
-| **ID** | Instruction decode | Work out what it means, and read the registers |
-| **EX** | Execute | The ALU does the work |
-| **MEM** | Memory | Load or store, if needed |
-| **WB** | Write back | Put the result in a register |
+| Stage | Name | Functional Hardware | Primary Hardware Action |
+|---|---|---|---|
+| **IF** | Instruction Fetch | [Program Counter](/courses/computer-architecture/ripple-and-synchronous-counters#the-program-counter), Instruction Memory / I-Cache, Incrementer Adder | Reads 32-bit instruction from memory at address PC; increments PC by 4 |
+| **ID** | Instruction Decode & Register Read | [Control Unit](/courses/computer-architecture/control-unit), [Register File](/courses/logic-design/registers), Sign Extender | Decodes opcode bits; reads source registers $rs_1$ and $rs_2$; sign-extends immediate |
+| **EX** | Execute / Address Calculation | [Arithmetic Logic Unit (ALU)](/courses/computer-organization/inside-the-cpu), Branch Comparator | Performs arithmetic operation, calculates effective memory address, or evaluates branch |
+| **MEM** | Memory Access | Data Memory / D-Cache | Reads data for `LOAD` or writes data for `STORE`; passes through ALU results |
+| **WB** | Write Back | Register File Write Port | Writes result from ALU or memory into destination register $rd$ |
 
-Between each pair of stages there's a [register](/courses/logic-design/registers), and all of those registers load on the same clock edge. That's what makes this work: at each tick, every instruction moves forward one stage together, and a [flip-flop's edge-triggered behaviour](/courses/logic-design/flip-flops) is what keeps them from running into each other.
+Three circuits handle the core operations in these stages:
 
-Step through it. Read a row to follow one instruction, or a column to see what the CPU is doing at one moment.
+- **Sign extender**: A combinational circuit in the ID stage. It takes an immediate constant, like a 16-bit offset in MIPS, and copies the sign bit across the top 16 bits. This turns a 16-bit signed integer into a 32-bit two's complement value without changing its sign or value.
+- **Branch comparator**: A dedicated circuit that compares two register values directly to check if a branch is taken. Modern pipelines place a dedicated comparator in the ID stage rather than relying on the main ALU in EX so the branch decision resolves earlier.
+- **Register file**: An on-chip array of processor registers with multiple read and write ports. A typical 32-bit RISC core provides two read ports, so it can read $rs_1$ and $rs_2$ at the same time, and one write port to update destination register $rd$.
+
+To overlap instructions, the processor places an edge-triggered **pipeline register** between each pair of stages: `IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB`.
+
+On each rising clock edge, every pipeline register captures the data and control signals from the stage before it. The next stage reads those values and processes them over the rest of the clock cycle. The edge-triggered [flip-flops](/courses/logic-design/flip-flops) prevent signals from mixing, keeping five separate instructions isolated on different hardware units at once.
+
+### Inside the pipeline registers
+
+Each pipeline register carries both data and control signals down the datapath. The control signals generated in the ID stage travel along with the data so each stage receives its commands at the exact cycle the instruction arrives:
+
+- **`IF/ID` register**: Holds the 32-bit instruction word and the incremented program counter ($PC + 4$), which is needed later for branches and jumps.
+- **`ID/EX` register**: Holds the two operand values from the register file, the 32-bit sign-extended immediate offset, the register numbers for source and destination, and the control signals for execution (`ALUOp`, `ALUSrc`, and destination selector `RegDst`).
+- **`EX/MEM` register**: Holds the 32-bit ALU result (either an arithmetic value or a memory address), the data word read from $rs_2$ for a `STORE`, the target branch address, the condition flags, and memory control signals (`MemRead`, `MemWrite`, `Branch`).
+- **`MEM/WB` register**: Holds the data word read from memory for a `LOAD`, the ALU result for an arithmetic instruction, the destination register number $rd$, and write-back control signals (`RegWrite`, `MemtoReg`).
+
+### Resolving the register file access conflict
+
+The register file is accessed in two different stages: ID reads operand registers, while WB writes destination registers. If an instruction in WB writes to register $R_1$ during the same clock cycle that a subsequent instruction in ID reads register $R_1$, the read operation might capture stale data.
+
+Processors solve this without pipeline stalls through **two-phase clocking**:
+
+1. **First half-cycle (falling edge or high phase)**: The write-back stage updates the destination register.
+2. **Second half-cycle (rising edge or low phase)**: The decode stage reads the source registers.
+
+Because writes happen before reads within the same clock period, the instruction in ID reads the freshly updated value rather than the old one. If two-phase clocking is not used, designers place bypass multiplexers inside the register file. When a read address matches the write address in the same cycle, the multiplexer routes the incoming write data straight to the read output.
+
+Step through the pipeline execution below. Read horizontally along a row to follow the progress of one instruction across time, or read vertically down a column to inspect what all five pipeline stages are doing during a single clock cycle.
 
 <PipelineStepper />
 
 ## How much faster?
 
-With $k$ stages and $n$ instructions:
+Consider running $n$ independent instructions on a processor with $k$ pipeline stages.
+
+In an unpipelined multicycle processor where each instruction traverses $k$ distinct functional blocks, taking $k$ clock cycles of stage length $T_{\text{stage}}$:
 
 $$
-\text{without a pipeline: } n \times k \text{ cycles} \qquad\qquad \text{with: } k + (n - 1) \text{ cycles}
+\text{Total Cycles}_{\text{unpipelined}} = n \times k
 $$
 
-The first instruction takes $k$ cycles to come out, and then one finishes on every cycle after that. So for large $n$, the speedup approaches $k$:
+In an unpipelined single-cycle processor, each instruction takes 1 clock cycle, but that single cycle must be long enough for all $k$ stages to finish sequentially ($T_{\text{unpipelined}} = \sum_{i=1}^k t_i$). In both unpipelined models, the total execution time is roughly $n \times k \times T_{\text{stage}} = n \sum t_i$.
+
+In a pipelined processor, the clock period is set to a single stage length plus register overhead ($T_{\text{pipelined}} \approx T_{\text{stage}}$). The first instruction enters the pipeline and takes $k$ cycles to fill the pipe and emerge from WB. After that initial latency, exactly one instruction completes on every subsequent clock cycle:
 
 $$
-\text{speedup} = \frac{n k}{k + n - 1} \to k
+\text{Total Cycles}_{\text{pipelined}} = k + (n - 1)
 $$
 
-Take 100 instructions and 5 stages: 500 cycles without, and 104 with, for a speedup of about 4.8.
+The ideal speedup in cycle count is:
+
+$$
+\text{Speedup}_{\text{ideal}} = \frac{n \times k}{k + n - 1}
+$$
+
+As the program length $n$ becomes very large ($n \gg k$), the ratio $\frac{n}{k + n - 1}$ approaches 1. The cycle speedup approaches the number of pipeline stages:
+
+$$
+\lim_{n \to \infty} \text{Speedup} = k
+$$
+
+For 1,000 instructions on a 5-stage pipeline:
+
+$$
+\text{Cycles}_{\text{unpipelined}} = 1000 \times 5 = 5000\text{ cycles}
+$$
+
+$$
+\text{Cycles}_{\text{pipelined}} = 5 + (1000 - 1) = 1004\text{ cycles}
+$$
+
+$$
+\text{Speedup} = \frac{5000}{1004} \approx 4.98
+$$
+
+### Clock period: stage imbalance and register overhead
+
+In real hardware, the speedup is always less than the stage count $k$ for two reasons:
+
+1. **Stage imbalance**: The clock cycle must be long enough for the **slowest stage**. If four stages take 150 picoseconds and one stage takes 250 picoseconds, the clock cycle must be at least 250 picoseconds. The faster stages finish early and wait idle for the rest of the cycle ($\Delta t_i = \max(t_j) - t_i = 100\text{ ps}$).
+2. **Register overhead**: The registers between stages add delays that do not exist in an unpipelined circuit. The total register delay $t_{\text{reg}}$ combines three parts:
+   - **Setup time** ($t_{\text{setup}}$): How long input signals must stay steady before the clock edge arrives.
+   - **Clock-to-Q delay** ($t_{\text{cq}}$): The time from the clock edge until the flip-flop output settles with the new data.
+   - **Clock skew** ($t_{\text{skew}}$): Slight differences in when the clock edge reaches different flip-flops across the chip, caused by wire resistance and temperature variations.
+
+The total register delay added to each stage is $t_{\text{reg}} = t_{\text{setup}} + t_{\text{cq}} + t_{\text{skew}}$.
+
+Let $t_i$ be the combinational logic delay of stage $i$. The unpipelined clock period is the sum of all stage delays:
+
+$$
+T_{\text{unpipelined}} = \sum_{i=1}^k t_i
+$$
+
+The pipelined clock period is governed by the critical path of the slowest stage plus register overhead:
+
+$$
+T_{\text{pipelined}} = \max_{1 \le i \le k}(t_i) + t_{\text{reg}}
+$$
+
+The true execution time speedup is:
+
+$$
+\text{Speedup}_{\text{actual}} = \frac{T_{\text{unpipelined\_total}}}{T_{\text{pipelined\_total}}} = \frac{n \times \sum_{i=1}^k t_i}{[k + (n - 1)] \times (\max(t_i) + t_{\text{reg}})}
+$$
+
+As $n \to \infty$:
+
+$$
+\text{Speedup}_{\max} = \frac{\sum_{i=1}^k t_i}{\max(t_i) + t_{\text{reg}}}
+$$
+
+**Pipeline efficiency** measures how close the implementation comes to the theoretical $k$-fold speedup:
+
+$$
+\text{Efficiency} = \frac{\text{Speedup}}{k} \times 100\%
+$$
 
 ## Why not 100 stages?
 
-There are limits. The clock can only be as fast as the **slowest stage**, so stages need to be evenly balanced. The registers between stages add a little delay each, so that eventually more stages stop helping. And as you'll see next, things can go wrong in a pipeline, and in a longer pipeline they cost more.
+If 5 stages give roughly a 5-fold speedup, 100 stages might sound like a 100-fold speedup. Early 2000s designs pursued deep pipelines, known as **superpipelining** (the Intel Pentium 4 Prescott had 31 stages). But four physical limits set a practical ceiling on depth:
 
-<Callout tone="violet" label="This is what you've been building to">
-The [8086's two-stage fetch and execute](/courses/microprocessors/inside-the-8086) was an early pipeline. A modern CPU has 15 to 20 stages. Add several parallel pipelines, and a **superscalar** chip can finish more than one instruction per clock, giving a CPI below 1.
+1. **Logic cannot be split into tiny pieces**: A 32-bit adder, barrel shifter, or cache decoder needs a minimum number of gate levels (often 4 to 6 gate delays). Cutting circuits finer requires placing registers inside arithmetic blocks, which adds synchronization overhead and worsens stage imbalance.
+2. **Register delays add up**: As the clock period shrinks to tens of picoseconds, the fixed register delay $t_{\text{reg}}$ (around 15 to 30 ps) takes up a larger fraction of every cycle. At a 200 ps clock, 25 ps of overhead wastes 12.5% of the cycle. At a 50 ps clock, that same 25 ps overhead wastes 50%. Past a certain point, adding another stage slows the processor down.
+3. **Hazard penalties grow**: When a branch prediction fails or a dependency causes a stall, the processor must discard every instruction currently in the pipe. In a 5-stage pipeline, resolving a branch in stage 3 wastes 2 cycles. In a 30-stage pipeline, resolving a branch in stage 15 throws away 14 cycles of work.
+4. **Clock distribution and power**: Sending a high-frequency clock to millions of flip-flops without timing errors requires large clock buffers. These buffers burn substantial power ($P = \alpha C V^2 f$) and generate heat.
+
+Modern processors (like ARM Cortex cores, Apple M-series, and AMD Zen) balance these factors with pipelines between 12 and 19 stages.
+
+## Traps and pitfalls
+
+<Callout tone="orange" label="Trap: Pipelining does not reduce individual instruction latency">
+Pipelining increases throughput, not individual speed. An instruction takes slightly longer to complete in a pipelined processor than in an unpipelined one because each stage is padded to match the slowest stage and pipeline registers add small delays.
 </Callout>
+
+<Callout tone="orange" label="Trap: Assuming registers write and read simultaneously without circuit support">
+The WB and ID stages cannot share the register file at the same instant without hardware support. Without two-phase clocking or bypass multiplexers inside the register file, reading a register that is being written in the same cycle returns old data.
+</Callout>
+
+<Callout tone="orange" label="Trap: The k-fold speedup myth">
+Dividing a CPU into $k$ stages rarely gives a $k$-fold speedup in practice. Stages are never perfectly balanced, pipeline registers add delay to every cycle, and stalls from branches, data dependencies, and cache misses waste cycles.
+</Callout>
+
+<Callout tone="orange" label="Trap: Pipelining short programs yields negligible speedup">
+For short programs ($n \le k$), the time spent filling the pipeline dominates. Running $n = 5$ instructions on a 5-stage pipeline takes $5 + 5 - 1 = 9$ cycles instead of 25 unpipelined, giving a $2.78\times$ speedup instead of $5\times$. Pipelining needs many instructions ($n \gg k$) to reach full speed.
+</Callout>
+
+<Callout tone="violet" label="Historical context: From 8086 queues to modern superscalar pipelines">
+The Intel 8086 used an early two-stage pipeline: a Bus Interface Unit prefetched bytes into a 6-byte queue while an Execution Unit ran instructions. Berkeley RISC and Stanford MIPS then showed that fixed-length instructions allowed uniform 5-stage pipelines. Modern **superscalar** chips duplicate these pipelines, issuing 4 to 8 instructions every cycle across parallel units.
+</Callout>
+
+## Worked practice problems
+
+### Problem 1: Quantitative pipeline speedup, stage imbalance, and latch overhead
+
+A non-pipelined single-cycle processor has the following combinational stage delays:
+
+- Instruction Fetch (IF): $200\text{ ps}$
+- Instruction Decode (ID): $150\text{ ps}$
+- Execute (EX): $250\text{ ps}$
+- Memory Access (MEM): $220\text{ ps}$
+- Write Back (WB): $160\text{ ps}$
+
+An engineering team redesigns this datapath into a 5-stage pipeline. Adding an edge-triggered pipeline register between stages introduces a register setup and propagation delay of $t_{\text{reg}} = 20\text{ ps}$.
+
+Calculate:
+1. The clock period of the unpipelined processor and the total time required to execute $1,000$ instructions.
+2. The clock period of the 5-stage pipelined processor and the total time required to execute $1,000$ instructions (assuming ideal conditions with no hazard stalls).
+3. The speedup achieved for $1,000$ instructions, the asymptotic speedup limit ($n \to \infty$), and the pipeline efficiency.
+4. The instruction throughput of the pipelined processor in MIPS (Million Instructions Per Second).
+
+<ModelAnswer>
+**Part 1: Unpipelined clock period and total execution time:**
+
+In an unpipelined single-cycle processor, one instruction must traverse all five functional blocks in a single clock cycle:
+
+$$T_{\text{unpipelined}} = \sum_{i=1}^5 t_i = 200 + 150 + 250 + 220 + 160 = 980\text{ ps}$$
+
+Total time to execute $n = 1,000$ instructions:
+
+$$T_{\text{unpipelined\_total}} = n \times T_{\text{unpipelined}} = 1000 \times 980\text{ ps} = 980,000\text{ ps} = 980.0\text{ ns}$$
+
+---
+
+**Part 2: Pipelined clock period and total execution time:**
+
+The clock period of the pipelined processor is determined by the slowest stage plus the register latch overhead:
+
+$$\max(t_i) = t_{\text{EX}} = 250\text{ ps}$$
+
+$$T_{\text{pipelined}} = \max(t_i) + t_{\text{reg}} = 250 + 20 = 270\text{ ps}$$
+
+Total clock cycles required for $k = 5$ stages and $n = 1,000$ instructions:
+
+$$\text{Cycles}_{\text{pipelined}} = k + n - 1 = 5 + 1000 - 1 = 1004\text{ cycles}$$
+
+Total execution time:
+
+$$T_{\text{pipelined\_total}} = 1004 \times 270\text{ ps} = 271,080\text{ ps} = 271.08\text{ ns}$$
+
+---
+
+**Part 3: Speedup and efficiency:**
+
+Actual speedup for $n = 1,000$ instructions:
+
+$$\text{Speedup} = \frac{T_{\text{unpipelined\_total}}}{T_{\text{pipelined\_total}}} = \frac{980,000\text{ ps}}{271,080\text{ ps}} \approx 3.615$$
+
+Asymptotic speedup as $n \to \infty$:
+
+$$\text{Speedup}_{\max} = \frac{T_{\text{unpipelined}}}{T_{\text{pipelined}}} = \frac{980\text{ ps}}{270\text{ ps}} \approx 3.630$$
+
+Pipeline efficiency:
+
+$$\text{Efficiency} = \frac{\text{Speedup}}{k} \times 100\% = \frac{3.615}{5} \times 100\% \approx 72.3\%$$
+
+The efficiency is below 100% because the faster stages sit idle waiting for the slowest stage, and each stage pays a 20 ps register overhead.
+
+---
+
+**Part 4: Instruction throughput in MIPS:**
+
+$$\text{Throughput} = \frac{n}{T_{\text{pipelined\_total}}} = \frac{1000\text{ instructions}}{271.08 \times 10^{-9}\text{ s}} \approx 3.689 \times 10^9\text{ instructions/s} \approx 3688.95\text{ MIPS}$$
+</ModelAnswer>
+
+---
+
+### Problem 2: Deep pipelining trade-off analysis
+
+A processor designer considers splitting the 5-stage pipeline from Problem 1 into an 8-stage superpipeline.
+- By splitting the longer stages, the maximum combinational stage delay drops from $250\text{ ps}$ to $140\text{ ps}$.
+- Each new interstage register adds $t_{\text{reg}} = 20\text{ ps}$, giving a new clock period of $T_{\text{super}} = 140 + 20 = 160\text{ ps}$.
+- In the 5-stage pipeline, branch instructions represent $20\%$ of all instructions, and branch outcome resolution occurs in stage 3, incurring a 2-cycle penalty on misprediction. The branch misprediction rate is $10\%$.
+- In the 8-stage pipeline, branch outcome resolution occurs in stage 5, incurring a 4-cycle penalty on misprediction. The branch misprediction rate remains $10\%$.
+- Both designs achieve an ideal CPI of 1.0 in the absence of branch mispredictions.
+
+Determine whether the 8-stage pipeline is faster than the 5-stage pipeline, calculating the effective CPI and average time per instruction for both designs.
+
+<ModelAnswer>
+**Part 1: Effective CPI of the 5-stage pipeline:**
+
+The average stall cycles added per instruction by branch mispredictions is:
+
+$$\text{Stall}_{\text{branch5}} = \text{Branch Frequency} \times \text{Mispredict Rate} \times \text{Penalty Cycles}$$
+
+$$\text{Stall}_{\text{branch5}} = 0.20 \times 0.10 \times 2 = 0.04\text{ stall cycles/instruction}$$
+
+$$\text{CPI}_5 = 1.0 + 0.04 = 1.04$$
+
+Average execution time per instruction:
+
+$$\text{Time}_5 = \text{CPI}_5 \times T_{\text{clk5}} = 1.04 \times 270\text{ ps} = 280.8\text{ ps/instruction}$$
+
+---
+
+**Part 2: Effective CPI of the 8-stage superpipeline:**
+
+In the 8-stage pipeline, resolving branches in stage 5 increases the misprediction penalty to 4 cycles:
+
+$$\text{Stall}_{\text{branch8}} = 0.20 \times 0.10 \times 4 = 0.08\text{ stall cycles/instruction}$$
+
+$$\text{CPI}_8 = 1.0 + 0.08 = 1.08$$
+
+Average execution time per instruction:
+
+$$\text{Time}_8 = \text{CPI}_8 \times T_{\text{clk8}} = 1.08 \times 160\text{ ps} = 172.8\text{ ps/instruction}$$
+
+---
+
+**Part 3: Performance comparison:**
+
+$$\text{Speedup} = \frac{\text{Time}_5}{\text{Time}_8} = \frac{280.8\text{ ps}}{172.8\text{ ps}} \approx 1.625$$
+
+The 8-stage superpipeline is about $62.5\%$ faster. Although the branch misprediction penalty doubled from 2 cycles to 4 cycles (raising CPI from 1.04 to 1.08), the clock period dropped from 270 ps to 160 ps. That higher clock speed easily offsets the extra branch stall cycles.
+</ModelAnswer>
+
+---
+
+### Problem 3: Pipeline register sizing and hardware bit widths
+
+A hardware engineering team designs a 32-bit classic 5-stage RISC processor datapath with 32 general-purpose registers ($R_0$ through $R_{31}$). To maintain synchronization, control signals generated by the main control unit in the ID stage must travel forward along with data through interstage pipeline registers (`IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB`).
+
+Control signal allocation:
+- **Execution stage (EX)**: `ALUOp` (2 bits), `ALUSrc` (1 bit), `RegDst` (1 bit) $\to 4$ control bits.
+- **Memory stage (MEM)**: `Branch` (1 bit), `MemRead` (1 bit), `MemWrite` (1 bit) $\to 3$ control bits.
+- **Write-back stage (WB)**: `RegWrite` (1 bit), `MemtoReg` (1 bit) $\to 2$ control bits.
+
+Calculate:
+1. The exact storage capacity (in bits/flip-flops) of each of the four pipeline registers (`IF/ID`, `ID/EX`, `EX/MEM`, and `MEM/WB`).
+2. The total storage overhead (in bits) introduced by pipelining the datapath.
+3. Why control signals must be pipelined forward alongside instruction data rather than routed directly from the ID control unit to downstream functional units.
+
+<ModelAnswer>
+**Part 1: Individual pipeline register bit allocations:**
+
+- **`IF/ID` register**:
+  Captures the output of the Instruction Fetch stage:
+  - Incremented Program Counter ($PC + 4$): 32 bits.
+  - Instruction word fetched from instruction cache: 32 bits.
+  $$\text{Width}_{\text{IF/ID}} = 32 + 32 = 64\text{ bits}$$
+
+- **`ID/EX` register**:
+  Captures the outputs of the Instruction Decode and Register Read stage:
+  - Incremented Program Counter ($PC + 4$, required for branch target calculation): 32 bits.
+  - Read Data 1 (contents of register $rs_1$): 32 bits.
+  - Read Data 2 (contents of register $rs_2$): 32 bits.
+  - Sign-extended immediate value: 32 bits.
+  - Source register 1 index ($rs_1$ address): $\log_2(32) = 5$ bits (used by the forwarding unit).
+  - Source register 2 / I-type destination index ($rs_2 / rt$ address): $\log_2(32) = 5$ bits (used by the forwarding unit and as candidate destination for I-type instructions).
+  - R-type destination register index ($rd$ address): $\log_2(32) = 5$ bits (candidate destination selected by `RegDst`).
+  - EX control signals: 4 bits (`ALUOp`, `ALUSrc`, `RegDst`).
+  - MEM control signals: 3 bits (`Branch`, `MemRead`, `MemWrite`).
+  - WB control signals: 2 bits (`RegWrite`, `MemtoReg`).
+  In MIPS, the `RegDst` multiplexer in the EX stage chooses between the 5-bit $rt$ and 5-bit $rd$ fields, which is why both destination candidates travel forward alongside $rs_1$ ($5 + 5 + 5 = 15$ register bits).
+  $$\text{Width}_{\text{ID/EX}} = 32 + 32 + 32 + 32 + 5 + 5 + 5 + (4 + 3 + 2) = 128 + 15 + 9 = 152\text{ bits}$$
+
+- **`EX/MEM` register**:
+  Captures the output of the Execution/ALU stage:
+  - Branch target address ($PC + 4 + \text{offset}$): 32 bits.
+  - ALU condition / Zero flag: 1 bit.
+  - ALU result (memory effective address or arithmetic result): 32 bits.
+  - Write data (value of $rs_2$ passed forward for `STORE` instructions): 32 bits.
+  - Selected destination register index ($rd$ or $rt$ chosen by `RegDst` multiplexer): 5 bits.
+  - MEM control signals: 3 bits (`Branch`, `MemRead`, `MemWrite`).
+  - WB control signals: 2 bits (`RegWrite`, `MemtoReg`).
+  $$\text{Width}_{\text{EX/MEM}} = 32 + 1 + 32 + 32 + 5 + (3 + 2) = 102 + 5 = 107\text{ bits}$$
+
+- **`MEM/WB` register**:
+  Captures the output of the Memory Access stage:
+  - Memory read data word (from data cache): 32 bits.
+  - ALU result (bypassed through MEM for register-register arithmetic instructions): 32 bits.
+  - Destination register index ($rd$): 5 bits.
+  - WB control signals: 2 bits (`RegWrite`, `MemtoReg`).
+  $$\text{Width}_{\text{MEM/WB}} = 32 + 32 + 5 + 2 = 71\text{ bits}$$
+
+---
+
+**Part 2: Total pipeline storage overhead:**
+
+$$\text{Total Bits} = 64\ (\text{IF/ID}) + 152\ (\text{ID/EX}) + 107\ (\text{EX/MEM}) + 71\ (\text{MEM/WB}) = 394\text{ flip-flops}$$
+
+Pipelining requires 394 dedicated edge-triggered flip-flops solely to store in-flight instruction state and control signals between clock boundaries, in addition to the register file and memory units.
+
+---
+
+**Part 3: Necessity of pipelining control signals:**
+
+In a pipelined CPU, multiple instructions occupy the datapath concurrently. In any given clock cycle:
+- Instruction $i$ is in WB.
+- Instruction $i+1$ is in MEM.
+- Instruction $i+2$ is in EX.
+- Instruction $i+3$ is in ID.
+
+If the control signals for instruction $i+3$ were wired directly to the EX, MEM, or WB hardware units without pipeline registers, those units would execute control operations for instruction $i+3$ while processing data for instructions $i$, $i+1$, and $i+2$. Pipelining the control signals ensures that each instruction's control words arrive at each functional block in lockstep with the instruction's data operands.
+</ModelAnswer>
+
+---
+
+### Problem 4: Optimal pipeline depth under register overhead and branch flushes
+
+An architect investigates the limits of pipeline frequency scaling for a high-performance microprocessor core.
+- The total unpipelined combinational datapath delay is $D = 1,200\text{ ps}$.
+- When partitioned into $k$ stages, each stage contains $D / k$ picoseconds of logic delay.
+- Each pipeline register contributes fixed clock-to-Q, setup, and clock skew delay of $t_{\text{reg}} = 30\text{ ps}$.
+- Branch instructions make up $20\%$ of all dynamic instructions ($f_{\text{branch}} = 0.20$).
+- The processor uses dynamic branch prediction with a misprediction rate of $15\%$ ($p_{\text{mispredict}} = 0.15$).
+- In a $k$-stage pipeline, branch outcomes are resolved at stage $\lceil k / 2 \rceil$, causing a flush penalty of $\lceil k / 2 \rceil - 1$ stall cycles on every misprediction.
+- Data hazards are eliminated via compiler scheduling and forwarding.
+
+1. Write the mathematical equations for the clock period $T_{\text{clk}}(k)$, the effective CPI $\text{CPI}(k)$, and the average execution time per instruction $\text{ET}(k)$.
+2. Calculate $T_{\text{clk}}$, $\text{CPI}$, and $\text{ET}$ for $k = 4, 8, 16, 24, 32, 40, 48, 60$.
+3. Identify the optimal stage count $k_{\text{opt}}$ and explain the physical mechanisms that cause performance to degrade beyond this point.
+
+<ModelAnswer>
+**Part 1: Mathematical formulation:**
+
+- **Clock period:**
+  $$T_{\text{clk}}(k) = \frac{D}{k} + t_{\text{reg}} = \frac{1200}{k} + 30\text{ ps}$$
+
+- **Branch penalty stall cycles per instruction:**
+  $$\text{Stall}_{\text{branch}}(k) = f_{\text{branch}} \times p_{\text{mispredict}} \times \left(\left\lceil \frac{k}{2} \right\rceil - 1\right) = 0.20 \times 0.15 \times \left(\left\lceil \frac{k}{2} \right\rceil - 1\right) = 0.03 \times \left(\left\lceil \frac{k}{2} \right\rceil - 1\right)$$
+
+- **Effective CPI:**
+  $$\text{CPI}(k) = \text{CPI}_{\text{ideal}} + \text{Stall}_{\text{branch}}(k) = 1.0 + 0.03 \times \left(\left\lceil \frac{k}{2} \right\rceil - 1\right)$$
+
+- **Average execution time per instruction:**
+  $$\text{ET}(k) = \text{CPI}(k) \times T_{\text{clk}}(k)$$
+
+---
+
+**Part 2: Evaluation across pipeline depths:**
+
+| Stages ($k$) | Branch Penalty ($\lceil k/2 \rceil - 1$) | $\text{CPI}(k)$ | $T_{\text{clk}}(k)$ (ps) | $\text{ET}(k) = \text{CPI} \times T_{\text{clk}}$ (ps) |
+| :--- | :--- | :--- | :--- | :--- |
+| **4** | $2 - 1 = 1$ | $1.0 + 0.03(1) = 1.03$ | $1200/4 + 30 = 330.0$ | **339.90 ps** |
+| **8** | $4 - 1 = 3$ | $1.0 + 0.03(3) = 1.09$ | $1200/8 + 30 = 180.0$ | **196.20 ps** |
+| **16** | $8 - 1 = 7$ | $1.0 + 0.03(7) = 1.21$ | $1200/16 + 30 = 105.0$ | **127.05 ps** |
+| **24** | $12 - 1 = 11$ | $1.0 + 0.03(11) = 1.33$ | $1200/24 + 30 = 80.0$ | **106.40 ps** |
+| **32** | $16 - 1 = 15$ | $1.0 + 0.03(15) = 1.45$ | $1200/32 + 30 = 67.5$ | **97.88 ps** |
+| **40** | $20 - 1 = 19$ | $1.0 + 0.03(19) = 1.57$ | $1200/40 + 30 = 60.0$ | **94.20 ps** |
+| **48** | $24 - 1 = 23$ | $1.0 + 0.03(23) = 1.69$ | $1200/48 + 30 = 55.0$ | **92.95 ps** |
+| **60** | $30 - 1 = 29$ | $1.0 + 0.03(29) = 1.87$ | $1200/60 + 30 = 50.0$ | **93.50 ps** |
+
+---
+
+**Part 3: Optimal depth and diminishing returns:**
+
+Among the evaluated sample depths in the table, performance reaches its peak at **$k = 48$ stages**, achieving **$92.95\text{ ps}$ per instruction**. (Evaluating all integer stage counts shows the absolute minimum occurs at **$k_{\text{opt}} = 50$ stages**, with $T_{\text{clk}} = 54.0\text{ ps}$, $\text{CPI} = 1.72$, and $\text{ET} = 92.88\text{ ps}$).
+
+Beyond this point (around 48 to 50 stages):
+1. **Register delay dominance**: At $k = 60$, stage logic shrinks to $1200 / 60 = 20\text{ ps}$, while register latch overhead is $30\text{ ps}$. Over $60\%$ of every clock cycle is wasted just waiting for flip-flops to latch and stabilize, yielding diminishing clock frequency gains.
+2. **Severe branch penalties**: At $k = 60$, every misprediction dumps 29 cycles of in-flight work, driving CPI up from 1.0 to 1.87. The inflation in CPI outpaces the shrinking clock period, causing total execution time per instruction to increase ($93.50\text{ ps} > 92.95\text{ ps}$).
+</ModelAnswer>
+
+---
+
+### Problem 5: Superscalar pipeline sizing, issue width, and hardware efficiency
+
+A processor company evaluates upgrading a single-issue scalar core to a 4-way superscalar processor ($W = 4$).
+
+Core parameters:
+- **Scalar core ($W = 1$)**: Runs at a clock frequency of $2.5\text{ GHz}$ ($T_{\text{clk}} = 400\text{ ps}$). On a representative $10,000$-instruction benchmark, it achieves an effective $\text{CPI} = 1.25$ ($\text{IPC} = 0.80$).
+- **4-way superscalar core ($W = 4$)**: Features multiple parallel ALUs, 4-issue decode/rename logic, and multiported register files. Due to larger bypass multiplexers and register routing delays, the clock period increases to $T_{\text{clk}} = 500\text{ ps}$ ($2.0\text{ GHz}$). On the same $10,000$-instruction benchmark, instruction-level parallelism limitations allow an average $\text{IPC} = 2.40$ ($\text{CPI} = 1 / 2.40 = 0.4167$).
+
+Calculate:
+1. The instruction throughput in MIPS for both cores.
+2. The total execution time required to execute the $10,000$-instruction benchmark on both cores.
+3. The overall speedup delivered by the superscalar processor.
+4. The issue slot utilization efficiency ($\text{IPC} / W \times 100\%$) for both architectures.
+
+<ModelAnswer>
+**Part 1: Throughput in MIPS:**
+
+- **Scalar core ($W = 1$):**
+  $$\text{Throughput}_{\text{scalar}} = \frac{f}{\text{CPI}} = \frac{2500\text{ MHz}}{1.25} = 2,000\text{ MIPS}$$
+
+- **4-way superscalar core ($W = 4$):**
+  $$\text{Throughput}_{\text{superscalar}} = f \times \text{IPC} = 2000\text{ MHz} \times 2.40 = 4,800\text{ MIPS}$$
+
+---
+
+**Part 2: Total execution time for 10,000 instructions:**
+
+- **Scalar core:**
+  $$T_{\text{scalar}} = N \times \text{CPI} \times T_{\text{clk}} = 10,000 \times 1.25 \times 400\text{ ps} = 5,000,000\text{ ps} = 5.0\ \mu\text{s}$$
+
+- **Superscalar core:**
+  $$T_{\text{superscalar}} = N \times \text{CPI} \times T_{\text{clk}} = 10,000 \times \left(\frac{1}{2.40}\right) \times 500\text{ ps} = \frac{5,000,000}{2.40}\text{ ps} \approx 2,083,333\text{ ps} \approx 2.083\ \mu\text{s}$$
+
+---
+
+**Part 3: Speedup:**
+
+$$\text{Speedup} = \frac{T_{\text{scalar}}}{T_{\text{superscalar}}} = \frac{5.0\ \mu\text{s}}{2.0833\ \mu\text{s}} = 2.40\times$$
+
+The 4-way superscalar processor completes the benchmark $2.4\times$ faster. Although the clock frequency was reduced by $20\%$ (from 2.5 GHz to 2.0 GHz), the $3\times$ improvement in IPC ($0.80 \to 2.40$) easily overcomes the lower clock rate.
+
+---
+
+**Part 4: Issue slot efficiency:**
+
+$$\text{Efficiency} = \frac{\text{IPC}}{W} \times 100\%$$
+
+- **Scalar core:**
+  $$\text{Efficiency}_{\text{scalar}} = \frac{0.80}{1} \times 100\% = 80.0\%$$
+
+- **4-way superscalar core:**
+  $$\text{Efficiency}_{\text{superscalar}} = \frac{2.40}{4} \times 100\% = 60.0\%$$
+
+While absolute performance increased substantially, issue slot efficiency decreased from $80\%$ to $60\%$. On average, $1.60$ out of the 4 issue slots remain idle each cycle due to data dependencies, memory latencies, and branch mispredictions.
+</ModelAnswer>
+
+---
+
+### Problem 6: Pipeline latency, loop drain overhead, and loop unrolling
+
+A DSP algorithm processes a vector of $N = 32$ integer samples on a 10-stage deep pipeline ($k = 10$). Each sample requires a 4-instruction inner loop body:
+
+```assembly
+loop:
+  LW   R1, 0(R2)      ; Load sample
+  ADDI R1, R1, 5      ; Compute sample + 5
+  SW   R1, 0(R2)      ; Store updated sample
+  ADDI R2, R2, 4      ; Advance pointer
+  BNE  R2, R3, loop   ; Branch if not finished
+```
+
+Execution conditions:
+- The pipeline does not support data forwarding.
+- In this 10-stage pipeline, ALU results become available in the register file at stage 7 (incurring 2 stall cycles for an instruction decoding in stage 4), while memory loads only complete write-back at stage 8 (incurring 3 stall cycles).
+- Stalls occur:
+  - `LW` to `ADDI` RAW hazard: 3 stall cycles.
+  - `ADDI` to `SW` RAW hazard: 2 stall cycles.
+  - Branch taken penalty: 2 stall cycles (resolved at stage 3).
+- In naïve execution, each 5-instruction iteration requires $5 + 3 + 2 + 2 = 12$ clock cycles.
+
+To boost throughput, a compiler unrolls the loop by a factor of 4 ($4\times$), interleaving memory loads and arithmetic for 4 samples simultaneously to eliminate all RAW data stalls.
+
+Calculate:
+1. Total clock cycles, effective CPI, and execution time for the naïve loop across all 32 samples at a $1\text{ GHz}$ clock ($1\text{ ns}$ cycle), both in steady state and with initial pipeline fill.
+2. Total clock cycles and effective CPI for the $4\times$ unrolled loop across all 32 samples (accounting for the 8 unrolled iterations and pipeline fill latency).
+3. The speedup delivered by loop unrolling.
+
+<ModelAnswer>
+**Part 1: Naïve loop execution:**
+
+- Dynamic instruction count: 32 iterations $\times$ 5 instructions/iteration = 160 instructions.
+- Clock cycles per iteration = 12 cycles.
+- In steady state (ignoring initial pipeline fill):
+$$\text{Total Cycles}_{\text{naïve\_steady}} = 32 \times 12 = 384\text{ cycles}$$
+$$\text{CPI}_{\text{naïve}} = \frac{384\text{ cycles}}{160\text{ instructions}} = 2.40$$
+$$\text{Execution Time}_{\text{naïve\_steady}} = 384 \times 1\text{ ns} = 384\text{ ns}$$
+
+If including the initial $(k - 1) = 9$ clock cycles to fill the 10-stage pipeline:
+$$\text{Total Cycles}_{\text{naïve\_full}} = 9 + 384 = 393\text{ cycles} \quad (393\text{ ns})$$
+
+---
+
+**Part 2: $4\times$ unrolled loop execution:**
+
+In the $4\times$ unrolled loop, each iteration processes 4 samples:
+- 4 loads: `LW R1, 0(R2)`, `LW R4, 4(R2)`, `LW R5, 8(R2)`, `LW R6, 12(R2)`
+- 4 additions: `ADDI R1, R1, 5`, `ADDI R4, R4, 5`, `ADDI R5, R5, 5`, `ADDI R6, R6, 5`
+- 4 stores: `SW R1, 0(R2)`, `SW R4, 4(R2)`, `SW R5, 8(R2)`, `SW R6, 12(R2)`
+- 1 pointer increment: `ADDI R2, R2, 16`
+- 1 loop branch: `BNE R2, R3, loop`
+- Total instructions per unrolled iteration = $4 + 4 + 4 + 1 + 1 = 14$ instructions.
+
+Because independent instructions from different samples are interleaved:
+- The 4 `ADDI` instructions execute while the 4 `LW` results are being read from memory, incurring **0 data stalls**.
+- The 4 `SW` instructions execute with **0 data stalls**.
+- The only penalty is the 2-cycle branch penalty at the end of each unrolled block.
+
+Cycles per unrolled block = $14\text{ instructions} + 2\text{ branch stall cycles} = 16\text{ cycles}$.
+Number of unrolled iterations = $32 / 4 = 8$ iterations.
+
+Total execution cycles (including $k - 1 = 9$ cycles to fill the 10-stage pipeline):
+$$\text{Total Cycles}_{\text{unrolled}} = (k - 1) + (8 \times 16) = 9 + 128 = 137\text{ cycles}$$
+
+In steady state (ignoring pipeline fill):
+$$\text{Total Cycles}_{\text{unrolled\_steady}} = 8 \times 16 = 128\text{ cycles}$$
+
+Total dynamic instructions executed:
+$$N_{\text{unrolled}} = 8 \times 14 = 112\text{ instructions}$$
+
+$$\text{CPI}_{\text{unrolled}} = \frac{137\text{ cycles}}{112\text{ instructions}} \approx 1.223$$
+$$\text{Execution Time}_{\text{unrolled}} = 137 \times 1\text{ ns} = 137\text{ ns}$$
+
+---
+
+**Part 3: Speedup:**
+
+With pipeline fill latency included for both implementations:
+$$\text{Speedup}_{\text{actual}} = \frac{\text{Time}_{\text{naïve\_full}}}{\text{Time}_{\text{unrolled}}} = \frac{393\text{ ns}}{137\text{ ns}} \approx 2.869\ (2.87\times)$$
+
+In steady state (ignoring the 9-cycle initial fill overhead):
+$$\text{Speedup}_{\text{steady}} = \frac{384\text{ ns}}{128\text{ ns}} = 3.00\times$$
+
+Loop unrolling delivers approximately a **$2.87\times$ to $3.00\times$ speedup**. It reduces dynamic branch instructions from 32 down to 8 (saving $24 \times 2 = 48$ branch penalty cycles) and creates a wide enough instruction window to schedule independent arithmetic during memory load latencies.
+</ModelAnswer>
+
+---
+
+## Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="pipelining"
+  practice
+  questions={[
+    {
+      id: "pipe-p1",
+      prompt: "What is the primary performance benefit of an instruction pipeline?",
+      options: [
+        { id: "a", text: "It increases instruction throughput without reducing the latency of individual instructions" },
+        { id: "b", text: "It reduces the latency of every individual instruction by dividing the work" },
+        { id: "c", text: "It eliminates the need for cache memory" },
+        { id: "d", text: "It doubles the physical ALU word width" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Pipelining overlaps multiple instructions concurrently, increasing throughput (instructions retired per second). An individual instruction still takes the same total time (or slightly longer due to register delays) to pass through all stages. Option (b) confuses throughput with latency. Option (c) is false because pipelines require high-bandwidth caches to avoid memory stalls. Option (d) describes bit-level datapath widening, not pipelining.",
+    },
+    {
+      id: "pipe-p2",
+      prompt: "Why are edge-triggered pipeline registers placed between stages in a pipelined CPU?",
+      options: [
+        { id: "a", text: "To hold the intermediate results and control signals of each instruction, preventing signals from racing between stages during a clock cycle" },
+        { id: "b", text: "To compress 32-bit instructions into 16-bit instructions" },
+        { id: "c", text: "To convert analog signals to digital voltages" },
+        { id: "d", text: "To perform floating-point division in parallel" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Pipeline registers isolate combinational logic stages. On each clock edge, they capture results from the previous stage and hold them stable for the next stage, preventing data races. Option (b) refers to instruction compression (like ARM Thumb). Option (c) relates to ADC converters. Option (d) describes dedicated arithmetic coprocessors.",
+    },
+    {
+      id: "pipe-p3",
+      prompt: "A 5-stage pipeline has stage delays of 180 ps, 120 ps, 260 ps, 210 ps, and 150 ps. The interstage register delay is 25 ps. What is the minimum clock period?",
+      options: [
+        { id: "a", text: "285 ps" },
+        { id: "b", text: "260 ps" },
+        { id: "c", text: "945 ps" },
+        { id: "d", text: "189 ps" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The clock period must accommodate the slowest stage (260 ps) plus the register overhead (25 ps): 260 + 25 = 285 ps. Option (b) neglects the register overhead. Option (c) is the unpipelined sum of all stages plus overhead. Option (d) is the unweighted average of the stages.",
+    },
+    {
+      id: "pipe-p4",
+      prompt: "How does a standard 5-stage RISC pipeline resolve register file read/write contention when instruction i writes a register in WB while instruction i+3 reads it in ID during the same clock cycle?",
+      options: [
+        { id: "a", text: "Using two-phase clocking: writing destination registers during the first half-cycle and reading source registers during the second half-cycle" },
+        { id: "b", text: "Inserting three pipeline stall bubbles between every pair of instructions" },
+        { id: "c", text: "Disabling the register file and redirecting all accesses to external DRAM" },
+        { id: "d", text: "Flushing the entire pipeline on every register access" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Two-phase clocking divides the clock cycle into two halves: the WB stage writes its result on the first phase (e.g. falling edge or high level), and the ID stage reads on the second phase (e.g. rising edge or low level). This provides the updated value in the same clock cycle without stalls. Option (b) describes a slow software stall workaround. Options (c) and (d) would cripple performance.",
+    },
+    {
+      id: "pipe-p5",
+      prompt: "Why does pipeline efficiency decrease as the number of pipeline stages increases into deep superpipelining (e.g. 30 stages)?",
+      options: [
+        { id: "a", text: "Fixed pipeline register delays consume a larger proportion of the shorter clock cycle, stage imbalance worsens, and branch misprediction flushes cost more cycles" },
+        { id: "b", text: "DRAM memory cells cannot refresh when pipelines exceed 10 stages" },
+        { id: "c", text: "Compilers cannot generate machine code for architectures with more than 8 stages" },
+        { id: "d", text: "ALUs cannot execute addition operations in deeply pipelined machines" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In superpipelined designs, the clock period becomes very short, so fixed flip-flop delays (setup and clock-to-Q) consume a large fraction of each cycle. Stage logic also cannot be divided completely evenly, and branch misprediction flushes discard dozens of in-flight instructions, causing substantial CPI loss. Options (b), (c), and (d) are incorrect.",
+    },
+  ]}
+/>

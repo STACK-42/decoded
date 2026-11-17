@@ -1,6 +1,6 @@
 # Decoded API
 
-The Cloudflare Worker and D1 database behind sign-in, saved progress, learner counts and public profiles. It runs at `https://decoded-api.stack42.tech`. Pushing to GitHub doesn't deploy it.
+The Cloudflare Worker and D1 database behind sign-in, saved progress, learner counts and public profiles. It runs at `https://api.csdecod.ing`. Pushing to GitHub doesn't deploy it.
 
 ## Deploying
 

@@ -86,9 +86,17 @@ async function route(request: Request, env: Env): Promise<Response> {
   }
 }
 
+/** Where the site lived before csdecod.ing (#71). */
+const OLD_SITE_HOST = "decoded.stack42.tech";
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (new URL(request.url).origin === env.SHARE_ORIGIN) return share(request, env);
+    const url = new URL(request.url);
+    // The site's old domain: send every page to the same path on the new one.
+    if (url.hostname === OLD_SITE_HOST) {
+      return Response.redirect(`${env.SITE_ORIGIN}${url.pathname}${url.search}`, 301);
+    }
+    if (url.origin === env.SHARE_ORIGIN) return share(request, env);
 
     const fromSite = request.headers.get("Origin") === env.SITE_ORIGIN;
     const corsHeaders: Record<string, string> = fromSite

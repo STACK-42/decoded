@@ -3,7 +3,7 @@ import { CodeTable, GrayEncoder, FloatExplorer, BcdAdderVisualizer, ParityLab } 
 
 # Codes and Floating Point
 
-A collection of bits on a data bus has no built-in meaning. The byte `01000111` could represent the integer 71, the [ASCII](/courses/computer-organization/bits-and-bytes#letters-are-numbers) letter `G`, part of a floating-point number, an instruction for a processor, or a pixel color channel. 
+A collection of bits on a data bus has no built-in meaning. The byte `01000111` could represent the integer 71, the [ASCII](/courses/computer-organization/bits-and-bytes#letters-are-numbers) letter `G`, part of a floating-point number, an instruction for a processor, or a [pixel color channel](/courses/computer-graphics/color-pixels#24-bit-true-color). 
 
 A **code** is an agreed mapping between symbols (letters, numbers, machine commands) and binary patterns called **code words**. Different goals, such as display readability, sensor reliability, arithmetic simplicity, and numerical range, require different binary codes.
 
@@ -121,31 +121,7 @@ $$
 C = K + Z_3 Z_2 + Z_3 Z_1
 $$
 
-When $C = 1$, the correction factor $0110_2$ is fed into a second 4-bit adder stage.
-
-```
-Hardware BCD Adder Stage:
-          A3..A0     B3..B0
-            │          │
-            ▼          ▼
-      ┌──────────────────────┐
-      │  4-Bit Binary Adder  │──────► Carry K
-      └──────────────────────┘
-                 │
-             Z3..Z0
-            ┌────┴────┐
-            │         ▼
-            │    Logic: C = K + Z3·Z2 + Z3·Z1 ──► BCD Carry-Out
-            ▼         │
-      ┌──────────────────────┐
-      │  4-Bit Binary Adder  │◄────── Injects 0110_2 when C=1
-      └──────────────────────┘
-                 │
-                 ▼
-         Corrected BCD Sum
-```
-
-Experiment with the two-stage BCD adder and observe the Boolean correction detector trigger below:
+When $C = 1$, the correction factor $0110_2$ is fed into a second 4-bit adder stage. Experiment with the two-stage BCD adder and observe the Boolean correction detector trigger below:
 
 <BcdAdderVisualizer />
 
@@ -302,13 +278,10 @@ The **IEEE 754 standard** defines how binary floating-point numbers are encoded 
 
 A 32-bit float partitions its bits into three distinct fields:
 
-```
-  31      30          23 22                                   0
-+---+-------------------+---------------------------------------+
-| S |    Exponent (E)   |             Fraction (F)              |
-+---+-------------------+---------------------------------------+
-1 bit       8 bits                         23 bits
-```
+| Field | Sign ($S$) | Biased Exponent ($E$) | Fraction ($F$) |
+| :--- | :---: | :---: | :---: |
+| **Bit Position** | Bit 31 | Bits 30–23 | Bits 22–0 |
+| **Width** | 1 bit | 8 bits | 23 bits |
 
 1. **Sign bit ($S$, 1 bit):**
    - $S = 0 \implies \text{positive}$

@@ -2,9 +2,9 @@ import { Callout, PracticalApplication, ApplicationsGrid, RegexPlayground } from
 
 # Practical: Building Regex from Automata
 
-A **regular expression** is a human-readable way of writing down a finite automaton. When you write something like `\d{3}-\d{4}`, the computer turns it into a set of instructions it can follow, then goes through your input one character at a time to check whether it matches. Regular expressions can seem magical because they do this so efficiently.
+A **regular expression** is a compact notation for a finite automaton. When you write `\d{3}-\d{4}`, the engine turns it into a machine and scans your input one character at a time to check whether it matches.
 
-In this practical lesson, you'll write regex patterns that match the same languages as the automata you just learned to trace.
+Translate the automata from this module into working regex patterns below, and test where real engines differ from textbook theory.
 
 ## Where this shows up today
 
@@ -16,16 +16,25 @@ In this practical lesson, you'll write regex patterns that match the same langua
     The first phase of every compiler, turning characters into tokens, is a finite automaton.
   </PracticalApplication>
   <PracticalApplication title="Form validation" tool="WEB">
-    Email, phone, postal code patterns in your sign-up forms.
+    Sign-up forms check email addresses, phone numbers, and postal codes with regex patterns.
   </PracticalApplication>
   <PracticalApplication title="Network intrusion detection" tool="SECURITY">
     Snort and Suricata match thousands of attack patterns against packets at line rate using compiled automata.
   </PracticalApplication>
 </ApplicationsGrid>
 
+## From textbook notation to tool syntax
+
+Earlier in this module you used textbook notation (`+` for union, `*` for zero or more, and whole-word matching by default). JavaScript and command-line tools add a few shorthands and one big behavioral difference:
+
+- **`^` and `$` (anchors):** By default, a tool regex succeeds if *any substring* matches. Adding `^` (start of string) and `$` (end of string) forces the pattern to consume the entire input word, just like a finite automaton does.
+- **`|` (union):** Tool syntax uses `|` for "or", because `+` is taken.
+- **`*`, `+`, and `{n}` (quantifiers):** `*` means zero or more, `+` means **one or more**, and `{n}` means **exactly $n$ times**.
+- **`.` and `\d` (character classes):** `.` matches any single character, `[ab]` matches either `a` or `b`, and `\d` matches any digit `0` through `9`.
+
 ## Exercise A: Match an NFA language
 
-In the previous lesson you traced an [NFA](/courses/theory-of-computation/nfa) that accepts strings ending in `ab` over the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) `{a, b}`. Write a regex that matches exactly this language.
+In the [NFA lesson](/courses/theory-of-computation/nfa#how-to-read-an-nfa) you traced an NFA that accepts strings ending in `ab` over the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) `{a, b}`. Write a regex that matches exactly this language.
 
 <RegexPlayground
   prompt="Write a regex that matches strings ending in 'ab' (over the alphabet {a, b}). Same language as the NFA you just traced."
@@ -41,9 +50,11 @@ In the previous lesson you traced an [NFA](/courses/theory-of-computation/nfa) t
   solutionHint="You need to match 'any sequence' followed by 'ab' at the end. Hint: .* means 'zero or more of any character'."
 />
 
+Notice a subtle point about the alphabet: `^.*ab$` allows *any* character before `ab` (so it would also match `"cab"`), whereas `^[ab]*ab$` (or `^(a|b)*ab$`) restricts the prefix strictly to $\Sigma = \{a, b\}$.
+
 ## Exercise B: A practical pattern
 
-Phone extensions in your company's system follow the format `DDD-DDDD` (three digits, hyphen, four digits). Write a regex that matches this pattern.
+Phone extensions in your company's system follow the format `DDD-DDDD` (three digits, hyphen, four digits). Write a regex that matches this pattern (outside `[...]`, `-` matches a literal hyphen directly).
 
 <RegexPlayground
   prompt="Match phone numbers in the format XXX-XXXX (where X is a digit 0-9)."
@@ -52,16 +63,24 @@ Phone extensions in your company's system follow the format `DDD-DDDD` (three di
     { string: "999-0000", shouldMatch: true },
     { string: "12-4567", shouldMatch: false, note: "only 2 digits before hyphen" },
     { string: "123-456", shouldMatch: false, note: "only 3 digits after hyphen" },
+    { string: "1234-5678", shouldMatch: false, note: "4 digits before hyphen, catches missing ^" },
+    { string: "123-45678", shouldMatch: false, note: "5 digits after hyphen, catches missing $" },
     { string: "123-456-7", shouldMatch: false, note: "extra digits" },
     { string: "abc-defg", shouldMatch: false, note: "letters, not digits" },
   ]}
-  placeholder="\d{3}-\d{4}"
-  solutionHint="Use \\d to match a digit, and {n} to match exactly n repetitions. Escape the hyphen as a literal character."
+  placeholder="^\d{3}-\d{4}$"
+  solutionHint="Use \\d to match a digit, {n} to match exactly n repetitions, and ^...$ anchors so longer numbers like 1234-5678 do not match as substrings. Outside [...], - matches a literal hyphen directly."
 />
+
+<Callout tone="orange" label="Forgetting anchors (^ and $)">
+  If you write `\d{3}-\d{4}` without `^` and `$`, `"1234-5678"` or `"123-45678"` will still match because `234-5678` and `123-4567` sit inside them as substrings. Always wrap full-string validation patterns in `^...$` so the tool behaves like a DFA checking the whole input.
+</Callout>
 
 ## Exercise C: The ReDoS trap
 
-This exercise shows catastrophic backtracking (ReDoS) by example. The pattern `(a+)+$` is deliberately pathological. Try it against a long string of `a`'s followed by one non-matching character (e.g., `"aaaaaaaaaaaaaaaaaaaaaaaaa!"`). The regex engine tries exponentially many ways to match the nested `+` quantifiers before it gives up, and in real code that can hang your application.
+This exercise shows **catastrophic backtracking** (**ReDoS**, Regular Expression Denial of Service) by example. The pattern `(a+)+$` triggers it on purpose.
+
+Why does it blow up on `"aaaa...!"`? Look at just three `a`'s followed by `!` (`"aaa!"`): the inner `a+` and outer `+` can split three `a`'s in $2^{3-1} = 4$ ways, namely `(aaa)`, `(aa)(a)`, `(a)(aa)`, or `(a)(a)(a)`. Each way fails at `$` when it hits `!`, so a **backtracking engine** (like JavaScript's `RegExp` or Python's `re`) rewinds and tries the next split. For $n$ `a`'s, each of the $n - 1$ gaps between letters can split or stay merged, giving $2^{n-1}$ paths. At $n = 25$, that is $2^{24} = 16,777,216$ failed attempts before the engine gives up, hanging your application. Removing the nested quantifier (writing `^a+$`, which matches the exact same strings) eliminates the ambiguity immediately.
 
 <RegexPlayground
   prompt="Try the ReDoS trap: (a+)+$ with overlapping quantifiers. Type a pattern, then test it against long strings of 'a' followed by a non-matching character to see catastrophic backtracking."
@@ -72,9 +91,9 @@ This exercise shows catastrophic backtracking (ReDoS) by example. The pattern `(
     { string: "a".repeat(25) + "!", shouldMatch: false, note: "25 a's then !, watch the timeout" },
   ]}
   placeholder="(a+)+$"
-  solutionHint="This is a demonstration, not an exercise to 'solve'. Try (a+)+$ and watch it hang on the long string with a '!' at the end. Then try a*.* as a non-catastrophic alternative."
+  solutionHint="This is a demonstration, not an exercise to 'solve'. Try (a+)+$ and watch it hang on the long string with a '!' at the end. Then try ^a+$ as a non-catastrophic alternative that matches the exact same strings."
 />
 
-<Callout tone="sky">
-<strong>The senior-engineer move:</strong> Knowing automata changes how you read regex. When catastrophic backtracking takes down production (the classic ReDoS attack), you can explain *why*: someone wrote a pattern the engine had to explore as an NFA with exponentially many paths. Instead of guessing at a fix, you rewrite it into a pattern the engine can compile to a deterministic DFA.
+<Callout tone="sky" label="Why DFAs don't hang on ReDoS">
+  Knowing automata changes how you read regex. When catastrophic backtracking takes down production, you can explain *why*: someone wrote an ambiguous nested quantifier that a backtracking NFA engine had to explore along exponentially many paths. By contrast, a DFA engine (like `ripgrep` or Go's `regexp`) tracks the single active DFA state in $O(n)$ time (or simulates the NFA active state set without backtracking). If you are stuck on a backtracking engine, you can fix the bug by rewriting the pattern without nested ambiguity (`^a+$`).
 </Callout>
