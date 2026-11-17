@@ -1,44 +1,136 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { BiuEuQueue, FetchExecuteCompare } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Inside the 8086
 
-A **microprocessor** is a whole [CPU](/courses/computer-organization/inside-the-cpu) on one chip. This course uses the Intel 8086 as its example. It's old, but today's PCs still descend from it, it's small enough to understand fully, and its assembly language still works on the x86 family today. Learn it and you can read what's underneath modern code.
+<Epigraph quote="The microprocessor is the old idea of computer recast in a single silicon chip." by="Federico Faggin" source="Silicon, 2019" />
 
-Three numbers describe it:
+A **microprocessor** is a complete central processing unit built on a single integrated circuit chip. This course uses the Intel 8086, released in 1978, as its foundation. The 8086 established the x86 architecture that powers desktop PCs, cloud servers, and gaming rigs today. It is small enough to study down to every pin and register, yet capable enough that modern 64-bit processors still preserve its instruction patterns.
 
-| Feature | 8085 (before) | 8086 |
+Before the 8086, 8-bit processors like the Intel 8085 handled one byte at a time. The 8086 changed computing by widening the core datapath:
+
+| Feature | 8085 (8-bit) | 8086 (16-bit) |
 |---|---|---|
 | Word size | 8-bit | 16-bit |
-| Address bus | 16 lines, so 64 KB | 20 lines, so 1 MB |
-| Instruction queue | None | 6 bytes |
-| Pipelining | None | Two stages |
+| Data bus | 8 lines | 16 lines |
+| Address bus | 16 lines (64 KB) | 20 lines (1 MB) |
+| Instruction queue | None | 6 bytes FIFO |
+| Execution style | Single-stage serial | Two-stage pipelined |
 
-**Word size** is how many bits it can handle in one go, and it applies to the ALU, the registers and the data bus. **Address lines** decide [how much memory it can reach](/courses/computer-organization/buses): $2^{20}$ bytes is 1 MB.
+The **word size** is the number of bits a processor manipulates in parallel during one operation. On the 8086, the word size is 16 bits (two bytes). That width applies throughout the core: the internal registers store 16-bit values, and the **ALU** (arithmetic logic unit), which is the internal combinational circuit that computes arithmetic and logic operations, processes 16 bits in a single step.
 
-The speed of a clock tick isn't everything. A faster clock means more steps per second, but what matters is how much useful work each step does.
+Communication with memory uses two dedicated sets of wires:
+
+- The **data bus** consists of 16 bidirectional lines ($D_{15}$ through $D_0$). It transfers data words or instruction bytes between the processor and external memory or I/O chips.
+- The **address bus** consists of 20 unidirectional output lines ($A_{19}$ through $A_0$). It carries the physical location the processor wants to access.
+
+### Calculating memory reach from address lines
+
+A processor with $k$ physical address lines can generate $2^k$ distinct binary combinations. Because each memory address in the 8086 identifies one 8-bit byte:
+
+$$
+2^{20} = 1{,}048{,}576\text{ bytes} = \frac{1{,}048{,}576}{1024}\text{ KB} = 1024\text{ KB} = 1\text{ MB}
+$$
+
+The memory space spans from address `00000h` to `FFFFFh`. The older 8085 had only 16 address lines, limiting it to $2^{16} = 65{,}536\text{ bytes} = 64\text{ KB}$. The extra 4 address lines on the 8086 multiplied available memory by 16 times.
+
+A **clock cycle** is the time between two consecutive pulses of the CPU oscillator signal. If an 8086 runs at a clock frequency of 5 MHz, each clock cycle lasts:
+
+$$
+T = \frac{1}{5\text{ MHz}} = \frac{1}{5 \times 10^6\text{ s}^{-1}} = 0.2\text{ \mu s} = 200\text{ ns}
+$$
+
+<Callout tone="orange" label="Trap: confusing register width with address space">
+A common misconception is that a 16-bit processor can only address $2^{16} = 64\text{ KB}$ of RAM. That confuses internal data width with external address width. The 8086 registers and ALU are 16 bits wide, but its address bus has 20 pins. A special segment-offset adder inside the processor produces 20-bit physical addresses from pairs of 16-bit registers, reaching a full 1 MB.
+</Callout>
+
+<Callout tone="orange" label="Trap: clock speed alone does not decide throughput">
+Comparing two processors by clock frequency alone is misleading. An 8085 running at 5 MHz requires several bus cycles to fetch a 16-bit number because its data bus is only 8 bits wide. An 8086 at the same 5 MHz clock fetches the full 16-bit word in one bus cycle, doubling memory bandwidth while overlapping instruction fetch with execution.
+</Callout>
 
 ## Two units instead of one
 
-In the [simple CPU](/courses/computer-organization/machine-cycle), fetching and executing took turns, and a CPU waiting on memory did nothing else. The 8086's big idea was to split the chip into two independent parts:
+In earlier processors, the hardware followed a strictly serial [machine cycle](/courses/computer-organization/machine-cycle): fetch an instruction from memory, decode it, execute it, and only then fetch the next one. While the execution unit calculated math, the memory bus sat idle. While memory was being read, the math circuits sat idle.
 
-- **Bus Interface Unit (BIU)**: the only part that talks to the outside world. It fetches instructions, reads and writes data, and calculates addresses.
-- **Execution Unit (EU)**: it runs instructions. It contains the ALU, the general registers and the flags. It never touches the outside bus.
+The 8086 eliminated this bottleneck by dividing the processor into two independent hardware units that run simultaneously:
 
-Between them sits a 6-byte **instruction queue**. Think of a kitchen: a helper keeps the counter stocked with ingredients while the cook works, so the cook doesn't have to stop and walk to the pantry.
+- **Bus Interface Unit (BIU)**: The unit that manages external communication. The BIU drives the 20-bit address bus, fetches instruction bytes from memory, transfers data to and from memory or I/O ports, and manages the segment registers.
+- **Execution Unit (EU)**: The unit that decodes and executes instructions. The EU houses the 16-bit ALU, the flags register, and the general-purpose registers. The EU has no direct connection to the external address or data pins. It receives instruction bytes from the BIU and hands data back to the BIU when memory writes are required.
+
+Between these two units sits an **instruction queue**: a 6-byte first-in, first-out (FIFO) storage buffer. The BIU acts as a supplier: whenever at least two bytes in the queue are empty, the BIU reads the next instruction bytes from memory across the bus and pushes them into the back of the queue. This proactive reading is called **prefetching**.
 
 <BiuEuQueue />
 
-The queue's main job is to make use of time that would be wasted. While the EU is busy running an instruction, the BIU is free to use the bus, so it reads ahead.
+The EU pulls decoded bytes from the front of the queue. If an instruction requires no bus access (for example, adding two registers together), the EU completes its work entirely inside the chip while the BIU keeps prefetching over the external bus.
+
+### Step-by-step trace: concurrent BIU and EU execution
+
+Consider what happens over several clock cycles when the EU runs register math while the queue has room:
+
+1. **Cycle 1**: The EU reads `ADD AX, BX` (2 bytes) from the head of the queue. The queue now has 4 bytes left and 2 free byte slots.
+2. **Cycle 2 to 3**: The EU decodes the instruction and commands the ALU to add the contents of BX into AX. This operation uses only internal registers, so the external memory bus is completely idle.
+3. **Cycle 2 to 5 (concurrent)**: Seeing at least 2 empty bytes in the queue, the BIU outputs the next address on the address bus and reads a 16-bit word from memory.
+4. **Cycle 6**: The BIU deposits the 2 fetched bytes into the tail of the queue, bringing it back to a full 6 bytes. Meanwhile, the EU finishes `ADD AX, BX` and immediately reads the next instruction from the queue. Neither unit waited on the other.
 
 ## This is pipelining
 
-Fetching the next instruction while running the current one is called **pipelining**, and the 8086 does it in two stages.
+Overlapping the fetch of future instructions with the execution of the current instruction is called **pipelining**. The 8086 implements a two-stage pipeline: fetch in the BIU and execute in the EU.
 
 <FetchExecuteCompare />
 
-There's one catch. If an instruction jumps somewhere else, all the bytes read ahead are for the wrong place, and the queue has to be thrown away and refilled. Modern CPUs still pay this price, as you'll see in [pipeline hazards](/courses/computer-architecture/pipeline-hazards).
+Under normal linear execution, the queue keeps the EU supplied without memory wait states. However, programs do not always run in a straight line.
 
-<Callout tone="orange" label="How to read this course">
-You don't need an 8086 to follow along. Each lesson from here on has a simulator that runs real 8086 instructions. To run the same code on your own computer, try the free emu8086 or DOSBox with NASM.
+### Branch penalties and queue flushes
+
+When the program executes a jump, call, or return instruction (`JMP`, `CALL`, `RET`), the sequential flow breaks:
+
+1. **Detection**: The EU executes `JMP 0450h`. The target instruction is located at address `0450h`.
+2. **Queue invalidation**: The 6 bytes already sitting in the queue were prefetched from the old sequential addresses immediately following the jump. Because the program will not execute those instructions, every byte in the queue is invalid.
+3. **Queue flush**: The processor performs a **queue flush**, discarding all contents of the 6-byte FIFO buffer.
+4. **Target fetch**: The BIU sends the new target address `0450h` to memory over the address bus and waits for the memory to return the first instruction byte.
+5. **EU stall**: While the BIU fetches the new target, the EU has no instructions to decode and must remain idle. This period of wasted clock cycles is a **pipeline hazard**, and the lost execution time is called the **branch penalty**.
+
+Once the first instruction byte from the new address arrives, the EU resumes execution, and the BIU begins prefetching subsequent sequential bytes to refill the queue.
+
+<Callout tone="violet" label="How to run these programs">
+You do not need original 8086 hardware to experiment. The interactive visualizers in this course simulate real 8086 instructions directly in your browser. For standalone work on your own machine, open-source tools such as NASM inside DOSBox or emu8086 allow you to assemble and step through the same machine code.
 </Callout>
+
+## Practice by hand
+
+Working through hardware timing and addressing by hand reinforces how the units interact.
+
+### Problem 1: Memory reach and bus widths
+
+A hypothetical revision of a 16-bit processor increases the address bus from 20 lines to 24 lines, while keeping the data bus at 16 bits.
+
+1. What is the maximum byte-addressable physical memory space of the revised chip?
+2. How many bytes can the processor transfer across the data bus in a single read cycle?
+
+<ModelAnswer>
+1. With 24 address lines ($A_{23}$ to $A_0$), the processor can generate $2^{24}$ distinct memory addresses:
+$$
+2^{24}\text{ bytes} = 16{,}777{,}216\text{ bytes} = \frac{16{,}777{,}216}{1024 \times 1024}\text{ MB} = 16\text{ MB}
+$$
+Increasing the address bus by 4 pins multiplies physical memory reach by $2^4 = 16$, raising the ceiling from 1 MB to 16 MB.
+
+2. The data bus is 16 bits wide. Since 1 byte is 8 bits, 16 bits equals 2 bytes. The processor can transfer up to **2 bytes** (one 16-bit word) in a single read or write cycle.
+</ModelAnswer>
+
+### Problem 2: Queue operation during a branch
+
+An 8086 processor is executing a loop. The 6-byte instruction queue is full, containing sequential instructions from addresses `0104h` to `0109h`. The EU decodes and executes the instruction at `0102h`: `JMP 0250h`.
+
+Explain step by step what happens to the instruction queue, the BIU, and the EU. Why does this instruction take longer than an arithmetic instruction like `ADD AX, BX`?
+
+<ModelAnswer>
+Step-by-step sequence:
+
+1. **Queue flush**: The instruction `JMP 0250h` changes the execution target. The six bytes currently stored in the queue (from addresses `0104h` to `0109h`) belong to the discarded fall-through path. The BIU flushes (empties) the queue.
+2. **Address update**: The instruction pointer (IP) is updated to the jump target address `0250h`.
+3. **Bus fetch**: The BIU initiates an external memory bus cycle, placing the physical address corresponding to `0250h` on the address bus.
+4. **EU stall**: The EU cannot execute any instructions because the queue is empty. It sits stalled for the duration of the memory read cycle (typically 4 clock cycles plus any wait states).
+5. **Resume**: As soon as the first byte from `0250h` arrives, it bypasses or enters the queue to be decoded by the EU. The BIU then resumes background prefetching for addresses `0251h`, `0252h`, and so forth.
+
+The jump takes longer than `ADD AX, BX` because `ADD AX, BX` executes entirely on internal registers with its opcode already prefetched into the queue. The branch instruction incurs the **branch penalty**: it invalidates the prefetched queue and forces the EU to wait while the BIU reads the new target instruction over the slower external memory bus.
+</ModelAnswer>
