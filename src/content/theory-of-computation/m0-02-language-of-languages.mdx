@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 
 # The Language of Languages
 
@@ -254,6 +254,31 @@ $$
 <Callout tone="mint" label="What you just built">
   You now have the three building blocks that the rest of this course uses: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different way to decide which strings belong to a language.
 </Callout>
+
+## Practice by hand
+
+Work these out on paper before revealing the answers.
+
+**1. Language concatenation:** Let $X = \{\varepsilon, a, ab\}$ and $Y = \{b, bb\}$. List every string in $XY$, then give $\lvert XY \rvert$.
+
+<ModelAnswer>
+Pair each string in $X$ with each string in $Y$:
+- From $\varepsilon$: $\varepsilon \cdot b = b$ and $\varepsilon \cdot bb = bb$.
+- From $a$: $a \cdot b = ab$ and $a \cdot bb = abb$.
+- From $ab$: $ab \cdot b = abb$ and $ab \cdot bb = abbb$.
+
+Because a language is a set, the duplicate $abb$ appears once:
+$$XY = \{b,\ bb,\ ab,\ abb,\ abbb\} \qquad \lvert XY \rvert = 5$$
+</ModelAnswer>
+
+**2. Empty string vs empty set:** Evaluate $\lvert\{\varepsilon\}\rvert$, $\lvert\emptyset\rvert$, $\emptyset^*$, and $\{a, ab\} \cdot \emptyset$.
+
+<ModelAnswer>
+- $\lvert\{\varepsilon\}\rvert = 1$: the set holds one string, the empty string $\varepsilon$.
+- $\lvert\emptyset\rvert = 0$: the empty set holds zero strings.
+- $\emptyset^* = \{\varepsilon\}$: picking zero strings from $\emptyset$ produces $\varepsilon$.
+- $\{a, ab\} \cdot \emptyset = \emptyset$: there is no string in $\emptyset$ to pair with $a$ or $ab$, so zero pairs exist.
+</ModelAnswer>
 
 ## Optional Further Reading
 

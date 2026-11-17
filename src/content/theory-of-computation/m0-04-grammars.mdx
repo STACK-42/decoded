@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DerivationStepper } from "@/components/mdx/TocVisualizers";
 
@@ -143,6 +143,24 @@ Run `aab` through it step by step: start in `S`, read `a` and loop to `S` ($S \R
 <Callout tone="orange" label="Forgetting a stopping rule">
   A common mistake when writing your first recursive grammar is leaving out the base case (such as $S \rightarrow \varepsilon$ or $S \rightarrow b$). Look at $S \rightarrow aS \mid bS$: every right-hand side still contains $S$, so a derivation can never finish with only terminals. That grammar generates the empty language, $L(G) = \emptyset$, not $\{a, b\}^+$. Always check that at least one rule removes all variables.
 </Callout>
+
+**Practice 1 (read a grammar):** What language does $S \rightarrow aS \mid bA$, $A \rightarrow bA \mid \varepsilon$ generate over $\{a, b\}$? Write down the shortest three words first.
+
+<ModelAnswer>
+- **Shortest words:** $S \Rightarrow bA \Rightarrow b$ (length 1), then $S \Rightarrow aS \Rightarrow abA \Rightarrow ab$ and $S \Rightarrow bA \Rightarrow bbA \Rightarrow bb$ (length 2).
+- **Pattern:** $S$ adds any number of $a$'s at the front, then $S \rightarrow bA$ forces one $b$, and $A$ adds zero or more $b$'s after it. No rule can ever place an $a$ after a $b$.
+- **Language:** $\{a^m b^n \mid m \ge 0,\ n \ge 1\}$, or $a^* b b^*$ (zero or more $a$'s followed by at least one $b$).
+</ModelAnswer>
+
+**Practice 2 (write a grammar):** Write a grammar over $\{a, b\}$ for all non-empty strings that start and end with the same letter.
+
+<ModelAnswer>
+Every string of length 1 starts and ends with the same letter ($a$ or $b$). Longer strings must place the same letter on both ends and allow anything in the middle:
+$$
+S \rightarrow aXa \mid bXb \mid a \mid b \qquad X \rightarrow aX \mid bX \mid \varepsilon
+$$
+Check edge cases: $S \rightarrow a$ and $S \rightarrow b$ give single-letter strings; $\varepsilon$ is excluded as requested; $X$ fills the middle with any string in $\{a, b\}^*$.
+</ModelAnswer>
 
 ## Where this shows up today
 

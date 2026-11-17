@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 
 # How to Read a Machine
 
@@ -188,6 +188,22 @@ Before moving to Module 1, keep two rules in mind:
 **Every state must have exactly one outgoing arrow per symbol.** If the alphabet is $\{a, b\}$, every state needs exactly one $a$-arrow and one $b$-arrow leaving it. A DFA that satisfies this rule everywhere is called a **complete DFA**. A diagram with a missing transition is incomplete; to turn it into a valid DFA, route every missing symbol to a non-accepting **trap state** (also called a **dead state** or **sink state**) that loops back to itself on every symbol in $\Sigma$. Once a string enters the trap state, it can never leave and is guaranteed to reject. By contrast, a machine where two $a$-arrows leave the same state is a different kind of machine, a nondeterministic automaton, which Module 1 covers.
 
 **The machine cannot look ahead.** It reads left to right, one symbol at a time, with no ability to peek at what comes next or go back. Every decision is made with only the current state and the current symbol. That constraint keeps the model limited enough to analyze mathematically, while staying expressive enough to match real tools like regex engines.
+
+## Practice: trace a transition table
+
+Use this DFA over $\{a, b\}$ to trace `bba`, `ab`, and $\varepsilon$ by hand, then decide what language the machine accepts:
+
+| State | on $a$ | on $b$ |
+| --- | --- | --- |
+| $q_0$ (start, accept) | $q_1$ | $q_0$ |
+| $q_1$ | $q_1$ | $q_0$ |
+
+<ModelAnswer>
+- **`bba`:** $q_0 \xrightarrow{b} q_0 \xrightarrow{b} q_0 \xrightarrow{a} q_1$. Since $q_1$ is not an accept state, `bba` is **rejected**.
+- **`ab`:** $q_0 \xrightarrow{a} q_1 \xrightarrow{b} q_0$. Since $q_0$ is an accept state, `ab` is **accepted**.
+- **$\varepsilon$:** zero steps keeps you at the start state $q_0$. Because $q_0$ is an accept state, $\varepsilon$ is **accepted**.
+- **Language:** every string that ends in $b$, plus $\varepsilon$ (equivalently, every string that does not end in $a$).
+</ModelAnswer>
 
 <Callout tone="mint" label="What you can now do">
   You can now read any state diagram. Given a machine and a string, you can trace each step and check whether the string is accepted. Module 1 builds on that skill: you will design these machines, prove what they can and cannot recognize, and connect them to the regex engine in your terminal.
