@@ -451,11 +451,11 @@ export const questions: Question[] = [
     options: [
       { id: "a", text: "Start Question 1 immediately so you do not waste any of your 120 minutes scanning" },
       { id: "b", text: "Spend the first 20 minutes tackling the hardest high-point question while energy is highest" },
-      { id: "c", text: "Pause for two physiological sighs, dump memorized formulas, scan every page in two minutes, save a 20-minute buffer, and start with straightforward questions" },
+      { id: "c", text: "Pause for two physiological sighs, scan every page in two minutes, do a targeted memory dump, save a 20-minute buffer, and start with straightforward questions" },
       { id: "d", text: "Answer questions strictly from page one to the back without checking total points first" },
     ],
     correctOptionId: "c",
-    explanation: "A short pause steadies your nervous system, a quick memory dump captures fragile formulas, a two-minute scan prevents missed back-page questions and budgets ~1 minute per mark with a 20-minute buffer, and starting with straightforward questions banks easy marks early. Options A and D risk getting trapped on a hard opener, while option B spikes stress before securing accessible points.",
+    explanation: "A short pause steadies your nervous system, a two-minute scan prevents missed back-page questions, a targeted memory dump captures formulas for the problems you spotted, and starting with straightforward questions banks easy marks early. Options A and D risk getting trapped on a hard opener, while option B spikes stress before securing accessible points.",
   },
   {
     id: `${L}/exam-day/walk-away`,
