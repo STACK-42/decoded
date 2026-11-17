@@ -2,37 +2,47 @@ import { Callout, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/
 
 # The Language Layer
 
-The second layer is how you tell software what you want: search, the file system, and prompts. Most people search the way they speak. With AI search, plain speech works better than it used to, but conversational phrasing still leads to vague **queries** (the strings of words and rules you send a search engine or database to ask for results).
+You paste a confusing problem into a search bar, get twenty forum threads that miss your issue, and realize the machine matched your literal words instead of what you meant. The [physical layer](/courses/computer-literacy/physical-layer) gets your input onto the screen without friction. The **language layer** is how you phrase requests so software returns what you want, across search boxes, files, commands, and AI assistants.
+
+## Searching with precision
+
+Most people search the way they speak. Newer search tools handle plain questions better than older ones, yet conversational phrasing still produces vague **queries** (the strings of words and rules you send a search engine to ask for results).
 
 Search engines do not read a page the way a person does. They build an **index**: a lookup table that maps individual words and exact phrases to the pages that contain them. Learning to pick precise **keywords** (specific terms that appear on the target page) and structure a query helps you find answers much faster.
 
-Compare three searches when a Python script crashes with `IndexError: list index out of range`:
+Suppose a small Python program crashes with `IndexError: list index out of range`. Compare three queries:
 
 1. **Conversational query:** `why did my python code stop working with that weird list error`. It mixes common words that match thousands of unrelated beginner posts.
 2. **Structured query:** `python "IndexError: list index out of range"`. Keeping the language name and wrapping the exact error text in quotes `"..."` forces results to contain that exact phrase.
-3. **Scoped query:** add `site:docs.python.org` when you want only official documentation instead of forum threads.
+3. **Scoped query:** `python "IndexError: list index out of range" site:docs.python.org`. Adding `site:` followed by a domain name (with no space after the colon) restricts results to official documentation instead of forum threads.
 
 <Callout tone="orange" label="Usual mistake: rewriting the error in your own words">
-When a program prints an [error message](/courses/computer-literacy/systems-layer#reading-error-messages) or code, beginners often rewrite it from memory ("python list ran out of space") instead of copying the exact text on screen. Documentation and bug trackers are indexed by exact words, so changing the phrasing hides the answer you need.
+When a program prints an [error message](/courses/computer-literacy/systems-layer#reading-error-messages) or error code, beginners often rewrite it from memory ("python list ran out of space") instead of copying the exact text on screen. Documentation and bug trackers are indexed by exact words, so changing the phrasing hides the answer you need.
 </Callout>
 
 ## The file system
 
-The **file system** is part of this language: it is the tree structure an [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system) uses to store, name, and find data on a drive. Every container in that tree is a **directory** (called a **folder** in desktop apps), and the single top container holding everything else is the **root directory** (`/` on macOS and Linux, or a drive letter like `C:\` on Windows).
+The **file system** is part of this language: it is the tree structure an [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system) uses to store, name, and find data on a drive. It branches downward from one top container into nested sub-containers and individual files, like an upside-down tree. Every container in that tree is a **directory** (often shown as a **folder** icon in desktop apps), and the single top container holding everything else is the **root directory** (`/` on macOS and Linux, or a drive letter like `C:\` on Windows).
 
 A **path** is the step-by-step address to a file or directory, with directory names separated by `/` on macOS and Linux (or `\` on Windows). Paths come in two forms:
 
-- **Absolute path:** starts at the root directory, such as `/Users/maya/projects/notes.txt`. It points to the exact same file no matter which folder you are in right now.
+- **Absolute path:** starts at the root directory, such as `/Users/maya/projects/notes.txt`. It points to the exact same file no matter which directory you are in right now.
 - **Relative path:** starts from your **current working directory** (the directory your program or terminal is in right now). If you are in `/Users/maya`, the relative path to that same file is `projects/notes.txt`. If you are inside `/Users/maya/images`, `..` means "one directory up", so `../projects/notes.txt` steps up to `/Users/maya` and then down into `projects/notes.txt`.
 
-Once you understand paths and directories, you stop depending on clicking through window after window to find things. That leads straight to the [terminal](/courses/operating-systems/lab-linux-commands#reading-the-prompt) (also called the **command line** or **shell**), a text window where you type commands directly to the operating system. Instead of clicking through nested folders and menus, you type where you want to go and what you want to do, and the system acts right away. Many commands let you pass options or act on hundreds of files at once, things graphical menus do not offer. That helps a lot once you start writing and running code.
+Once you understand paths and directories, you stop depending on clicking through window after window to find things. That leads straight to the [terminal](/courses/operating-systems/lab-linux-commands#reading-the-prompt) (also called the **command line** or **shell**), a text window where you type commands directly to the operating system. Instead of clicking through nested directories and menus, you type where you want to go and what you want to do, and the system acts right away. Three commands handle almost all navigation: `pwd` prints your working directory, `ls` lists what is inside it, and `cd` changes to another directory:
+
+```text
+$ pwd
+/Users/maya
+$ ls
+images  projects
+$ cd projects
+```
+
+Many commands also accept short **options** (extra flags such as `ls -a` to show hidden files) or act on hundreds of files at once, things graphical menus do not offer. That helps a lot once you start writing and running code.
 
 <Callout tone="orange" label="Usual mistake: losing track of your working directory">
-Typing a relative path like `notes.txt` without checking which directory you are in is the most common reason beginners see `No such file or directory`. Before assuming a file disappeared, check where you are (`pwd` on macOS/Linux, `cd` on Windows) and list what is in that directory (`ls` or `dir`).
-</Callout>
-
-<Callout tone="violet" label="Build the skill">
-Practice using the command line to move between directories, inspect files, and automate small tasks. Fetch files straight from a web address with download tools like `curl` and `wget`, install code libraries with one command using a **package manager** (a tool that fetches and sets up software packages, such as `npm` or `pip`), and write short scripts for repetitive web or file work.
+Typing a relative path like `notes.txt` without checking which directory you are in is the most common reason beginners see `No such file or directory`. Before assuming a file disappeared, check where you are (`pwd` on macOS, Linux, or Windows PowerShell; `cd` alone in Windows Command Prompt) and list what is in that directory (`ls` on macOS, Linux, or PowerShell; `dir` in Command Prompt).
 </Callout>
 
 <ApplicationsGrid>
@@ -49,30 +59,30 @@ Practice using the command line to move between directories, inspect files, and 
   </PracticalApplication>
 </ApplicationsGrid>
 
-Searching inside files can be exact too, using a **regular expression** (or **regex**): a short pattern language for text, such as `[0-9]{4}` to match any four-digit year. The Theory of Computation course explains how [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) work underneath.
+## Pattern matching with regex
+
+Searching by exact words falls short when you want a pattern rather than one fixed string, such as finding every four-digit year in a log file. A **regular expression** (or **regex**) is a compact pattern language for text. Square brackets match one character from a range, so `[0-9]` matches any single digit from `0` through `9`, and curly braces set how many times to repeat it, so `{4}` means four in a row. Together, `[0-9]{4}` matches any four consecutive digits, from `1999` to `2026`.
+
+The Theory of Computation course explains the formal math underneath [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), using textbook notation rather than editor syntax like `[0-9]`.
 
 ## Prompt literacy
 
-Using AI tools is another form of language, and clarity decides the output just as much as it does in search. A **prompt** is the instruction and context you give the model. When a prompt leaves out what you know, any rules to follow, and the format you want, the model has to guess, so it gives a vague, generic answer.
+Using AI assistants is another form of language, and clarity decides the output just as much as it does in search. A **prompt** is the instruction and context you give an AI language model. When a prompt leaves out three parts, (1) what you already know, (2) the exact problem or rule to follow, and (3) the output format you want, the model has to guess and gives a generic answer.
 
 Compare two prompts side by side:
 
-1. **Weak prompt:** *"Explain recursion."* This gives no clue what language you know, where you got stuck, or how detailed the answer should be.
-2. **Clear prompt:** *"I understand Python loops and functions, but I lose track of how values return when a recursive function unwinds. Trace `factorial(3)` call by call and show what happens at the base case."* This states what you already know, names the exact confusion, and asks for a concrete trace.
+1. **Weak prompt:** *"Explain file paths."* This gives no clue which operating system you use, where you got stuck, or how concrete the answer should be.
+2. **Clear prompt:** *"I am learning Windows PowerShell for the first time. I understand absolute paths, but I lose track of where `../notes.txt` points when I change directories. Walk through an example with three directories and show what `pwd` prints at each step."* This states what you know, names the exact confusion, and asks for a concrete step-by-step trace.
 
-Letting the model write your prompts or ideas from scratch feels faster, but it has a cost: if you stop drafting your own thoughts, you stop developing them.
+Think first, write something imperfect, and then use the tool to refine it. That way the machine amplifies your thinking instead of replacing it.
 
 <Callout tone="orange" label="Usual mistake: letting AI write the first draft">
 Asking an AI to write your prompt, outline, or solution from a blank page skips the effort that builds your own understanding. Worse, when the model makes a small, hard-to-spot mistake, you do not yet have the knowledge needed to catch it.
 </Callout>
 
-<Callout tone="violet" label="The amplification rule">
-Think first, write something imperfect, then use the tool to refine it. That way the machine amplifies your thinking and you keep doing the thinking yourself.
-</Callout>
-
 ## Practice by hand
 
-**1. Trace absolute and relative paths:** Your terminal's current working directory is `/Users/maya/courses/notes`, and the file you want to run lives at `/Users/maya/projects/app.py`. Write the absolute path to `app.py`, write the relative path using `..`, and explain why typing `python3 app.py` directly from `/Users/maya/courses/notes` fails with `No such file or directory`.
+**1. Trace absolute and relative paths:** Your terminal's current working directory is `/Users/maya/courses/notes`, and the file you want to run lives at `/Users/maya/projects/app.py`. Write the absolute path to `app.py`, write the relative path using `..`, and explain why typing `python3 app.py` to run that Python file directly from `/Users/maya/courses/notes` fails with `No such file or directory`.
 
 <ModelAnswer>
 - **Absolute path:** `/Users/maya/projects/app.py`. It starts from the root directory `/`, so it reaches the same file from any working directory.
@@ -80,9 +90,9 @@ Think first, write something imperfect, then use the tool to refine it. That way
 - **Why `python3 app.py` fails:** Without a path prefix, `app.py` is resolved relative to your current working directory (`/Users/maya/courses/notes`), which does not contain `app.py`. Running `pwd` and `ls` shows where you are before running a relative command.
 </ModelAnswer>
 
-**2. Turn a crash into a query and a prompt:** A Python script crashes with `KeyError: 'user_id'`. Write a structured search query for official Python documentation, then write a clear three-part AI prompt you could send after inspecting your own code first.
+**2. Turn a crash into a query and a prompt:** A Python program stops with `KeyError: 'user_id'` while trying to look up a missing `'user_id'` field in a table of records. Write a structured search query for official Python documentation, then write a clear three-part AI prompt you could send after inspecting your own data first.
 
 <ModelAnswer>
-- **Search query:** `python "KeyError" site:docs.python.org` (or `python "KeyError: 'user_id'"` if searching for that exact key pattern across projects). Wrapping the exact error name in quotes keeps the indexed term intact instead of paraphrasing it into loose words such as "dictionary key missing".
-- **Three-part prompt:** *"I know Python dictionaries and loops. My script loops over parsed JSON rows and hits `KeyError: 'user_id'` on `row['user_id']`. Show how to safely check for missing keys and trace a 4-line example."* It states what you know, names the exact failure, and asks for a concrete trace.
+- **Search query:** `python "KeyError" site:docs.python.org` (or `python "KeyError: 'user_id'"` if searching for that exact key pattern across projects). Wrapping the exact error name in quotes keeps the indexed term intact instead of paraphrasing it into loose words such as "table key missing".
+- **Three-part prompt:** *"I know Python basics and how to inspect files in the terminal. My script stops with `KeyError: 'user_id'` on one row of my data table. Explain why that error happens and show a 4-line example that checks whether `'user_id'` is present first."* It states what you know, names the exact failure, and asks for a specific short example.
 </ModelAnswer>
