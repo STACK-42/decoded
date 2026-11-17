@@ -8,6 +8,17 @@ const MAX_LESSONS = 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 // The numbers don't need to be live, and caching keeps a busy page from querying D1 on every view.
 const CACHE = { "Cache-Control": "public, max-age=300" };
+const STATS_TTL = 5 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 200;
+
+let allStatsCache: { at: number; data: { registered: Record<string, number> } } | null = null;
+const courseStatsCache = new Map<string, { at: number; data: Record<string, unknown> }>();
+
+/** Test hook: reset cached statistics between test runs. */
+export function resetStatsCacheForTests() {
+  allStatsCache = null;
+  courseStatsCache.clear();
+}
 
 const shown = (n: number | null | undefined) => (n != null && n >= MIN_COUNT ? n : undefined);
 
@@ -16,12 +27,17 @@ const LEARNERS = `SELECT user_id, course FROM enrollments UNION SELECT user_id, 
 
 /** GET /stats: how many people take each course. */
 export async function allCourseStats(env: Env): Promise<Response> {
+  if (allStatsCache && Date.now() - allStatsCache.at < STATS_TTL) {
+    return Response.json(allStatsCache.data, { headers: CACHE });
+  }
   const { results } = await env.DB.prepare(
     `SELECT course, COUNT(*) AS n FROM (${LEARNERS}) GROUP BY course HAVING n >= ?`,
   )
     .bind(MIN_COUNT)
     .all<{ course: string; n: number }>();
-  return Response.json({ registered: Object.fromEntries(results.map((r) => [r.course, r.n])) }, { headers: CACHE });
+  const data = { registered: Object.fromEntries(results.map((r) => [r.course, r.n])) };
+  allStatsCache = { at: Date.now(), data };
+  return Response.json(data, { headers: CACHE });
 }
 
 /**
@@ -34,6 +50,12 @@ export async function courseStats(request: Request, env: Env, course: string): P
   const lessons = lessonsParam === null ? null : Number(lessonsParam);
   if (lessons !== null && !(Number.isInteger(lessons) && lessons >= 1 && lessons <= MAX_LESSONS)) {
     return Response.json({ error: "invalid" }, { status: 400 });
+  }
+
+  const cacheKey = `${course}?lessons=${lessons ?? "none"}`;
+  const cached = courseStatsCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < STATS_TTL) {
+    return Response.json(cached.data, { headers: CACHE });
   }
 
   const [registered, finished, week, quizzes] = await env.DB.batch<Record<string, unknown>>([
@@ -51,13 +73,18 @@ export async function courseStats(request: Request, env: Env, course: string): P
   ]);
 
   const count = (rows: { results: Record<string, unknown>[] }) => shown(rows.results[0]?.n as number);
-  return Response.json(
-    {
-      registered: count(registered),
-      finished: lessons === null ? undefined : count(finished),
-      completedThisWeek: Object.fromEntries(week.results.map((r) => [r.lesson, r.n])),
-      quizAverages: Object.fromEntries(quizzes.results.map((r) => [r.lesson, Math.round((r.average as number) * 100)])),
-    },
-    { headers: CACHE },
-  );
+  const data = {
+    registered: count(registered),
+    finished: lessons === null ? undefined : count(finished),
+    completedThisWeek: Object.fromEntries(week.results.map((r) => [r.lesson, r.n])),
+    quizAverages: Object.fromEntries(quizzes.results.map((r) => [r.lesson, Math.round((r.average as number) * 100)])),
+  };
+
+  if (courseStatsCache.size >= MAX_CACHE_ENTRIES) {
+    const oldest = courseStatsCache.keys().next().value;
+    if (oldest) courseStatsCache.delete(oldest);
+  }
+  courseStatsCache.set(cacheKey, { at: Date.now(), data });
+
+  return Response.json(data, { headers: CACHE });
 }

@@ -1,7 +1,7 @@
 import { applyD1Migrations, env as testEnv } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import worker, { type Env } from "../src/index";
-import { MIN_COUNT } from "../src/stats";
+import { MIN_COUNT, resetStatsCacheForTests } from "../src/stats";
 
 const env = testEnv as unknown as Env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] };
 const API = "https://api.csdecod.ing";
@@ -35,6 +35,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  resetStatsCacheForTests();
   await env.DB.batch(["quiz_scores", "progress", "enrollments", "sessions", "identities", "users"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
 });
 
@@ -48,6 +49,11 @@ describe("GET /stats", () => {
     expect(status).toBe(200);
     expect(cache).toContain("max-age");
     expect(body.registered).toEqual({ "logic-design": 10 });
+
+    // Calling again returns the cached response even if DB changes before reset
+    await addLearners(5, { enrolled: true, lessons: ["signals"] });
+    const cached = await get("/stats");
+    expect(cached.body.registered).toEqual({ "logic-design": 10 });
   });
 });
 
