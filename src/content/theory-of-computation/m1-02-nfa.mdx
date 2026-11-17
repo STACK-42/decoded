@@ -10,25 +10,25 @@ That is an **NFA**, a nondeterministic finite automaton. It looks like a DFA wit
 
 ## What Changes
 
-The formal definition of an NFA is almost identical to a DFA's. Only the transition function δ changes:
+An NFA is still a five-tuple $(Q, \Sigma, \delta, q_0, F)$. Only the transition function $\delta$ changes:
 
 **DFA:** $\delta : Q \times \Sigma \rightarrow Q$
 
 **An NFA:** $\delta : Q \times \Sigma_\varepsilon \rightarrow \mathcal{P}(Q)$
 
-The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
+The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can also transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
 
-Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states. So δ no longer returns a single next state. It returns a *set* of possible next states, which may be $\emptyset$, meaning there's no transition at all.
+Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states (including the empty set $\emptyset$ and $Q$ itself). For example, if $Q = \{q_0, q_1\}$, then $\mathcal{P}(Q) = \{\emptyset, \{q_0\}, \{q_1\}, \{q_0, q_1\}\}$, which has $2^2 = 4$ subsets. So $\delta$ no longer returns a single next state. It returns a *set* of possible next states, which may be $\emptyset$, meaning there's no transition at all.
 
 Everything else ($Q$, $\Sigma$, $q_0$, $F$) means exactly what it meant for a DFA.
 
 <Callout tone="violet" label="The one change summarized">
-  A DFA's δ returns one state, and an NFA's δ returns a set of states. Returning a set instead of a single value is the whole definition of nondeterminism.
+  A DFA's $\delta$ returns one state, and an NFA's $\delta$ returns a set of states. Returning a set instead of a single value is the whole definition of nondeterminism.
 </Callout>
 
 ## How to Read an NFA
 
-When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies**, one per state in $\delta(q, a)$, and all the copies run simultaneously. If *any* copy ends in an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) when the input runs out, the string is accepted.
+When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies**, one per state in $\delta(q, a)$, and all the copies run simultaneously. If *at least one* copy ends in an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) when the input runs out, the string is accepted.
 
 Another way to think about an NFA is as a machine that always guesses right: if any path through it leads to acceptance, the NFA finds that path.
 
@@ -49,40 +49,65 @@ Here is a small NFA over $\Sigma = \{a, b\}$ that accepts strings ending in $ab$
 
 From a DFA's point of view, something is wrong here: $q_0$ has *two* arrows labeled $a$, one looping back and one going to $q_1$. A DFA can't have that. An NFA handles it by splitting: when you read $a$ from $q_0$, the machine simultaneously stays at $q_0$ and moves to $q_1$.
 
-Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition means that copy dies while the others keep going.
+Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition returns $\emptyset$, meaning that copy dies while the others keep going.
 
 Let's trace the string $aab$:
 
 | Step | Read | Active states |
 | --- | --- | --- |
 | start | | $\{q_0\}$ |
-| 1 | $a$ | $q_0$ splits → $\{q_0, q_1\}$ |
-| 2 | $a$ | $q_0$ splits again → $\{q_0, q_1\}$. $q_1$ has no $a$-arrow, that copy dies |
-| 3 | $b$ | $q_0$ on $b$ → $q_0$. $q_1$ on $b$ → $q_2$ → $\{q_0, q_2\}$ |
-| end | | $q_2 \in F$ → **Accepted** |
+| 1 | $a$ | $q_0$ splits $\rightarrow \{q_0, q_1\}$ |
+| 2 | $a$ | $q_0$ splits again $\rightarrow \{q_0, q_1\}$; $q_1$ has no $a$-arrow so that copy dies |
+| 3 | $b$ | $q_0$ on $b \rightarrow q_0$; $q_1$ on $b \rightarrow q_2$, giving $\{q_0, q_2\}$ |
+| end | | $q_2 \in F$ (even though $q_0 \notin F$) $\rightarrow$ **Accepted** |
+
+Notice that at the end, the copy in $q_0$ is not in an accept state, yet the machine still accepts because the copy in $q_2$ *is* in $F$.
 
 Now trace $ba$:
 
 | Step | Read | Active states |
 | --- | --- | --- |
 | start | | $\{q_0\}$ |
-| 1 | $b$ | $q_0$ on $b$ → $\{q_0\}$ |
-| 2 | $a$ | $q_0$ splits → $\{q_0, q_1\}$ |
-| end | | neither $q_0$ nor $q_1$ is in $F$ → **Rejected** |
+| 1 | $b$ | $q_0$ on $b \rightarrow \{q_0\}$ |
+| 2 | $a$ | $q_0$ splits $\rightarrow \{q_0, q_1\}$ |
+| end | | neither $q_0$ nor $q_1$ is in $F$ $\rightarrow$ **Rejected** |
 
 The machine accepts exactly the strings ending in $ab$: anything can come before, as long as the last two symbols are $a$ then $b$.
+
+<Callout tone="orange" label="Two NFA reading traps">
+  Students often misread parallel copies in two opposite ways:
+  - **One copy dying does not reject the string.** In step 2 of $aab$, the copy in $q_1$ dies on $a$, yet $aab$ is still accepted because the copy in $q_0$ survived. A string is rejected only when *zero* surviving copies sit in $F$ at the end.
+  - **Hitting $F$ mid-string does not accept early.** If you trace $aba$, the machine visits $q_2$ after reading $ab$, then $q_2$ has no $a$-arrow and dies on the last $a$. Just like a DFA, an NFA must consume the entire string before checking whether any copy is in $F$.
+</Callout>
 
 Try building the equivalent DFA in your head. You'd need states for "I just saw an $a$", "I just saw $ab$" and "neither", with every transition filled in. The NFA also has three states, but it was much easier to design: you describe the ending you want and let nondeterminism handle whatever comes before it.
 
 ## ε-Transitions
 
-NFAs have one more feature: the **ε-transition**. An arrow labeled ε is a transition that happens without consuming any symbol, and the machine can take it freely at any point.
+NFAs have one more feature: the **ε-transition** (epsilon-transition). An arrow labeled $\varepsilon$ is a transition that happens without consuming any symbol, and the machine can take a copy along it freely at any point.
 
-It's a design convenience and adds no new power. It lets you connect machines together without redesigning either one. For example, if you have a machine that accepts $a^*$ connected by an ε-transition to another machine that accepts $b^*$, you get the combined behavior of $a^*b^*$ with no extra work.
+To keep track of free moves, define the **$\varepsilon$-closure** of a state $q$, written $E(q)$: the set of all states reachable from $q$ by following zero or more $\varepsilon$-arrows (so $q$ itself is always in $E(q)$). For a set of states $S$, $E(S)$ is the union of $E(q)$ for every $q \in S$.
 
+Here is a concrete example for $a^*b^*$ (any number of $a$'s followed by any number of $b$'s) over $\Sigma = \{a, b\}$, with $Q = \{q_0, q_1\}$, start $q_0$, and $F = \{q_1\}$:
+
+$$
+\begin{array}{c|ccc}
+\delta & a & b & \varepsilon \\
+\hline
+q_0 & \{q_0\} & \emptyset & \{q_1\} \\
+q_1 & \emptyset & \{q_1\} & \emptyset \\
+\end{array}
+$$
+
+State $q_0$ accepts $a$'s, state $q_1$ accepts $b$'s, and the $\varepsilon$-arrow $q_0 \xrightarrow{\varepsilon} q_1$ connects them without redesigning either half. Before reading anything, the $\varepsilon$-closures are $E(q_0) = \{q_0, q_1\}$ and $E(q_1) = \{q_1\}$.
+
+Watch how three strings trace through this machine:
+- **$\varepsilon$ (accepted):** Start in $q_0$ and immediately take the $\varepsilon$-closure to $\{q_0, q_1\}$. No symbols are left, and $q_1 \in F$, so $\varepsilon$ is accepted.
+- **$ab$ (accepted):** Start in $E(q_0) = \{q_0, q_1\}$. Read $a$: $q_0 \xrightarrow{a} q_0$, while $q_1$ has no $a$-arrow and dies, leaving $\{q_0\}$; take its $\varepsilon$-closure to get $\{q_0, q_1\}$. Read $b$: $q_0$ has no $b$-arrow and dies, while $q_1 \xrightarrow{b} q_1$, leaving $E(\{q_1\}) = \{q_1\}$. Since $q_1 \in F$, $ab$ is accepted.
+- **$ba$ (rejected):** Start in $\{q_0, q_1\}$. Read $b$: $q_0$ dies and $q_1 \xrightarrow{b} q_1$, leaving $\{q_1\}$. Read $a$: $q_1$ has no $a$-arrow, so the active set becomes $\emptyset$. With no surviving copies in $F$, $ba$ is rejected.
 
 <Callout tone="orange" label="ε-transitions do not add power">
-  Every NFA with ε-transitions can be converted to an equivalent NFA without them. They're a convenience for the designer and give the machine no new capabilities. The subset construction below shows why.
+  Every NFA with $\varepsilon$-transitions can be converted to an equivalent DFA (and an NFA without $\varepsilon$-transitions). They're a convenience for the designer and give the machine no new capabilities. The subset construction below shows why.
 </Callout>
 
 ## The Theorem: NFA = DFA
@@ -91,29 +116,29 @@ Here is what Rabin and Scott proved in 1959:
 
 > Every NFA has an equivalent DFA that recognizes exactly the same language.
 
-The proof is constructive and gives you a mechanical procedure called the **subset construction** for building the DFA directly from the NFA.
+The proof is constructive and gives you a mechanical procedure called the **subset construction** (also called the **powerset construction**) for building the DFA directly from the NFA.
 
 The idea: if an NFA can be in several states at once, build a DFA where each state stands for a set of NFA states, namely all the states the NFA could currently be in.
 
-For an NFA with $n$ states, the DFA has at most $2^n$ states, one per subset of $Q$. In practice most subsets are unreachable and the DFA ends up much smaller, but the worst case is exponential.
+For an NFA with $n$ states, the DFA has at most $2^n$ states, one per subset of $Q$. In practice most subsets are unreachable from the start state and the DFA ends up much smaller, but the worst case is exponential.
 
-Let's convert the NFA above to a DFA.
+Let's convert the ends-in-$ab$ NFA above to a DFA.
 
-NFA states: $Q = \{q_0, q_1, q_2\}$. DFA states are subsets of $Q$. Start: $\{q_0\}$.
+NFA states: $Q = \{q_0, q_1, q_2\}$, with no $\varepsilon$-transitions. DFA states are subsets of $Q$. Start: $\{q_0\}$.
 
 From $\{q_0\}$:
-- on $a$: $q_0$ goes to $\{q_0, q_1\}$ → DFA state $\{q_0, q_1\}$
-- on $b$: $q_0$ goes to $\{q_0\}$ → DFA state $\{q_0\}$
+- on $a$: $q_0$ goes to $\{q_0, q_1\}$ $\rightarrow$ new DFA state $\{q_0, q_1\}$
+- on $b$: $q_0$ goes to $\{q_0\}$ $\rightarrow$ already have $\{q_0\}$
 
 From $\{q_0, q_1\}$:
-- on $a$: $q_0$ → $\{q_0, q_1\}$, $q_1$ has no $a$-arrow → $\emptyset$ → union is $\{q_0, q_1\}$
-- on $b$: $q_0$ → $\{q_0\}$, $q_1$ → $\{q_2\}$ → union is $\{q_0, q_2\}$
+- on $a$: $q_0 \rightarrow \{q_0, q_1\}$, $q_1$ has no $a$-arrow ($\emptyset$) $\rightarrow$ union is $\{q_0, q_1\}$
+- on $b$: $q_0 \rightarrow \{q_0\}$, $q_1 \rightarrow \{q_2\}$ $\rightarrow$ union is $\{q_0, q_2\}$ (new!)
 
 From $\{q_0, q_2\}$:
-- on $a$: $q_0$ → $\{q_0, q_1\}$, $q_2$ has no $a$-arrow → $\{q_0, q_1\}$
-- on $b$: $q_0$ → $\{q_0\}$, $q_2$ has no $b$-arrow → $\{q_0\}$
+- on $a$: $q_0 \rightarrow \{q_0, q_1\}$, $q_2$ has no $a$-arrow ($\emptyset$) $\rightarrow$ union is $\{q_0, q_1\}$
+- on $b$: $q_0 \rightarrow \{q_0\}$, $q_2$ has no $b$-arrow ($\emptyset$) $\rightarrow$ union is $\{q_0\}$
 
-That's three reachable states out of $2^3 = 8$ possible subsets. The accept states are the DFA states containing $q_2$, which here is just $\{q_0, q_2\}$.
+Every transition out of $\{q_0\}$, $\{q_0, q_1\}$, and $\{q_0, q_2\}$ lands back inside those same three subsets, so the process stops here. The other $8 - 3 = 5$ subsets of $Q$ (such as $\{q_1\}$ or $\emptyset$) are unreachable from $\{q_0\}$ and never appear in the machine. The accept states are every DFA state containing at least one NFA accept state ($q_2$), which here is $\{q_0, q_2\}$.
 
 $$
 \begin{array}{c|cc}
@@ -126,6 +151,16 @@ $$
 $$
 
 It's the same language, now as a complete DFA with every cell filled.
+
+Two extra cases show up on other NFAs when you do subset construction by hand:
+- **What if every state in a subset has no arrow for a symbol?** Their union is $\emptyset$. In the DFA, $\emptyset$ becomes a real state (its [trap state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes)): every symbol takes $\emptyset$ back to $\emptyset$, and $\emptyset$ is never an accept state.
+- **What if the NFA has $\varepsilon$-transitions?** Start the DFA at $E(q_0)$ instead of $\{q_0\}$, and after taking the union of transitions on a symbol, take the $\varepsilon$-closure of that union.
+
+<Callout tone="orange" label="Subset construction mistakes">
+  When converting an NFA to a DFA on an exam, watch for two slips:
+  - **Missing accept states:** Every subset that contains *at least one* NFA accept state must be marked final in the DFA. In the example above, $\{q_0, q_2\}$ is final even though $q_0 \notin F$.
+  - **Dropping the $\emptyset$ state:** If an NFA subset has no outgoing transition for a letter, its next state in the DFA is $\emptyset$, not blank. Include $\emptyset$ as a row with self-loops on every letter so the DFA stays complete.
+</Callout>
 
 <Callout tone="sky" label="Why this matters in tools you already use">
   Regex engines convert your pattern into an NFA first, because NFAs map onto regex syntax one piece at a time. Then they either simulate the NFA by tracking the set of active states, or convert it to a DFA for faster repeated matching. Both are direct applications of Rabin and Scott's result, running in tools you use every day, like your terminal.
@@ -148,13 +183,13 @@ The standard pipeline followed by most serious regex engines:
 1. Write regex
 2. Convert to NFA
 3. Convert NFA to DFA via subset construction
-4. Minimize the DFA
+4. Minimize the DFA (merge states that behave identically to shrink the table)
 5. Simulate
 
 This is what tools like `lex`, `flex` and `ripgrep`'s regex engine do, so the theory here is also the pipeline inside your toolchain.
 
 <Callout tone="mint" label="Where you stand">
-  NFAs and DFAs are two faces of the same model. The NFA is the design tool: compact, readable, and close to regex syntax. The DFA is the execution tool: deterministic, fast, and implementable as a lookup table. The subset construction converts one into the other mechanically. The next lesson shows how regex syntax maps onto NFA construction, operator by operator.
+  NFAs and DFAs are two faces of the same model. The NFA is the design tool: compact, readable, and close to regex syntax. The DFA is the execution tool: deterministic, fast, and implementable as a lookup table. The subset construction converts one into the other mechanically. Next, you'll practice [reading and writing regular expressions](/courses/theory-of-computation/regular-expressions) directly before proving in [Kleene's Theorem](/courses/theory-of-computation/kleenes-theorem) that expressions and automata define the exact same languages.
 </Callout>
 
 ## Optional Further Reading

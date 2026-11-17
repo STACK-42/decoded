@@ -46,7 +46,7 @@ export const questions: Question[] = [
   {
     id: "theory-of-computation/finite-automata-quiz/q4",
     quiz: "finite-automata-quiz",
-    prompt: "Consider the NFA from the last lesson that accepts strings ending in 'ab'. Does the string 'bab' get accepted?",
+    prompt: "Consider the NFA from the NFA lesson that accepts strings ending in 'ab'. Does the string 'bab' get accepted?",
     options: [
       { id: "a", text: "Yes" },
       { id: "b", text: "No" },

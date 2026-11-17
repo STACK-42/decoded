@@ -8,7 +8,7 @@ The formal definition fixes that. It's a precise notation that lets you reason a
 
 ## Deterministic Finite Automaton Definition
 
-A **Deterministic Finite Automaton** is defined as a five-tuple:
+A **Deterministic Finite Automaton** is defined as a **five-tuple** (an ordered list of five components, where position matters):
 
 $$
 M = (Q,\ \Sigma,\ \delta,\ q_0,\ F)
@@ -22,23 +22,23 @@ $$
 Q = \{q_0,\ q_1,\ q_2\}
 $$
 
-**$\Sigma$** is the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), the set of symbols the machine is allowed to read. A symbol outside $\Sigma$ never appears in its input.
+**$\Sigma$** is the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), the finite set of symbols the machine is allowed to read. A symbol outside $\Sigma$ never appears in its input.
 
 $$
 \Sigma = \{a,\ b\}
 $$
 
-**$\delta$** is the transition function, meaning the arrows. It takes a state and a symbol and returns the next state:
+**$\delta$** is the **transition function**, meaning the arrows. Here $Q \times \Sigma$ is the set of all pairs $(q, a)$ built from one state $q \in Q$ and one symbol $a \in \Sigma$. The function takes one such pair and returns the single next state:
 
 $$
 \delta : Q \times \Sigma \rightarrow Q
 $$
 
-Read that as: given any state in $Q$ and any symbol in $\Sigma$, $\delta$ tells you exactly which state to move to. One input, one output, no ambiguity. That's what *deterministic* means.
+Read that as: given any state in $Q$ and any symbol in $\Sigma$, $\delta$ tells you exactly which state to move to. One input pair, one output state, no ambiguity. That's what *deterministic* means.
 
-**$q_0$** is the initial state, where computation always begins. $q_0 \in Q$.
+**$q_0$** is the **initial state** (also called the **start state**), where computation always begins. $q_0 \in Q$.
 
-**$F$** is the set of [accept states](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram), the double circles. $F \subseteq Q$. If the machine runs out of input while its current state is in $F$, it accepts the input.
+**$F$** is the set of [accept states](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) (also called **final states**), the double circles. $F \subseteq Q$. Because $F$ can be *any* subset of $Q$, a DFA can have zero accept states ($F = \emptyset$, rejecting every string), can include the start state ($q_0 \in F$, meaning the empty string is accepted), or can make every state accepting ($F = Q$). If the machine runs out of input while its current state is in $F$, it accepts the input.
 
 <Callout tone="violet" label="Why a five-tuple">
   Five components are the minimum needed to fully specify a [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means). Give someone these five and they can reconstruct the diagram exactly, and they can also reason about the machine mathematically without drawing it.
@@ -46,7 +46,7 @@ Read that as: given any state in $Q$ and any symbol in $\Sigma$, $\delta$ tells 
 
 ## Mapping Diagram to Tuple
 
-Here is the ends-in-$ab$ machine you traced by hand at the end of lesson 03, written down with the new vocabulary.
+Here is the ends-in-$ab$ machine you traced by hand in [How to Read a Machine](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), written down with the new vocabulary.
 
 <AutomatonDiagram
   states={["q0", "q1", "q2"]}
@@ -77,6 +77,8 @@ $$
 q_0 = q_0 \qquad F = \{q_2\}
 $$
 
+The fourth component of the tuple says which state in $Q$ is the start state, which here happens to be named $q_0$ (in another machine, the start state could just as well be named $s$ or $A$).
+
 And the transition function $\delta$ as a table, with one entry for every state and symbol:
 
 $$
@@ -89,29 +91,33 @@ q_2 & q_1 & q_0 \\
 \end{array}
 $$
 
-Each row is a state, each column a symbol, and each cell is where $\delta$ sends you. The table and the diagram hold identical information; they're two representations of the same machine.
+Each row is a state, each column a symbol, and each cell is where $\delta$ sends you: for instance, row $q_1$ and column $b$ holds $q_2$, meaning $\delta(q_1, b) = q_2$. The table and the diagram hold identical information; they're two representations of the same machine.
 
 <Callout tone="orange" label="The transition table must be complete">
-  Every cell in the table must be filled, because every state needs a transition for every symbol in $\Sigma$. A machine with a missing transition is no longer a DFA. This is one of the differences between a DFA and an [NFA](/courses/theory-of-computation/nfa), which you'll meet in the next lesson.
+  Every cell in the table must be filled, because every state needs a transition for every symbol in $\Sigma$. With $3$ states and $2$ symbols, the table has $3 \times 2 = 6$ cells and none can be left blank. A machine with a missing transition is no longer a DFA. This is one of the differences between a DFA and an [NFA](/courses/theory-of-computation/nfa), which you'll meet in the next lesson.
 </Callout>
 
 ## The Extended Transition Function: $\hat{\delta}$
 
-$\delta$ handles one symbol at a time, but what you care about is what happens after reading a whole string. For that, mathematicians define $\hat{\delta}$ (delta-hat), the extended transition function, which works on strings instead of single symbols.
+$\delta$ handles one symbol at a time, but what you care about is what happens after reading a whole string. For that, mathematicians define $\hat{\delta}$ (delta-hat), the **extended transition function**, which works on strings from $\Sigma^*$ instead of single symbols:
+
+$$
+\hat{\delta} : Q \times \Sigma^* \rightarrow Q
+$$
 
 $$
 \hat{\delta}(q,\ \varepsilon) = q
 $$
 
-Reading the [empty string](/courses/theory-of-computation/language-of-languages#string-word) from any state leaves you in that state.
+Reading the [empty string](/courses/theory-of-computation/language-of-languages#string-word) from any state leaves you in that state, because zero symbols have been consumed.
 
 $$
 \hat{\delta}(q,\ wa) = \delta(\hat{\delta}(q,\ w),\ a)
 $$
 
-Reading a string $wa$ means: first process the string $w$ to get some intermediate state, then read the final symbol $a$ from there.
+Reading a non-empty string $wa$ (any prefix $w \in \Sigma^*$ followed by a final symbol $a \in \Sigma$) works in two steps: first process $w$ from $q$ to get an intermediate state $\hat{\delta}(q, w)$, then take one final step from there on $a$ using $\delta$.
 
-The definition is recursive: it builds up the computation one symbol at a time, exactly as you did by hand in lesson 03. $\hat{\delta}$ is the formal name for that process.
+The definition is recursive: it builds up the computation one symbol at a time, exactly as you did by hand in [How to Read a Machine](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand). $\hat{\delta}$ is the formal name for that process.
 
 To see $\hat{\delta}$ in action, run it on the string $ab$ for the machine above. Apply the recursive rule, peeling off one symbol at a time from the right:
 
@@ -119,25 +125,39 @@ $$
 \hat{\delta}(q_0,\ ab) = \delta(\hat{\delta}(q_0,\ a),\ b)
 $$
 
+To evaluate $\hat{\delta}(q_0, a)$, write the single-symbol string $a$ as $\varepsilon a$ (so $w = \varepsilon$) and apply both rules:
+
 $$
-\hat{\delta}(q_0,\ a) = \delta(\hat{\delta}(q_0,\ \varepsilon),\ a) = \delta(q_0,\ a) = q_1
+\hat{\delta}(q_0,\ a) = \hat{\delta}(q_0,\ \varepsilon a) = \delta(\hat{\delta}(q_0,\ \varepsilon),\ a) = \delta(q_0,\ a) = q_1
 $$
+
+Plug $q_1$ back into the outer step for $ab$:
 
 $$
 \hat{\delta}(q_0,\ ab) = \delta(q_1,\ b) = q_2
 $$
 
-The language a DFA $M$ accepts is then defined as:
+Now trace a rejected string, $ba$, the same way:
+
+$$
+\hat{\delta}(q_0,\ b) = \delta(\hat{\delta}(q_0,\ \varepsilon),\ b) = \delta(q_0,\ b) = q_0
+$$
+
+$$
+\hat{\delta}(q_0,\ ba) = \delta(\hat{\delta}(q_0,\ b),\ a) = \delta(q_0,\ a) = q_1
+$$
+
+The language a DFA $M$ accepts (also called the language **recognized** by $M$) is then defined as:
 
 $$
 L(M) = \{w \in \Sigma^* \mid \hat{\delta}(q_0,\ w) \in F\}
 $$
 
-That's all strings that, fed to the machine from $q_0$, end in an accept state. The trace above ends at $q_2 \in F$, so $ab \in L(M)$. You reached the same conclusion by hand in lesson 03; this time it comes straight from the definition, with no diagram involved.
+That's all strings that, fed to the machine from $q_0$, end in an accept state. For $ab$, the trace ends at $q_2 \in F$, so $ab \in L(M)$. For $ba$, the trace ends at $q_1 \notin F$, so $ba \notin L(M)$. You reached the same conclusions by hand earlier; this time they come straight from the definition, with no diagram involved.
 
 ## What "Deterministic" Buys You
 
-Lesson 03 unpacked the word: at every state, every symbol has exactly one transition arrow. Formally, that rule lives in the type of $\delta$ itself:
+Earlier we unpacked the word informally: at every state, every symbol has exactly one transition arrow. Formally, that rule lives in the type of $\delta$ itself:
 
 $$
 \delta : Q \times \Sigma \rightarrow Q
@@ -148,7 +168,7 @@ The codomain is $Q$, not the power set of $Q$, so one input pair always returns 
 Two consequences follow. First, a DFA simulator is a tight loop: read one character, do one table lookup, never backtrack. That's why regex engines built on DFAs run in time linear in the length of the input. Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
 
 <Callout tone="sky" label="Historical note">
-  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire rather than as a computing model. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The parking meter, the regex engine, and the original neuron model are all instances of the same five-tuple.
+  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire rather than as a computing model. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The [parking meter](/courses/theory-of-computation/how-to-read-a-machine#a-first-example-a-parking-meter), the regex engine, and the original neuron model are all instances of the same five-tuple.
 </Callout>
 
 ## Building Your First DFA
@@ -157,7 +177,7 @@ Knowing the definition isn't enough; you also need to build machines. The proces
 
 **Step 1: Identify the conditions.** What does the machine need to remember to make the right decision at the end? Each distinct condition becomes a state. Track only the conditions that affect the final answer, not the full history of what it has seen.
 
-**Step 2: Name the states.** One state per condition. Add a dead state if the machine can reach a point where acceptance is impossible regardless of what follows.
+**Step 2: Name the states.** One state per condition. Add a [trap state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes) (also called a **dead state** or **sink state**, one with self-loops on every symbol) if the machine can reach a point where acceptance is impossible regardless of what follows. For example, a machine for "starts with $a$" needs a dead state the moment the first symbol is $b$, whereas "at least one $a$" does not because an $a$ can still show up later.
 
 **Step 3: Fill the transition table.** For every state, for every symbol, decide: if I am in this condition and I read this symbol, what condition am I in now?
 
@@ -169,6 +189,12 @@ The conditions that matter:
 - $q_0$: haven't seen any $a$ yet, so can't accept yet
 - $q_1$: have seen at least one $a$, so accept from here on
 
+Now fill the four transitions one by one:
+- From $q_0$ on $a$: we just saw an $a$, so move to $q_1$.
+- From $q_0$ on $b$: we still haven't seen an $a$, so stay in $q_0$.
+- From $q_1$ on $a$: we already saw at least one $a$, and seeing another doesn't undo that, so stay in $q_1$.
+- From $q_1$ on $b$: we still have seen at least one $a$, so stay in $q_1$.
+
 $$
 \begin{array}{c|cc}
 \delta & a & b \\
@@ -178,7 +204,7 @@ q_1 & q_1 & q_1 \\
 \end{array}
 $$
 
-$q_0$ is initial. $q_1$ is the only accept state. Once you reach $q_1$, no symbol can take you back, because "seen at least one $a$" stays true forever.
+$q_0$ is initial. $q_1$ is the only accept state (and $\varepsilon$ is rejected because $q_0 \notin F$, which matches "at least one $a$"). Once you reach $q_1$, no symbol can take you back, because "seen at least one $a$" stays true forever.
 
 <AutomatonDiagram
   states={["q0", "q1"]}
@@ -193,7 +219,18 @@ $q_0$ is initial. $q_1$ is the only accept state. Once you reach $q_1$, no symbo
   accepting={["q1"]}
 />
 
-Try `a`, `ba`, `bbb`, `bab`. The machine should accept exactly the strings where at least one `a` appears anywhere.
+Check two traces by hand:
+- `ba` (accepted): $q_0 \xrightarrow{b} q_0 \xrightarrow{a} q_1 \in F$.
+- `bbb` (rejected): $q_0 \xrightarrow{b} q_0 \xrightarrow{b} q_0 \xrightarrow{b} q_0 \notin F$.
+
+Try `a`, `ba`, `bbb`, `bab` in the diagram above too. The machine should accept exactly the strings where at least one `a` appears anywhere.
+
+<Callout tone="orange" label="Common DFA design mistakes">
+  Three slips account for most wrong DFAs on exams:
+  - **Stopping after reaching $F$:** Leaving out outgoing arrows from $q_1$ once the condition is met. A DFA still has to read the rest of the string, so every accept state needs an arrow for every symbol in $\Sigma$.
+  - **Forgetting the empty string:** Always check whether $\varepsilon$ belongs in the language. If it does, $q_0$ itself must be in $F$.
+  - **Tracking too much history:** You do not need states for "saw two $a$'s" or "saw $ba$" when the rule only asks for *at least one* $a$. Every state should represent a distinction that changes the final answer.
+</Callout>
 
 <Callout tone="mint" label="What you now have">
   A DFA is now a mathematical object with a precise definition, as well as a picture you can trace. You can write one as a five-tuple, read its [transition table](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), apply $\hat{\delta}$ to compute what any string does, and build one from scratch by identifying the conditions your language needs to track. The next lesson introduces NFAs, machines where $\delta$ returns a set of states, and the surprising theorem that they recognize exactly the same languages as DFAs.
