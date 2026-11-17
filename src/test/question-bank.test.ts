@@ -59,11 +59,22 @@ describe("question bank", () => {
         return [`${course}/${name}`, readFileSync(file, "utf8")];
       }),
     );
+    // A lesson's file name doesn't always match its slug (m1-01-states-symbols.mdx is
+    // "states-symbols-and-transitions"), so look the file up in the registry first.
+    const registry = readFileSync(path.resolve(__dirname, "../content/registry.ts"), "utf8");
+    const importOf = Object.fromEntries([...registry.matchAll(/const (\w+) = lesson\(\(\) => import\("@\/content\/([^"]+)"\)\)/g)].map((m) => [m[1], m[2]]));
+    const fileOf: Record<string, string> = {};
+    for (const m of registry.matchAll(/slug: "([^"]+)"[^}]*?Component: (\w+)/g)) {
+      const file = importOf[m[2]];
+      if (file) fileOf[`${file.split("/")[0]}/${m[1]}`] = file;
+    }
     for (const [slug, qs] of Object.entries(byCourse)) {
       const course = courses.find((c) => c.slug === slug)!;
       for (const q of qs.filter((x) => x.section)) {
         expect(q.lesson, `${q.id} has a section but no lesson`).toBeTruthy();
-        const file = Object.keys(sources).find((k) => k.startsWith(`${slug}/`) && k.endsWith(".mdx") && k.replace(/^.*\/(m\d+-\d+-|\d+-)/, "").replace(/\.mdx$/, "") === q.lesson);
+        const file =
+          fileOf[`${slug}/${q.lesson}`] ??
+          Object.keys(sources).find((k) => k.startsWith(`${slug}/`) && k.endsWith(".mdx") && k.replace(/^.*\/(m\d+-\d+-|\d+-)/, "").replace(/\.mdx$/, "") === q.lesson);
         expect(file, `${q.id}: no file for lesson ${q.lesson}`).toBeTruthy();
         const ids = parseSections(sources[file!]).map((s) => s.id);
         expect(ids, `${q.id}: no heading #${q.section} in ${q.lesson}`).toContain(q.section);
