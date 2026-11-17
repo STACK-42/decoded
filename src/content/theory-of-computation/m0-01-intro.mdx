@@ -1,21 +1,38 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph } from "@/components/mdx/MdxComponents";
 
 # The Abstraction Gap
 
-Most computer science curricula teach you the **mathematical scaffolding** that practitioners use without knowing they're using it. Theory of Computation is a clear example. It was built in the 1930s to 1950s by people like Turing, Church and Kleene, who were trying to answer one question: *what can a machine compute, and what can't it?*
+<Epigraph quote="We can only see a short distance ahead, but we can see plenty there that needs to be done." by="Alan Turing" source="Computing Machinery and Intelligence (Mind), 1950" />
 
-They weren't building apps. Still, that question produced:
+Try writing a regular expression to validate an email address, and it takes one line. Try writing a regular expression to check whether a piece of HTML or JSON has matching opening and closing tags at any depth, and the expression breaks no matter how clever you get. Try writing a static analyzer that inspects arbitrary code and guarantees it will never crash or spread malware, and the task turns out to be mathematically impossible.
 
-- **[Finite Automata](/courses/theory-of-computation/how-to-read-a-machine)** → regex engines (grep, sed, almost every search bar)
-- **[Pushdown Automata](/courses/theory-of-computation/pushdown-automata)** → parsers (every compiler, every browser rendering HTML)
-- **Turing Machines** → the conceptual model for every CPU
-- **Decidability** → why no antivirus can perfectly detect all malware
-- **[Complexity Classes (P vs NP)](/courses/advanced-algorithms/p-and-np#p-vs-np)** → why cryptography works at all
+Those limits are not quirks of `grep`, JavaScript, or your compiler. Between the 1930s and 1950s, mathematicians including Alan Turing, Alonzo Church, and Stephen Kleene asked a foundational question: *what can a machine compute, and what can it never compute, no matter how fast the hardware is?* They were not shipping apps, yet their answers explain the boundaries of the tools you use every day:
 
-<Callout tone="orange" label="The reverse-engineering question">
-For each course topic, ask: *"What breaks if this theory didn't exist?"* That question gets through the abstraction faster than most textbook chapters.
+- **[Finite Automata](/courses/theory-of-computation/how-to-read-a-machine)** are machines with a fixed, tiny amount of memory that read one character at a time. They power regular expression engines (`grep`, `sed`, `ripgrep`, and search bars), which stay fast precisely because they never allocate extra scratch memory while scanning.
+- **[Pushdown Automata](/courses/theory-of-computation/pushdown-automata)** add a single last-in, first-out stack to a finite automaton. That extra stack is why compilers and browser HTML parsers can match nested brackets, tags, and function calls.
+- **Turing Machines** replace the stack with an unbounded read/write tape, giving the mathematical model behind every general-purpose CPU.
+- **Decidability** asks whether an algorithm exists that always halts and gives a guaranteed yes-or-no answer for every possible input. Because many program properties are undecidable, no antivirus or linter can perfectly detect every piece of malware or every infinite loop.
+- **[Complexity Classes (P vs NP)](/courses/advanced-algorithms/p-and-np#p-vs-np)** separate problems we can solve quickly from problems whose answers we can only check quickly. Modern cryptography relies on encryption being fast with a key and breaking it without the key taking impossibly long.
+
+## A concrete example: why regex fails on nested brackets
+
+Suppose you want a machine to check whether parentheses like `((()))` are balanced, meaning every `(` has a matching `)`. A [finite automaton](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) has a fixed number of states, say $k$ states, and no external counter or stack.
+
+Watch what happens step by step as you feed it opening brackets:
+
+1. Start feeding `(` one character at a time: `(`, `((`, `(((`, and so on.
+2. Up to depth $k$, the machine can use a different state for each count of unclosed brackets.
+3. By the time you feed $k + 1$ opening brackets, the machine has only $k$ states to sit in, so by the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle) at least two different counts, say $i$ and $j$ opening brackets, must land in the exact same state.
+4. From that moment on, the machine has forgotten whether it saw $i$ or $j$ opening brackets. When you follow with $i$ closing `)` brackets, the machine lands in the same final state whether you started with $i$ or $j$ opening brackets, so it either accepts an unbalanced string or rejects a balanced one.
+
+Add one stack (a pushdown automaton), and the problem vanishes: push a marker onto the stack for every `(`, pop one for every `)`, and accept if the stack is empty at the end. That boundary between Module 1 (finite memory) and Module 2 (stack memory) is why you reach for a regex in one job and a parser in the next.
+
+<Callout tone="violet" label="The reverse-engineering question">
+  For each topic in this course, ask: *"What breaks if this theory did not exist?"* Looking at what a model cannot do gets through the abstraction faster than memorizing symbol lists.
 </Callout>
 
-Making those connections has a name in cognitive science: **transfer learning**, taking a principle from one domain and recognizing it in another. It's a big part of what separates senior engineers from juniors.
+<Callout tone="orange" label="The usual mistake: treating theory as dead notation">
+  Students often treat formal symbols like $\Sigma$, $\delta$, and $\Rightarrow$ as isolated algebra to memorize for an exam. Whenever you meet a new model, ask two concrete questions instead: *what is this machine allowed to remember*, and *how does it read its input*? Everything else in the notation only writes those two rules down.
+</Callout>
 
-This course is built around that skill. Every module pairs the formal idea with the modern tool, the job, and the failure you've probably already seen in the wild.
+Connecting an abstract model to the real tool it governs is called **transfer learning**: recognizing the same underlying mechanism across two different domains. Modules 1 and 2 of this course build finite automata, regular expressions, context-free grammars, and pushdown automata from scratch, pairing each formal idea with the tool and failure mode it explains. (Turing machines and decidability pick up in later courses once these first two layers are solid.)

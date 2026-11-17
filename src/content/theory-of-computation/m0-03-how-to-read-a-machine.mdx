@@ -2,11 +2,9 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, Diagram, PracticalApplicat
 
 # How to Read a Machine
 
-You can now describe a language as a set, and generate one with a grammar. The next question is the other direction: **how does a machine decide whether a string belongs to a language?**
+You can now describe a [language](/courses/theory-of-computation/language-of-languages#language-l) as a set, and generate one with a [grammar](/courses/theory-of-computation/grammars). The next question goes in the opposite direction: **given a string, how does a machine decide whether it belongs to the language?**
 
-> If that question is hard to parse (for example, if you're unsure what a string is), go back to The Language of Languages first.
-
-The answer is a state diagram. This lesson teaches you to read one by hand: take a picture and a string, follow the arrows, and decide accept or reject. In Module 1 you'll see the same machine written formally as a tuple of sets and functions. The picture comes first because the notation is easier to trust once you've convinced yourself with a finger on the page.
+The answer is a **state diagram**. This lesson teaches you to read one by hand: take a picture and a string, follow the arrows, and decide accept or reject. In Module 1 you'll see the same machine written formally as a tuple of sets and functions. The picture comes first because the notation is easier to trust once you've convinced yourself with a finger on the page.
 
 ## The Anatomy of a State Diagram
 
@@ -14,11 +12,11 @@ A state diagram has four ingredients.
 
 **States** are drawn as circles. Each circle is a snapshot of the machine's memory. A finite automaton has no tape, counter or variables; its entire memory at any moment is which circle it's in.
 
-**The initial state** has an arrow pointing into it from nowhere. The machine always starts there, before reading any symbol.
+**The initial state** (also called the **start state**) has an arrow pointing into it from nowhere. The machine always starts there, before reading any symbol.
 
-**Accept states** are drawn as double circles. If the machine finishes reading the whole input while sitting in one of these, it answers *yes, this string is in the language*. If it ends anywhere else, the answer is *no*.
+**Accept states** (also called **final states**) are drawn as double circles. If the machine finishes reading the whole input while sitting in one of these, it answers *yes, this string is in the language*. If it ends anywhere else, the answer is *no*.
 
-**Transitions** are arrows between states, each labeled with a symbol. When the machine reads a symbol, it follows the arrow with that label out of its current state. That's the entire computation.
+**Transitions** are arrows between states, each labeled with a symbol from the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma). When the machine reads a symbol, it follows the arrow with that label out of its current state. That's the entire computation.
 
 <Callout tone="violet" label="The machine's only job">
   Read one symbol. Follow the matching arrow. Repeat until the string runs out, then check whether the final state is an accept state.
@@ -38,7 +36,7 @@ That's enough to start reading machines. The formal definition, a 5-tuple of set
 
 ## A First Example: A Parking Meter
 
-A parking meter that opens its gate once you've inserted $20 or more is, at its core, a deterministic finite automaton. The states track *amount paid so far*, the alphabet is *the coins you can insert*, and the accept state is *gate open*.
+A parking meter that opens its gate once you've inserted \$20 or more is, at its core, a deterministic finite automaton. The states track *amount paid so far*, the alphabet is *the coins you can insert*, and the accept state is *gate open*.
 
 This meter accepts three coins, \$5, \$10, and \$25,
 and opens at any total of \$20 or more.
@@ -70,17 +68,17 @@ and opens at any total of \$20 or more.
 
 This time, the states are:
 
-- $q_0$: $0 paid *(start)*
-- $q_5$: $5
-- $q_{10}$: $10
-- $q_{15}$: $15
-- $q_\text{open}$: $20 or more *(accept)*. Once you land here, every further coin loops back, so the gate stays open
+- $q_0$: \$0 paid *(start)*
+- $q_5$: \$5
+- $q_{10}$: \$10
+- $q_{15}$: \$15
+- $q_\text{open}$: \$20 or more *(accept)*. Notice the three self-loops back to $q_\text{open}$: because a DFA must define a transition for every coin from every state, inserting extra coins after the gate opens simply keeps the machine in $q_\text{open}$.
 
 Try a few sequences in the input box above. Spaces are optional, so `$5 $10 $5` and `$5$10$5` parse identically:
 
-- `$5 $10 $5` → $20 → **accepted**
-- `$10 $25` → $35 → **accepted**
-- `$5 $5` → $10 → **rejected** (gate stays closed)
+- `$5 $10 $5` → \$20 → **accepted** ($q_0 \rightarrow q_5 \rightarrow q_{15} \rightarrow q_\text{open}$)
+- `$10 $25` → \$35 → **accepted** ($q_0 \rightarrow q_{10} \rightarrow q_\text{open}$)
+- `$5 $5` → \$10 → **rejected** ($q_0 \rightarrow q_5 \rightarrow q_{10}$, gate stays closed)
 
 This is what designing a DFA is like when the language has an obvious memory structure. Once you decide *the running total is what I track*, every arrow in the diagram is forced and you can't draw it wrong. You won't always be this lucky. The next machine's states don't have obvious meanings, so you'll work them out by tracing strings.
 
@@ -136,7 +134,7 @@ Take the string $abb$:
 | 2 | $b$ | $q_2$ |
 | 3 | $b$ | $q_0$ |
 
-It ends at $q_0$, which is not an accept state. **Rejected.**
+Notice step 2: after reading $ab$, the machine sits in the accept state $q_2$, but the string is not finished yet. It must keep going, read the final $b$, and move to $q_0$, which is not an accept state. **Rejected.**
 
 Take the string $b$:
 
@@ -147,9 +145,23 @@ Take the string $b$:
 
 It ends at $q_0$, which is not an accept state. **Rejected.**
 
+Finally, take the [empty string](/courses/theory-of-computation/language-of-languages#string-word) $\varepsilon$ (zero symbols):
+
+| Step | Read | State |
+| --- | --- | --- |
+| 0 | (start) | $q_0$ |
+
+With zero symbols left to read, the machine stops immediately in $q_0$, which is not an accept state. **Rejected.**
+
+<Callout tone="orange" label="Two tracing traps: stopping early and forgetting ε">
+  Students frequently trip on two edge cases when tracing by hand:
+  - **Stopping early:** landing in an accept state partway through the input (like reaching $q_2$ at step 2 of $abb$) does *not* accept the string. You check whether you are in an accept state only after consuming the **entire** string.
+  - **Forgetting $\varepsilon$:** because $\varepsilon$ has zero symbols, the machine takes zero arrows and stays at the start state. A DFA accepts $\varepsilon$ if and only if its start state is also an accept state.
+</Callout>
+
 The rule: **every accepted string ends in $ab$.**
 
-The accepted strings ($ab$, $aab$, $bab$) all end with $a$ followed by $b$, and the rejected ones ($abb$, $b$) don't. The machine checks exactly one thing: *did the input just end in $ab$?*
+The accepted strings ($ab$, $aab$, $bab$) all end with $a$ followed by $b$, and the rejected ones ($abb$, $b$, $\varepsilon$) don't. The machine checks exactly one thing: *did the input just end in $ab$?*
 
 In regex, this language is `/ab$/`. A regex engine compiles a pattern like this into a state machine that runs exactly the way you just traced, with the same circles, arrows and accept condition.
 
@@ -173,7 +185,7 @@ Whenever you design or read a state diagram, ask: *what does this state know?* T
 
 Before moving to Module 1, fix these two facts in your mental model:
 
-**Every state must have exactly one outgoing arrow per symbol.** If the alphabet is $\{a, b\}$, every state needs exactly one $a$-arrow and one $b$-arrow leaving it. A machine with a missing transition is incomplete. A machine where two $a$-arrows leave the same state is a different kind of machine, a nondeterministic automaton, which Module 1 covers.
+**Every state must have exactly one outgoing arrow per symbol.** If the alphabet is $\{a, b\}$, every state needs exactly one $a$-arrow and one $b$-arrow leaving it. A DFA that satisfies this rule everywhere is called a **complete DFA**. A diagram with a missing transition is incomplete; to turn it into a valid DFA, route every missing symbol to a non-accepting **trap state** (also called a **dead state** or **sink state**) that loops back to itself on every symbol in $\Sigma$. Once a string enters the trap state, it can never leave and is guaranteed to reject. By contrast, a machine where two $a$-arrows leave the same state is a different kind of machine, a nondeterministic automaton, which Module 1 covers.
 
 **The machine cannot look ahead.** It reads left to right, one symbol at a time, with no ability to peek at what comes next or go back. Every decision is made with only the current state and the current symbol. That constraint keeps the model limited enough to analyze mathematically, and it's still useful enough to match real tools like regex engines.
 

@@ -10,44 +10,59 @@ In 1956 the linguist Noam Chomsky proposed a different way to pin down a languag
 
 ## The four parts of a grammar
 
-A grammar is a four-tuple:
+A **grammar** is a four-tuple:
 
 $$
 G = (V,\ T,\ P,\ S)
 $$
 
-- $V$ is a finite set of **variables** (also called non-terminals). We write them as uppercase letters: $S$, $A$, $B$.
-- $T$ is the set of **terminals**, the symbols that end up in the finished string. It's the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$.
-- $P$ is a finite set of **productions** (rules) of the form $\alpha \rightarrow \beta$, read "$\alpha$ can be rewritten as $\beta$".
-- $S \in V$ is the **start variable**, the symbol every derivation begins from.
+- $V$ is a finite set of **variables** (also called **non-terminals**), placeholders that still need to be expanded. We write them as uppercase letters: $S$, $A$, $B$.
+- $T$ is the set of **terminals**, the finished output symbols that never get rewritten again. It's the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$. Variables and terminals cannot overlap ($V \cap T = \emptyset$), otherwise you could never tell whether a symbol is finished output or a placeholder waiting to be replaced.
+- $P$ is a finite set of **productions** (rewriting rules) of the form $\alpha \rightarrow \beta$, read "$\alpha$ can be rewritten as $\beta$".
+- $S \in V$ is the **start variable**, the single placeholder every derivation begins from.
 
-Some textbooks write the same thing as $(N, \Sigma, P, S)$, with $N$ for non-terminals. The parts are identical; only the letters change.
+Some textbooks write the same four parts as $(N, \Sigma, P, S)$ or $(V, \Sigma, R, S)$, with $N$ for non-terminals and $R$ for rules. The parts are identical; only the letters change.
 
-When several rules share a left-hand side, they're written on one line with a bar. $S \rightarrow aS \mid b$ is shorthand for the two rules $S \rightarrow aS$ and $S \rightarrow b$.
+When several rules share a left-hand side, they're written on one line with a vertical bar `|`. For example, $S \rightarrow aS \mid b$ is shorthand for the two separate rules $S \rightarrow aS$ and $S \rightarrow b$: whenever you see $S$, you may replace it with either $aS$ or $b$.
 
 ## Derivations
 
-You use a grammar by starting from $S$ and repeatedly replacing a variable with the right-hand side of one of its rules. Each replacement is one **derivation step**, written $\Rightarrow$. Take the grammar
+You use a grammar by starting from $S$ and repeatedly replacing a variable with the right-hand side of one of its rules. Each single replacement is one **derivation step**, written $\Rightarrow$. Take the grammar
 
 $$
 S \rightarrow aS \mid b
 $$
 
-and derive $aab$:
+and derive $aab$ step by step:
+
+1. Start from the start variable: $S$.
+2. Apply $S \rightarrow aS$: $S \Rightarrow aS$.
+3. Apply $S \rightarrow aS$ to the remaining $S$: $aS \Rightarrow aaS$.
+4. Apply $S \rightarrow b$ to replace the last $S$ with a terminal: $aaS \Rightarrow aab$.
+
+Written on one line, the **derivation** is:
 
 $$
 S \Rightarrow aS \Rightarrow aaS \Rightarrow aab
 $$
 
-Three steps: $S \rightarrow aS$ twice, then $S \rightarrow b$ to finish. The intermediate strings like $aaS$, which still contain variables, are called **sentential forms**. A derivation is finished when no variables are left.
+The intermediate strings like $aS$ and $aaS$, which still contain variables, are called **sentential forms**. A derivation finishes only when no variables are left, leaving a string of terminals alone.
 
-$\Rightarrow^*$ means "in zero or more steps", so $S \Rightarrow^* aab$. The **language of the grammar** is every string of terminals you can reach from $S$:
+Write $\Rightarrow^*$ for "in zero or more steps" (for instance $S \Rightarrow^* S$ in zero steps, and $S \Rightarrow^* aab$ in three steps), and $\Rightarrow^+$ for "in one or more steps". The **language of the grammar** is every string of terminals you can reach from $S$:
 
 $$
 L(G) = \{w \in T^* \mid S \Rightarrow^* w\}
 $$
 
-For $S \rightarrow aS \mid b$, every string is some number of $a$'s followed by one $b$, so $L(G) = \{b,\ ab,\ aab,\ aaab,\ \ldots\}$, which is the [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) $a^*b$.
+For $S \rightarrow aS \mid b$: zero applications of $S \rightarrow aS$ followed by $S \rightarrow b$ gives $b$; one application gives $ab$; two give $aab$; and so on. Every string is some number of $a$'s followed by one $b$, so $L(G) = \{b,\ ab,\ aab,\ aaab,\ \ldots\}$, which is the [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) $a^*b$.
+
+<Callout tone="orange" label="Mixing up → and ⇒">
+  Students often swap the two arrows when writing proofs:
+  - $\rightarrow$ lives inside a **production rule** in $P$ (for example, $S \rightarrow aS$ is a rule you are allowed to use).
+  - $\Rightarrow$ shows one **derivation step** on the whole working string (for example, $aS \Rightarrow aaS$ shows the string before and after applying a rule).
+
+  Also remember that sentential forms with leftover variables, such as $aaS$, are **never** in $L(G)$. Only strings made purely of terminals ($w \in T^*$) belong to the language.
+</Callout>
 
 ## Try it: deriving $a^nb^n$
 
@@ -75,14 +90,20 @@ Chomsky's other contribution was to sort grammars by how much freedom their rule
 
 | Type | Name | Rules look like | Recognized by | Example language |
 | --- | --- | --- | --- | --- |
-| 3 | Regular | $A \rightarrow aB$ or $A \rightarrow a$ | Finite automaton | $a^*b$ |
+| 3 | Regular | $A \rightarrow aB$ or $A \rightarrow a$ (or $A \rightarrow \varepsilon$) | Finite automaton | $a^*b$ |
 | 2 | Context-free | $A \rightarrow \beta$ (one variable on the left) | Pushdown automaton | $a^nb^n$ |
 | 1 | Context-sensitive | $\alpha \rightarrow \beta$ with $\lvert\alpha\rvert \le \lvert\beta\rvert$ | Linear-bounded automaton | $a^nb^nc^n$ |
 | 0 | Unrestricted | $\alpha \rightarrow \beta$, anything | Turing machine | Anything a program can enumerate |
 
+Why do those four restrictions separate four different machines?
+- **Type 3 (Regular):** every rule produces at most one terminal and keeps at most one variable at the right end ($A \rightarrow aB$ or $A \rightarrow a$), which is called a **right-linear grammar**. (A **left-linear grammar** puts the variable on the left instead, $A \rightarrow Ba$, which has the exact same power as long as you don't mix both in one grammar.) Because there is only ever one active variable at the frontier, a machine only needs to remember *which variable it is currently in*, so finite memory is enough.
+- **Type 2 (Context-free):** the left-hand side is still a single variable $A$, so you can rewrite $A$ anywhere it appears, regardless of its neighbors. Allowing terminals on *both* sides of $A$, as in $S \rightarrow aSb$, forces a recognizer to match the left side against the right side later, which needs a stack (a pushdown automaton).
+- **Type 1 (Context-sensitive):** the left-hand side can require surrounding symbols ($\alpha \rightarrow \beta$), and rules cannot shrink the working string ($\lvert\alpha\rvert \le \lvert\beta\rvert$, except optionally $S \rightarrow \varepsilon$ if $S$ never appears on a right-hand side). Because strings never get shorter during derivation, a recognizer only ever needs a tape proportional to the input length (a **linear-bounded automaton**).
+- **Type 0 (Unrestricted):** any string of variables and terminals (with at least one variable on the left) can rewrite to anything, including shrinking or erasing symbols, giving the full power of a Turing machine.
+
 Each type contains the ones below it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and so on. The examples in the last column sit exactly one level up: $a^nb^n$ is context-free but not regular, and $a^nb^nc^n$ is context-sensitive but not context-free.
 
-This table is also a map of this course. Module 1 covers type 3 and Module 2 covers type 2. Types 1 and 0, and the Turing machine, are where later courses pick up.
+This table is also a map of this course. Module 1 covers type 3 and Module 2 covers type 2. Types 1 and 0, and the Turing machine, belong to later courses on computability.
 
 <Callout tone="orange" label="Why the left-hand side matters">
   "Context-free" means a rule like $A \rightarrow \beta$ can be applied wherever $A$ appears, whatever surrounds it. A context-sensitive rule such as $aAb \rightarrow aab$ only fires when $A$ sits between an $a$ and a $b$. That dependence on the neighbours is the "context".
@@ -90,7 +111,9 @@ This table is also a map of this course. Module 1 covers type 3 and Module 2 cov
 
 ## A regular grammar is a finite automaton
 
-Type 3 rules have a shape you've already seen. In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labelled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
+Type 3 rules have a shape you're about to read closely in the [next lesson](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). In a state diagram, circles are states (with a start arrow into the start state and a double circle marking an accept state) and labelled arrows move from state to state as symbols are read.
+
+In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labelled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
 
 <AutomatonDiagram
   states={["S", "F"]}
@@ -103,13 +126,23 @@ Type 3 rules have a shape you've already seen. In $A \rightarrow aB$, read $A$ a
   accepting={["F"]}
 />
 
-Run `aab` through it and compare the states it visits with the derivation $S \Rightarrow aS \Rightarrow aaS \Rightarrow aab$ above. Each derivation step is one transition. That correspondence works for every right-linear grammar, which is why regular grammars, finite automata and regular expressions all describe the same family of languages.
+Run `aab` through it step by step: start in `S`, read `a` and loop to `S` ($S \Rightarrow aS$), read `a` and loop to `S` ($aS \Rightarrow aaS$), read `b` and move to `F` ($aaS \Rightarrow aab$), then finish in the double-circle accept state `F`. Now try `aba`: after reading `ab` you sit in `F`, and there is no arrow leaving `F` for the trailing `a`, so the string fails (matching the grammar, since once $S \rightarrow b$ ends the derivation, no further $a$ can be generated). That correspondence works for every right-linear grammar, which is why regular grammars, finite automata and regular expressions all describe the same family of languages.
 
 ## Two exam questions you'll meet
 
-**"What language does this grammar generate?"** Derive the three or four shortest strings, look for the pattern, then check that every rule preserves it. For $S \rightarrow aSb \mid \varepsilon$: $\varepsilon$, $ab$, $aabb$, $aaabbb$. The pattern is $a^nb^n$, and $S \rightarrow aSb$ keeps the counts equal, so $L(G) = \{a^nb^n \mid n \ge 0\}$.
+**"What language does this grammar generate?"** Derive the three or four shortest strings, look for the pattern, then check that every rule preserves it and that no stray strings slip in.
+1. For $S \rightarrow aSb \mid \varepsilon$: applying the base rule once gives $\varepsilon$; using $S \rightarrow aSb$ once then $\varepsilon$ gives $ab$; twice gives $aabb$; three times gives $aaabbb$.
+2. Every step adds one $a$ on the left and one $b$ on the right, so the count of $a$'s always equals the count of $b$'s, and no $b$ can ever appear before an $a$.
+3. Therefore $L(G) = \{a^nb^n \mid n \ge 0\}$. Checking a counterexample such as `aab` or `ba` confirms neither can be derived because $S$ never places a $b$ to the left of an $a$ or adds $a$ without $b$.
 
-**"Write a grammar for this language."** Work out what has to stay balanced or ordered, and let one variable carry that job. For "strings over $\{a, b\}$ with an even number of symbols", one variable can add two symbols at a time: $S \rightarrow aaS \mid abS \mid baS \mid bbS \mid \varepsilon$. Test your answer by deriving a few strings and by trying to derive one that shouldn't be there.
+**"Write a grammar for this language."** Work out what has to stay balanced or ordered, and let one variable carry that job. For "strings over $\{a, b\}$ with an even number of symbols":
+1. Every valid string has length $0, 2, 4, \ldots$, so start from length $0$ with $S \rightarrow \varepsilon$.
+2. To preserve evenness while allowing any combination of $a$ and $b$, add two symbols at a time before $S$: $S \rightarrow aaS \mid abS \mid baS \mid bbS \mid \varepsilon$.
+3. Test an accepted string like `abba`: $S \Rightarrow abS \Rightarrow abbaS \Rightarrow abba$. Test an odd-length string like `aba`: every rule changes the terminal count by $2$ (or $0$ for $\varepsilon$), so an odd length can never be reached.
+
+<Callout tone="orange" label="Forgetting a stopping rule">
+  A common mistake when writing your first recursive grammar is leaving out the base case (such as $S \rightarrow \varepsilon$ or $S \rightarrow b$). Look at $S \rightarrow aS \mid bS$: every right-hand side still contains $S$, so a derivation can never finish with only terminals. That grammar generates the empty language, $L(G) = \emptyset$, not $\{a, b\}^+$. Always check that at least one rule removes all variables.
+</Callout>
 
 ## Where this shows up today
 
