@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getLesson } from "@/content/registry";
 
 interface QuoteItem {
   quote: string;
   author: string;
   source: string;
   imageUrl?: string;
+  /** "course/lesson" when the quote opens a lesson on the site. */
+  lesson?: string;
 }
 
 const quotes: QuoteItem[] = [
@@ -140,7 +144,142 @@ const quotes: QuoteItem[] = [
     author: "Abhijit Naskar",
     source: "Visvavatan: 100 Demilitarization Sonnets",
   },
+  /* The epigraphs that open lessons, each linking back to its lesson. Keep in step with the <Epigraph> lines. */
+  {
+    quote:
+      "While the first binary search was published in 1946, the first published binary search without bugs did not appear until 1962.",
+    author: "Jon Bentley",
+    source: "Programming Pearls, 1986",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/1/12/Jon_Bentley_informaticien.jpg",
+    lesson: "algorithm-design-and-analysis/linear-and-binary-search",
+  },
+  {
+    quote:
+      "We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%.",
+    author: "Donald E. Knuth",
+    source: "Structured Programming with go to Statements, 1974",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Donald_Ervin_Knuth_%28cropped%29.jpg/330px-Donald_Ervin_Knuth_%28cropped%29.jpg",
+    lesson: "algorithm-design-and-analysis/counting-steps",
+  },
+  {
+    quote:
+      "I conclude that there are two ways of constructing a software design: One way is to make it so simple that there are obviously no deficiencies, and the other way is to make it so complicated that there are no obvious deficiencies. The first method is far more difficult.",
+    author: "C.A.R. Hoare",
+    source: "The Emperor's Old Clothes (ACM Turing Award Lecture), 1980",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Sir_Tony_Hoare_IMG_5125.jpg/330px-Sir_Tony_Hoare_IMG_5125.jpg",
+    lesson: "algorithm-design-and-analysis/quick-sort",
+  },
+  {
+    quote:
+      "[The Euclidean algorithm] is the granddaddy of all algorithms, because it is the oldest nontrivial algorithm that has survived to the present day.",
+    author: "Donald E. Knuth",
+    source: "The Art of Computer Programming, Vol. 2, 1969",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Donald_Ervin_Knuth_%28cropped%29.jpg/330px-Donald_Ervin_Knuth_%28cropped%29.jpg",
+    lesson: "algorithm-design-and-analysis/euclid-gcd",
+  },
+  {
+    quote:
+      "An algorithm must be seen to be believed, and the best way to learn what an algorithm is all about is to try it.",
+    author: "Donald E. Knuth",
+    source: "The Art of Computer Programming, Vol. 1, 1968",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Donald_Ervin_Knuth_%28cropped%29.jpg/330px-Donald_Ervin_Knuth_%28cropped%29.jpg",
+    lesson: "algorithm-design-and-analysis/what-is-an-algorithm",
+  },
+  {
+    quote:
+      "Those who cannot remember the past are condemned to repeat it.",
+    author: "George Santayana",
+    source: "The Life of Reason, 1905",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/George_Santayana_at_Santo_Stefano_Rotondo_Convent_1947.png/330px-George_Santayana_at_Santo_Stefano_Rotondo_Convent_1947.png",
+    lesson: "algorithm-design-and-analysis/dynamic-programming",
+  },
+  {
+    quote:
+      "The only way to go fast, is to go well.",
+    author: "Robert C. Martin",
+    source: "Clean Architecture, 2017",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Robert_C._Martin_surrounded_by_computers_%28cropped%29.jpg/330px-Robert_C._Martin_surrounded_by_computers_%28cropped%29.jpg",
+    lesson: "advanced-software-engineering/engineering-in-the-age-of-ai",
+  },
+  {
+    quote:
+      "The purpose of computing is insight, not numbers.",
+    author: "Richard Hamming",
+    source: "Numerical Methods for Scientists and Engineers, 1962",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/0/08/Richard_Hamming.jpg",
+    lesson: "computational-mathematics/matrices-and-matlab",
+  },
+  {
+    quote:
+      "A display connected to a digital computer gives us a chance to gain familiarity with concepts not realizable in the physical world. It is a looking glass into a mathematical wonderland.",
+    author: "Ivan E. Sutherland",
+    source: "The Ultimate Display, Proceedings of IFIP Congress, 1965",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Ivan_Sutherland_at_CHM.jpg/330px-Ivan_Sutherland_at_CHM.jpg",
+    lesson: "computer-graphics/what-is-computer-graphics",
+  },
+  {
+    quote:
+      "Computer literacy is a contact with the activity of computing deep enough to make the computational equivalent of reading and writing fluent and enjoyable.",
+    author: "Alan Kay",
+    source: "Computer Software, Scientific American, 1984",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Alan_Kay_and_the_prototype_of_the_Dynabook_%283009206205%29.jpg/330px-Alan_Kay_and_the_prototype_of_the_Dynabook_%283009206205%29.jpg",
+    lesson: "computer-literacy/physical-layer",
+  },
+  {
+    quote:
+      "The art of being wise is the art of knowing what to overlook.",
+    author: "William James",
+    source: "The Principles of Psychology, 1890",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/William_James_b1842c.jpg/330px-William_James_b1842c.jpg",
+    lesson: "the-exam-mind/the-problem-with-how-you-study",
+  },
+  {
+    quote:
+      "We can only see a short distance ahead, but we can see plenty there that needs to be done.",
+    author: "Alan Turing",
+    source: "Computing Machinery and Intelligence (Mind), 1950",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/330px-Alan_turing_header.jpg",
+    lesson: "theory-of-computation/intro",
+  },
+  {
+    quote:
+      "The microprocessor is the old idea of computer recast in a single silicon chip.",
+    author: "Federico Faggin",
+    source: "Silicon, 2019",
+    imageUrl:
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Federico_Faggin_%28cropped%29.jpg/330px-Federico_Faggin_%28cropped%29.jpg",
+    lesson: "microprocessors/inside-the-8086",
+  },
 ];
+
+function QuoteLessonLink({ path, visible }: { path: string; visible: boolean }) {
+  const [course, slug] = path.split("/");
+  const found = getLesson(course, slug);
+  if (!found) return null;
+  return (
+    <Link
+      to={`/courses/${path}`}
+      className={`group mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-all duration-700 ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      Opens the lesson <span className="text-foreground normal-case tracking-normal font-body italic text-sm">{found.lesson.title}</span>
+      <span className="transition-transform group-hover:translate-x-0.5">→</span>
+    </Link>
+  );
+}
 
 export function ProfoundQuotes() {
   const [index, setIndex] = useState(0);
@@ -176,6 +315,7 @@ export function ProfoundQuotes() {
                 &ldquo;{current.quote}&rdquo;
               </blockquote>
             </div>
+            {current.lesson && <QuoteLessonLink path={current.lesson} visible={fade} />}
           </div>
 
           {/* Square box side: Portrait or Typographic Attribution */}
