@@ -33,7 +33,6 @@ import {
   siGooglemaps,
   si7zip,
   siLetsencrypt,
-  siOpenssl,
   siAudacity,
   siOpengl,
   siWebgl,
@@ -52,7 +51,7 @@ import {
   siGoogle,
   siDuckduckgo,
 } from "simple-icons";
-import { Usb, Cpu, Hash } from "lucide-react";
+import { Usb, Cpu, Hash, KeyRound } from "lucide-react";
 
 export type ToolBadge = {
   label: string;
@@ -132,7 +131,7 @@ export const TOOL_BADGES: Record<string, ToolBadge[]> = {
   ],
   "Encryption": [
     { label: "Let's Encrypt", icon: siLetsencrypt, color: "#003A70" },
-    { label: "OpenSSL", icon: siOpenssl, color: "#721412" },
+    { label: "OpenSSL", lucideIcon: KeyRound, color: "#721412" },
   ],
   "Digital audio and noise filters": [
     { label: "Audacity", icon: siAudacity, color: "#0000EB" },

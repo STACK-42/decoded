@@ -1,11 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import CoursePage from "@/pages/CoursePage";
 import { PracticalApplication } from "@/components/mdx/MdxComponents";
+import { courseToolBadges } from "@/components/tools/courseToolBadges";
 
-describe("CoursePage tools section", () => {
-  it("renders tools decoded in course for computer-networks", () => {
+describe("CoursePage tools", () => {
+  it("shows the course's tools as linked icons in the header, not as cards below", () => {
     render(
       <MemoryRouter initialEntries={["/courses/computer-networks"]}>
         <Routes>
@@ -14,9 +15,16 @@ describe("CoursePage tools section", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Tools Decoded in this Course")).toBeTruthy();
-    expect(screen.getByText("ping, traceroute and Wireshark")).toBeTruthy();
-    expect(screen.getAllByText("Wireshark").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Tools Decoded in this Course")).toBeNull();
+    const row = screen.getByRole("list", { name: "Tools this course explains" });
+    const wireshark = within(row).getByRole("link", { name: "Wireshark" });
+    expect(wireshark.getAttribute("href")).toBe("/tools#ping-traceroute-and-wireshark");
+    expect(wireshark.querySelector("svg")).toBeTruthy();
+  });
+
+  it("lists each product once even when two tool groups share it", () => {
+    const labels = courseToolBadges("computer-networks").map((b) => b.badge.label);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it("renders PracticalApplication with authentic tool icon", () => {

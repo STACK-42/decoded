@@ -1,15 +1,22 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteChrome";
 import { getLesson } from "@/content/registry";
 import { tools } from "@/content/tools";
 import { TOOL_BADGES } from "@/components/tools/toolBadges";
 import { ToolIcon } from "@/components/tools/ToolIcon";
+import { toolAnchor } from "@/components/tools/courseToolBadges";
 
 export default function Tools() {
   useEffect(() => {
     document.title = "Browse by Tool — Decoded";
   }, []);
+
+  // Course pages link to one tool's card (/tools#redis); bring it into view once the page renders.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ block: "start" });
+  }, [hash]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -30,8 +37,9 @@ export default function Tools() {
               return (
                 <section
                   key={tool.name}
+                  id={toolAnchor(tool.name)}
                   aria-label={tool.name}
-                  className="group relative border border-border/80 bg-card p-6 md:p-7 rounded-2xl flex flex-col justify-between transition-all duration-200 hover:border-violet/40 hover:shadow-md motion-safe:hover:-translate-y-0.5"
+                  className="scroll-mt-24 group relative border border-border/80 bg-card p-6 md:p-7 rounded-2xl flex flex-col justify-between transition-all duration-200 hover:border-violet/40 hover:shadow-md motion-safe:hover:-translate-y-0.5"
                 >
                   <div>
                     {badges.length > 0 && (

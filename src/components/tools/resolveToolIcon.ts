@@ -60,7 +60,6 @@ import {
   siOpencv,
   siOpengl,
   siOpenjdk,
-  siOpenssl,
   siOpenstreetmap,
   siPandas,
   siPostgresql,
@@ -203,7 +202,8 @@ const BRANDS: Rule[] = [
   brand(siQiskit, "#6929C4", "qiskit"),
   brand(siOpencv, "#5C3EE8", "opencv"),
   brand(siLetsencrypt, "#003A70", "let's encrypt", "letsencrypt"),
-  brand(siOpenssl, "#721412", "openssl"),
+  // OpenSSL's mark is a wordmark that can't be read at icon size, so it gets a key.
+  topic(KeyRound, "#721412", "openssl"),
   brand(siBitcoin, "#F7931A", "bitcoin", "ecdsa"),
   brand(siCloudflare, "#F38020", "cloudflare", "1.1.1.1", "cdn", "akamai", "cloudfront", "anycast"),
   brand(siGooglemaps, "#4285F4", "google maps"),

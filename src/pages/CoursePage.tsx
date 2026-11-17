@@ -12,9 +12,7 @@ import { CourseLearners } from "@/components/LearnerCounts";
 import { CourseCompanions } from "@/components/Companions";
 import { coursesWithBanks } from "@/content/questionBanks";
 import { readAttempts } from "@/lib/exams";
-import { tools } from "@/content/tools";
-import { TOOL_BADGES } from "@/components/tools/toolBadges";
-import { ToolIcon } from "@/components/tools/ToolIcon";
+import { CourseTools } from "@/components/tools/CourseTools";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -33,7 +31,6 @@ export default function CoursePage() {
   if (!course) return <Navigate to="/404" replace />;
 
   const total = flattenLessons(course).length;
-  const courseTools = tools.filter((t) => t.lessons.some((l) => l.course === course.slug));
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -62,9 +59,10 @@ export default function CoursePage() {
               {course.description}
             </p>
 
-            <div className="mt-8 grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-x-14 empty:hidden">
+            <div className="mt-8 flex flex-wrap gap-x-14 gap-y-6 empty:hidden">
               {course.authors && <CourseAuthors authors={course.authors} />}
               <CoursePrerequisites courseSlug={course.slug} />
+              <CourseTools courseSlug={course.slug} />
             </div>
             {total > 0 && <CourseRegistration course={course} />}
             {total > 0 && <CourseCompanions course={course} />}
@@ -138,86 +136,6 @@ export default function CoursePage() {
           )}
         </section>
 
-        {courseTools.length > 0 && (
-          <section className="border-t border-border bg-card/30 py-12 md:py-16">
-            <div className="container max-w-4xl">
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-                  Practical Applications
-                </span>
-                <Link
-                  to="/tools"
-                  className="font-mono text-xs text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1 group"
-                >
-                  <span>All 33 real-world tools</span>
-                  <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                </Link>
-              </div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">
-                Tools Decoded in this Course
-              </h2>
-              <p className="font-body text-base italic text-muted-foreground max-w-2xl mb-8">
-                See how the abstract theory in this course powers the real software you use every day.
-              </p>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {courseTools.map((t) => {
-                  const badges = TOOL_BADGES[t.name] ?? [];
-                  const relevantLessons = t.lessons.filter((l) => l.course === course.slug);
-                  return (
-                    <div
-                      key={t.name}
-                      className="group rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all duration-200 hover:border-border hover:shadow-md motion-safe:hover:-translate-y-0.5 flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-3 flex-wrap">
-                          {badges.map((b) => (
-                            <span
-                              key={b.label}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-mono font-medium border"
-                              style={{
-                                borderColor: `${b.color}33`,
-                                backgroundColor: `${b.color}14`,
-                                color: b.color === "#000000" || b.color === "#181717" || b.color === "#231F20" ? "currentColor" : b.color,
-                              }}
-                            >
-                              <ToolIcon badge={b} className="w-3.5 h-3.5 shrink-0" />
-                              <span>{b.label}</span>
-                            </span>
-                          ))}
-                          <h3 className="font-display font-semibold text-base leading-snug">{t.name}</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                          {t.tagline}
-                        </p>
-                      </div>
-
-                      {relevantLessons.length > 0 && (
-                        <div className="pt-3 border-t border-border/50 space-y-1.5">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">
-                            Decoded in:
-                          </span>
-                          {relevantLessons.map((l) => (
-                            <Link
-                              key={l.lesson}
-                              to={`/courses/${course.slug}/${l.lesson}`}
-                              className="text-xs text-foreground/80 hover:text-foreground hover:underline flex items-center justify-between gap-2 group/link"
-                            >
-                              <span className="truncate">{l.title}</span>
-                              <span className="text-[10px] font-mono text-muted-foreground group-hover/link:translate-x-0.5 transition-transform shrink-0">
-                                Read →
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
       </main>
 
       <SiteFooter />
