@@ -43,7 +43,7 @@ Trace a few strings through it step by step:
 - `)(` (**rejected**): $d_0 \xrightarrow{)} x \xrightarrow{(} x$. Closing before opening drops straight into the dead state $x$.
 - `((()))` (**rejected**): $d_0 \xrightarrow{(} d_1 \xrightarrow{(} d_2 \xrightarrow{(} x \xrightarrow{)} x \xrightarrow{)} x \xrightarrow{)} x$. Even though `((()))` is balanced, on the third `(` there is no state for "three open", so it falls into $x$ and stays there.
 
-You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever finite number of states $n$ you pick, there are $n + 1$ different opening counts $0, 1, 2, \dots, n$, so by the time a machine reads $n$ opening brackets, at least two different counts must land in the same state. Once two depths share a state, appending the matching number of `)` for the shallower one forces the machine to accept an unbalanced string too. The machine always runs out of memory before the input runs out of brackets.
+You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever finite number of states $n$ you pick, there are $n + 1$ different opening counts $0, 1, 2, \dots, n$ (including count $0$ at the start state before reading anything). By the time a machine reads $n$ opening brackets, at least two different counts must land in the same state. Assuming the machine accepts every valid balanced string, once two depths share a state, appending the matching number of `)` for the shallower one forces the machine to accept an unbalanced string too. The machine always runs out of memory before the input runs out of brackets.
 
 <Callout tone="violet" label="Why any DFA fails here">
   This DFA does not fail because it was designed badly. Any DFA for this language fails the same way. A machine with n states can only count up to about n, and balanced brackets need a count with no limit.
@@ -91,9 +91,9 @@ If $L$ is a [regular language](/courses/theory-of-computation/kleenes-theorem), 
 
 1. $|y| \geq 1$: the loop part is not empty (at least one symbol is needed to leave $q$ and return to $q$)
 2. $|xy| \leq p$: the loop happens within the first $p$ symbols (because the pigeonhole repeat already occurred among the first $p + 1$ states)
-3. $xy^iz \in L$ for every $i \geq 0$: you can skip the loop ($i = 0$, since $y^0 = \varepsilon$, leaving $xz$) or repeat it ($i = 2, 3, \ldots$) and still end in the same [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram)
+3. $xy^iz \in L$ for every $i \geq 0$: you can skip the loop ($i = 0$, since $y^0 = \varepsilon$, leaving $xz$), walk it once ($i = 1$, leaving $w$), or repeat it ($i = 2, 3, \ldots$) and still end in the same [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram)
 
-Map it back to the picture: $x$ is the path from the start state to the first visit to $q$, $y$ is the loop from $q$ back to $q$, and $z$ is the rest of the path from $q$ to acceptance. (What if $L$ is a finite regular language, like $\{ab\}$? Pick $p = 3$, larger than the longest string in $L$; then no string $w \in L$ has $|w| \geq p$, so the "every string with $|w| \geq p$" claim holds vacuously without needing any loop.)
+Map it back to the picture: $x$ is the path from the start state to the first visit to $q$, $y$ is the loop from $q$ back to $q$, and $z$ is the rest of the path from $q$ to acceptance. (What if $L$ is a finite regular language, like $\{ab\}$? A complete DFA for $\{ab\}$ has 4 states, so pick $p = 4$, larger than the longest string in $L$; then no string $w \in L$ has $|w| \geq p$, so the "every string with $|w| \geq p$" claim holds automatically with nothing to break.)
 
 ### Using it on $a^nb^n$
 
@@ -111,7 +111,7 @@ The proof uses [proof by contradiction](/courses/discrete-mathematics/direct-and
 
 **Step 2.** Choose $w = a^pb^p$. Why not a fixed string like $a^5b^5$? If $p = 10$, then $|a^5b^5| = 10$ works, but if $p = 20$, $a^5b^5$ is too short and the lemma does not apply. Writing $w = a^pb^p$ in terms of $p$ guarantees $w \in L$ and $|w| = 2p \geq p$ for every $p \geq 1$.
 
-**Step 3.** The lemma guarantees $w = xyz$ with $|y| \geq 1$ and $|xy| \leq p$. Because the first $p$ symbols of $w = a^pb^p$ are all $a$s, both $x$ and $y$ must sit inside that opening block of $a$s. So $x = a^j$, $y = a^k$ for some $k \geq 1$, and $z = a^{p - j - k}b^p$.
+**Step 3.** The lemma guarantees $w = xyz$ with $|y| \geq 1$ and $|xy| \leq p$. Because the first $p$ symbols of $w = a^pb^p$ are all $a$'s, both $x$ and $y$ must sit inside that opening block of $a$'s. So $x = a^j$ ($j \geq 0$), $y = a^k$ ($k \geq 1$, with $j + k \leq p$), and $z = a^{p - j - k}b^p$.
 
 **Step 4.** Pump once with $i = 2$ (repeating the loop an extra time):
 
@@ -119,11 +119,13 @@ $$
 xy^2z = a^j a^{2k} a^{p - j - k} b^p = a^{p+k}b^p
 $$
 
-That string has $k$ more $a$s than $b$s. Since $k \geq 1$, it is **not** in $L$. (Pumping down with $i = 0$ breaks balance too: $xy^0z = xz = a^{p-k}b^p$, which has $k$ fewer $a$s than $b$s.)
+That string has $k$ more $a$'s than $b$'s. Since $k \geq 1$, it is **not** in $L$. (Pumping down with $i = 0$ breaks balance too: $xy^0z = xz = a^{p-k}b^p$, which has $k$ fewer $a$'s than $b$'s.)
 
 **Step 5.** Condition 3 promised $xy^2z \in L$. We just showed $xy^2z \notin L$. That contradiction proves the assumption was wrong: $L$ is **not regular**.
 
-No DFA, NFA or regex in the strict sense can recognize it, however clever or large.
+Notice that proving a *subset* ($a^nb^n$) is non-regular does not by itself prove a larger language is non-regular (after all, $a^nb^n$ is a subset of $(a+b)^*$, which *is* regular). To prove **balanced brackets** itself is not regular, run the exact same five steps directly on the balanced-bracket language with $w = \text{`('}^p\text{`)'}^p$: $|xy| \leq p$ traps $y = \text{`('}^k$ ($k \geq 1$) in the opening brackets, so $xy^2z = \text{`('}^{p+k}\text{`)'}^p$ has more `(` than `)` and is unbalanced.
+
+No DFA, NFA or regex in the strict sense can recognize either language, however clever or large.
 
 <Callout tone="orange" label="Common pumping-lemma mistakes">
   Two mistakes ruin pumping-lemma proofs on exams:
@@ -140,8 +142,8 @@ No DFA, NFA or regex in the strict sense can recognize it, however clever or lar
 <ModelAnswer>
 Assume for contradiction that $L$ is regular, with pumping length $p \geq 1$.
 1. Choose $w = a^p b^{2p} \in L$. Its length is $3p \geq p$.
-2. For any split $w = xyz$ with $|y| \geq 1$ and $|xy| \leq p$, the first $p$ symbols of $w$ are all $a$'s, so $y = a^k$ for some $k \geq 1$.
-3. Pump with $i = 2$: $xy^2z = a^{p+k} b^{2p}$.
+2. For any split $w = xyz$ with $|y| \geq 1$ and $|xy| \leq p$, the first $p$ symbols of $w$ are all $a$'s, so $x = a^j$ ($j \geq 0$), $y = a^k$ ($k \geq 1$, $j + k \leq p$), and $z = a^{p - j - k}b^{2p}$.
+3. Pump with $i = 2$: $xy^2z = a^j a^{2k} a^{p - j - k} b^{2p} = a^{p+k} b^{2p}$.
 4. For a string in $L$, the number of $b$'s must be twice the number of $a$'s, i.e. $2(p + k) = 2p + 2k$. Since $k \geq 1$, $2p \neq 2(p + k)$, so $xy^2z \notin L$. This contradicts the pumping lemma, proving $L$ is not regular.
 </ModelAnswer>
 

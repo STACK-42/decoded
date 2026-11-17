@@ -6,7 +6,7 @@ import { CnfConverter } from "@/components/mdx/TocVisualizers";
 
 People write grammars to be readable, so real grammars are full of rules that make algorithms awkward: rules that produce nothing ($M \rightarrow \Lambda$), rules that just rename a variable ($A \rightarrow B$), and variables that never contribute to any word. A **normal form** is a fixed shape that every rule must have. Any [context-free grammar](/courses/theory-of-computation/context-free-grammars) can be rewritten into one without changing the language (apart from $\Lambda$, as you'll see), and once every rule has the same shape, proofs and parsing algorithms get much simpler.
 
-To standardize a context-free grammar, you clean it up in three steps and then convert it into **Chomsky Normal Form**. A second normal form, **Greibach Normal Form**, uses a different rule shape for top-down parsing.
+To standardize a context-free grammar, you clean it up in three steps and then convert it into **Chomsky Normal Form**. A second normal form, **Greibach Normal Form**, uses a different rule shape for **top-down parsing** (predicting which rule to expand next from the current input letter, left to right).
 
 ## Removing Λ-productions
 
@@ -14,9 +14,11 @@ A **Λ-production** is a rule $X \rightarrow \Lambda$. A variable is **nullable*
 
 1. **Find every nullable variable** in passes: first mark every variable with a direct rule $X \rightarrow \Lambda$; then repeat until nothing new gets marked, marking any variable $Y$ that has a rule $Y \rightarrow Z_1 Z_2 \cdots Z_k$ where every symbol $Z_i$ is already marked nullable.
 2. **Delete** all $\Lambda$-rules ($X \rightarrow \Lambda$).
-3. **Add shortened copies:** wherever a nullable variable appears on a right-hand side, add a copy of that rule with the variable left out (one copy for each non-empty combination of leaving nullable variables out). Never add a new $X \rightarrow \Lambda$ rule here; if every symbol on a right-hand side is nullable, Step 1 already marked $X$ nullable.
+3. **Add shortened copies:** wherever one or more nullable variables appear on a right-hand side, add a new copy of that rule for each way of leaving at least one nullable variable out (never adding a new $X \rightarrow \Lambda$ rule here; if every symbol on a right-hand side is nullable, Step 1 already marked $X$ nullable).
 
-For example, if $S \rightarrow AA$ and $A \rightarrow a \mid \Lambda$, then both $A$ (directly) and $S$ (via $AA$) are nullable. Leaving out one $A$ in $S \rightarrow AA$ adds $S \rightarrow A$ (leaving out both would give $\Lambda$, which we skip), leaving $S \rightarrow AA \mid A$ and $A \rightarrow a$.
+For example:
+- If $S \rightarrow AA$ and $A \rightarrow a \mid \Lambda$, then both $A$ (directly) and $S$ (via $AA$) are nullable. Leaving out one $A$ in $S \rightarrow AA$ adds $S \rightarrow A$ (leaving out both would give $\Lambda$, which we skip), leaving $S \rightarrow AA \mid A$ and $A \rightarrow a$.
+- If $S \rightarrow aAB$ where both $A$ and $B$ are nullable, omitting $A$ gives $aB$, omitting $B$ gives $aA$, and omitting both gives $a$, so $S \rightarrow aAB \mid aB \mid aA \mid a$.
 
 Now work a complete example:
 
@@ -30,7 +32,7 @@ $$
 S \rightarrow aMb \mid ab \qquad M \rightarrow aMb \mid ab
 $$
 
-Every word is still there: anything that used $M \rightarrow \Lambda$ now uses one of the new $ab$ rules instead. The one exception is $\Lambda$ itself. If the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar) is nullable, the language contains $\Lambda$, and a grammar with no $\Lambda$-rules can't produce it. The normal forms below describe $L - \{\Lambda\}$; if you ever need to keep $\Lambda$ in the language, add a fresh start variable $S_0 \rightarrow S \mid \Lambda$ at the very end.
+Every word is still there: anything that used $M \rightarrow \Lambda$ now uses one of the new $ab$ rules instead. The one exception is $\Lambda$ itself. If the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar) is nullable, the language contains $\Lambda$, and a grammar with no $\Lambda$-rules can't produce it. The normal forms below describe $L - \{\Lambda\}$; if you ever need to keep $\Lambda$ in the language, add a fresh start variable $S_0 \rightarrow S \mid \Lambda$ **before** removing unit productions (so $S_0$ inherits $S$'s non-unit rules while keeping $S_0 \rightarrow \Lambda$ as the single $\Lambda$-rule, and $S_0$ never appears on a right-hand side).
 
 ## Removing unit productions
 
@@ -42,7 +44,7 @@ $$
 S \rightarrow aA \qquad A \rightarrow a \mid B \qquad B \rightarrow A \mid bb
 $$
 
-1. **Find unit-reachable variables:** $S$ has no unit rules, so it reaches only $\{S\}$. $A$ reaches $B$ (via $A \rightarrow B$), so $A$ reaches $\{A, B\}$. $B$ reaches $A$ (via $B \rightarrow A$), so $B$ reaches $\{B, A\}$.
+1. **Find unit-reachable variables (in zero or more unit steps):** $S$ has no unit rules, so it reaches only $\{S\}$ (zero steps). $A$ reaches itself plus $B$ (via $A \rightarrow B$), giving $\{A, B\}$. $B$ reaches itself plus $A$ (via $B \rightarrow A$), giving $\{B, A\}$.
 2. **Copy non-unit rules:** $A$ already has $A \rightarrow a$, and inherits $B \rightarrow bb$ as $A \rightarrow bb$. $B$ already has $B \rightarrow bb$, and inherits $A \rightarrow a$ as $B \rightarrow a$.
 3. **Delete unit rules** ($A \rightarrow B$ and $B \rightarrow A$):
 
@@ -55,8 +57,8 @@ Notice that $B$ is now unreachable from $S$, which is the next kind of clean-up.
 ## Removing useless variables
 
 A variable is **useless** for either of two reasons:
-- It is **non-generating**: it can never derive any string of terminals (for instance, $B \rightarrow bB$ loops forever with no base rule).
-- It is **unreachable**: no derivation starting from $S$ can ever reach it (like $B$ in the result above).
+- It is **non-generating**: it can never derive any string of terminals (for instance, $B \rightarrow bB$ loops forever with no base rule). In general, find generating variables in passes: mark every variable with a terminal-only rule, then repeatedly mark any variable that has a rule whose right-hand side uses only terminals and already-marked variables; delete everything never marked.
+- It is **unreachable**: no derivation starting from $S$ can ever reach it (like $B$ in the result above). Find reachable variables in passes too: mark $S$, then repeatedly mark any variable appearing on the right-hand side of a rule for an already-marked variable; delete everything never marked.
 
 Work a quick example to see why order matters here too:
 
@@ -107,13 +109,13 @@ $$
 \end{aligned}
 $$
 
-The "test a word" box checks a word against the original grammar and against the CNF grammar; the two answers should always agree (for non-empty words).
+The "test a word" box checks a non-empty word against the original grammar and against the CNF grammar; the two answers should always agree (for non-empty words, since CNF omits $\Lambda$).
 
 ### Why Chomsky Normal Form helps
 
-In CNF, every [parse tree](/courses/theory-of-computation/context-free-grammars#parse-trees) is a [binary tree](/courses/data-structures/binary-trees#nodes-with-two-children): each $A \rightarrow BC$ rule splits one variable into two, and each $A \rightarrow a$ rule turns one variable into one letter. Starting from 1 symbol ($S$), each $A \rightarrow BC$ step increases the symbol count by 1, so reaching $n$ variables takes $n - 1$ binary steps, and turning those $n$ variables into $n$ letters takes $n$ terminal steps. Every derivation of a word of length $n \ge 1$ therefore takes **exactly $2n - 1$ steps**, no matter how the grammar is written.
+In CNF, every [parse tree](/courses/theory-of-computation/context-free-grammars#parse-trees) is a [binary tree](/courses/data-structures/binary-trees#nodes-with-two-children): each $A \rightarrow BC$ rule splits one variable into two (increasing the total number of symbols in the working string by $1$), and each $A \rightarrow a$ rule turns one variable into one letter (keeping the symbol count unchanged). Starting from $1$ symbol ($S$) and ending with $n$ terminals, a derivation must take $n - 1$ binary steps and $n$ terminal steps in *any* order (leftmost, rightmost, or mixed). Every derivation of a word of length $n \ge 1$ therefore takes **exactly $2n - 1$ steps**, no matter how the grammar is written.
 
-That fixed structure makes CNF the starting point for proofs about [context-free languages](/courses/theory-of-computation/context-free-grammars), and for the **CYK algorithm**, which the box above uses. CYK uses [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming) to decide whether a CNF grammar generates a word: it fills a table storing which variables derive each substring, starting with length-1 substrings (matched directly against rules $A \rightarrow a$) and building up to longer substrings by trying every split point $k$ to match $A \rightarrow BC$. It runs in [$O(n^3)$ time](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) for a word of length $n$.
+That fixed structure makes CNF the starting point for proofs about [context-free languages](/courses/theory-of-computation/context-free-grammars), and for the **CYK algorithm**, which the box above uses. CYK uses [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming) to decide whether a CNF grammar generates a word: it fills a table storing which variables derive each substring. For `ab` under $S \rightarrow AB$, $A \rightarrow a$, $B \rightarrow b$, length-1 cells find `a` $\leftarrow \{A\}$ and `b` $\leftarrow \{B\}$, then length-2 checks the single split `a | b` and sees $S \rightarrow AB$ matches, so $S$ derives `ab`. For length $n$, there are $\frac{n(n+1)}{2} = O(n^2)$ substrings and up to $n - 1$ split points $k$ per substring, giving [$O(n^3)$ time](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations).
 
 <Callout tone="orange" label="Order and shape mistakes in CNF">
   Three traps when converting to CNF by hand:
@@ -151,7 +153,7 @@ $$
 
 Now every right-hand side begins with a single terminal and has only variables after it.
 
-In GNF, every derivation step produces exactly one terminal, so a word of length $n$ takes exactly $n$ steps, and a parser always knows which letter the next rule must start with. That makes GNF useful for top-down parsing. Converting a general grammar to GNF takes more work than converting to CNF, though. If a rule starts with a variable ($S \rightarrow Ba$), you must expand $B$'s rules until a terminal appears in front. That breaks if the grammar has **left recursion**, where a variable begins its own right-hand side (such as $E \rightarrow E + T \mid T$), so you first rewrite left recursion to the right ($E \rightarrow T \mid T E'$ with $E' \rightarrow + T \mid + T E'$).
+In GNF, every derivation step produces exactly one terminal, so a word of length $n$ takes exactly $n$ steps, and a parser always knows which letter the next rule must start with. That makes GNF useful for top-down parsing. Converting an arbitrary grammar to GNF takes more work than converting to CNF, though (beyond rewriting trailing terminals as above, exams here focus on recognizing GNF rules): if a rule starts with a variable ($S \rightarrow Ba$), you must substitute $B$'s rules until a terminal appears in front. That breaks if the grammar has **left recursion**, where a variable begins its own right-hand side (such as $E \rightarrow E + T \mid T$), so you first rewrite left recursion to the right ($E \rightarrow T \mid T E'$ with $E' \rightarrow + T \mid + T E'$, which generates a $T$ followed by zero or more $+T$ blocks, then substitute $T$'s rules into $E$ so a terminal leads).
 
 <Callout tone="orange" label="GNF allows only one leading terminal">
   A common mistake is stopping as soon as a rule *starts* with a terminal, like $S \rightarrow abB$. GNF requires **one** terminal at the front followed purely by variables, so $b$ in the second position must still be replaced by a variable ($T_b \rightarrow b$), giving $S \rightarrow a T_b B$.

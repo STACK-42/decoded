@@ -8,13 +8,13 @@ import { PdaRunner } from "@/components/mdx/TocVisualizers";
 
 ## The pieces
 
-A PDA can be drawn as a flowchart. Before any step runs, the input tape holds the word followed by infinitely many blank symbols $\Delta$, the read head starts at the first letter, and the stack begins empty (full of $\Delta$). A run starts at START and moves from box to box:
+A PDA can be drawn as a flowchart. Before any step runs, the input tape holds the word followed by infinitely many blank symbols $\Delta$, the read head starts at the first letter, and the stack begins empty ($\Delta$ is returned whenever you POP an empty stack). A run starts at START and moves from box to box:
 
 - **START** is where every run begins.
 - **READ** takes the next letter from the input tape and follows the edge labeled with that letter (without changing the stack). Once the word is used up, READ finds $\Delta$.
 - **POP** removes the top symbol from the stack and follows the edge labeled with it (without advancing the input tape). If the stack is empty, POP finds $\Delta$ and leaves the stack empty.
 - **PUSH x** puts $x$ on top of the stack (without consuming any input).
-- **ACCEPT** and **REJECT** end the run. Every machine here reads $\Delta$ on the tape before moving to ACCEPT so that the whole input must be consumed.
+- **ACCEPT** ends an accepting run (and a **REJECT** box, when drawn, ends a failing run explicitly instead of crashing on a missing edge). Every machine here reads $\Delta$ on the tape before moving to ACCEPT so that the whole input must be consumed.
 
 If a READ or POP finds a symbol with no matching edge, the machine **crashes**, which rejects that path. Leaving edges out is the normal way to say "this cannot happen in a valid word".
 
@@ -69,7 +69,7 @@ Trace two accepted words through the flowchart step by step (writing the stack t
 
 Notice why there are **two separate READ boxes** (`read1` and `read2`) instead of looping `pop1` back to `read1`: `read1` accepts $a$'s and transitions out on the first $b$, whereas `read2` has no $a$-edge at all. Once the machine starts popping $b$'s, seeing another $a$ (as in `abab`) crashes at `read2` instead of pushing again.
 
-Step through `aaabbb` in the runner above and watch the stack fill to three $a$'s and drain back to $\Delta$. Then try words that should fail, and find where each one crashes:
+Step through `aaabbb` in the runner above and watch the stack fill to three $a$'s and drain back to $\Delta$. If you enter a rejected word in the runner, it reports straight away that no path reaches `ACCEPT`; trace these four failing inputs by hand to see where each run crashes:
 
 - `aab`: the input ends with an $a$ still on the stack, so `pop2` finds $a$ instead of $\Delta$ and crashes.
 - `abb`: the second $b$ goes to `pop1`, which tries to pop from an empty stack, finds $\Delta$ instead of $a$, and crashes.
@@ -133,7 +133,7 @@ In `abba`, `read1` has two edges for `a` (`pushA` and `popA`) and two for `b` (`
 - **A wrong guess:** If the machine pushes `a` (stack: `a`), then on the first `b` immediately guesses the middle and jumps to `popB`, that `popB` expects `b` on top of the stack, pops `a` instead, and crashes.
 - **The winning path:** Push `a` (stack: `a`), push `b` (stack: `ba`, top first), then on the third letter (`b`) guess the middle and take `popB`, which pops `b` (stack: `a`) and moves to `read2`. At `read2`, read the final `a`, go to `popA`, pop `a` (stack: empty), then `read2` finds $\Delta$ on the tape and `popEnd` finds $\Delta$ on the stack $\rightarrow$ `accept`.
 
-Try `abab` or `aba` in the runner: for `aba`, pushing `a` leaves `a` on the stack, and on `b` neither pushing `b` (stack `ba`, too tall for one remaining `a`) nor popping `b` (stack has `a`, not `b`) can succeed. Every guess crashes somewhere.
+Try `abab` or `aba` in the runner to see them rejected right away, and verify by hand why `aba` crashes: pushing `a` leaves `a` on the stack, and on `b` neither pushing `b` (stack `ba`, too tall for one remaining `a`) nor popping `b` (stack has `a`, not `b`) can succeed. Every guess crashes somewhere.
 
 **Practice (trace the palindrome PDA):** Trace the winning path for `baab` on the even-palindrome PDA above, listing the stack contents (top first) after each step.
 
@@ -149,18 +149,18 @@ Try `abab` or `aba` in the runner: for `aba`, pushing `a` leaves `a` on the stac
   Three traps when building or tracing a PDA:
   - **`POP` removes the symbol:** `POP` is destructive, not a peek. If you still need a symbol after checking it, you have to `PUSH` it back.
   - **Forgetting a phase change:** Looping back from popping to the first `READ` box in $a^nb^n$ lets `abab` slip through. Use a second `READ` box with no $a$-edge once popping begins.
-  - **Assuming DPDA = NPDA:** For finite automata, determinism and nondeterminism accept the exact same languages. For PDAs they do not.
+  - **Assuming DPDA = NPDA:** For finite automata, determinism and nondeterminism accept the exact same languages. For pushdown automata, a deterministic PDA (DPDA) is strictly weaker than a nondeterministic PDA (NPDA).
 </Callout>
 
 <Callout tone="violet" label="Here nondeterminism adds power">
-  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some [context-free languages](/courses/theory-of-computation/context-free-grammars), including the even palindromes $ww^R$, can only be recognized by a nondeterministic PDA. Reading $abba$ left to right, a prefix like $ab$ could be the whole first half (as in $abba$) or part of a longer one (as in $abbabba$); without a center marker (compare $wcw^R$, where $c$ signals "start popping" and a deterministic PDA works), a deterministic machine can't know where the first half ends.
+  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some [context-free languages](/courses/theory-of-computation/context-free-grammars), including the even palindromes $ww^R$ (where $w^R$ means $w$ written in reverse), can only be recognized by a nondeterministic PDA. Reading $abba$ left to right, a prefix like $ab$ could be the whole first half (as in $abba$) or part of a longer one (as in $abbabba$); without a center marker (compare $wcw^R$, where $c$ signals "start popping" and a deterministic PDA works), a deterministic machine can't know where the first half ends.
 </Callout>
 
 ## The formal definition
 
-Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states $Q$, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$, **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta$, start state $q_0$, **initial stack symbol** $Z_0$ (a bottom-of-stack marker placed at startup to detect an empty stack, like $\Delta$ in the flowcharts), and final states $F$.
+Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states $Q$, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$, **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta : Q \times (\Sigma \cup \{\Lambda\}) \times \Gamma \rightarrow \mathcal{P}(Q \times \Gamma^*)$ (mapping a state, input symbol or $\Lambda$, and top stack symbol to a finite set of next pairs), start state $q_0$, **initial stack symbol** $Z_0$ (a bottom-of-stack marker placed at startup to detect an empty stack, like $\Delta$ in the flowcharts), and final states $F$.
 
-Each transition $\delta(q, a, X) \ni (q', \gamma)$ reads an input letter $a \in \Sigma \cup \{\varepsilon\}$, pops the top symbol $X$ from the stack, moves to state $q'$, and pushes a stack string $\gamma \in \Gamma^*$ in place of $X$ ($\gamma = \varepsilon$ pops $X$ without replacing it, $\gamma = X$ leaves $X$ unchanged, and $\gamma = YX$ pushes $Y$ on top of $X$). A 7-tuple PDA accepts either by reaching a state in $F$ at the end of the input or by emptying its stack; both conventions define the exact same languages as the flowcharts above.
+Each transition $(q', \gamma) \in \delta(q, a, X)$ reads an input letter $a \in \Sigma \cup \{\Lambda\}$, pops the top symbol $X$ from the stack, moves to state $q'$, and pushes a stack string $\gamma \in \Gamma^*$ (leftmost symbol on top) in place of $X$: $\gamma = \Lambda$ pops $X$ without replacing it, $\gamma = X$ leaves $X$ unchanged, and $\gamma = YX$ pushes $Y$ on top of $X$ (for example, pushing $a$ onto $Z_0$ in $a^nb^n$ writes $(q_0, aZ_0) \in \delta(q_0, a, Z_0)$). A 7-tuple PDA accepts either by reaching a state in $F$ at the end of the input or by emptying its stack; both conventions define the exact same languages as the flowcharts above.
 
 ## Where this shows up today
 

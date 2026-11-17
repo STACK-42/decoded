@@ -4,7 +4,7 @@ import { DerivationStepper, ParseTreeExplorer } from "@/components/mdx/TocVisual
 
 # Context-Free Grammars
 
-The last lesson proved that no finite automaton can recognize $a^nb^n$ or balanced brackets. A [grammar](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar) describes both in one line each (writing $\Lambda$ for the [empty string](/courses/theory-of-computation/language-of-languages#string-word)):
+The last lesson proved that no finite automaton can recognize $a^nb^n$ or balanced brackets. A [grammar](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar) describes both in one line each (writing $\Lambda$ in mathematical prose for the [empty string](/courses/theory-of-computation/language-of-languages#string-word); the interactive steppers below use `ε`):
 
 $$
 S \rightarrow aSb \mid \Lambda \qquad\qquad S \rightarrow (S)S \mid \Lambda
@@ -26,7 +26,7 @@ $$
 
 $X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because at each step it can emit $a$ or $b$ in any order and stop with $X \rightarrow \Lambda$. Walk through two derivations:
 - Shortest word: pick $X \rightarrow \Lambda$ for all three $X$'s: $S \Rightarrow XaXaX \Rightarrow aXaX \Rightarrow aaX \Rightarrow aa$.
-- Mixed word `baab`: $S \Rightarrow XaXaX \Rightarrow bXaXaX \Rightarrow baXaX \Rightarrow baaX \Rightarrow baabX \Rightarrow baab$.
+- Mixed word `baab`: $S \Rightarrow XaXaX \Rightarrow bXaXaX \Rightarrow baXaX$ (erasing the first $X$ via $X \rightarrow \Lambda$) $\Rightarrow baaX$ (erasing the second $X$ via $X \rightarrow \Lambda$) $\Rightarrow baabX \Rightarrow baab$.
 
 Every derivation must start with $S \rightarrow XaXaX$, which locks in two $a$'s that no rule can delete, while the three $X$'s fill the gaps with anything (including more $a$'s). So $S$ generates "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), $(a + b)^*a(a + b)^*a(a + b)^*$.
 
@@ -63,7 +63,7 @@ Both derivations apply the same rules to the same variables. Only the order diff
 
 ## Parse trees
 
-A **parse tree** is a [rooted tree](/courses/discrete-mathematics/trees#rooted-trees) that records which rule rewrote each variable, without recording the order. The root is the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar), every internal node is a variable whose children (left to right) are the right-hand side of the rule used on it, and the **leaves** (nodes with no children) hold terminals or $\Lambda$. Reading the leaves from left to right gives the **yield** of the tree, which spells the derived word (a $\Lambda$ leaf contributes the empty string, so it adds no character to the word).
+A **parse tree** is a [rooted tree](/courses/discrete-mathematics/trees#rooted-trees) that records which rule rewrote each variable, without recording the order. The root is the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar), every internal node is a variable whose children (left to right) are the right-hand side of the rule used on it, and the **leaves** (nodes with no children) hold terminals or $\Lambda$ (when a variable uses a rule $X \rightarrow \Lambda$, its single child leaf is $\Lambda$, which adds no character to the word). Reading the leaves from left to right gives the **yield** of the tree, which spells the derived word.
 
 Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, because the tree already fixes which rule rewrites each variable: walking those choices top-down while expanding the leftmost remaining variable gives a unique leftmost derivation (and picking the rightmost gives a unique rightmost one). That is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
 
@@ -88,7 +88,7 @@ With $a = 2$, the first evaluates to $6$ and the second to $8$. A compiler that 
 
 To show a grammar is ambiguous, you only need **one** word with two parse trees (or two leftmost derivations). To show it isn't, you have to argue about every word, which is much harder, so exams almost always ask for the first.
 
-Ambiguity is usually fixed by rewriting the grammar so that precedence and associativity are built into separate layers of variables:
+Ambiguity is usually fixed by rewriting the grammar so that **precedence** (which operator binds tighter, like `*` before `+`) and **associativity** (which way repeated operators group, like `(a + a) + a` vs `a + (a + a)`) are built into separate layers of variables:
 
 $$
 E \rightarrow E + T \mid T \qquad T \rightarrow T * F \mid F \qquad F \rightarrow (E) \mid a
@@ -100,7 +100,7 @@ $$
 E \Rightarrow E + T \Rightarrow T + T \Rightarrow F + T \Rightarrow a + T \Rightarrow a + T * F \Rightarrow a + F * F \Rightarrow a + a * F \Rightarrow a + a * a
 $$
 
-Even `a + a + a`, which had two trees in $E \rightarrow E + E$ (`(a + a) + a` vs `a + (a + a)`), now has only one tree, `(a + a) + a`, because $E \rightarrow E + T$ puts the recursive $E$ on the left and forces the right side $T$ to be $+$-free.
+Even `a + a + a`, which had two trees in $E \rightarrow E + E$ (`(a + a) + a` vs `a + (a + a)`), now has only one tree, `(a + a) + a`, making `+` **left-associative** because $E \rightarrow E + T$ puts the recursive $E$ on the left and forces the right side $T$ to be $+$-free.
 
 <ParseTreeExplorer grammar={"E -> E+T | T\nT -> T*F | F\nF -> (E) | a"} target="a+a*a" />
 
@@ -117,8 +117,8 @@ There is now only one tree for $a + a * a$, and it groups $a * a$ first, the way
 
 <ModelAnswer>
 Both leftmost derivations produce `aa`, starting with a different first rule at step 1:
-- **Derivation 1 (expand on the right):** $S \Rightarrow aS \Rightarrow aa$ (root $S$ has children $a$ and $S$, where the child $S$ rewrites to $a$).
-- **Derivation 2 (expand on the left):** $S \Rightarrow Sa \Rightarrow aa$ (root $S$ has children $S$ and $a$, where the child $S$ rewrites to $a$).
+- **Derivation 1 (right-recursive rule $S \rightarrow aS$):** $S \Rightarrow aS \Rightarrow aa$ (root $S$ has children $a$ and $S$, where the child $S$ rewrites to $a$).
+- **Derivation 2 (left-recursive rule $S \rightarrow Sa$):** $S \Rightarrow Sa \Rightarrow aa$ (root $S$ has children $S$ and $a$, where the child $S$ rewrites to $a$).
 
 Two distinct leftmost derivations correspond to two distinct parse trees for the same word `aa`, so the grammar is ambiguous.
 </ModelAnswer>

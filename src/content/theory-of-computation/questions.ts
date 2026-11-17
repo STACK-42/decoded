@@ -642,7 +642,7 @@ export const questions: Question[] = [
       { id: "d", text: "Finite automata can only accept finite languages" },
     ],
     correctOptionId: "b",
-    explanation: "With p states, a finite automaton cannot distinguish more than p counts of a's, so pumping the loop in aᵖbᵖ produces an unbalanced string that it still accepts. DFAs easily read b after a (as in a*b*), accept ε when q₀ ∈ F, and recognize infinite languages like a*.",
+    explanation: "With p states, a finite automaton cannot distinguish more than p counts of a's, so pumping the loop in aᵖbᵖ produces an unbalanced string that it still accepts. DFAs easily read b after a (as in a*b*), accept Λ when q₀ ∈ F, and recognize infinite languages like a*.",
   },
   {
     id: "theory-of-computation/context-free-quiz/q2",
@@ -923,7 +923,7 @@ export const questions: Question[] = [
       { id: "d", text: "Because S would stay on the stack forever" },
     ],
     correctOptionId: "b",
-    explanation: "Adding an S-loop at POP lets any S on top of the stack disappear without reading input, even an inner S pushed by a rule like V₁ → ST₂. Putting ε acceptance on a separate branch directly out of START avoids corrupting inner derivations. PDAs can accept ε, and POP boxes routinely have loops.",
+    explanation: "Adding an S-loop at POP lets any S on top of the stack disappear without reading input, even an inner S pushed by a rule like V₁ → ST₂. Putting Λ acceptance on a separate branch directly out of START avoids corrupting inner derivations. PDAs can accept Λ, and POP boxes routinely have loops.",
   },
   {
     id: "theory-of-computation/cfg-equals-pda/anbncn-two-stacks",
@@ -938,6 +938,6 @@ export const questions: Question[] = [
       { id: "d", text: "Because a PDA can only accept palindromes" },
     ],
     correctOptionId: "b",
-    explanation: "One LIFO stack can compare at most two counts at once: matching a's with b's wipes out the count n before c's arrive, while stacking b's above a's hides the a's underneath. L is context-sensitive (needs two stacks / a linear-bounded automaton), not regular or limited to palindromes.",
+    explanation: "One LIFO stack can compare at most two counts at once: matching a's with b's wipes out the count n before c's arrive, while stacking b's above a's hides the a's underneath. L is context-sensitive (recognized by a linear-bounded automaton, whereas two stacks give full Turing-machine power), not regular or limited to palindromes.",
   },
 ];
