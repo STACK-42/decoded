@@ -8,9 +8,9 @@ The [physical layer](/courses/computer-literacy/physical-layer) gets your input 
 
 One of the most useful skills here is reading **error messages**: the report a program prints when an operation fails. At first, an error message can look like noise, but it is structured information with up to three parts:
 
-- An **error type or code**: a short label for what went wrong, such as HTTP `404 Not Found` for a missing web page or `PermissionError` when access is blocked.
+- An **error type or code**: a short label for what went wrong, such as [HTTP](/courses/computer-networks/http-and-https#requests-and-responses) `404 Not Found` for a missing web page or `PermissionError` when access is blocked.
 - A plain-text message explaining what failed.
-- A **stack trace** (also called a **traceback**): the list of active function calls, file names, and line numbers at the moment the program stopped.
+- A **stack trace** (also called a **traceback**): the list of active [function calls](/courses/data-structures/stacks#the-call-stack), file names, and line numbers at the moment the program stopped.
 
 Trace a real Python error step by step:
 
@@ -23,7 +23,7 @@ FileNotFoundError: [Errno 2] No such file or directory: 'data/scores.csv'
 
 1. **Read the error summary first.** In Python, the error type and reason are on the *last* line: `FileNotFoundError`, followed by the exact path `'data/scores.csv'` it failed to open. (In languages such as Java and JavaScript, the summary is usually at the *top* with the call chain below it.)
 2. **Find your own file and line number.** `File "report.py", line 4` points directly to the line in your script that caused the failure, separating your own code from library code.
-3. **Check what the program expected.** The script looked for `data/scores.csv` relative to your current directory. From there you have three checks: does the `data` folder exist here, is the filename spelled the exact same way, and did you run the command from the directory that holds `data`?
+3. **Check what the program expected.** The script looked for `data/scores.csv` relative to your [current working directory](/courses/computer-literacy/language-layer#the-file-system). From there you have three checks: does the `data` folder exist here, is the filename spelled the exact same way, and did you run the command from the directory that holds `data`?
 
 Each time you read an error as a clue, the next failure gets easier to diagnose.
 
@@ -35,7 +35,7 @@ Closing an error popup without reading it, or searching "my code crashed" instea
 
 Many everyday computer problems happen when people mix up three boundaries:
 
-- **Local vs. in the cloud:** **local** software runs on your own computer's processor and stores data on your own drive, so it works offline and stays on that device. Software **in the cloud** runs on remote servers over the internet; your screen shows the interface while the work and data live on a server somewhere else.
+- **Local vs. in the cloud:** **local** software runs on your own computer's [processor](/courses/computer-organization/inside-the-cpu) and stores data on your own drive, so it works offline and stays on that device. Software **in the cloud** runs on remote servers over the internet; your screen shows the interface while the work and data live on a server somewhere else.
 - **App vs. browser tab:** a **native app** (a desktop or mobile application) is installed directly on your operating system and can access local folders you approve. A **web app** runs inside a **browser tab** under strict security limits (a sandbox), so it cannot read your drive unless you pick or upload a file.
 - **Saved vs. synced:** **saved** means your changes have been written to storage on the machine in front of you. **Synced** means those saved changes have also been uploaded to a remote server and copied down to your other devices.
 

@@ -92,7 +92,7 @@ Before adding a probabilistic engine, an architect must check that ML is really 
 | Dimension | Traditional software | Machine learning systems |
 | --- | --- | --- |
 | Where the logic comes from | written explicitly by engineers | emerges from code + data + hyperparameters (training settings people choose, such as how long to train) |
-| How it fails | loudly: stack traces, null pointers, crashes | silently: valid output, wrong behavior or bias |
+| How it fails | loudly: [stack traces](/courses/computer-literacy/systems-layer#reading-error-messages), null pointers, crashes | silently: valid output, wrong behavior or bias |
 | How it's tested | unit tests check exact outputs | statistical evaluation checks probabilistic bounds |
 | How it decays | when dependencies or APIs change | as soon as real-world data drifts |
 | Artifact size | megabytes (binaries, containers) | gigabytes to terabytes (model weights) |

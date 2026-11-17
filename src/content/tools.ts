@@ -187,6 +187,7 @@ export const tools: Tool[] = [
     name: "The Linux terminal",
     what: "Typing commands instead of clicking, and what the shell asks the OS to do for you.",
     lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "terminal" },
       { course: "operating-systems", lesson: "lab-linux-commands", mentions: "bash" },
       { course: "operating-systems", lesson: "services-and-system-calls", mentions: "bash" },
       { course: "operating-systems", lesson: "interprocess-communication", mentions: "pipe" },
@@ -211,10 +212,19 @@ export const tools: Tool[] = [
   },
   {
     name: "AI coding assistants",
-    what: "Why an AI agent needs tests, memory files and limits around it, and two ways AI-written code went wrong.",
+    what: "How to write clear prompts, why an AI agent needs tests, memory files and limits around it, and two ways AI-written code went wrong.",
     lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "prompt" },
       { course: "advanced-software-engineering", lesson: "engineering-in-the-age-of-ai", mentions: "harness" },
       { course: "advanced-software-engineering", lesson: "case-study-ai-generated-pid", mentions: "pip" },
+    ],
+  },
+  {
+    name: "Search queries and error messages",
+    what: "How search indexes match exact queries, and how to read a traceback from the summary line up.",
+    lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "index" },
+      { course: "computer-literacy", lesson: "systems-layer", mentions: "traceback" },
     ],
   },
   {
