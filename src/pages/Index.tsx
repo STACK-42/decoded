@@ -7,6 +7,7 @@ import { courses } from "@/content/registry";
 import { DecodeText } from "@/components/DecodeText";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 import { HeroField } from "@/components/HeroField";
+import { ProfoundQuotes } from "@/components/ProfoundQuotes";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -124,39 +125,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* THE STORY */}
-      <section className="relative z-10 border-t border-border bg-black/20">
-        <div className="container py-24">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="eyebrow text-neon mb-4">Our Origin</div>
-              <h2 className="font-display text-4xl font-bold leading-tight mb-6">
-                Born from the frustration of "Magic Boxes"
-              </h2>
-              <div className="font-body text-lg text-foreground/70 space-y-4">
-                <p>
-                  Computer science education is good at what it's supposed to do. But students are left to
-                  connect each course to practice on their own, memorizing abstract proofs without ever
-                  seeing the tools built on them.
-                </p>
-                <p>
-                  Here you don't only learn the concepts. You learn how computing itself works, and how
-                  its pieces talk to each other.
-                </p>
-              </div>
-            </div>
-            <div className="relative aspect-square border border-border bg-muted/5 flex items-center justify-center overflow-hidden">
-               <div className="absolute inset-0 grid-noise opacity-20" />
-               <div className="relative z-10 text-center p-8">
-                 <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-4">Core Philosophy</div>
-                 <div className="font-display text-2xl italic leading-relaxed">
-                   "Theory without tools is boring. Tools without theory are fragile."
-                 </div>
-               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* VOICES OF THE CRAFT */}
+      <ProfoundQuotes />
 
       <SiteFooter />
     </div>
