@@ -77,17 +77,30 @@ export default function Index() {
       <section className="relative z-10 border-b border-border">
         <div className="container py-16 md:py-20">
           <div className="max-w-3xl">
+            <figure className="mb-10 max-w-2xl border-l-2 border-neon pl-5">
+              <blockquote className="font-body text-xl italic leading-snug text-foreground/90">
+                &ldquo;Computer science is not about computers in the same sense that physics is not really about particle accelerators.&rdquo;
+              </blockquote>
+              <figcaption className="mt-3 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                Hal Abelson, <span className="normal-case italic">MIT Lecture 1A, 1986</span>
+              </figcaption>
+            </figure>
+
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
-              Theory vs. Tools
+              The essence of the craft
             </h2>
             <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
               <p>
-                Most CS courses teach the proof and stop there. The tool that idea turned into, the one engineers
-                use every day, gets a passing mention or none at all. You shouldn't have to decode your own
-                syllabus to find out why it matters.
+                It is easy to spend years in a CS degree memorizing proofs without realizing you are looking at the engine
+                of a compiler, a database, or a network router. The laptop in front of you is just the instrument. The math
+                is what makes it do anything useful.
+              </p>
+              <p className="font-mono text-base text-foreground/90">
+                A regex engine is a state machine. A build tool is a topological sort. Git is a directed acyclic graph.
               </p>
               <p className="text-neon">
-                Decoded takes one topic at a time, explains it in plain words and shows you the software it runs in.
+                Decoded cuts through the academic posturing. We explain why someone had to think of it in the first place,
+                and point straight to the software you use every day that runs on it.
               </p>
             </div>
           </div>
