@@ -163,7 +163,7 @@ The rule: **every accepted string ends in $ab$.**
 
 The accepted strings ($ab$, $aab$, $bab$) all end with $a$ followed by $b$, and the rejected ones ($abb$, $b$, $\varepsilon$) don't. The machine checks exactly one thing: *did the input just end in $ab$?*
 
-In regex, this language is `/ab$/`. A regex engine compiles a pattern like this into a state machine that runs exactly the way you just traced, with the same circles, arrows and accept condition.
+In programmer regex syntax, this language is `/ab$/`, where the slashes wrap the pattern and `$` marks the end of the string (not a dollar sign as in the parking meter above). A regex engine compiles a pattern like this into a state machine that runs exactly the way you just traced, with the same circles, arrows and accept condition.
 
 The point here is the skill: tracing the machine symbol by symbol. The first lesson of Module 1 takes this exact machine and writes it down as a 5-tuple, with the same six arrows in formal syntax.
 
@@ -185,7 +185,7 @@ Whenever you design or read a state diagram, ask: *what does this state know?* T
 
 Before moving to Module 1, keep two rules in mind:
 
-**Every state must have exactly one outgoing arrow per symbol.** If the alphabet is $\{a, b\}$, every state needs exactly one $a$-arrow and one $b$-arrow leaving it. A DFA that satisfies this rule everywhere is called a **complete DFA**. A diagram with a missing transition is incomplete; to turn it into a valid DFA, route every missing symbol to a non-accepting **trap state** (also called a **dead state** or **sink state**) that loops back to itself on every symbol in $\Sigma$. Once a string enters the trap state, it can never leave and is guaranteed to reject. By contrast, a machine where two $a$-arrows leave the same state is a different kind of machine, a nondeterministic automaton, which Module 1 covers.
+**Every state must have exactly one outgoing arrow per symbol.** If the alphabet is $\{a, b\}$, every state needs exactly one $a$-arrow and one $b$-arrow leaving it. A DFA that satisfies this rule everywhere is called a **complete DFA**. Unlike the shorthand diagram in the [Grammars lesson](/courses/theory-of-computation/grammars#a-regular-grammar-is-a-finite-automaton) that omitted error transitions out of `F`, turning an incomplete diagram into a valid complete DFA means routing every missing symbol to a non-accepting **trap state** (also called a **dead state** or **sink state**) that loops back to itself on every symbol in $\Sigma$. Once a string enters the trap state, it can never leave and is guaranteed to reject. By contrast, a machine where two $a$-arrows leave the same state is a different kind of machine, a nondeterministic automaton, which Module 1 covers.
 
 **The machine cannot look ahead.** It reads left to right, one symbol at a time, with no ability to peek at what comes next or go back. Every decision is made with only the current state and the current symbol. That constraint keeps the model limited enough to analyze mathematically, while staying expressive enough to match real tools like regex engines.
 

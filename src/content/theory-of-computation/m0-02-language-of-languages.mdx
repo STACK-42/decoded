@@ -40,14 +40,14 @@ $$
 
 The **length** of a string $w$, written $|w|$, is the number of symbols in it, so $|abb| = 3$ and $|a| = 1$.
 
-The **empty string** $\varepsilon$ (epsilon) is the string with zero symbols. (Some textbooks write $\Lambda$, capital lambda, for the same string; Module 2 uses $\Lambda$ in grammar derivations, and both mean the zero-symbol string.) Do not treat $\varepsilon$ as "nothing". It exists, it is a valid string over every alphabet, and its length is zero:
+The **empty string** $\varepsilon$ (epsilon) is the string with zero symbols. (Some textbooks write $\Lambda$, capital lambda, for the same string; Module 0 uses $\varepsilon$ everywhere, and Module 2 switches to $\Lambda$ in grammar derivations.) Do not treat $\varepsilon$ as "nothing". It exists, it is a valid string over every alphabet, and its length is zero:
 
 $$
 |\varepsilon| = 0
 $$
 
 <Callout tone="orange" label="The ε mistake">
-  Students often confuse the empty string $\varepsilon$ with the empty set $\emptyset$, and the language $\{\varepsilon\}$ with $\emptyset$.
+  Students often confuse the empty string $\varepsilon$ with the empty set $\emptyset$, and the language $\{\varepsilon\}$ with $\emptyset$. We also write $|L|$ for the **size** (cardinality) of a language $L$, meaning how many strings it holds:
   - $\varepsilon$ is a **string** of length $0$. $\emptyset$ is a **set** containing zero strings.
   - $\{\varepsilon\}$ is a **language with one string in it** ($\lvert\{\varepsilon\}\rvert = 1$), whereas $\emptyset = \{\}$ is the **empty language with zero strings** ($\lvert\emptyset\rvert = 0$).
 
@@ -66,7 +66,7 @@ $$
 L = \{w \in \Sigma^* \mid w \text{ starts with } a\}
 $$
 
-Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule (read the vertical bar $\mid$ as "such that", and $\Sigma^*$ as every possible string over $\Sigma$, defined right below). Since you can't list an infinite language, formal language theory is mostly about finding short, exact rules that describe one.
+Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule (read $\in$ as "in", the vertical bar $\mid$ as "such that", and $\Sigma^*$ as every possible string over $\Sigma$, defined in the next section). Since you can't list an infinite language, formal language theory is mostly about finding short, exact rules that describe one.
 
 <table>
   <thead>
@@ -123,7 +123,7 @@ $$
 $$
 
 <Callout tone="orange" label="What is ∅*?">
-  The Kleene star also applies to any language $L$, meaning zero or more strings from $L$ joined together. Students often guess that $\emptyset^* = \emptyset$, assuming "repeating nothing gives nothing". In fact, picking **zero** strings from $\emptyset$ gives the empty string $\varepsilon$, so:
+  The Kleene star also applies to any language $L$, writing $L^*$ for zero or more strings from $L$ placed side by side. Students often guess that $\emptyset^* = \emptyset$, assuming "repeating nothing gives nothing". In fact, picking **zero** strings always produces the empty string $\varepsilon$ (just as $L^0 = \{\varepsilon\}$ below), so:
   $$\emptyset^* = \{\varepsilon\} \qquad \text{while} \qquad \emptyset^+ = \emptyset$$
   $\emptyset^*$ has one element ($\varepsilon$), whereas $\emptyset^+$ requires picking at least one string from an empty set and has none.
 </Callout>
@@ -167,7 +167,7 @@ $$
 
 If two pairs produce the same string, the set keeps only one copy. For example, if $X = \{a, aa\}$ and $Y = \{a, aa\}$, the pairs give $aa, aaa, aaa, aaaa$, so $XY = \{aa, aaa, aaaa\}$ (three strings, not four).
 
-Exponents abbreviate repeated concatenation:
+Exponents abbreviate repeated concatenation ($L^k$ concatenates $k$ copies of $L$, so for $\Sigma = \{a, b\}$, $\Sigma^2 = \Sigma \cdot \Sigma$):
 
 $$
 a^3 = aaa \qquad \Sigma^2 = \{aa,\ ab,\ ba,\ bb\}
@@ -183,7 +183,7 @@ And $w^0 = \varepsilon$ for any string $w$, and $L^0 = \{\varepsilon\}$ for any 
 
 ## Regular Expressions: The First Compact Notation
 
-You may know [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) from `grep`. In math, a **regular expression** is a formal notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and built from three operations: union, concatenation, and Kleene star.
+You may know [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) from `grep`. In math, a **regular expression** is a formal notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and built from three operations: union, concatenation, and Kleene star. (Unlike `grep` or JavaScript, where `+` means "one or more", textbook notation uses `+` for **union**, meaning "or".)
 
 A regular expression over $\Sigma$ is defined by three rules:
 
@@ -193,11 +193,11 @@ A regular expression over $\Sigma$ is defined by three rules:
 - Any single symbol $a \in \Sigma$ is a regular expression, describing $\{a\}$
 
 **Recursion.** If $r_1$ and $r_2$ are regular expressions, so are:
-- $r_1 r_2$: concatenation (strings formed by a string from $r_1$ followed by one from $r_2$)
-- $r_1 + r_2$: union (any string in $r_1$ or in $r_2$)
-- $r_1^*$: Kleene star (zero or more strings from $r_1$ concatenated together)
+- $r_1 r_2$: concatenation (a string from $r_1$'s language followed by one from $r_2$'s language)
+- $r_1 + r_2$: union (any string in $r_1$'s language or in $r_2$'s language)
+- $r_1^*$: Kleene star (zero or more strings from $r_1$'s language concatenated together)
 
-**Closure.** Nothing else is a regular expression.
+**Completeness.** Nothing else is a regular expression.
 
 Those three rules generate every regular expression, from a search pattern in your terminal to an input check in your code.
 
@@ -283,8 +283,8 @@ $$XY = \{b,\ bb,\ ab,\ abb,\ abbb\} \qquad \lvert XY \rvert = 5$$
 ## Optional Further Reading
 
 <ApplicationsGrid>
-  <PracticalApplication title="Why does the empty string exist?" tool="Search →">
-    Search "why does the empty string exist in formal languages". Knowing why $\varepsilon$ exists makes every definition that follows clearer.
+  <PracticalApplication title="Why does the empty string exist?" tool="IDENTITY">
+    Just as `0` acts as the identity for addition ($x + 0 = x$), $\varepsilon$ acts as the identity for string concatenation ($w\varepsilon = \varepsilon w = w$) and gives Kleene star a way to represent zero repetitions. Without $\varepsilon$, simple languages like "optional sign" or "zero or more digits" would need awkward special cases.
   </PracticalApplication>
   <PracticalApplication title="Regular Expressions" tool="Watch Video →">
     Chris Marriott's video on regular expressions is a clear visual walkthrough that lines up well with what you just read. [Watch on YouTube](https://youtu.be/h___LthS3QQ?si=rTELcV9rGt8ZN3ij).

@@ -17,8 +17,8 @@ G = (V,\ T,\ P,\ S)
 $$
 
 - $V$ is a finite set of **variables** (also called **non-terminals**), placeholders that still need to be expanded. We write them as uppercase letters: $S$, $A$, $B$.
-- $T$ is the set of **terminals**, the finished output symbols that never get rewritten again. It's the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$. Variables and terminals cannot overlap ($V \cap T = \emptyset$), otherwise you could never tell whether a symbol is finished output or a placeholder waiting to be replaced.
-- $P$ is a finite set of **productions** (rewriting rules) of the form $\alpha \rightarrow \beta$, read "$\alpha$ can be rewritten as $\beta$".
+- $T$ is the set of **terminals**, the finished output symbols that never get rewritten again. It's the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$. Variables and terminals cannot overlap ($V \cap T = \emptyset$, meaning their intersection is empty), otherwise you could never tell whether a symbol is finished output or a placeholder waiting to be replaced.
+- $P$ is a finite set of **productions** (rewriting rules) of the form $\alpha \rightarrow \beta$, read "$\alpha$ can be rewritten as $\beta$", where $\alpha$ and $\beta$ are strings of variables and terminals and $\alpha$ holds at least one variable.
 - $S \in V$ is the **start variable**, the single placeholder every derivation begins from.
 
 Some textbooks write the same four parts as $(N, \Sigma, P, S)$ or $(V, \Sigma, R, S)$, with $N$ for non-terminals and $R$ for rules. The parts are identical; only the letters change.
@@ -66,7 +66,7 @@ For $S \rightarrow aS \mid b$: zero applications of $S \rightarrow aS$ followed 
 
 ## Try it: deriving $a^nb^n$
 
-Here is the grammar for a language that Module 2 proves no finite automaton can recognize:
+Here is the grammar for $a^nb^n = \{a^nb^n \mid n \ge 0\}$ (some number of $a$'s followed by the exact same number of $b$'s), a language that Module 2 proves no finite automaton can recognize:
 
 $$
 S \rightarrow aSb \mid \varepsilon
@@ -82,7 +82,7 @@ Try a target like `aab` that isn't in the language. The stepper searches every d
   The stepper always replaces the **leftmost** variable first. When a sentential form has several variables, you could replace them in any order and reach the same strings. Fixing the order makes every derivation easier to compare, and Module 2 uses it to define [parse trees](/courses/theory-of-computation/context-free-grammars#parse-trees).
 </Callout>
 
-Now edit the rules to `S -> (S)S | ε`. That grammar generates every string of balanced brackets. Pick `(())()` from the examples and watch the derivation keep a variable open for each unclosed bracket.
+Now edit the rules to `S -> (S)S | ε` and click **Derive**. That grammar generates every string of balanced brackets. Pick `()()` from the example buttons (or type `(())()` into the string box and click **Derive**) to watch the derivation keep a variable open for each unclosed bracket.
 
 ## The Chomsky hierarchy
 
@@ -96,12 +96,12 @@ Chomsky's other contribution was to sort grammars by how much freedom their rule
 | 0 | Unrestricted | $\alpha \rightarrow \beta$, anything | Turing machine | Anything a program can enumerate |
 
 Why do those four restrictions separate four different machines?
-- **Type 3 (Regular):** every rule produces at most one terminal and keeps at most one variable at the right end ($A \rightarrow aB$, $A \rightarrow a$, or $A \rightarrow \varepsilon$), which is called a **right-linear grammar**. (A **left-linear grammar** puts the variable on the left instead, $A \rightarrow Ba$, which has the same power as long as you don't mix both in one grammar.) Because there is at most one active variable at the end of the working string, a machine only needs to remember *which variable it is currently in*, so finite memory is enough.
-- **Type 2 (Context-free):** the left-hand side is still a single variable $A$, so you can rewrite $A$ anywhere it appears, regardless of its neighbors. Allowing terminals on *both* sides of $A$, as in $S \rightarrow aSb$, forces a recognizer to match the left side against the right side later, which needs a stack (a pushdown automaton).
-- **Type 1 (Context-sensitive):** the left-hand side can require surrounding symbols ($\alpha \rightarrow \beta$), and rules cannot shrink the working string ($\lvert\alpha\rvert \le \lvert\beta\rvert$, except optionally $S \rightarrow \varepsilon$ if $S$ never appears on a right-hand side). Because strings never get shorter during derivation, a recognizer only ever needs a tape proportional to the input length (a **linear-bounded automaton**).
-- **Type 0 (Unrestricted):** any string of variables and terminals (with at least one variable on the left) can rewrite to anything, including shrinking or erasing symbols, giving the full power of a Turing machine.
+- **Type 3 (Regular):** every rule produces at most one terminal and keeps at most one variable at the right end ($A \rightarrow aB$, $A \rightarrow a$, or $A \rightarrow \varepsilon$), which is called a **right-linear grammar**. (A **left-linear grammar** puts the variable on the left instead, $A \rightarrow Ba$, which has the same power as long as you don't mix both in one grammar.) Because there is at most one active variable at the end of the working string, a recognizer only needs to remember *which variable it is currently in*, so finite memory is enough.
+- **Type 2 (Context-free):** the left-hand side is still a single variable $A$, so you can rewrite $A$ anywhere it appears, regardless of its neighbors. Allowing terminals on *both* sides of $A$ (as in $S \rightarrow aSb$, where the left count of $a$'s must match the right count of $b$'s later) can require a stack (a pushdown automaton).
+- **Type 1 (Context-sensitive):** the left-hand side can require surrounding symbols ($\alpha \rightarrow \beta$), and rules cannot shrink the total symbol count ($\lvert\alpha\rvert \le \lvert\beta\rvert$, except optionally $S \rightarrow \varepsilon$ if $S$ never appears on a right-hand side). Because strings never get shorter during derivation, a recognizer only ever needs a scratch tape bounded by the input length (a **linear-bounded automaton**).
+- **Type 0 (Unrestricted):** any string of variables and terminals (with at least one variable on the left) can rewrite to anything, including shrinking or erasing symbols, giving the full power of a Turing machine (which can generate any language a program can list out, even when non-members might loop forever).
 
-Each type contains the ones below it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and so on. The examples in the last column sit one level up each time: $a^nb^n$ is context-free and not regular, and $a^nb^nc^n$ is context-sensitive and not context-free.
+Each row is a wider family than the row above it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and every context-sensitive language is unrestricted. The examples in the last column sit one level up each time: $a^nb^n$ is context-free and not regular, and $a^nb^nc^n$ (equal counts of $a$'s, $b$'s, and $c$'s in order) is context-sensitive and not context-free.
 
 This table is also a map of this course. Module 1 covers type 3 and Module 2 covers type 2. Types 1 and 0, and the Turing machine, belong to later courses on computability.
 
@@ -111,9 +111,9 @@ This table is also a map of this course. Module 1 covers type 3 and Module 2 cov
 
 ## A regular grammar is a finite automaton
 
-Type 3 rules have a shape you're about to read closely in the [next lesson](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). In a state diagram, circles are states (with a start arrow into the start state and a double circle marking an accept state) and labeled arrows move from state to state as symbols are read.
+Type 3 rules give you a preview of **state diagrams**, which the [next lesson](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) teaches in full. In a state diagram, circles are states (with a start arrow into the start state and a double circle marking an accept state) and labeled arrows move from state to state as symbols are read.
 
-In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labeled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
+In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labeled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram), and $A \rightarrow \varepsilon$ marks state $A$ itself as an accept state. Here is $S \rightarrow aS \mid b$ drawn as a shorthand diagram (leaving out the error arrows for invalid paths, which the next lesson adds using a trap state):
 
 <AutomatonDiagram
   states={["S", "F"]}
