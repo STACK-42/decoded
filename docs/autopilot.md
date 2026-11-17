@@ -55,7 +55,7 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
     - [x] Computer Graphics: +32 (32 → 64), 2 for each of the 16 taught lessons, each with `lesson` and (all but one) `section`. (PR #90)
     - [x] Theory of Computation: +34 (26 → 60), 2 or 3 for each of the 15 taught lessons, each with `lesson` and (all but the intro) `section`. The bank test now finds a lesson's file through `registry.ts`, since `m1-01-states-symbols.mdx` is the slug `states-symbols-and-transitions`. (PR #91, stacked on #90)
     - [x] Microprocessors: +34 (10 → 44), 3 for each of the 11 taught lessons (4 for segments), each with `lesson` and (all but one) `section`. (PR #94, stacked on #91)
-    - [x] Computer Organization: +26 (10 → 36), 2 or 3 for each of the 9 taught lessons, each with `lesson` and `section`. (PR #PRNUM, stacked on #94)
+    - [x] Computer Organization: +26 (10 → 36), 2 or 3 for each of the 9 taught lessons, each with `lesson` and `section`. (PR #96, stacked on #94)
     - Still to do, measured 2026-11-16: Discrete Mathematics 26, Data Structures 20, Computer Networks 9. Advanced Software Engineering (42) is new and left to its authors.
   - [ ] 4d. Set `lesson`/`section` on the 259 migrated questions.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
@@ -92,7 +92,7 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
-- 2026-11-17 10:40 (run B): exam phase 4c, Computer Organization: +26 questions over all 9 taught lessons, numbers checked by script (500 GB shown as 465.7, G = 01000111, 2¹⁶ and 2¹² locations, the disk capacity 516,096,000 bytes, 4.2 ms average wait at 7,200 rpm). PR #PRNUM, open, stacked on #94.
+- 2026-11-17 10:40 (run B): exam phase 4c, Computer Organization: +26 questions over all 9 taught lessons, numbers checked by script (500 GB shown as 465.7, G = 01000111, 2¹⁶ and 2¹² locations, the disk capacity 516,096,000 bytes, 4.2 ms average wait at 7,200 rpm). PR #96, open, stacked on #94.
 - 2026-11-17 06:10 (run A): exam phase 4c, Microprocessors: +34 questions over all 11 taught lessons, every value checked by script (C8h + 64h flags, CS:IP and segment limits, effective address, MUL/DIV results, XOR case flip, LOOP sum, SP after push/pop, INT 21h vector at 84h). PR #94, open, stacked on #91.
 - 2026-11-16 10:40 (run B): exam phase 4c, Theory of Computation: +34 questions over all 15 taught lessons, every trace and membership answer checked by script (DFA and NFA runs, the parking meter, concatenation, regex word order and anchors, grammar membership). The bank test's lesson-to-file lookup now goes through the registry. PR #91, open, stacked on #90.
 - 2026-11-16 06:10 (run A): exam phase 4c resumed after the owner merged the stack. Logic Design and Computer Architecture skipped (they already have 152 and 64 inline practice questions; decision logged in 4c). Computer Graphics: +32 questions, 2 per taught lesson, every number recomputed by script (row-major index, bit depths, alpha blend, image and frame-buffer sizes, PPI, DDA and Bresenham pixels). PR #90, open.
