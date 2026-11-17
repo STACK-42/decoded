@@ -995,6 +995,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

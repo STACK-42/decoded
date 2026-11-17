@@ -393,15 +393,16 @@ export const questions: Question[] = [
     section: "not-the-best-time-to-study",
     prompt: "Why does flipping through summary notes in the final hour before an exam usually lower your performance?",
     options: [
-      { id: "a", text: "Because you cannot learn any new material at all on exam day, even hours earlier" },
+      { id: "a", text: "Because reviewing any material on the day of an exam violates spaced repetition" },
       { id: "b", text: "Because reviewing notes makes your handwriting slower during the first five minutes" },
       { id: "c", text: "Because spotting one shaky formula triggers a cortisol spike that stays active past the start of the exam, while tiring working memory" },
       { id: "d", text: "Because instructors change the exam notation if students review outside the hall" },
     ],
     correctOptionId: "c",
-    explanation: "Last-minute skimming surfaces uncertain details that trigger a cortisol surge lasting over an hour, drains working memory before the timer starts, and adds interfering clutter. Option A overstates the cutoff (the danger is the final hour), while options B and D are irrelevant.",
+    explanation: "Last-minute skimming surfaces uncertain details that trigger a cortisol surge lasting over an hour, drains working memory before the timer starts, and adds interfering clutter. Option A is wrong because earlier light review is fine (the danger is the final hour), while options B and D are irrelevant.",
   },
   {
+    // id kept for review history stability; tests retroactive interference
     id: `${L}/exam-day/proactive-interference`,
     lesson: "exam-day",
     section: "not-the-best-time-to-study",
@@ -413,7 +414,7 @@ export const questions: Question[] = [
       { id: "d", text: "Working memory locked in the edge case permanently because you read it under pressure" },
     ],
     correctOptionId: "b",
-    explanation: "Retroactive interference happens when freshly skimmed details create competing clutter that blocks retrieval of older, well-consolidated memories. Option A confuses interference with post-exam emotion bias, option C misstates spacing, and option D is false because crammed last-minute traces are weak rather than permanent.",
+    explanation: "Retroactive interference happens when freshly skimmed details create competing clutter that blocks retrieval of older, well-consolidated memories. Option A confuses interference with emotion bias, option C misstates spacing, and option D is false because crammed last-minute traces are weak rather than permanent.",
   },
   {
     id: `${L}/exam-day/group-chat`,
@@ -423,11 +424,11 @@ export const questions: Question[] = [
     options: [
       { id: "a", text: "Classmates usually know the exact exam questions ahead of time" },
       { id: "b", text: "Reading messages causes sleep pressure to rise faster than staying quiet" },
-      { id: "c", text: "Checking one message takes thirty minutes of your exam time" },
+      { id: "c", text: "Reading peer debates right before the test boosts confidence by exposing you to alternative notation" },
       { id: "d", text: "Emotional contagion spreads peer panic, and classmates' different notation and rare edge cases create unnecessary confusion" },
     ],
     correctOptionId: "d",
-    explanation: "Group chats amplify anxiety through emotional contagion and mix different notation and rare edge cases right before you sit down, making you doubt solid preparation. Options A, B, and C misstate why pre-exam chats hurt performance.",
+    explanation: "Group chats amplify anxiety through emotional contagion and mix different notation and rare edge cases right before you sit down, making you doubt solid preparation. Options A and B misstate what group chats do, and option C gets the effect backward because seeing unfamiliar notation minutes before the test causes confusion.",
   },
   {
     id: `${L}/exam-day/its-a-normal-day`,
@@ -464,11 +465,11 @@ export const questions: Question[] = [
     prompt: "Why is it smart to walk past classmates debating answers outside the exam hall?",
     options: [
       { id: "a", text: "You cannot change submitted answers, and hearing one conflicting answer triggers negativity bias that hurts confidence for upcoming exams" },
-      { id: "b", text: "Because classmates who discuss answers are always wrong about the hardest problems" },
-      { id: "c", text: "Because walking away triggers retroactive interference that erases your memory of the exam" },
-      { id: "d", text: "Because discussing the test right afterward lowers your sleep consolidation for the next course" },
+      { id: "b", text: "Because classmates outside the hall rarely remember the exact questions they just answered" },
+      { id: "c", text: "Because discussing the test right afterward causes retroactive interference that weakens what you just submitted" },
+      { id: "d", text: "Because hallway debates prevent sleep consolidation on the exam you already finished" },
     ],
     correctOptionId: "a",
-    explanation: "Once the paper is submitted, post-exam debates cannot raise your score, and negativity bias makes a single disputed answer feel like total failure, draining energy for rest or the next exam. Option B is untrue, option C misuses retroactive interference, and option D invents a sleep effect.",
+    explanation: "Once the paper is submitted, post-exam debates cannot raise your score, and negativity bias makes a single disputed answer feel like total failure, draining energy for rest or the next exam. Option B assumes peers are uninformed rather than addressing the emotional risk, option C misuses retroactive interference (your paper is already turned in), and option D invents a sleep effect.",
   },
 ];
