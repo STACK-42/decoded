@@ -1,47 +1,210 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { InterruptFlow } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Interrupts
 
-Imagine you're cooking and expecting a package. You could go to the door every minute to check, or you could carry on cooking and let the doorbell tell you. The second way is obviously better, and it's how a CPU deals with devices. An **interrupt** is a doorbell.
+Imagine you are cooking dinner and expecting a delivery. You could walk to the front door every thirty seconds to check the porch, or you could keep cooking and let the doorbell notify you when the driver arrives. The second approach lets you do real work while waiting.
 
-Without interrupts, a CPU would have to keep asking the keyboard "any key yet?" millions of times, wasting nearly all of its time. That approach is called [polling](/courses/computer-architecture/io-methods).
+In computer systems, an **interrupt** is that doorbell: an electrical or software signal that diverts the central processing unit from its current instruction sequence to handle an urgent event immediately.
+
+Without interrupts, the processor must repeatedly read an I/O device's status register in a tight loop to see if new data has arrived. That continuous checking is called [polling](/courses/computer-architecture/io-methods). Polling burns millions of clock cycles asking "any key pressed yet?", which starves the rest of the system of computing time. Interrupts reverse the relationship: the device alerts the processor only when it needs attention.
 
 ## What happens
 
-An interrupt is a forced `CALL`. Step through it, then try masking it.
+At the hardware level, an interrupt acts like an involuntary subroutine call triggered from the outside. Step through the execution sequence in the visualizer below, then toggle the mask setting to see what happens when the processor ignores incoming requests.
 
 <InterruptFlow />
 
-**ISR** stands for Interrupt Service Routine, the code that handles the event. It's a normal procedure, except it ends with `IRET` rather than `RET`, because it has to restore the flags too.
+The code that executes in response to an interrupt is called an **Interrupt Service Routine (ISR)**, or interrupt handler. An ISR is a normal procedure located in memory, but it ends with a specialized instruction: the **Interrupt Return (IRET)**. While a standard return instruction restores only the instruction pointer and code segment, `IRET` restores the instruction pointer, code segment, and the processor flags register.
 
-The time between the request and the start of the ISR is the **interrupt latency**.
+The total elapsed time between the moment a peripheral asserts an interrupt request and the moment the CPU executes the first instruction of the ISR is the **interrupt latency**. Latency includes finishing the current instruction, running the interrupt acknowledge bus cycles, saving processor state onto the stack, and fetching the handler address.
+
+### The hardware interrupt sequence
+
+When an interrupt request reaches the 8086 processor, the hardware performs an eight-step sequence before running the first line of the handler:
+
+1. **Complete current instruction**: The CPU finishes executing the active machine instruction. The processor never stops midway through an instruction cycle, with the exception of repeatable string instructions (`REP MOVS`), which suspend cleanly after the current iteration and save their state.
+2. **Push flags**: The processor decrements the stack pointer (`SP`) by 2 and pushes the 16-bit `FLAGS` register onto the stack.
+3. **Clear IF and TF**: The CPU clears the Interrupt Flag (`IF = 0`) to prevent other maskable interrupts from disrupting handler entry, and clears the Trap Flag (`TF = 0`) to disable single-step debugging during handler dispatch.
+4. **Push CS**: The processor decrements `SP` by 2 and pushes the current Code Segment register (`CS`) onto the stack.
+5. **Push IP**: The processor decrements `SP` by 2 and pushes the current Instruction Pointer (`IP`) onto the stack. This return address points to the exact instruction that should execute once the interrupt finishes.
+6. **Fetch target address**: The CPU uses the interrupt's type number to locate the handler's entry in the vector table, loading the new offset into `IP` and the new segment into `CS`.
+7. **Execute the ISR**: The CPU begins fetching and executing instructions from the handler routine at the newly loaded `CS:IP`.
+8. **Execute IRET**: When the handler completes, `IRET` pops the saved `IP`, pops the saved `CS`, and pops the saved `FLAGS` from the stack in reverse order. Execution resumes in the interrupted program with all processor registers and flags restored.
+
+<Callout tone="orange" label="Trap: ending an ISR with RET instead of IRET">
+Ending an interrupt handler with a standard `RET` instruction corrupts the stack. A normal near `RET` pops only two bytes into `IP`, leaving the saved `CS` and `FLAGS` stranded on the stack. The stack pointer remains misaligned, subsequent procedure returns read garbage, and the processor never restores its original condition flags. An ISR must always terminate with `IRET`.
+</Callout>
 
 ## Types of interrupt
 
-| Type | Caused by | Example |
-|---|---|---|
-| Hardware (external) | A device signalling on a pin | A key press, a disk finishing |
-| Software | An instruction in the program | `INT 21h`, the [DOS call](/courses/microprocessors/first-program) you've used |
-| Exception | The CPU itself, when something goes wrong | Divide by zero, or `INTO` after an overflow |
+The 8086 recognizes three distinct categories of interrupts depending on what triggered them:
 
-The 8086 supports 256 interrupt types, numbered 0 to 255. Each has a 4-byte entry at the very bottom of memory, holding the CS and IP of its handler, which is the **interrupt vector table**.
+| Category | Trigger mechanism | Synchronous / Asynchronous | Example |
+|---|---|---|---|
+| Hardware interrupt (external) | Voltage level or edge on a CPU pin | Asynchronous to program execution | Keyboard key press, timer tick, disk transfer complete |
+| Software interrupt | Explicit execution of the `INT n` instruction | Synchronous to program execution | `INT 21h` system service call in DOS |
+| CPU exception | Execution unit detects an invalid condition | Synchronous to program execution | Divide by zero (`INT 00h`), overflow check (`INTO`) |
+
+A **hardware interrupt (external)** arrives from physical circuitry outside the processor chip via physical pins. Because peripherals operate on their own clocks, external hardware interrupts are asynchronous: they can arrive at any arbitrary moment during program execution.
+
+A **software interrupt** is generated synchronously by the program itself through instructions such as `INT n`, where $n$ is the requested interrupt number. Software interrupts provide a clean gateway for user applications to invoke operating system functions and BIOS routines without needing to know their fixed memory addresses at build time.
+
+A **CPU exception** is an internal condition generated directly by the execution unit when it encounters an operational anomaly. Exceptions fall into two specific classes:
+- A **fault** is reported before the offending instruction finishes execution. The saved return address points directly to the instruction that caused the fault. If the operating system corrects the underlying problem (such as loading a missing memory page from disk), the instruction can be restarted and continue seamlessly. Examples include divide-by-zero errors (`INT 00h`) and page faults.
+- A **trap** is reported immediately after the instruction finishes execution. The saved return address points to the following instruction. Examples include single-step traps for debuggers (`INT 01h`) and arithmetic overflow traps initiated by `INTO` (`INT 04h`).
+
+### The Interrupt Vector Table (IVT)
+
+The 8086 processor architecture reserves 256 interrupt types, identified by an 8-bit **interrupt vector** or **type number** ranging from 0 to 255 (`00h` to `FFh`).
+
+To locate the handler for each type, the processor looks in the **Interrupt Vector Table (IVT)**. The IVT occupies the first 1,024 bytes of physical memory, spanning addresses `00000h` through `003FFh`. Each vector entry requires four bytes: a 2-byte offset for `IP` followed by a 2-byte base segment address for `CS`.
+
+$$\text{IVT Base Physical Address} = \text{Type Number} \times 4$$
+
+Consider software interrupt `INT 21h`, used by DOS applications to invoke operating system services. To find its handler:
+
+1. Multiply the type number `21h` (decimal 33) by 4:
+   $$21\text{h} \times 4 = 84\text{h}$$
+2. The entry begins at physical memory address `00084h` and spans four consecutive bytes:
+   - `00084h`: Low byte of `IP`
+   - `00085h`: High byte of `IP`
+   - `00086h`: Low byte of `CS`
+   - `00087h`: High byte of `CS`
+3. The processor loads the 16-bit word at `00084h` into register `IP` and the 16-bit word at `00086h` into register `CS`, then branches to `CS:IP`.
+
+```
+Physical Address     Contents
+00084h               Offset Low Byte   (IP low)
+00085h               Offset High Byte  (IP high)
+00086h               Segment Low Byte  (CS low)
+00087h               Segment High Byte (CS high)
+```
+
+Because memory is organized in little-endian order, the lower-order byte is always stored at the lower physical address.
 
 ## Maskable and non-maskable
 
-The chip has two interrupt pins, and the difference between them is whether software can switch them off:
+The 8086 has two dedicated physical pins for receiving external hardware interrupt signals:
 
-| | Maskable (INTR) | Non-maskable (NMI) |
+| Feature | Maskable Interrupt (INTR) | Non-Maskable Interrupt (NMI) |
 |---|---|---|
-| Can be ignored? | Yes, with `CLI` (IF = 0) | No |
-| Used for | Normal devices such as a keyboard | Critical events such as hardware failure |
-| Example on the 8085 | RST 7.5, RST 6.5, RST 5.5 | TRAP |
-| Priority | Lower | Higher |
+| Pin name | INTR (pin 18) | NMI (pin 17) |
+| Can software disable it? | Yes, by clearing Interrupt Flag (`IF = 0` via `CLI`) | No, the CPU always responds |
+| Trigger method | Level-triggered (active high voltage) | Edge-triggered (positive 0 V to 5 V transition) |
+| Vector type identification | Supplied by external controller across data bus | Fixed internally to Type `02h` |
+| Typical use cases | Keyboards, serial ports, disks, network cards | Parity errors, memory bus faults, imminent power loss |
+| Hardware priority | Lower priority than NMI | Higher priority than INTR |
 
-Why would you ever turn interrupts off? While an ISR is updating some shared data, another interrupt arriving halfway through could find it half-changed. So critical code runs `CLI`, does its work quickly and runs `STI`. A real emergency, like a memory error, still gets through on NMI.
+A **maskable interrupt (INTR)** allows software to defer handling when executing sensitive operations. When the processor executes `CLI` (Clear Interrupt Flag), it sets `IF = 0`. The processor ignores any high signal on the INTR pin until software runs `STI` (Set Interrupt Flag), which sets `IF = 1`. INTR is level-triggered: external hardware must hold the pin high until the CPU samples it at the end of an instruction.
 
-<Callout tone="orange" label="Everything depends on this">
-A computer that seems to run many programs at once uses a timer interrupt, firing many times a second, to take control back from a running program and let the next one have a turn. That's how an [operating system](/courses/operating-systems) stays in charge.
+A **non-maskable interrupt (NMI)** cannot be masked or disabled by software. It is edge-triggered: a low-to-high transition latches the request inside the CPU regardless of `IF`. The processor assigns NMI fixed vector Type `02h` internally, so it requires no external vector number. NMI handles hardware emergencies where continuing normal execution could corrupt data or damage equipment.
+
+### The interrupt acknowledge cycle (INTA) and the 8259A PIC
+
+Because the INTR pin does not have a fixed vector number, the CPU must ask the external hardware which device is interrupting. It does this over the bus using an **interrupt acknowledge cycle (INTA)**.
+
+When the CPU accepts a request on INTR, it generates two consecutive active-low pulses on its $\overline{\text{INTA}}$ pin:
+
+1. **First INTA pulse**: Signals external hardware that the CPU has accepted the interrupt request. During this pulse, an external controller resolves competing priorities and locks the winning device.
+2. **Second INTA pulse**: Causes the external controller to place the 8-bit vector number (from 0 to 255) onto the lower data bus lines ($D_7\text{--}D_0$). The CPU reads this byte and multiplies it by 4 to locate the vector in the IVT.
+
+In practical IBM PC compatible systems, multiple devices share the single INTR pin through a dedicated chip: the **Programmable Interrupt Controller (PIC 8259A)**. The 8259A acts as an advanced priority encoder. It connects to eight peripheral request lines (IRQ0 through IRQ7), resolves which device has the highest priority, drives the CPU's INTR pin high, and supplies the programmed vector number during the second `INTA` pulse.
+
+<Callout tone="violet" label="Why timer interrupts drive multitasking">
+A single CPU core can run only one instruction stream at any instant. Modern operating systems create the illusion of simultaneous program execution by programming an external hardware timer to fire an interrupt several hundred times per second. Each timer interrupt preempts the currently running thread, saves its register state, and hands the CPU to the operating system scheduler, which selects another thread to execute. Without hardware interrupts, a runaway loop in a user program would freeze the entire machine.
 </Callout>
 
-When several devices ask at once, a [priority encoder](/courses/logic-design/comparators-decoders-encoders) decides who goes first.
+<Callout tone="orange" label="Trap: assuming CLI disables all interrupts">
+Executing `CLI` clears only the Interrupt Flag (`IF`), which silences the maskable INTR pin. It has zero effect on the non-maskable interrupt (NMI), software interrupts (`INT n`), or processor exceptions such as divide by zero. Writing `CLI` does not guarantee that your code will execute without interruption if an exception occurs or if memory reports a parity error.
+</Callout>
+
+## Practice by hand
+
+### Problem 1: Extracting vector addresses from memory
+
+A system running on an 8086 processor needs to service two interrupts:
+- Interrupt Type `10h` (BIOS video services)
+- Interrupt Type `08h` (system timer interrupt)
+
+An engineer inspects the first 128 bytes of system RAM with a memory probe and reads the following byte sequences:
+- At physical addresses `00020h` through `00023h`: `30h`, `12h`, `00h`, `F0h`
+- At physical addresses `00040h` through `00043h`: `80h`, `E0h`, `00h`, `C0h`
+
+1. Calculate the starting physical base address in the Interrupt Vector Table for Type `10h` and Type `08h`.
+2. Extract the initial values of `IP` and `CS` for each interrupt service routine from the byte values above.
+3. Calculate the 20-bit physical entry point in memory where the CPU begins executing each handler routine.
+
+<ModelAnswer>
+1. **IVT Base Physical Addresses**:
+   The physical base address for any interrupt type $N$ is calculated as $\text{Base} = N \times 4$.
+   - For Type `10h`: Convert `10h` to decimal ($16$).
+     $$\text{Base} = 16 \times 4 = 64 = 00040\text{h}$$
+     The vector entry for Type `10h` begins at physical address `00040h`.
+   - For Type `08h`: Convert `08h` to decimal ($8$).
+     $$\text{Base} = 8 \times 4 = 32 = 00020\text{h}$$
+     The vector entry for Type `08h` begins at physical address `00020h`.
+
+2. **Extracting `CS` and `IP`**:
+   The 8086 uses little-endian byte ordering. The first two bytes store the 16-bit offset (`IP`), with the low byte at the lower address. The next two bytes store the 16-bit segment (`CS`), with the low byte at the lower address.
+   - For Type `10h` at addresses `00040h` to `00043h`:
+     - Byte at `00040h` = `80h` (low byte of `IP`)
+     - Byte at `00041h` = `E0h` (high byte of `IP`)
+     - `IP = E080h`
+     - Byte at `00042h` = `00h` (low byte of `CS`)
+     - Byte at `00043h` = `C0h` (high byte of `CS`)
+     - `CS = C000h`
+     - Vector address is `C000:E080h`.
+   - For Type `08h` at addresses `00020h` to `00023h`:
+     - Byte at `00020h` = `30h` (low byte of `IP`)
+     - Byte at `00021h` = `12h` (high byte of `IP`)
+     - `IP = 1230h`
+     - Byte at `00022h` = `00h` (low byte of `CS`)
+     - Byte at `00023h` = `F0h` (high byte of `CS`)
+     - `CS = F000h`
+     - Vector address is `F000:1230h`.
+
+3. **Physical Entry Points**:
+   Using the real-mode address translation formula $\text{Physical} = \text{CS} \times 16 + \text{IP}$:
+   - For Type `10h`:
+     $$\text{Segment Base} = \text{C000h} \times 10\text{h} = \text{C0000h}$$
+     $$\text{Physical Address} = \text{C0000h} + \text{E080h} = \text{CE080h}$$
+   - For Type `08h`:
+     $$\text{Segment Base} = \text{F000h} \times 10\text{h} = \text{F0000h}$$
+     $$\text{Physical Address} = \text{F0000h} + \text{1230h} = \text{F1230h}$$
+</ModelAnswer>
+
+### Problem 2: Stack tracing and return instruction diagnosis
+
+An 8086 processor is executing a program with stack segment `SS = 3000h` and stack pointer `SP = 2000h`. The current instruction pointer is `CS:IP = 1500:0420h`, and the flags register contains `FLAGS = 0340h`.
+
+An external device triggers a hardware interrupt. The CPU completes the current instruction and dispatches the interrupt handler.
+
+1. List the values pushed onto the stack by the CPU hardware in order of arrival, specify their physical memory addresses, and state the value of `SP` immediately before the first instruction of the ISR runs.
+2. Suppose a programmer terminates this ISR with a standard near `RET` instruction. What value is loaded into `IP`, what is the value of `SP` after the return, and why does this corrupt system operation?
+3. What happens if the programmer instead terminates the ISR with a far `RET` (`RETF`) instruction? Explain why `IRET` is the only correct instruction to exit an ISR.
+
+<ModelAnswer>
+1. **Values pushed onto the stack**:
+   Before the interrupt, initial `SS:SP = 3000:2000h`.
+   $$\text{Physical Address} = 3000\text{h} \times 16 + 2000\text{h} = 30000\text{h} + 2000\text{h} = 32000\text{h}$$
+   The CPU pushes three 16-bit words, decrementing `SP` by 2 bytes for each push:
+   - Step 1: Push `FLAGS` (`0340h`). `SP` becomes `1FFEh`. Physical memory `31FFEh` stores `40h` (low byte) and `31FFFh` stores `03h` (high byte).
+   - Step 2: Push `CS` (`1500h`). `SP` becomes `1FFCh`. Physical memory `31FFCh` stores `00h` (low byte) and `31FFDh` stores `15h` (high byte).
+   - Step 3: Push `IP` (`0420h`, pointing to the return instruction). `SP` becomes `1FFAh`. Physical memory `31FFAh` stores `20h` (low byte) and `31FFBh` stores `04h` (high byte).
+
+   When the ISR begins executing its first instruction, `SP` equals `1FFAh`.
+
+2. **Terminating with near `RET`**:
+   - A near `RET` pops one 16-bit word from `SS:SP` into `IP` and increments `SP` by 2:
+     - `IP` receives the word at `31FFAh`, which is `0420h`.
+     - `SP` increments from `1FFAh` to `1FFCh`.
+   - The saved `CS` (`1500h`) and saved `FLAGS` (`0340h`) remain stranded on the stack.
+   - The stack is out of alignment by 4 bytes. When the resumed program next attempts to pop a value or return from a subroutine, it reads the leftover `CS` or `FLAGS` words instead of its own stack frame, causing erratic behavior and system crashes. Furthermore, the processor flags modified by the ISR are never restored.
+
+3. **Terminating with far `RET` (`RETF`) vs `IRET`**:
+   - A far `RET` pops two 16-bit words from the stack: the first into `IP` (`0420h`) and the second into `CS` (`1500h`). `SP` increments by 4 bytes to `1FFEh`.
+   - While `CS:IP` is correctly restored to `1500:0420h`, the saved `FLAGS` register remains stranded at address `31FFEh`. The stack remains unbalanced by 2 bytes.
+   - The CPU's arithmetic and control flags remain whatever values the ISR produced during its calculations, potentially altering program flow in the main application.
+   - `IRET` is the only instruction designed to pop all three items in exact reverse order: it pops two bytes into `IP`, two bytes into `CS`, and two bytes into `FLAGS`. `SP` returns to `2000h`, fully restoring both the stack pointer and the processor state.
+</ModelAnswer>
