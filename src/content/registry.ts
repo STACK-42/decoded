@@ -25,6 +25,7 @@ const TocContextFreeQuiz = lesson(() => import("@/content/theory-of-computation/
 const LitTyping = lesson(() => import("@/content/computer-literacy/01-physical-layer.mdx"));
 const LitLanguage = lesson(() => import("@/content/computer-literacy/02-language-layer.mdx"));
 const LitSystems = lesson(() => import("@/content/computer-literacy/03-systems-layer.mdx"));
+const LitQuiz = lesson(() => import("@/content/computer-literacy/04-fluency-quiz.mdx"));
 const AdaWhatIsAnAlgorithm = lesson(() => import("@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx"));
 const AdaCountingSteps = lesson(() => import("@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx"));
 const AdaJavaLabToolkit = lesson(() => import("@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx"));
@@ -335,6 +336,7 @@ export const courses: Course[] = [
     description:
       "Back in the 1930s mathematicians who put the first principles of this field weren't writing and shipping apps. They were asking much simpler questions, like 'what is computable?' That question produced regex, parsers, CPUs, cryptography, and the famous world of antivirus software. This small course decodes each topic in the theory of computation into the tools you are going to use or already in use.",
     accent: "neon",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
@@ -350,10 +352,10 @@ export const courses: Course[] = [
       },
       {
         title: "Finite Automata",
-        blurb: "The first formal computing model — and the engine behind every regex.",
+        blurb: "The first formal computing model, and the engine behind every regex.",
         lessons: [
           { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
-          { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
+          { slug: "nfa", title: "NFA: Nondeterministic Automata", duration: "12 min", Component: TocNfa },
           { slug: "regular-expressions", title: "Reading and Writing Regular Expressions", duration: "15 min", kind: "practical", Component: TocRegularExpressions },
           { slug: "transition-graphs", title: "Transition Graphs", duration: "14 min", Component: TocTransitionGraphs },
           { slug: "kleenes-theorem", title: "Kleene's Theorem", duration: "15 min", Component: TocKleenesTheorem },
@@ -382,6 +384,7 @@ export const courses: Course[] = [
     description:
       "Everything about computing is interaction. The more precisely you speak to the machine, the more effective you become. That fluency has three layers: physical, language and systems. It comes from years of watching what separates fluent users from frustrated ones.",
     accent: "orange",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
@@ -392,6 +395,7 @@ export const courses: Course[] = [
           { slug: "physical-layer", title: "The Physical Layer", duration: "6 min", Component: LitTyping },
           { slug: "language-layer", title: "The Language Layer", duration: "7 min", Component: LitLanguage },
           { slug: "systems-layer",  title: "The Systems Layer",  duration: "7 min", Component: LitSystems },
+          { slug: "fluency-quiz",   title: "Quiz: The Three Layers of Fluency", duration: "8 min", kind: "quiz", Component: LitQuiz },
         ],
       },
     ],
@@ -798,6 +802,7 @@ export const courses: Course[] = [
       "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
     accent: "orange",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -846,6 +851,7 @@ export const courses: Course[] = [
       "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
     accent: "violet",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -989,6 +995,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -1189,7 +1196,7 @@ export const courses: Course[] = [
       "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
     accent: "sky",
     status: "available",
-    rounds: 3,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

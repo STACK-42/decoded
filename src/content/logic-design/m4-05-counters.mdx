@@ -7,18 +7,17 @@ Digital computers use binary counters to measure time, step through instruction 
 
 Examine the lowest four bits of a standard binary counting sequence:
 
-```
-Decimal    Binary (Q3 Q2 Q1 Q0)
-  0             0  0  0  0
-  1             0  0  0  1
-  2             0  0  1  0
-  3             0  0  1  1
-  4             0  1  0  0
-  5             0  1  0  1
-  6             0  1  1  0
-  7             0  1  1  1
-  8             1  0  0  0
-```
+| Decimal | $Q_3$ | $Q_2$ | $Q_1$ | $Q_0$ |
+| :---: | :---: | :---: | :---: | :---: |
+| 0 | 0 | 0 | 0 | 0 |
+| 1 | 0 | 0 | 0 | 1 |
+| 2 | 0 | 0 | 1 | 0 |
+| 3 | 0 | 0 | 1 | 1 |
+| 4 | 0 | 1 | 0 | 0 |
+| 5 | 0 | 1 | 0 | 1 |
+| 6 | 0 | 1 | 1 | 0 |
+| 7 | 0 | 1 | 1 | 1 |
+| 8 | 1 | 0 | 0 | 0 |
 
 Notice the pattern:
 - Bit $Q_0$ toggles on **every single step**.
@@ -38,20 +37,13 @@ Because a [T flip-flop](/courses/logic-design/flip-flops#2-the-t-flip-flop-toggl
 
 Counters are divided into two fundamental engineering families based on how their clock signals are distributed:
 
-```
-  1. Asynchronous (Ripple) Counter:
-     CLK ---> [ FF 0 ] ---> [ FF 1 ] ---> [ FF 2 ] ---> [ FF 3 ]
-                 Q0            Q1            Q2            Q3
-
-  2. Synchronous Counter:
-              +-------------- Common Clock ---------------+
-              |              |              |             |
-              v              v              v             v
-     CLK ---> [ FF 0 ]       [ FF 1 ]       [ FF 2 ]      [ FF 3 ]
-                 ^              ^              ^             ^
-                 |              |              |             |
-                 +---- AND -----+---- AND -----+-------------+ (Carry Logic)
-```
+| Architectural Feature | Asynchronous (Ripple) Counter | Synchronous Counter |
+| :--- | :--- | :--- |
+| **Clock Distribution** | Cascaded: each stage clocks the next ($CLK_{i+1} = Q_i$) | Common: all stages receive identical system $CLK$ |
+| **Flip-Flop Switching** | Sequential ripple through stages | Simultaneous on clock edge |
+| **Propagation Delay** | Cumulative: $n \times t_{pd}$ | Constant: $t_{pd} + t_{comb}$ |
+| **Decoding Glitches** | Severe transient glitching during ripple transitions | Minimal / Glitch-free |
+| **Hardware Complexity** | Minimal (no external logic gates needed) | Higher (requires steering AND gates for toggle conditions) |
 
 ---
 
@@ -129,23 +121,12 @@ $$
 T_i = \prod_{j=0}^{i-1} Q_j
 $$
 
-```
-         +-----------------------------------------------------------+
-         |                                                           |
-         |      +-------------------------------------+              |
-         |      |                                     |              |
-         |      |      +---------------+              |              |
-         |      |      |               |              |              |
-         v      |      v               |              |              |
-       +----+   |    +----+            v              v              |
-   1 --| T  |   +--->| T  |          +----+         +----+           |
-       |  Q0|---+    |  Q1|---+----->| &  |-- T2    | &  |-- T3      |
-       |>   |        |>   |   |      +----+         +----+           |
-       +----+        +----+   |        |  to FF 2     |  to FF 3     |
-         ^             ^      +--------+--------------+              |
-         |             |                                             |
-   CLK --+-------------+---------------------------------------------+
-```
+| Stage | Clock Input | Toggle Input Equation ($T_i$) | Toggle Condition |
+| :---: | :---: | :--- | :--- |
+| **FF 0** | System CLK | $T_0 = 1$ | Always toggles on every active clock edge |
+| **FF 1** | System CLK | $T_1 = Q_0$ | Toggles whenever $Q_0 = 1$ |
+| **FF 2** | System CLK | $T_2 = Q_0 \cdot Q_1$ | Toggles whenever $Q_0 = Q_1 = 1$ |
+| **FF 3** | System CLK | $T_3 = Q_0 \cdot Q_1 \cdot Q_2$ | Toggles whenever $Q_0 = Q_1 = Q_2 = 1$ |
 
 The carry AND gates compute the toggle enable inputs ($T_2 = Q_0 \cdot Q_1$ and $T_3 = Q_0 \cdot Q_1 \cdot Q_2$) that feed the $T$ terminals of flip-flops FF 2 and FF 3. Each flip-flop is clocked in unison by the common clock line.
 

@@ -1,17 +1,48 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 
 # The Language Layer
 
-The second layer is how you tell software what you want: search, the file system, and now prompts. Most people search the way they speak. With AI search that costs less than it used to, but it still leads to vague queries. Learning to structure a query, pick precise keywords and think about how information is indexed changes how quickly you find answers.
+You paste a confusing problem into a search bar, get twenty forum threads that miss your issue, and realize the machine matched your literal words instead of what you meant. The [physical layer](/courses/computer-literacy/physical-layer) gets your input onto the screen without friction. The **language layer** is how you phrase requests so software returns what you want, across search boxes, files, commands, and AI assistants.
+
+## Searching with precision
+
+Most people search the way they speak. Newer search tools handle plain questions better than older ones, yet conversational phrasing still produces vague **queries** (the strings of words and rules you send a search engine to ask for results).
+
+Search engines do not read a page the way a person does. They build an **index**: a lookup table that maps individual words and exact phrases to the pages that contain them. Learning to pick precise **keywords** (specific terms that appear on the target page) and structure a query helps you find answers much faster.
+
+Suppose a small Python program crashes with `IndexError: list index out of range`. Compare three queries:
+
+1. **Conversational query:** `why did my python code stop working with that weird list error`. It mixes common words that match thousands of unrelated beginner posts.
+2. **Structured query:** `python "IndexError: list index out of range"`. Keeping the language name and wrapping the exact error text in quotes `"..."` forces results to contain that exact phrase.
+3. **Scoped query:** `python "IndexError: list index out of range" site:docs.python.org`. Adding `site:` followed by a domain name (with no space after the colon) restricts results to official documentation instead of forum threads.
+
+<Callout tone="orange" label="Usual mistake: rewriting the error in your own words">
+When a program prints an [error message](/courses/computer-literacy/systems-layer#reading-error-messages) or error code, beginners often rewrite it from memory ("python list ran out of space") instead of copying the exact text on screen. Documentation and bug trackers are indexed by exact words, so changing the phrasing hides the answer you need.
+</Callout>
 
 ## The file system
 
-The **file system** is part of this language. Folders, paths and directories are how the machine organizes what it holds. Once you understand them, you stop depending on clicking around to find things.
+The **file system** is part of this language: it is the tree structure an [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system) uses to store, name, and find data on a drive. It branches downward from one top container into nested sub-containers and individual files, like an upside-down tree. Every container in that tree is a **directory** (often shown as a **folder** icon in desktop apps), and the single top container holding everything else is the **root directory** (`/` on macOS and Linux, or a drive letter like `C:\` on Windows).
 
-That understanding leads to the [terminal](/courses/operating-systems/lab-linux-commands#reading-the-prompt), which then stops being a scary interface and becomes a direct line to the system. Instead of clicking through layers, you say where you want to go and what you want to do, and the system responds immediately. Many commands do things the GUI can't do at all. This will help a lot later, when you learn to code and build software.
+A **path** is the step-by-step address to a file or directory, with directory names separated by `/` on macOS and Linux (or `\` on Windows). Paths come in two forms:
 
-<Callout tone="violet" label="Build the skill">
-Practice using the command line to navigate and manipulate files and directories. Download files from the internet with tools like curl and wget, and get comfortable with package managers like npm and with simple scrapers.
+- **Absolute path:** starts at the root directory, such as `/Users/maya/projects/notes.txt`. It points to the exact same file no matter which directory you are in right now.
+- **Relative path:** starts from your **current working directory** (the directory your program or terminal is in right now). If you are in `/Users/maya`, the relative path to that same file is `projects/notes.txt`. If you are inside `/Users/maya/images`, `..` means "one directory up", so `../projects/notes.txt` steps up to `/Users/maya` and then down into `projects/notes.txt`.
+
+Once you understand paths and directories, you stop depending on clicking through window after window to find things. That leads straight to the [terminal](/courses/operating-systems/lab-linux-commands#reading-the-prompt) (also called the **command line** or **shell**), a text window where you type commands directly to the operating system. Instead of clicking through nested directories and menus, you type where you want to go and what you want to do, and the system acts right away. Three commands handle almost all navigation: `pwd` prints your working directory, `ls` lists what is inside it, and `cd` changes to another directory:
+
+```text
+$ pwd
+/Users/maya
+$ ls
+images  projects
+$ cd projects
+```
+
+Many commands also accept short **options** (extra flags such as `ls -a` to show hidden files) or act on hundreds of files at once, things graphical menus do not offer. That helps a lot once you start writing and running code.
+
+<Callout tone="orange" label="Usual mistake: losing track of your working directory">
+Typing a relative path like `notes.txt` without checking which directory you are in is the most common reason beginners see `No such file or directory`. Before assuming a file disappeared, check where you are (`pwd` on macOS, Linux, or Windows PowerShell; `cd` alone in Windows Command Prompt) and list what is in that directory (`ls` on macOS, Linux, or PowerShell; `dir` in Command Prompt).
 </Callout>
 
 <ApplicationsGrid>
@@ -24,16 +55,44 @@ Practice using the command line to navigate and manipulate files and directories
   </PracticalApplication>
 
   <PracticalApplication title="Practice in a real terminal" tool="Terminal →">
-    Use the terminal on macOS or Linux, or PowerShell on Windows. You can also run a Linux distro in a virtual machine.
+    Use the terminal on macOS or Linux, or PowerShell on Windows. You can also run a Linux system in a [virtual machine](/courses/operating-systems/lab-linux-commands#1-a-virtual-machine) (a simulated computer running inside your own).
   </PracticalApplication>
 </ApplicationsGrid>
 
-Searching text can be made exact too, with [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter). The Theory of Computation course explains how they work.
+## Pattern matching with regex
+
+Searching by exact words falls short when you want a pattern rather than one fixed string, such as finding every four-digit year in a log file. A **regular expression** (or **regex**) is a compact pattern language for text. Square brackets match one character from a range, so `[0-9]` matches any single digit from `0` through `9`, and curly braces set how many times to repeat it, so `{4}` means four in a row. Together, `[0-9]{4}` matches any four consecutive digits, from `1999` to `2026`.
+
+The Theory of Computation course explains the formal math underneath [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), using textbook notation rather than editor syntax like `[0-9]`.
 
 ## Prompt literacy
 
-Using AI tools is another form of language, and as with any language, clarity matters. It's tempting to let the system do all the thinking and generate your prompts or ideas for you, but that has a cost: if you stop drafting your own thoughts, you stop developing them.
+Using AI assistants is another form of language, and clarity decides the output just as much as it does in search. A **prompt** is the instruction and context you give an AI language model. When a prompt leaves out three parts, (1) what you already know, (2) the exact problem or rule to follow, and (3) the output format you want, the model has to guess and gives a generic answer.
 
-<Callout tone="violet" label="The amplification rule">
-Think first. Write something imperfect. Then use the tool to refine it. That way the machine amplifies your thinking and you keep doing the thinking yourself.
+Compare two prompts side by side:
+
+1. **Weak prompt:** *"Explain file paths."* This gives no clue which operating system you use, where you got stuck, or how concrete the answer should be.
+2. **Clear prompt:** *"I am learning Windows PowerShell for the first time. I understand absolute paths, but I lose track of where `../notes.txt` points when I change directories. Walk through an example with three directories and show what `pwd` prints at each step."* This states what you know, names the exact confusion, and asks for a concrete step-by-step trace.
+
+Think first, write something imperfect, and then use the tool to refine it. That way the machine amplifies your thinking instead of replacing it.
+
+<Callout tone="orange" label="Usual mistake: letting AI write the first draft">
+Asking an AI to write your prompt, outline, or solution from a blank page skips the effort that builds your own understanding. Worse, when the model makes a small, hard-to-spot mistake, you do not yet have the knowledge needed to catch it.
 </Callout>
+
+## Practice by hand
+
+**1. Trace absolute and relative paths:** Your terminal's current working directory is `/Users/maya/courses/notes`, and the file you want to run lives at `/Users/maya/projects/app.py`. Write the absolute path to `app.py`, write the relative path using `..`, and explain why typing `python3 app.py` to run that Python file directly from `/Users/maya/courses/notes` fails with `No such file or directory`.
+
+<ModelAnswer>
+- **Absolute path:** `/Users/maya/projects/app.py`. It starts from the root directory `/`, so it reaches the same file from any working directory.
+- **Relative path:** `../../projects/app.py`. The first `..` steps up from `notes` to `/Users/maya/courses`, the second `..` steps up to `/Users/maya`, and `projects/app.py` steps down into `projects` to reach `app.py`.
+- **Why `python3 app.py` fails:** Without a path prefix, `app.py` is resolved relative to your current working directory (`/Users/maya/courses/notes`), which does not contain `app.py`. Running `pwd` and `ls` shows where you are before running a relative command.
+</ModelAnswer>
+
+**2. Turn a crash into a query and a prompt:** A Python program stops with `KeyError: 'user_id'` while trying to look up a missing `'user_id'` field in a table of records. Write a structured search query for official Python documentation, then write a clear three-part AI prompt you could send after inspecting your own data first.
+
+<ModelAnswer>
+- **Search query:** `python "KeyError" site:docs.python.org` (or `python "KeyError: 'user_id'"` if searching for that exact key pattern across projects). Wrapping the exact error name in quotes keeps the indexed term intact instead of paraphrasing it into loose words such as "table key missing".
+- **Three-part prompt:** *"I know Python basics and how to inspect files in the terminal. My script stops with `KeyError: 'user_id'` on one row of my data table. Explain why that error happens and show a 4-line example that checks whether `'user_id'` is present first."* It states what you know, names the exact failure, and asks for a specific short example.
+</ModelAnswer>

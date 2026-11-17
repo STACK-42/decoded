@@ -1,6 +1,6 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
-import { CmosSwitchVisualizer, PropagationDelayLab } from "@/components/mdx/LogicVisualizers";
+import { CmosSwitchVisualizer, PropagationDelayLab, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # Logic Gates
 
@@ -138,28 +138,22 @@ A row of inverters is also all it takes to form a [1's complement](/courses/logi
 ## Graphic symbols and standard notation
 
 Digital schematics use two graphic standards from IEEE/ANSI Std 91-1984:
-1. **Distinctive-shape symbols:** Curved shapes that show the function by contour. These are standard in North America and common worldwide.
+1. **Distinctive-shape symbols:** Curved shapes that show the function by contour. These are standard in North America and common worldwide (as seen in the interactive Gate Playground above).
 2. **Rectangular-shape symbols:** Rectangular boxes with qualifying symbols inside:
    - `&` indicates AND functionality.
    - `≥1` indicates OR functionality (at least one active input).
    - `1` indicates a single-input buffer or inverter.
    - `=1` indicates exclusive-OR (exactly one active input).
 
-```text
-Distinctive Shapes:
-     ___                    ___                    ___
-A --|   \              A --\   \              A --|   \
-    |    )--- Y             )   )--- Y            |    )o--- Y
-B --|___/              B --/___/              B --|___/
-     AND                     OR                    NAND
-
-Rectangular (IEEE Std 91):
-     +---+                  +---+                  +---+
-A ---| & |             A ---|≥1 |             A ---| & |o--- Y
-     |   |--- Y             |   |--- Y             |   |
-B ---|   |             B ---|   |             B ---|   |
-     +---+                  +---+                  +---+
-```
+| Gate Function | Distinctive Shape (ANSI) | Rectangular Shape (IEEE Std 91) | Qualifier Symbol |
+| :--- | :--- | :--- | :---: |
+| **AND** | Curved back, flat front | Rectangular box | `&` |
+| **OR** | Curved back, pointed front | Rectangular box | `≥1` |
+| **NOT (Inverter)** | Triangle with output bubble | Rectangular box with bubble | `1` |
+| **NAND** | AND shape with output bubble | Rectangular box with bubble | `&` |
+| **NOR** | OR shape with output bubble | Rectangular box with bubble | `≥1` |
+| **XOR** | Double-curved back, pointed front | Rectangular box | `=1` |
+| **XNOR** | XOR shape with output bubble | Rectangular box with bubble | `=1` |
 
 ### Active-high vs. active-low logic
 
@@ -195,13 +189,13 @@ Output waveforms also require finite time to cross voltage levels:
 
 Why do industry standards measure rise and fall times between **10% and 90%** rather than 0% and 100%? Physical voltage transitions follow exponential RC charging curves governed by parasitic capacitance and channel resistance. Because exponential waveforms approach their final rail voltages slowly, the 0% and 100% boundary points are hard to pinpoint and sensitive to ambient noise. The 10% to 90% interval provides a repeatable, low-noise measurement of the signal's maximum slewing rate.
 
-```text
-Input:   _______/‾‾‾‾‾‾‾\_______
-                |       |
-Output:  ‾‾‾‾‾‾‾\_______/‾‾‾‾‾‾‾
-                |---|   |---|
-                tpHL    tpLH
-```
+<TimingDiagram
+  signals={[
+    { name: "Input", bits: [0, 0, 1, 1, 1, 1, 0, 0, 0], tone: "stroke-mint" },
+    { name: "Output", bits: [1, 1, 1, 0, 0, 0, 0, 1, 1], tone: "stroke-orange" },
+  ]}
+  marks={[2, 3, 6, 7]}
+/>
 
 Cumulative propagation delays along critical combinational paths set the maximum operating clock frequency ($f_{\max}$) of synchronous digital hardware:
 $$
@@ -220,20 +214,11 @@ Trace how signal transitions alternate polarities along cascaded stages and accu
 
 Electric circuits operate in environments subject to electromagnetic interference, power supply ripple, and cross-talk from neighboring traces. **Noise margin** quantifies a gate's ability to tolerate unwanted voltage fluctuations without misinterpreting logic levels:
 
-```text
-Output Voltage Ranges                 Input Voltage Tolerances
-+----------------------+              +----------------------+
-| V_OH(min) - Logic 1  |              | V_IH(min) - Logic 1  |
-+----------------------+              +----------------------+
-|                      |  <-- NM_H    |                      |
-+----------------------+              +----------------------+
-| Indeterminate State  |              | Indeterminate State  |
-+----------------------+              +----------------------+
-|                      |  <-- NM_L    |                      |
-+----------------------+              +----------------------+
-| V_OL(max) - Logic 0  |              | V_IL(max) - Logic 0  |
-+----------------------+              +----------------------+
-```
+| Voltage Level Parameter | Driving Gate (Output) | Receiving Gate (Input) | Safety Margin |
+| :--- | :--- | :--- | :--- |
+| **Logic 1 (High)** | $V_{OH(\min)}$ (guaranteed minimum) | $V_{IH(\min)}$ (threshold required) | $NM_H = V_{OH(\min)} - V_{IH(\min)}$ |
+| **Forbidden Band** | Undefined output | Indeterminate transition band | Buffer protection zone |
+| **Logic 0 (Low)** | $V_{OL(\max)}$ (guaranteed maximum) | $V_{IL(\max)}$ (threshold required) | $NM_L = V_{IL(\max)} - V_{OL(\max)}$ |
 
 The parameters are defined as:
 - $V_{OH(\min)}$: Minimum output voltage guaranteed when driving logic 1 under rated load.

@@ -17,12 +17,6 @@ A beginner might attempt to control loading by placing an AND gate directly on t
 
 $$\text{GatedClock} = \text{CLK} \cdot \text{Load}$$
 
-```
-                CLK ---------+---\
-                              \___ [ AND ]----+-----> CLK input of Flip-Flop
-               Load ---------/
-```
-
 > [!WARNING]
 > In synchronous design, **clock gating using simple logic gates causes serious timing problems**.
 > 1. **Clock Skew:** The AND gate inserts propagation delay into the clock path. The flip-flop receives its clock edge picoseconds or nanoseconds later than ungated flip-flops, causing fatal setup and hold time violations across the chip.
@@ -30,24 +24,7 @@ $$\text{GatedClock} = \text{CLK} \cdot \text{Load}$$
 
 ### The Safe Solution: Recirculating Multiplexer Load
 
-The industry-standard solution keeps the clock connected directly to every flip-flop without any intervening gates. Instead, control is placed in the data path using a 2-to-1 [multiplexer](/courses/logic-design/multiplexers) in front of each flip-flop:
-
-```
-                      +-------------------+
-                      |                   | (Feedback Q_i)
-                      v                   |
-                 +--------+               |
-          I_i ---| 1      |               |
-                 |    MUX |-- D_i --+-----+----+
-          Q_i ---| 0      |         |     Q_i  |
-                 +--------+         |          |
-                      ^             |  FF_i    |
-                      |             |> CLK     |
-                    Load            +----------+
-                                          ^
-                                          |
-        CLK ------------------------------+
-```
+The industry-standard solution keeps the clock connected directly to every flip-flop without any intervening gates. Instead, control is placed in the data path using a 2-to-1 [multiplexer](/courses/logic-design/multiplexers) in front of each flip-flop.
 
 The multiplexer Boolean equation is:
 
@@ -78,30 +55,12 @@ On each active clock edge, every stored bit advances one position along the chai
 
 Shift registers form the bridge between the serial communication world (where bits travel one at a time over single wires, as in [stream ciphers](/courses/computational-mathematics/stream-ciphers#how-it-works)) and the parallel computer world (where 32 or 64 bits travel simultaneously over buses).
 
-```
-  1. SISO:  Serial In  ---> [FF0] ---> [FF1] ---> [FF2] ---> [FF3] ---> Serial Out
-
-  2. SIPO:  Serial In  ---> [FF0] ---> [FF1] ---> [FF2] ---> [FF3]
-                              |          |          |          |
-                              v          v          v          v
-                             Q0         Q1         Q2         Q3   (Parallel Out)
-
-                             I0         I1         I2         I3   (Parallel In)
-                              |          |          |          |
-                              v          v          v          v
-  3. PISO:                 [ MUX ]    [ MUX ]    [ MUX ]    [ MUX ]
-                              |          |          |          |
-                              v          v          v          v
-               Load/Shift -> [FF0] ---> [FF1] ---> [FF2] ---> [FF3] ---> Serial Out
-
-                             I0         I1         I2         I3   (Parallel In)
-                              |          |          |          |
-  4. PIPO:                 +--v----------v----------v----------v--+
-                           |  [FF0]     [FF1]     [FF2]     [FF3] |
-                           +--|----------|----------|----------|--+
-                              v          v          v          v
-                             Q0         Q1         Q2         Q3   (Parallel Out)
-```
+| Topology | Input Mode | Output Mode | Primary Use Case |
+| :--- | :--- | :--- | :--- |
+| **SISO** (Serial-In, Serial-Out) | 1 wire (bit-by-bit) | 1 wire (bit-by-bit) | Digital delay line, pipeline pipelining |
+| **SIPO** (Serial-In, Parallel-Out) | 1 wire (bit-by-bit) | $n$ wires (all bits at once) | Serial-to-parallel conversion (UART, SPI, networking) |
+| **PISO** (Parallel-In, Serial-Out) | $n$ wires (all bits at once) | 1 wire (bit-by-bit) | Parallel-to-serial serialization (transmitters, shift registers) |
+| **PIPO** (Parallel-In, Parallel-Out) | $n$ wires (all bits at once) | $n$ wires (all bits at once) | General CPU working registers, pipeline buffers |
 
 1. **Serial-In, Serial-Out (SISO):**
    Bits enter one by one at the input and exit one by one at the output. An $n$-stage SISO register functions as a precise digital **time delay**: an input pulse emerges at the output exactly $n$ clock cycles later.
@@ -143,17 +102,7 @@ A shift register can be transformed into a cyclic sequence generator by connecti
 
 ### 1. The Ring Counter
 
-In a **ring counter**, the non-inverted serial output of the final stage is connected directly back to the serial input of the first stage:
-
-$$D_0 = Q_{n-1}$$
-
-```
-        +----------------------------------------------------+
-        |                                                    |
-        +-----> [ FF0 ] ----> [ FF1 ] ----> [ FF2 ] ----> [ FF3 ]
-                  |             |             |             |
-                  Q0            Q1            Q2            Q3
-```
+In a **ring counter**, the non-inverted serial output of the final stage is connected directly back to the serial input of the first stage ($D_0 = Q_{n-1}$).
 
 To operate correctly, the register is pre-loaded with a single logic 1 (e.g. `1000`). On successive clock pulses, that single 1 circulates endlessly around the ring:
 

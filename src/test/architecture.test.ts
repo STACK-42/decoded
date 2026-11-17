@@ -3,17 +3,36 @@ import {
   amat,
   amdahl,
   calculateAmdahlRequiredSpeedup,
+  calculateAmdahlScaling,
   calculateBusBandwidth,
+  calculateBusClockSkewLimit,
   calculateCacheOverhead,
   calculateControlStoreSize,
+  calculateDaisyChainLatency,
+  calculateDmaCycleStealImpact,
   calculateDmaTransfer,
   calculateDramRefreshOverhead,
+  calculateFalseSharingOverhead,
+  calculateFifoOverrunMargin,
+  calculateForwardingControl,
+  calculateGustafsonSpeedup,
+  calculateMaxDaisyChainDevices,
   calculateMaxZeroOpInstructions,
   calculateMultiLevelAmat,
+  calculateOptimalPipelineStages,
   calculatePageTableOverhead,
+  calculatePipelineCpiWithHazards,
+  calculatePipelineRegisterBits,
+  calculatePipelineSpeedup,
   calculatePollingOverhead,
   calculateRegisterWindows,
+  calculateSimdBranchDivergence,
+  calculateSplitTransactionThroughput,
+  checkBernsteinConditions,
   decodeCanonicalAddress48,
+  simulateBranchPredictors,
+  simulateDistributedArbitration,
+  simulateMesiCoherence,
   simulateTreePlru4Way,
   cpi,
   cpuTime,
@@ -236,7 +255,338 @@ describe("module 4 calculations", () => {
     expect(res.effectiveBandwidthMBps).toBeCloseTo(66, 0); // 264 / 4 = 66 MB/s
     expect(res.efficiencyPercent).toBeCloseTo(25, 0); // 25% efficiency
   });
+
+  it("calculates bus clock skew limits and maximum frequency", () => {
+    // tProp = 5.85 ns, tSetup = 3.5 ns, tCo = 4.0 ns, tSkew = 1.8 ns
+    const res = calculateBusClockSkewLimit(5.85, 3.5, 4.0, 1.8);
+    expect(res.minClockPeriodNs).toBeCloseTo(15.15, 2);
+    expect(res.maxClockFrequencyMHz).toBeCloseTo(66.0, 1);
+  });
+
+  it("calculates split-transaction bus throughput and speedup", () => {
+    // 64-bit (8-byte) bus at 200 MHz
+    // Request 2 cycles, response 4 cycles (32 bytes data)
+    // Memory latency 80 cycles
+    const res = calculateSplitTransactionThroughput(8, 200e6, 2, 4, 80);
+    expect(res.circuitSwitchedCycles).toBe(86);
+    expect(res.circuitSwitchedThroughputMBps).toBeCloseTo(74.42, 2);
+    expect(res.circuitSwitchedEfficiencyPercent).toBeCloseTo(4.65, 2);
+    expect(res.splitCycles).toBe(6);
+    expect(res.splitThroughputMBps).toBeCloseTo(1066.67, 2);
+    expect(res.splitEfficiencyPercent).toBeCloseTo(66.67, 2);
+    expect(res.speedup).toBeCloseTo(14.33, 2);
+  });
+
+  it("calculates FIFO overrun margin under interrupt latency jitter", () => {
+    // 115200 baud, 10 bits/byte (11520 bytes/sec)
+    // worst case latency 450 microseconds (0.00045 sec)
+    // 16-byte FIFO, half-full trigger (8 bytes threshold => 8 bytes headroom)
+    const res = calculateFifoOverrunMargin(115200, 10, 0.00045, 16, 8);
+    expect(res.byteArrivalIntervalSec).toBeCloseTo(0.0000868, 6);
+    expect(res.bytesArrivedDuringLatency).toBe(6);
+    expect(res.headroomBytes).toBe(8);
+    expect(res.isOverrun).toBe(false);
+    expect(res.remainingMarginBytes).toBe(2);
+
+    // Worse latency of 800 microseconds => 10 bytes arrive > 8 bytes headroom => overrun
+    const overrunRes = calculateFifoOverrunMargin(115200, 10, 0.0008, 16, 8);
+    expect(overrunRes.bytesArrivedDuringLatency).toBe(10);
+    expect(overrunRes.isOverrun).toBe(true);
+    expect(overrunRes.remainingMarginBytes).toBe(-2);
+  });
+
+  it("calculates daisy chain dispatch latency and maximum device scaling", () => {
+    // Problem 3 parameters:
+    // Device 3 (4th device, index 3)
+    // 12 ns instruction complete, 15 ns INTA assert, 6 ns prop delay per hop, 10 ns vector drive, 8 ns latch setup
+    const res = calculateDaisyChainLatency(3, 12, 15, 6, 10, 8);
+    expect(res.daisyChainPropagationNs).toBe(18);
+    expect(res.totalDispatchLatencyNs).toBe(63);
+
+    // Maximum devices within 75 ns acquisition budget (15 ns INTA + 10 ns drive + 8 ns setup = 33 ns overhead)
+    // 75 - 33 = 42 ns => 42 / 6 = 7 hops => 8 devices max
+    const maxDevs = calculateMaxDaisyChainDevices(75, 15, 6, 10, 8);
+    expect(maxDevs).toBe(8);
+  });
+
+  it("simulates distributed self-selection arbitration", () => {
+    // Problem 4 parameters:
+    // Device A = 10 (1010_2), Device B = 12 (1100_2), Device C = 9 (1001_2)
+    // 4-bit bus
+    const res = simulateDistributedArbitration([10, 12, 9], 4);
+    expect(res.winnerIndex).toBe(1); // Device B
+    expect(res.winnerPriority).toBe(12);
+
+    // Bit 3 (MSB): all devices have bit 3 = 1 => busValue = 1, all 3 remain active
+    expect(res.steps[0].bitIndex).toBe(3);
+    expect(res.steps[0].busValue).toBe(1);
+    expect(res.steps[0].activeDeviceIndices).toEqual([0, 1, 2]);
+
+    // Bit 2: A has 0, B has 1, C has 0 => busValue = 1 (B drives). A and C withdraw!
+    expect(res.steps[1].bitIndex).toBe(2);
+    expect(res.steps[1].busValue).toBe(1);
+    expect(res.steps[1].activeDeviceIndices).toEqual([1]);
+    expect(res.steps[1].withdrawnDeviceIndices).toEqual([0, 2]);
+  });
+
+  it("calculates DMA cycle stealing memory contention impact on effective CPI", () => {
+    // Problem 4 parameters:
+    // CPU 2.5 GHz, base CPI 1.4, Bus 200 MHz, 8 bytes wide
+    // DMA 400 MB/s, 1 memory request per 25 instructions, 20% collision probability
+    const res = calculateDmaCycleStealImpact(2.5e9, 1.4, 200e6, 8, 400e6, 25, 0.2);
+    expect(res.maxBusThroughputBytesPerSec).toBe(1600e6);
+    expect(res.dmaBusUtilizationPercent).toBe(25);
+    expect(res.cpuBusUtilizationPercent).toBeCloseTo(35.71, 2);
+    expect(res.combinedBusDemandPercent).toBeCloseTo(60.71, 2);
+    expect(res.stallCyclesPerCollision).toBe(12.5);
+    expect(res.averageStallCyclesPerInstruction).toBeCloseTo(0.1, 4);
+    expect(res.effectiveCpi).toBeCloseTo(1.5, 2);
+    expect(res.slowdownPercent).toBeCloseTo(7.14, 2);
+  });
 });
+
+describe("module 5: pipelining and parallelism", () => {
+  it("calculates pipeline speedup, imbalance and latch overhead", () => {
+    // 5 stages: IF = 200 ps, ID = 150 ps, EX = 250 ps, MEM = 220 ps, WB = 160 ps
+    // register delay = 20 ps, 1000 instructions
+    const res = calculatePipelineSpeedup([200, 150, 250, 220, 160], 20, 1000);
+    expect(res.numStages).toBe(5);
+    expect(res.unpipelinedCycleTimePs).toBe(980);
+    expect(res.pipelinedCycleTimePs).toBe(270);
+    expect(res.unpipelinedTotalTimePs).toBe(980000);
+    expect(res.pipelinedTotalTimePs).toBe(271080);
+    expect(res.speedup).toBeCloseTo(3.615, 3);
+    expect(res.asymptoticSpeedup).toBeCloseTo(3.63, 2);
+    expect(res.efficiencyPercent).toBeCloseTo(72.3, 1);
+    expect(res.throughputMips).toBeCloseTo(3688.95, 2);
+  });
+
+  it("calculates effective CPI with data hazards and branch mispredictions", () => {
+    // 25% loads with 50% load-use stall (1 cycle penalty)
+    // 20% branches with 15% mispredicted (2 cycle penalty)
+    const res = calculatePipelineCpiWithHazards({
+      loadFrequency: 0.25,
+      loadUseHazardFraction: 0.5,
+      branchFrequency: 0.2,
+      mispredictRate: 0.15,
+      branchPenaltyCycles: 2,
+    });
+    expect(res.idealCpi).toBe(1.0);
+    expect(res.dataStallCyclesPerInstruction).toBe(0.125);
+    expect(res.controlStallCyclesPerInstruction).toBe(0.06);
+    expect(res.effectiveCpi).toBe(1.185);
+    expect(res.pipelineEfficiencyPercent).toBeCloseTo(84.39, 2);
+  });
+
+  it("calculates Amdahl's Law scaling and asymptotic limits", () => {
+    // 85% parallel code (serial = 15%)
+    const res = calculateAmdahlScaling(0.85, [1, 2, 4, 8, 16, 64]);
+    expect(res.asymptoticSpeedup).toBeCloseTo(6.6667, 4);
+    expect(res.scaling[0].speedup).toBe(1.0);
+    expect(res.scaling[3].processors).toBe(8);
+    expect(res.scaling[3].speedup).toBeCloseTo(3.9024, 4);
+    expect(res.scaling[3].efficiencyPercent).toBeCloseTo(48.78, 2);
+    expect(res.scaling[5].processors).toBe(64);
+    expect(res.scaling[5].speedup).toBeCloseTo(6.1244, 4);
+    expect(res.scaling[5].efficiencyPercent).toBeCloseTo(9.57, 2);
+  });
+
+  it("calculates Gustafson's Law scaled speedup under weak scaling", () => {
+    // serial = 15%, 64 processors
+    const res = calculateGustafsonSpeedup(0.15, 64);
+    expect(res.scaledSpeedup).toBeCloseTo(54.55, 2);
+    expect(res.efficiencyPercent).toBeCloseTo(85.23, 2);
+  });
+
+  it("simulates MESI cache coherence protocol transitions", () => {
+    // 3 cores: Core 0, 1, 2
+    // Trace: Core 0 reads, Core 1 reads, Core 0 writes, Core 2 reads
+    const steps = simulateMesiCoherence(3, [
+      { coreId: 0, op: "read" },
+      { coreId: 1, op: "read" },
+      { coreId: 0, op: "write" },
+      { coreId: 2, op: "read" },
+    ]);
+
+    // Step 1: Core 0 reads from I => transitions to E (no other core has it), BusRd
+    expect(steps[0].priorStates).toEqual(["I", "I", "I"]);
+    expect(steps[0].nextStates).toEqual(["E", "I", "I"]);
+    expect(steps[0].busAction).toBe("BusRd");
+    expect(steps[0].dataSuppliedBy).toBe("Memory");
+
+    // Step 2: Core 1 reads from I => Core 0 downgrades E->S, Core 1 becomes S, BusRd
+    expect(steps[1].priorStates).toEqual(["E", "I", "I"]);
+    expect(steps[1].nextStates).toEqual(["S", "S", "I"]);
+    expect(steps[1].busAction).toBe("BusRd");
+
+    // Step 3: Core 0 writes while S => issues Invalidate, Core 1 S->I, Core 0 S->M
+    expect(steps[2].priorStates).toEqual(["S", "S", "I"]);
+    expect(steps[2].nextStates).toEqual(["M", "I", "I"]);
+    expect(steps[2].busAction).toBe("Invalidate");
+
+    // Step 4: Core 2 reads while Core 0 is M => Core 0 flushes to bus, transitions M->S, Core 2 becomes S
+    expect(steps[3].priorStates).toEqual(["M", "I", "I"]);
+    expect(steps[3].nextStates).toEqual(["S", "I", "S"]);
+    expect(steps[3].busAction).toBe("BusRd");
+    expect(steps[3].dataSuppliedBy).toBe("Core 0");
+  });
+
+  it("checks Bernstein conditions for data dependencies", () => {
+    // Case 1: RAW dependency (ADD R1, R2, R3 -> SUB R4, R1, R5)
+    const rawCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R1", "R5"], ["R4"]);
+    expect(rawCheck.raw).toEqual(["R1"]);
+    expect(rawCheck.war).toEqual([]);
+    expect(rawCheck.waw).toEqual([]);
+    expect(rawCheck.canParallelize).toBe(false);
+
+    // Case 2: Independent instructions (ADD R1, R2, R3 and SUB R4, R5, R6)
+    const indepCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R5", "R6"], ["R4"]);
+    expect(indepCheck.raw).toEqual([]);
+    expect(indepCheck.war).toEqual([]);
+    expect(indepCheck.waw).toEqual([]);
+    expect(indepCheck.canParallelize).toBe(true);
+
+    // Case 3: WAR and WAW dependencies
+    const warCheck = checkBernsteinConditions(["R1", "R2"], ["R3"], ["R4", "R5"], ["R1"]);
+    expect(warCheck.war).toEqual(["R1"]);
+    expect(warCheck.canParallelize).toBe(false);
+
+    const wawCheck = checkBernsteinConditions(["R2", "R3"], ["R1"], ["R4", "R5"], ["R1"]);
+    expect(wawCheck.waw).toEqual(["R1"]);
+    expect(wawCheck.canParallelize).toBe(false);
+  });
+
+  it("simulates 1-bit and 2-bit branch predictor loop behavior", () => {
+    // 5 iterations taken, 1 exit (not taken), then another 5 iterations taken
+    const loopOutcomes = [
+      true, true, true, true, false, // loop 1: 4 taken, 1 exit
+      true, true, true, true, false, // loop 2: 4 taken, 1 exit
+    ];
+
+    const res = simulateBranchPredictors(loopOutcomes, 3); // starts strongly taken (11)
+
+    // 2-bit counter avoids flipping on the single loop exit, outperforming 1-bit predictor
+    expect(res.accuracy2BitPercent).toBeGreaterThanOrEqual(res.accuracy1BitPercent);
+    expect(res.steps).toHaveLength(10);
+  });
+
+  it("calculates pipeline register bit widths across stages", () => {
+    const sizing = calculatePipelineRegisterBits();
+    expect(sizing.ifIdBits).toBe(64); // 32-bit PC + 32-bit instruction
+    expect(sizing.idExBits).toBe(152); // 32 PC + 3x32 data/imm + 3x5 reg indices + 9 control
+    expect(sizing.exMemBits).toBe(107); // 32 target + 1 zero + 32 ALU + 32 write data + 5 Rd + 5 control
+    expect(sizing.memWbBits).toBe(71); // 32 mem data + 32 ALU + 5 Rd + 2 control
+    expect(sizing.totalBits).toBe(394);
+  });
+
+  it("calculates optimal pipeline stages balancing frequency and branch penalty", () => {
+    // 1000 ps total combinational delay, 20 ps register overhead, 20% branches, 10% mispredict rate
+    const opt = calculateOptimalPipelineStages({
+      combinationalDelayPs: 1000,
+      registerDelayPs: 20,
+      branchFrequency: 0.20,
+      branchMispredictRate: 0.10,
+    });
+
+    expect(opt.optimalStages).toBeGreaterThan(5);
+    expect(opt.optimalStages).toBeLessThan(45);
+    expect(opt.optimalClockPeriodPs).toBeGreaterThan(20);
+    expect(opt.optimalCpi).toBeGreaterThan(1.0);
+
+    // Problem 4 parameters: D = 1200 ps, Treg = 30 ps, branch = 20%, mispredict = 15%
+    const prob4 = calculateOptimalPipelineStages({
+      combinationalDelayPs: 1200,
+      registerDelayPs: 30,
+      branchFrequency: 0.20,
+      branchMispredictRate: 0.15,
+      penaltyFn: (k) => Math.max(1, Math.ceil(k / 2) - 1),
+      maxStagesToTest: 60,
+    });
+    // Integer minimum occurs at k = 50 stages
+    expect(prob4.optimalStages).toBe(50);
+    expect(prob4.optimalClockPeriodPs).toBe(54);
+    expect(prob4.optimalCpi).toBeCloseTo(1.72, 2);
+    expect(prob4.optimalTimePerInstructionPs).toBeCloseTo(92.88, 2);
+
+    // Stage 48 evaluation from problem table
+    const eval48 = prob4.stageEvaluations.find((e) => e.stages === 48);
+    expect(eval48).toBeDefined();
+    expect(eval48!.clockPeriodPs).toBe(55);
+    expect(eval48!.cpi).toBeCloseTo(1.69, 2);
+    expect(eval48!.timePerInstructionPs).toBeCloseTo(92.95, 2);
+  });
+
+  it("calculates forwarding unit multiplexer control signals and resolves double hazards", () => {
+    // Normal EX hazard: EX/MEM writes R1, ID/EX reads R1 as Rs1
+    const exHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 2,
+      exMemRd: 1,
+      exMemRegWrite: true,
+      memWbRd: 0,
+      memWbRegWrite: false,
+    });
+    expect(exHazard.forwardA).toBe("10"); // Forward from EX/MEM
+    expect(exHazard.forwardB).toBe("00"); // No forward for Rs2
+
+    // Normal MEM hazard: MEM/WB writes R2, ID/EX reads R2 as Rs2
+    const memHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 2,
+      exMemRd: 0,
+      exMemRegWrite: false,
+      memWbRd: 2,
+      memWbRegWrite: true,
+    });
+    expect(memHazard.forwardA).toBe("00");
+    expect(memHazard.forwardB).toBe("01"); // Forward from MEM/WB
+
+    // Double hazard: both EX/MEM and MEM/WB write to R1; ID/EX reads R1
+    // EX/MEM must win because it contains the more recent value
+    const doubleHazard = calculateForwardingControl({
+      idExRs1: 1,
+      idExRs2: 5,
+      exMemRd: 1,
+      exMemRegWrite: true,
+      memWbRd: 1,
+      memWbRegWrite: true,
+    });
+    expect(doubleHazard.forwardA).toBe("10"); // Most recent wins!
+  });
+
+  it("calculates SIMD warp execution cycles under branch divergence", () => {
+    const res = calculateSimdBranchDivergence({
+      vectorWidth: 16,
+      takenProbability: 0.5,
+      takenCycles: 10,
+      notTakenCycles: 12,
+    });
+
+    // In a 16-wide warp with 50% condition probability, divergence is near certain
+    expect(res.probDivergent).toBeGreaterThan(0.99);
+    // When divergent, both branches execute under mask (10 + 12 = 22 cycles)
+    expect(res.averageSimdCycles).toBeCloseTo(22, 1);
+    expect(res.idealScalarEquivalentCycles).toBe(11);
+    expect(res.simdEfficiencyPercent).toBeCloseTo(50, 1);
+  });
+
+  it("evaluates false sharing bus invalidation overhead vs cache line padding", () => {
+    const res = calculateFalseSharingOverhead({
+      writesPerThread: 1000,
+      threads: 4,
+      cacheMissPenaltyCycles: 100,
+      hitCycles: 1,
+    });
+
+    // With 4 threads ping-ponging, miss rate is 75% without padding
+    // Average cycle cost per write is 0.75 * 100 + 0.25 * 1 = 75.25 cycles
+    expect(res.cyclesWithoutPadding).toBe(75250);
+    // With padding, 100% hits = 1,000 cycles
+    expect(res.cyclesWithPadding).toBe(1000);
+    expect(res.speedup).toBeCloseTo(75.25, 2);
+  });
+});
+
 
 
 

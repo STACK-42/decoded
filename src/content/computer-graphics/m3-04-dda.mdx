@@ -1,23 +1,23 @@
-import { Callout, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LineStepper, RoundingDrift } from "@/components/mdx/GraphicsVisualizers";
 
 # The DDA Line Algorithm
 
-The [naive algorithm](/courses/computer-graphics/slope-and-the-line-equation#the-naive-algorithm-just-use-the-equation) had two problems: gaps in steep lines, and a multiplication for every pixel. The **digital differential analyzer (DDA)** fixes both.
+The [naive algorithm](/courses/computer-graphics/slope-and-the-line-equation#the-naive-algorithm-just-use-the-equation) left gaps on steep lines, divided by zero on vertical lines, and needed a floating-point multiplication for every pixel. The **digital differential analyzer (DDA)** solves all three problems. Its name comes from early computing devices ("differential analyzers") that solved equations by accumulating small increments step by step.
 
-## Idea 1: add instead of multiply
+## Idea 1: incremental addition instead of multiplication
 
-Look at what happens to y as x goes up by one:
+Examining the slope-intercept equation as $x$ advances by single unit steps reveals an efficient recursive relationship:
 
 $$
 y_{k+1} = m(x_k + 1) + c = (m x_k + c) + m = y_k + m
 $$
 
-Each new y is just the previous y plus $m$. There's no need to multiply at all: start at the first endpoint and keep adding the slope. Working out each point from the one before is called an **incremental** method, and DDA is the classic example.
+Each subsequent $y$ value is obtained by adding slope $m$ to the previous $y$ value. This eliminates multiplication entirely during the inner rendering loop: the algorithm initializes at the starting endpoint and updates coordinates using repeated addition. Formulating successive values from previous terms is called an **incremental** method, and DDA is its classic graphic formulation.
 
-## Idea 2: step along the longer direction
+## Idea 2: step along the dominant axis
 
-To avoid gaps, take one step per pixel along whichever direction the line covers more of, and let the other coordinate change by a fraction each step:
+To eliminate gaps, the algorithm steps by one pixel along whichever axis spans the greater distance, and advances the other axis by a fractional step:
 
 $$
 \text{steps} = \max(\lvert \Delta x \rvert, \lvert \Delta y \rvert)
@@ -27,31 +27,31 @@ x_{\text{inc}} = \frac{\Delta x}{\text{steps}}
 y_{\text{inc}} = \frac{\Delta y}{\text{steps}}
 $$
 
-The longer direction then moves exactly 1 pixel per step (or −1, going backwards), and the shorter one moves by less than 1. Every column (or row) the line passes through gets exactly one pixel, so there are no gaps.
+When $\lvert \Delta x \rvert \ge \lvert \Delta y \rvert$, dividing by $\text{steps} = \lvert \Delta x \rvert$ makes $x_{\text{inc}} = \pm 1$ and $y_{\text{inc}} = \Delta y / \lvert \Delta x \rvert$ (which has size $\le 1$). When $\lvert \Delta y \rvert > \lvert \Delta x \rvert$, dividing by $\lvert \Delta y \rvert$ makes $y_{\text{inc}} = \pm 1$ and $x_{\text{inc}} = \Delta x / \lvert \Delta y \rvert$ (again size $\le 1$). Because the dominant axis always moves by 1 pixel per step, every row or column along the line gets a pixel with no gaps.
 
 ## The three cases
 
-That one formula covers every line, but it's usually taught as three cases, depending on the slope:
+Although the unified formula handles any line orientation, graphics textbooks commonly analyze DDA across three cases based on slope magnitude:
 
-| Case | Condition | Steps | x changes by | y changes by |
+| Case | Condition | Steps | x increment | y increment |
 |---|---|---|---|---|
-| 1 | $\lvert m \rvert < 1$, gentle | $\lvert \Delta x \rvert$ | 1 | $m$ |
-| 2 | $\lvert m \rvert = 1$, diagonal | $\lvert \Delta x \rvert = \lvert \Delta y \rvert$ | 1 | 1 |
-| 3 | $\lvert m \rvert > 1$, steep | $\lvert \Delta y \rvert$ | $1/m$ | 1 |
+| 1 | $\lvert m \rvert < 1$, gentle | $\lvert \Delta x \rvert$ | $\pm 1$ (sign of $\Delta x$) | $\Delta y / \lvert \Delta x \rvert$ ($+m$ right, $-m$ left) |
+| 2 | $\lvert m \rvert = 1$, diagonal | $\lvert \Delta x \rvert = \lvert \Delta y \rvert$ | $\pm 1$ | $\pm 1$ |
+| 3 | $\lvert m \rvert > 1$, steep | $\lvert \Delta y \rvert$ | $\Delta x / \lvert \Delta y \rvert$ ($+1/m$ up, $-1/m$ down) | $\pm 1$ (sign of $\Delta y$) |
 
-(When the line runs right to left or top to bottom, the 1s become −1s and the increments take the sign of $\Delta x$ or $\Delta y$.)
+Because $x_{\text{inc}} = \Delta x / \text{steps}$ and $y_{\text{inc}} = \Delta y / \text{steps}$ divide the signed coordinate differences by a positive step count, the increments automatically match the signs of $\Delta x$ and $\Delta y$ in all directions.
 
 ## The algorithm
 
-1. Compute $\Delta x = x_2 - x_1$ and $\Delta y = y_2 - y_1$.
-2. $\text{steps} = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$.
-3. $x_{\text{inc}} = \Delta x / \text{steps}$ and $y_{\text{inc}} = \Delta y / \text{steps}$.
-4. Start at $x = x_1$, $y = y_1$.
-5. Repeat steps + 1 times (the +1 is for the starting pixel): light $(\text{round}(x), \text{round}(y))$, then add $x_{\text{inc}}$ to x and $y_{\text{inc}}$ to y.
+1. Compute coordinate differences $\Delta x = x_2 - x_1$ and $\Delta y = y_2 - y_1$.
+2. Determine total steps: $\text{steps} = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$.
+3. Compute coordinate increments: $x_{\text{inc}} = \Delta x / \text{steps}$ and $y_{\text{inc}} = \Delta y / \text{steps}$.
+4. Initialize floating-point coordinates at the start point: $x = x_1$, $y = y_1$.
+5. Loop $\text{steps} + 1$ iterations (the extra iteration plots the initial endpoint): illuminate pixel $(\text{round}(x), \text{round}(y))$, then update $x \leftarrow x + x_{\text{inc}}$ and $y \leftarrow y + y_{\text{inc}}$.
 
 ## Example 1: a gentle line, (5, 4) to (12, 7)
 
-$\Delta x = 7$, $\Delta y = 3$, so $m = 3/7 \approx 0.429$. That's under 1, case 1: 7 steps, x goes up by 1 and y by $3/7$ each time. Step through it:
+For endpoints $(5, 4)$ and $(12, 7)$, $\Delta x = 7$ and $\Delta y = 3$, giving $m = 3/7 \approx 0.429$. Because $\lvert m \rvert < 1$, this falls under Case 1: the algorithm executes 7 steps, incrementing $x$ by 1 and $y$ by $3/7 \approx 0.429$ per iteration:
 
 <LineStepper algorithm="dda" from={[5, 4]} to={[12, 7]} />
 
@@ -66,17 +66,17 @@ $\Delta x = 7$, $\Delta y = 3$, so $m = 3/7 \approx 0.429$. That's under 1, case
 | 6 | 11 | 6.571 | (11, 7) |
 | 7 | 12 | 7 | (12, 7) |
 
-<Callout tone="orange" label="Don't round the slope either">
-Many worked solutions round $m$ to 0.4 before starting. Then y goes 4, 4.4, 4.8, 5.2, 5.6, 6, 6.4, 6.8, and it never reaches the endpoint's 7; the last pixel only lands on 7 after rounding. Worse, at x = 11 it gives 6.4 → 6 instead of the true 6.571 → 7, so the drawn line is wrong. Every addition carries the rounding error forward. Keep $m$ as a fraction (3/7) or to several decimals.
+<Callout tone="orange" label="Cumulative error from rounding slope increments">
+Rounding the slope to a coarse decimal like $0.4$ before executing the loop introduces cumulative error. With increment $0.4$, $y$ advances as $4.0, 4.4, 4.8, 5.2, 5.6, 6.0, 6.4, 6.8$, failing to reach the final endpoint value of $7.0$. At $x = 11$, the drifted sum $6.4$ rounds to pixel $(11, 6)$ rather than the correct $(11, 7)$. Each addition accumulates rounding error; always keep slope increments as exact fractions or full-precision floating-point values.
 </Callout>
 
-See the drift side by side. Orange pixels are the ones the rounded slope gets wrong:
+The visualizer below compares exact fractional increments against premature rounding, highlighting erroneous pixels in orange:
 
 <RoundingDrift />
 
 ## Example 2: a steep line, (5, 7) to (10, 15)
 
-$\Delta x = 5$, $\Delta y = 8$, so $m = 1.6$, over 1: case 3. Now y is the long direction, 8 steps, and x moves by $1/m = 5/8 = 0.625$ each step. Enter `5 7 10 15` above and press **Draw**.
+For endpoints $(5, 7)$ and $(10, 15)$, $\Delta x = 5$ and $\Delta y = 8$, giving $m = 8/5 = 1.6$. Because $\lvert m \rvert > 1$, this falls under Case 3: $y$ is the dominant axis spanning 8 steps, while $x$ advances by $1/m = 5/8 = 0.625$ per step:
 
 | k | x (exact) | y | pixel |
 |---|---|---|---|
@@ -90,23 +90,23 @@ $\Delta x = 5$, $\Delta y = 8$, so $m = 1.6$, over 1: case 3. Now y is the long 
 | 7 | 9.375 | 14 | (9, 14) |
 | 8 | 10 | 15 | (10, 15) |
 
-At k = 4, x is exactly 7.5, halfway between two pixels. This course rounds halves up, so the pixel is (8, 11). (Rounding $1/m$ to 0.6 would give x = 7.4 there and pixel (7, 11), the same carried-error problem as before.) Either neighbor is a reasonable choice for a tie, but pick one rule and stick with it.
+At iteration $k = 4$, $x = 7.5$ lies exactly equidistant between column 7 and column 8. Following the convention of rounding half values upward yields pixel $(8, 11)$.
 
 ## Example 3: diagonals, (3, 5) to (8, 10) and back
 
-$\Delta x = \Delta y = 5$: case 2. Both coordinates go up by exactly 1 each step, so no rounding is needed: (3, 5), (4, 6), (5, 7), (6, 8), (7, 9), (8, 10).
+When $\Delta x = \Delta y = 5$ (Case 2), both coordinates advance by exactly 1 on every step without requiring fractional rounding: $(3, 5), (4, 6), (5, 7), (6, 8), (7, 9), (8, 10)$.
 
-Reverse it, (8, 10) to (3, 5): now $\Delta x = \Delta y = -5$, so both increments are −1 and the same six pixels come out in the opposite order. The formula handles direction by itself, with no special case needed.
+Reversing direction from $(8, 10)$ to $(3, 5)$ yields $\Delta x = \Delta y = -5$, so both increments evaluate to $-1$. The identical sequence of six pixels is plotted in reverse order, showing that the unified step equations handle every direction automatically.
 
 ## Example 4: horizontal, (2, 2) to (9, 2)
 
-$\Delta y = 0$, so $m = 0$. There are 7 steps, x goes up by 1 and y by 0: (2, 2), (3, 2), … (9, 2), 8 pixels in all. A vertical line works the same way with the roles swapped, which the naive algorithm couldn't do at all.
+When $\Delta y = 0$, slope $m = 0$. The algorithm computes $\text{steps} = 7$, with $x_{\text{inc}} = 1$ and $y_{\text{inc}} = 0$, generating $(2, 2), (3, 2), \dots, (9, 2)$ (8 total pixels). For a vertical line ($\Delta x = 0$), $\text{steps} = \lvert\Delta y\rvert$ gives $x_{\text{inc}} = 0$ and $y_{\text{inc}} = \pm 1$ from the exact same formula, avoiding the naive algorithm's division by zero without a separate branch.
 
-## Example 5: (2, 2) to (8, 5), and a homework line
+## Example 5: (2, 2) to (8, 5)
 
-Some notes present this exact method under the name "naive line-drawing algorithm": find $\Delta x$ and $\Delta y$, take $\text{steps} = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$, divide to get the increments, and keep adding them. Whatever the name, it's DDA, and it's worked the same way.
+Some courses call this incremental procedure the "naive line-drawing algorithm" (computing $\Delta x$ and $\Delta y$, setting $\text{steps} = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$, and repeatedly adding increments). In graphics textbooks, this is DDA.
 
-From (2, 2) to (8, 5): $\Delta x = 6$, $\Delta y = 3$, so 6 steps, $x_{\text{inc}} = 6/6 = 1$ and $y_{\text{inc}} = 3/6 = 0.5$.
+Tracing from $(2, 2)$ to $(8, 5)$: $\Delta x = 6$, $\Delta y = 3$, giving 6 steps with increments $x_{\text{inc}} = 6/6 = 1.0$ and $y_{\text{inc}} = 3/6 = 0.5$.
 
 | k | x | y (exact) | pixel |
 |---|---|---|---|
@@ -118,23 +118,25 @@ From (2, 2) to (8, 5): $\Delta x = 6$, $\Delta y = 3$, so 6 steps, $x_{\text{inc
 | 5 | 7 | 4.5 | (7, 5) |
 | 6 | 8 | 5 | (8, 5) |
 
-<Callout tone="orange" label="A point is not a pixel">
-Listing the answer as (3, 2.5), (5, 3.5) and so on gives points on the true line, not pixels: there is no pixel at y = 2.5. The last step is always to round each point to the pixel you light. With halves rounded up, (3, 2.5) becomes (3, 3).
+<Callout tone="orange" label="Points vs discrete pixels">
+Listing coordinates like $(3, 2.5)$ identifies mathematical locations along the continuous line, not pixel entries in a frame buffer. The final step in DDA is always rounding each calculated coordinate to its discrete pixel center. Rounding half values upward maps $(3, 2.5)$ to pixel $(3, 3)$.
 </Callout>
 
-Now try (3, 1) to (9, 6) yourself before reading on, or enter `3 1 9 6` in the stepper above.
+Try tracing a gentle line by hand from $(3, 1)$ to $(9, 6)$ before revealing the answer:
 
-$\Delta x = 6$ and $\Delta y = 5$, so 6 steps, $x_{\text{inc}} = 1$ and $y_{\text{inc}} = 5/6 \approx 0.833$. The y values are 1, 1.833, 2.667, 3.5, 4.333, 5.167 and 6, so the pixels are (3, 1), (4, 2), (5, 3), (6, 4), (7, 4), (8, 5) and (9, 6).
+<ModelAnswer label="Check DDA trace from (3, 1) to (9, 6)">
+$\Delta x = 6$ and $\Delta y = 5$, giving $\text{steps} = 6$, $x_{\text{inc}} = 1.0$, and $y_{\text{inc}} = 5/6 \approx 0.833$. The continuous $y$ values are $1.0, 1.833, 2.667, 3.5, 4.333, 5.167,$ and $6.0$, rounding to pixels $(3, 1), (4, 2), (5, 3), (6, 4), (7, 4), (8, 5),$ and $(9, 6)$.
+</ModelAnswer>
 
-## What DDA still gets wrong
+## Limitations of DDA
 
-DDA is simple and gap-free, but it isn't perfect:
+While DDA eliminates gaps and replaces inner-loop multiplication with addition, it has notable limitations:
 
-- It still uses [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) numbers and **rounds** every pixel, and rounding takes time.
-- Adding a rounded $m$ over and over **accumulates error**, so on long lines the computed points drift away from the true line.
+- It relies on [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) arithmetic and requires an explicit rounding call per pixel, which consumes processor cycles.
+- When rendering long line segments, repeated accumulation of floating-point inaccuracies causes calculated positions to gradually drift away from the true line.
 
 <PracticalApplication title="Rasterization" tool="GPUs, game engines">
-The incremental trick, "work out the next value from the last with an addition", is everywhere in graphics. GPUs fill triangles by stepping across them incrementally, and DDA itself is used to step through grids, for example to trace a ray across a voxel world or a tile map in classic games.
+The principle of incremental coordinate evaluation remains ubiquitous in computer graphics. GPUs rasterize triangles by stepping edge coordinates incrementally across scan lines. Grid-traversal DDA variants are also standard in **ray casting** (shooting sight lines in games) to walk step by step across 3D block grids (**voxels**) or 2D tile maps.
 </PracticalApplication>
 
-The [next lesson](/courses/computer-graphics/bresenham) gets rid of floating point and rounding altogether, using only whole numbers.
+The [next lesson](/courses/computer-graphics/bresenham) introduces Bresenham's algorithm, which eliminates floating-point arithmetic and rounding entirely by operating strictly on integers.

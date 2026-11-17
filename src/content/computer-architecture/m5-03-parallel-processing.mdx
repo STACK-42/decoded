@@ -1,61 +1,714 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { FlynnTaxonomy, SimdDemo, AmdahlLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Parallel Processing
 
-Around the mid-2000s, clock speeds stopped rising, because faster chips were getting too hot to cool. But transistors kept getting smaller. So chipmakers used them differently: rather than one faster processor, they built several. That's why your phone has many cores.
+During the 1980s and 1990s, processors grew faster mostly through higher clock speeds and deeper instruction pipelines. Computers sped up because single cores ran at higher frequencies.
 
-**Parallel processing** breaks a problem into parts that can run at the same time on different processors. The opposite is **serial processing**: one task at a time.
+Around 2004, that approach hit a physical wall. Chips became too hot to cool with ordinary fans and heatsinks. Transistors kept shrinking under Moore's law, but running them faster drew too much power. Instead of pushing a single core to higher frequencies, chip designers placed multiple complete processor cores on the same chip die.
+
+**Parallel processing** breaks a program into separate pieces that run at the same time on multiple processing units. The alternative is **serial processing**, where one processor runs instructions one after another in order.
+
+### Why chips went multicore
+
+Most of the power consumed by CMOS digital circuits is **dynamic power**, the energy spent charging and discharging transistor gates each clock cycle:
+
+$$
+P_{\text{dynamic}} = \alpha \times C \times V^2 \times f
+$$
+
+Where:
+- $\alpha$ is the activity factor (fraction of gates switching each clock cycle).
+- $C$ is the capacitive load of the transistors and interconnect wires.
+- $V$ is the operating supply voltage.
+- $f$ is the clock frequency.
+
+In 1974, Robert Dennard observed that as transistor dimensions shrink by a factor of $s \approx 0.7$ with each generation:
+- Gate length and width shrink by $s$, reducing area to $s^2 \approx 0.5$ (doubling transistor density per chip, the basis of Moore's law).
+- Capacitance shrinks to $sC$.
+- Under **Dennard scaling**, operating voltage could drop by the same factor ($V \to sV$), allowing clock frequency to increase ($f \to f/s$).
+- Power per transistor dropped by $s^2$: $P \to \alpha(sC)(sV)^2(f/s) = s^2 P$.
+- Power density (power per square millimeter) stayed constant: $\frac{s^2 P}{s^2 A} = \text{constant}$.
+
+For thirty years, Dennard scaling let engineers increase clock speeds every generation without overheating chips.
+
+Around 2004, this rule broke down. Gate insulating layers had thinned to about $1.2\text{ nm}$ (only four or five atoms thick). Electrons began leaking through the thin gates even when turned off. Operating voltage could not safely drop below roughly $0.7\text{ V}$. Transistors require a minimum threshold voltage ($V_{th}$) to turn off cleanly. Lowering $V_{th}$ causes subthreshold leakage current to increase exponentially, consuming unacceptable standby power even when idle. Lowering supply voltage without lowering $V_{th}$ degrades switching speed and leaves logic signals vulnerable to electrical noise.
+
+With voltage stuck between $0.8\text{ V}$ and $1.1\text{ V}$, increasing clock frequency caused power and heat to climb sharply. Chips reached $100\text{ to }150\text{ W/cm}^2$, the cooling limit of copper heatsinks and air fans.
+
+This limit is the **Power Wall**. Because a single core could no longer scale in frequency, designers added more cores. Two cores running at $2.0\text{ GHz}$ deliver roughly the same total throughput as a single core running at $4.0\text{ GHz}$, but operate at a lower voltage, cutting power by more than half.
 
 ## Flynn's taxonomy
 
-Flynn sorted computers by a simple question: how many instruction streams and data streams are there? Four kinds result.
+In 1966, computer scientist Michael J. Flynn categorized all computer systems by examining two independent dimensions: the number of **instruction streams** and the number of **data streams**.
 
 <FlynnTaxonomy />
 
+This classification produces four fundamental architectural categories:
+
+| Architecture | Description | Typical Hardware | Primary Application |
+|---|---|---|---|
+| **SISD** (Single Instruction, Single Data) | One instruction operates on one data item at a time | Classic uniprocessors (Intel 8086, classic single-core CPUs) | Legacy sequential algorithms |
+| **SIMD** (Single Instruction, Multiple Data) | One control unit broadcasts a single instruction to multiple processing elements | Vector supercomputers, SSE/AVX/NEON extensions, GPUs | Graphics, audio, image processing, machine learning |
+| **MISD** (Multiple Instruction, Single Data) | Multiple processors execute different instructions on the same data stream | Fault-tolerant redundant systems (Space Shuttle computers), systolic arrays | Spacecraft voting systems, experimental signal filtering |
+| **MIMD** (Multiple Instruction, Multiple Data) | Multiple autonomous processors execute distinct instructions on distinct data streams | Multicore PCs, multi-socket enterprise servers, cloud clusters | Operating systems, servers, general parallel workloads |
+
+MISD is rarely used in standard computing because executing multiple distinct instructions on a single stream of data is seldom useful. Its primary real-world application is fault-tolerant redundancy: in the Space Shuttle primary flight software, four independent computers executed different implementations of flight control logic on identical telemetry sensor data, voting on output actuator commands to survive software and hardware faults (though physically each computer ran as an independent processor, conceptually they acted as multiple instruction streams processing a single telemetry stream). Another example is systolic arrays, where data streams through an array of pipelined arithmetic cells that perform successive filtering stages.
+
 ## SIMD: one instruction, many values
 
-Imagine brightening an image. It's the same calculation on millions of pixels, so why fetch and decode the same instruction millions of times? **SIMD** runs it once on a whole group of values.
+Consider brightening a [4K digital photograph](/courses/computer-graphics/screen-resolution#reading-a-resolution) ($3840 \times 2160 = 8,294,400\text{ pixels}$). Adding a brightness constant to every pixel on a traditional scalar (SISD) processor requires looping over eight million pixels:
+
+```c
+for (int i = 0; i < 8294400; i++) {
+    pixels[i] += brightness;
+}
+```
+
+This scalar loop requires over eight million instruction fetches, eight million instruction decodes, eight million pointer increments, and eight million branch evaluations. Over $90\%$ of the energy is wasted fetching and decoding the very same addition opcode repeatedly.
+
+A **SIMD** architecture eliminates this overhead. A single instruction fetch and decode controls dozens or hundreds of arithmetic units operating in lockstep on wide register vectors.
 
 <SimdDemo />
 
-There are two common designs. An **array processor** has many processing elements working in step. A **vector processor** uses a long pipeline fed by whole arrays. Your laptop's CPU has SIMD instructions too (SSE and AVX on x86, NEON on ARM), and a **GPU** is largely built around this idea, which is why GPUs took over machine learning: it's mostly matrix arithmetic.
+SIMD architectures take three primary hardware forms:
+
+1. **Vector processors**: Pipelined vector arithmetic units that operate on continuous arrays streamed from memory or vector registers (such as the classic Cray-1).
+2. **Short-vector / Multimedia extensions**: Wide registers (128-bit, 256-bit, or 512-bit) embedded directly inside standard CPU cores. Examples include Intel AVX-512 (which operates on sixteen 32-bit floats in a single cycle) and ARM NEON.
+3. **Graphics Processing Units (GPUs)**: Massive SIMD arrays deployed under a Single Instruction, Multiple Threads (**SIMT**) execution model. A modern GPU integrates thousands of arithmetic cores organized into streaming multiprocessors. Hardware schedulers group threads into lockstep clusters (called **warps** of 32 threads on NVIDIA, or **wavefronts** of 64 threads on AMD), applying the same instruction across thousands of data points concurrently. This makes GPUs well suited for deep learning and matrix multiplication.
+
+### The penalties: memory stride and branch divergence
+
+SIMD hardware reaches peak efficiency only when code satisfies two architectural constraints:
+
+1. **Unit-stride memory access**: When vector elements reside in contiguous memory locations, the memory controller fetches an entire 64-byte cache line in a single burst, populating the vector register immediately. If data is stored with non-unit strides or scattered randomly in memory, the processor must execute hardware **gather** (loading individual addresses into a vector register) or **scatter** (writing vector elements to disparate addresses) instructions. Gather and scatter serialize memory operations into multiple separate cache lookups, which drops SIMD throughput.
+2. **Branch divergence**: Because all 32 threads in a warp share a single instruction decoder, they must execute identical instructions in lockstep. If threads evaluate an `if-else` condition with differing outcomes, the GPU cannot execute both paths simultaneously. Instead, the hardware serializes execution: it first runs the `if` body while deactivating threads whose condition was false using an execution mask, and then runs the `else` body while deactivating threads whose condition was true. If threads diverge evenly, execution throughput drops by half.
 
 ## MIMD: independent workers
 
-**MIMD** is several complete processors, each running its own instructions. Everything from a phone to a data centre works this way.
+**MIMD** systems use multiple independent processor cores, each with its own program counter, instruction decoder, and execution datapath.
 
-- **Multicore**: multiple CPUs on one chip, usually sharing some [cache](/courses/computer-architecture/cache-policies) and main memory.
-- **Multiprocessor**: several chips in one computer. In **symmetric** systems they're all equal, while in **asymmetric** systems one is in charge.
-- **Cluster**: many separate computers connected by a network. There's no shared memory, so they send messages to each other.
+### Shared memory vs. distributed memory
 
-**Hyper-threading** (simultaneous multithreading) is a cheaper trick. One physical core keeps two sets of registers, so it can look like two cores. When one [thread](/courses/operating-systems/lab-java-threads#programs-processes-and-threads) is waiting on memory, the other can use the idle hardware. An Intel Core i7 with 8 cores can run 16 threads this way.
+MIMD hardware falls into two main structural topologies:
+
+1. **Shared-memory systems**: All processors access a unified physical address space:
+   - **Symmetric Multiprocessing (SMP) / Uniform Memory Access (UMA)**: Multiple processors connect to a centralized main memory through a shared system bus or crossbar switch. Access latency to any memory location is identical for every CPU (typically around $60\text{ ns}$).
+   - **Non-Uniform Memory Access (NUMA)**: Memory is physically partitioned among processor sockets, but remains unified under a single global address space. A CPU accesses its local socket memory rapidly ($\approx 60\text{ ns}$), while accessing remote memory across point-to-point coherent interconnects (such as Intel Ultra Path Interconnect [UPI] or AMD Infinity Fabric) takes longer ($\approx 140\text{ ns}$). Operating system thread schedulers must be NUMA-aware, pinning threads to the specific socket where their data structures reside.
+2. **Distributed-memory systems (clusters)**: Independent computers (nodes) connected over a high-speed network (such as InfiniBand or 100 GbE). Each node has its own private address space; processors coordinate exclusively by sending explicit messages across the network (using protocols like MPI).
+
+### Hardware multithreading
+
+To keep execution datapaths busy when an instruction stalls on memory latency, processors employ **hardware multithreading**:
+
+- **Fine-grained multithreading**: The processor switches between execution threads on every single clock cycle in a round-robin schedule, hiding latency bubbles but slowing single-thread speed.
+- **Coarse-grained multithreading**: The processor executes one thread until a major stall event occurs (such as an L3 cache miss), then switches to an alternate thread.
+- **Simultaneous Multithreading (SMT / Hyper-Threading)**: A superscalar core replicates architectural registers (Program Counter, register file) while sharing functional ALUs and caches. When Thread 0 is waiting for a memory load, Thread 1 issues instructions to the idle ALUs during the very same clock cycle. An 8-core CPU with SMT presents itself to the operating system as 16 logical processors.
+
+### Coherence vs. consistency
+
+Multiprocessor memory design separates two distinct concepts:
+
+- **Cache Coherence**: Guarantees that all processors observe a consistent view of writes to the **same memory address**. It answers: "What value does a read to address $X$ return after a write to address $X$?"
+- **Memory Consistency**: Defines the legal ordering of reads and writes across **different memory addresses**. It answers: "In what order do writes to address $X$ and address $Y$ become visible to other cores?" While cache coherence is enforced by hardware protocols like MESI, memory consistency requires memory models (such as Sequential Consistency, Total Store Ordering, or Weak Ordering) and explicit software fence instructions (`MFENCE` or `DMB`).
+
+### The cache coherence problem and the MESI protocol
+
+When multiple CPU cores each have a private Level 1 cache and share main memory, a severe consistency challenge emerges: the **cache coherence problem**.
+
+If Core A and Core B both cache address `0x1000` (value 42), and Core A writes value 99 to that address, Core B's cache holds stale data. If Core B reads `0x1000`, it receives 42 instead of the updated 99.
+
+To maintain coherence, multicore processors use **bus snooping protocols**, where each cache controller continuously monitors ("snoops") the coherent bus for transactions involving memory blocks it holds.
+
+Modern processors use **write-invalidate** protocols: writing to a shared cache block invalidates other copies rather than updating them. This saves interconnect bandwidth because repeated writes to the same local variable do not flood the bus with data updates.
+
+The industry-standard **MESI protocol** (also known as the Illinois protocol) assigns every cache block one of four states:
+
+| State | Name | Meaning | Is Block Dirty? | Can Other Caches Hold It? |
+|---|---|---|---|---|
+| **M** | Modified | The cache block is present only in this cache and has been modified (dirty relative to DRAM). Must be written back to memory when evicted. | Yes | No |
+| **E** | Exclusive | The cache block is present only in this cache and is clean (matches DRAM). Can be written silently without bus activity. | No | No |
+| **S** | Shared | The cache block may be present in other CPU caches. It is clean (matches DRAM). Writing requires broadcasting an invalidation. In standard MESI, evictions from state S are silent (no bus notification); a core still broadcasts an invalidation before writing to guarantee exclusive access. | No | Yes |
+| **I** | Invalid | The cache line does not contain valid data. Reading it causes a cache miss. | No | N/A |
+
+Some architectures (such as AMD Opteron/EPYC and ARM) extend MESI to **MOESI** by adding an **Owner (O)** state. In MOESI, a core holding a dirty line can share read-only copies with other caches without first writing the block back to slow DRAM; the Owner core retains responsibility for eventually writing the modified data back to memory when evicted.
+
+### MESI state transitions
+
+- **Read on state I (Read Miss)**: The core broadcasts a `BusRd` request on the bus.
+  - If no other core holds the block, it transitions to **Exclusive (E)**.
+  - If another core holds the block in E or S, it transitions to **Shared (S)**.
+  - If another core holds the block in Modified (M), that core intercepts the request, flushes the dirty data to memory, transitions to Shared (S), and the requesting core loads the data into **Shared (S)**.
+- **Write on state S (Write Upgrade)**: The core broadcasts an `Invalidate` signal on the bus. All other caches containing the block transition to **Invalid (I)**. The writing core transitions from **Shared to Modified (M)**.
+- **Write on state E (Silent Upgrade)**: Because the block is present exclusively in this cache, the core transitions to **Modified (M)** with zero bus communication.
+- **Write on state I (Write Miss)**: The core issues a `BusRdX` (Read with Intent to Modify) request. All other caches invalidate their copies, and the writing core loads the block directly into **Modified (M)**.
 
 ## Levels of parallelism
 
-Parallelism happens at several levels, often at once:
+Modern computing exploits parallelism across multiple structural tiers simultaneously:
 
-| Level | What runs in parallel | Who arranges it |
-|---|---|---|
-| Bit | Bits in a word: 64-bit is faster than 8-bit | The hardware |
-| Instruction | Stages of a [pipeline](/courses/computer-architecture/pipelining), superscalar execution | The hardware or compiler |
-| Data | One operation over many values (SIMD) | The programmer or compiler |
-| Task | Different functions on different cores | The programmer |
+| Level | Granularity | Managed By | Physical Mechanism |
+|---|---|---|---|
+| **Bit-level** | 8-bit to 64-bit words | Chip hardware | Word-wide ALUs, 64-bit adders |
+| **Instruction-level (ILP)** | Individual assembly instructions | Hardware & Compiler | Pipelining, out-of-order execution, superscalar issue |
+| **Data-level (DLP)** | Arrays, vectors, matrices | Programmer & Compiler | SIMD vector registers, GPU streaming multiprocessors |
+| **Thread-level (TLP)** | Independent concurrent threads | Operating System | Multicore chips, Simultaneous Multithreading (SMT) |
+| **Task / Process-level** | Independent programs, services | Distributed software | Cloud server clusters, high-performance computing (HPC) |
 
 ## The limit: Amdahl's law
 
-If 8 cores make it 8 times faster, why not use a million? Because some of nearly every program can't be split: reading the input, say, or combining the results. With $p$ the fraction that can run in parallel, on $n$ processors:
+If adding cores makes computers faster, why not deploy 1,000 cores to make every program run 1,000 times faster?
+
+In 1967, computer architect Gene Amdahl proved that the speedup achievable by parallel hardware is strictly bounded by the portion of the program that cannot be parallelized.
+
+Amdahl's law considers a fixed problem size (**strong scaling**). Let $p$ be the fraction of the code that can run in parallel ($0 \le p \le 1$), and $s = 1 - p$ be the inherently serial fraction that must run sequentially on a single core (such as reading input, initializing data structures, or synchronizing results).
+
+The total execution time on 1 core is:
 
 $$
-\text{speedup} = \frac{1}{(1 - p) + \dfrac{p}{n}}
+T(1) = T_{\text{serial}} + T_{\text{parallel}} = (1 - p)T(1) + p T(1)
 $$
 
-Set the parallel part to 90% and move the cores up to 128. Watch the orange bar, which never shrinks.
+On $N$ processor cores, the serial fraction still takes $(1 - p)T(1)$ because only one processor can execute it. The parallel fraction is divided among the $N$ cores:
+
+$$
+T(N) = (1 - p)T(1) + \frac{p T(1)}{N}
+$$
+
+The resulting speedup is the ratio of execution times:
+
+$$
+\text{Speedup} = \frac{T(1)}{T(N)} = \frac{T(1)}{(1 - p)T(1) + \dfrac{p T(1)}{N}} = \frac{1}{(1 - p) + \dfrac{p}{N}}
+$$
+
+As the number of processors $N$ grows toward infinity ($N \to \infty$), the term $\frac{p}{N}$ approaches zero:
+
+$$
+\lim_{N \to \infty} \text{Speedup} = \frac{1}{1 - p} = \frac{1}{s}
+$$
+
+Experiment with parallel fractions and core counts below. Observe the orange bar, representing the sequential portion of the execution time: no matter how many cores are added, the orange bar never shrinks.
 
 <AmdahlLab />
 
-Even with 90% parallel code, you can never go past 10× speedup, however many cores you add. That 10% serial part sets the ceiling.
+If a program is $90\%$ parallel ($p = 0.90$, meaning $s = 0.10$ is serial), the maximum theoretical speedup on an infinite number of processors is:
 
-<Callout tone="violet" label="The whole course in one idea">
-Pipelining, caches and parallelism all do the same thing: they make the common case fast by arranging work so that less time is wasted waiting. You can now open up any modern chip's spec sheet and know what its parts are for.
+$$
+\text{Speedup}_{\max} = \frac{1}{1 - 0.90} = \frac{1}{0.10} = 10\times
+$$
+
+Even with 10,000 cores, speedup cannot exceed $10\times$ because the 10% sequential portion sets an upper limit.
+
+### Gustafson's law: weak scaling
+
+Amdahl's law assumes that problem size remains fixed as computing resources expand. In practice, researchers do not use supercomputers to solve the same problem faster; they use more cores to solve much larger problems that were previously intractable (such as simulating weather at 1-kilometer grid resolution instead of 100-kilometer resolution).
+
+In 1988, John Gustafson formulated **scaled speedup** (**weak scaling**), where problem size expands proportionally with processor count so that parallel execution time remains constant:
+
+Let the execution time on the parallel system be normalized to $1$:
+
+$$
+T_{\text{parallel}} = s + (1 - s) = 1
+$$
+
+On a sequential uniprocessor, executing this larger scaled workload requires running the serial work once and the parallel work $N$ times:
+
+$$
+W(N) = s + N(1 - s)
+$$
+
+The scaled speedup is:
+
+$$
+\text{Speedup}_{\text{Gustafson}} = \frac{W(N)}{T_{\text{parallel}}} = s + N(1 - s) = N - s(N - 1)
+$$
+
+Where $s$ is the serial fraction of the parallel program.
+
+Under Gustafson's law, if $s = 0.15$ on $N = 64$ processors, the scaled speedup is:
+
+$$
+\text{Speedup} = 64 - 0.15 \times (64 - 1) = 64 - 9.45 = 54.55\times
+$$
+
+Parallel efficiency under Gustafson scaling is:
+
+$$
+\text{Efficiency} = \frac{\text{Speedup}}{N} = \frac{N - s(N - 1)}{N} = 1 - s \left( \frac{N - 1}{N} \right)
+$$
+
+As $N \to \infty$, efficiency never drops below $1 - s$ ($85\%$ efficiency for $s = 0.15$), regardless of how many cores are added.
+
+Amdahl's law governs execution when you want a fixed task completed as fast as possible; Gustafson's law governs execution when you want to accomplish the maximum amount of work within a fixed time budget.
+
+## Traps and pitfalls
+
+<Callout tone="orange" label="Trap: Amdahl's law does not make parallel computing futile">
+Amdahl's law is sometimes seen as proof that large multicore systems are not worth building. But Amdahl's law applies to fixed problem sizes (strong scaling). When problem size grows along with core count (weak scaling), Gustafson's law applies, and efficiency stays high.
 </Callout>
+
+<Callout tone="orange" label="Trap: False sharing causes cache thrashing without shared data">
+**False sharing** happens when two threads on different cores update separate variables that sit inside the same 64-byte cache line. The threads never touch each other's data, but the coherence protocol invalidates the entire line on every write, creating bus contention. Programmers fix this by padding independent variables to separate 64-byte boundaries.
+</Callout>
+
+<Callout tone="orange" label="Trap: Confusing cache coherence with memory consistency">
+A multicore chip with MESI cache coherence does not automatically run multithreaded programs in sequential order. Cache coherence guarantees only that all cores agree on updates to any single address. It gives no guarantee about the order of writes to different addresses. Memory barriers (`MFENCE` or `DMB`) are required to enforce cross-address ordering.
+</Callout>
+
+<Callout tone="orange" label="Trap: The GPU throughput trap">
+Running code on a GPU does not automatically make it faster. GPUs achieve high throughput on parallel, branch-free code with contiguous memory access. For sequential code, pointer-heavy data structures, or diverging branches, a modern CPU core runs faster than a GPU shader core.
+</Callout>
+
+<Callout tone="violet" label="Architectural synthesis: The unifying principle of computer design">
+Pipelining, caches, virtual memory, and multicore parallelism all tackle the same issue: computation is faster than communication. By overlapping work, caching active data, and splitting tasks across cores, processor architectures turn memory latency into useful throughput.
+</Callout>
+
+## Worked practice problems
+
+### Problem 1: Amdahl's law and multicore scaling analysis
+
+A software company analyzes a database query engine and determines that $85\%$ of the execution time can be parallelized across multiple cores ($p = 0.85$). The remaining $15\%$ consists of sequential lock synchronization and transaction log writing ($s = 0.15$).
+
+Calculate:
+1. The theoretical speedup and parallel efficiency ($\text{Speedup} / N \times 100\%$) when running on an 8-core processor.
+2. The theoretical speedup and parallel efficiency when running on a 64-core enterprise server.
+3. The asymptotic speedup limit as the number of cores approaches infinity ($N \to \infty$).
+4. The parallel fraction $p$ required to achieve an actual speedup of $20\times$ on any processor count.
+5. The scaled speedup under Gustafson's law for $N = 64$ cores with a serial fraction of $s = 0.15$.
+
+<ModelAnswer>
+**Part 1: Speedup and efficiency on 8 cores:**
+
+$$p = 0.85, \quad s = 1 - p = 0.15, \quad N = 8$$
+
+$$\text{Speedup}_8 = \frac{1}{(1 - p) + \dfrac{p}{N}} = \frac{1}{0.15 + \dfrac{0.85}{8}} = \frac{1}{0.15 + 0.10625} = \frac{1}{0.25625} \approx 3.9024$$
+
+Parallel efficiency on 8 cores:
+
+$$\text{Efficiency}_8 = \frac{\text{Speedup}_8}{N} \times 100\% = \frac{3.9024}{8} \times 100\% \approx 48.78\%$$
+
+---
+
+**Part 2: Speedup and efficiency on 64 cores:**
+
+$$\text{Speedup}_{64} = \frac{1}{0.15 + \dfrac{0.85}{64}} = \frac{1}{0.15 + 0.01328125} = \frac{1}{0.16328125} \approx 6.1244$$
+
+Parallel efficiency on 64 cores:
+
+$$\text{Efficiency}_{64} = \frac{\text{Speedup}_{64}}{N} \times 100\% = \frac{6.1244}{64} \times 100\% \approx 9.57\%$$
+
+Increasing cores by a factor of 8 (from 8 to 64) only yields an increase in speedup from $3.90\times$ to $6.12\times$ because the 15% serial fraction dominates.
+
+---
+
+**Part 3: Asymptotic speedup limit:**
+
+$$\text{Speedup}_{\max} = \frac{1}{1 - p} = \frac{1}{0.15} \approx 6.6667$$
+
+Even with an infinite number of processor cores, this program can never achieve more than a $6.67\times$ speedup on a fixed workload.
+
+---
+
+**Part 4: Parallel fraction required for 20× speedup:**
+
+The asymptotic speedup ceiling must be at least 20:
+
+$$\text{Speedup}_{\max} = \frac{1}{1 - p} \ge 20 \implies 1 - p \le \frac{1}{20} = 0.05 \implies p \ge 0.95$$
+
+To achieve a $20\times$ speedup on any number of processors, at least $95\%$ of the code must be parallelized.
+
+---
+
+**Part 5: Gustafson scaled speedup on 64 cores:**
+
+Under weak scaling (problem size scales with core count):
+
+$$\text{Speedup}_{\text{Gustafson}} = N - s(N - 1) = 64 - 0.15 \times (64 - 1) = 64 - 0.15 \times 63 = 64 - 9.45 = 54.55$$
+
+$$\text{Efficiency}_{\text{Gustafson}} = \frac{54.55}{64} \times 100\% \approx 85.23\%$$
+
+Under Gustafson's law, the system achieves a $54.55\times$ speedup with over $85\%$ parallel efficiency.
+</ModelAnswer>
+
+---
+
+### Problem 2: MESI cache coherence state trace
+
+Consider a symmetric multiprocessor with three processor cores (Core 0, Core 1, and Core 2) connected via a shared snooping bus to main memory. Each core maintains a private cache implementing the 4-state MESI protocol.
+
+Initially, cache block address `X` is not present in any cache (all three cores are in state **Invalid** for block `X`).
+
+Trace the state of block `X` in each core's cache and record the resulting bus transactions for the following sequential operations:
+1. **Core 0 reads address `X`**.
+2. **Core 1 reads address `X`**.
+3. **Core 0 writes address `X`**.
+4. **Core 2 reads address `X`**.
+
+<ModelAnswer>
+**Step 1: Core 0 reads address `X`**
+- Prior states: Core 0: `I`, Core 1: `I`, Core 2: `I`.
+- Action: Core 0 misses and broadcasts a `BusRd` transaction on the bus.
+- Snooping: Neither Core 1 nor Core 2 holds block `X`.
+- Data supplier: Main memory supplies the block to Core 0.
+- Transition: Because no other cache holds the line, Core 0 transitions to **Exclusive (E)**.
+- Next states: Core 0: **`E`**, Core 1: **`I`**, Core 2: **`I`**.
+
+---
+
+**Step 2: Core 1 reads address `X`**
+- Prior states: Core 0: `E`, Core 1: `I`, Core 2: `I`.
+- Action: Core 1 misses and broadcasts a `BusRd` transaction on the bus.
+- Snooping: Core 0 detects the read request for a block it holds in state `E`. Core 0 asserts the dedicated wired-OR `SHARED` line on the snooping bus to signal that another cache holds the block, and downgrades its state to **Shared (S)**.
+- Data supplier: Main memory (or Core 0 via cache-to-cache transfer) supplies the block.
+- Transition: Because the `SHARED` bus wire is asserted, Core 1 loads the block and transitions to **Shared (S)** (instead of Exclusive).
+- Next states: Core 0: **`S`**, Core 1: **`S`**, Core 2: **`I`**.
+
+---
+
+**Step 3: Core 0 writes address `X`**
+- Prior states: Core 0: `S`, Core 1: `S`, Core 2: `I`.
+- Action: Core 0 holds the line in `S`. To write without causing data inconsistency, it broadcasts an **`Invalidate`** transaction on the bus.
+- Snooping: Core 1 detects the invalidation signal for block `X` and transitions its copy from `S` to **Invalid (I)**.
+- Data supplier: Local cache (Core 0 modifies its local copy in place).
+- Transition: Core 0 transitions from `S` to **Modified (M)**.
+- Next states: Core 0: **`M`**, Core 1: **`I`**, Core 2: **`I`**.
+
+---
+
+**Step 4: Core 2 reads address `X`**
+- Prior states: Core 0: `M`, Core 1: `I`, Core 2: `I`.
+- Action: Core 2 misses and broadcasts a `BusRd` transaction on the bus.
+- Snooping: Core 0 snoops the read request and sees that it owns the block in state `M` (dirty). Core 0 signals the bus to wait, flushes the dirty block data onto the bus (updating main memory and supplying the data to Core 2), and transitions from `M` to **Shared (S)**.
+- Data supplier: **Core 0** (supplies the modified data directly via bus flush).
+- Transition: Core 2 captures the data from the bus and transitions to **Shared (S)**.
+- Next states: Core 0: **`S`**, Core 1: **`I`**, Core 2: **`S`**.
+</ModelAnswer>
+
+---
+
+### Problem 3: Gustafson's weak scaling vs Amdahl's strong scaling on large supercomputers
+
+A national laboratory runs a global climatology climate simulation model. Detailed profiling indicates that $96\%$ of the floating-point computation can be partitioned independently across geographic grid cells ($p = 0.96$). The remaining $4\%$ represents sequential global boundary convergence checking, file I/O, and inter-node barriers ($s = 0.04$).
+
+1. **Amdahl's Law (Strong Scaling)**: Assuming the total problem size (spatial grid resolution) remains fixed:
+   - Calculate the theoretical speedup ceiling on an infinite number of processors ($N \to \infty$).
+   - Calculate the speedup and parallel efficiency ($\text{Speedup} / N \times 100\%$) for $N = 128$, $512$, and $2,048$ processor cores.
+2. **Gustafson's Law (Weak Scaling)**: In practice, researchers increase grid resolution when more processors are available to improve forecast accuracy, keeping total execution time constant:
+   - Calculate the Gustafson scaled speedup and parallel efficiency for $N = 128$, $512$, and $2,048$ processor cores.
+3. Contrast the results and explain why supercomputing centers evaluate scalable architectures using Gustafson's weak scaling rather than Amdahl's strong scaling.
+
+<ModelAnswer>
+**Part 1: Strong scaling under Amdahl's law:**
+
+- Asymptotic speedup ceiling:
+  $$\text{Speedup}_{\max} = \frac{1}{s} = \frac{1}{0.04} = 25.0\times$$
+  Regardless of how many thousands of cores are added, strong scaling can never exceed a $25\times$ speedup.
+
+- Speedup and efficiency evaluations:
+  $$\text{Speedup}(N) = \frac{1}{s + \dfrac{1 - s}{N}} = \frac{1}{0.04 + \dfrac{0.96}{N}}$$
+
+  - **$N = 128$ cores:**
+    $$\text{Speedup}_{128} = \frac{1}{0.04 + \dfrac{0.96}{128}} = \frac{1}{0.04 + 0.0075} = \frac{1}{0.0475} \approx 21.05\times$$
+    $$\text{Efficiency}_{128} = \frac{21.05}{128} \times 100\% \approx 16.45\%$$
+
+  - **$N = 512$ cores:**
+    $$\text{Speedup}_{512} = \frac{1}{0.04 + \dfrac{0.96}{512}} = \frac{1}{0.04 + 0.001875} = \frac{1}{0.041875} \approx 23.88\times$$
+    $$\text{Efficiency}_{512} = \frac{23.88}{512} \times 100\% \approx 4.66\%$$
+
+  - **$N = 2,048$ cores:**
+    $$\text{Speedup}_{2048} = \frac{1}{0.04 + \dfrac{0.96}{2048}} = \frac{1}{0.04 + 0.00046875} = \frac{1}{0.04046875} \approx 24.71\times$$
+    $$\text{Efficiency}_{2048} = \frac{24.71}{2048} \times 100\% \approx 1.21\%$$
+
+Under strong scaling, efficiency collapses to $1.2\%$ at 2,048 cores because the fixed 4% serial workload dominates total runtime.
+
+---
+
+**Part 2: Weak scaling under Gustafson's law:**
+
+Under Gustafson's law, the workload scales with processor count:
+$$\text{Speedup}_{\text{scaled}}(N) = N - s(N - 1) = N - 0.04(N - 1)$$
+
+- **$N = 128$ cores:**
+  $$\text{Speedup}_{128} = 128 - 0.04(127) = 128 - 5.08 = 122.92\times$$
+  $$\text{Efficiency}_{128} = \frac{122.92}{128} \times 100\% \approx 96.03\%$$
+
+- **$N = 512$ cores:**
+  $$\text{Speedup}_{512} = 512 - 0.04(511) = 512 - 20.44 = 491.56\times$$
+  $$\text{Efficiency}_{512} = \frac{491.56}{512} \times 100\% \approx 96.01\%$$
+
+- **$N = 2,048$ cores:**
+  $$\text{Speedup}_{2048} = 2048 - 0.04(2047) = 2048 - 81.88 = 1,966.12\times$$
+  $$\text{Efficiency}_{2048} = \frac{1966.12}{2048} \times 100\% \approx 96.00\%$$
+
+---
+
+**Part 3: Significance for supercomputing:**
+
+Amdahl's law models running a small, fixed-size problem faster. On 2,048 cores, each core receives only a tiny fraction of the problem, so serial bottlenecks overwhelm the run.
+Gustafson's law models solving larger, higher-resolution problems in the same total wall-clock time. In climate modeling or AI training, scientists refine the mesh or expand dataset size as computing clusters grow. Because the parallel workload expands linearly while the sequential setup overhead remains constant, supercomputers achieve over $95\%$ parallel efficiency on tens of thousands of cores.
+</ModelAnswer>
+
+---
+
+### Problem 4: Directory-based cache coherence for large NUMA systems
+
+A symmetric shared-bus snooping protocol cannot scale to a 16-node NUMA multiprocessor (Nodes 0 through 15) because broadcast traffic would saturate the bus. The system instead uses a directory-based cache coherence protocol over a point-to-point mesh network.
+
+Each cache block entry in a node's local directory contains:
+- **State**: `Uncached` (`U`), `Shared` (`S`), or `Exclusive` (`E`).
+- **Sharer Mask**: A 16-bit vector $\{b_{15}, \dots, b_0\}$ where bit $b_i = 1$ (value $2^i$) if Node $i$ currently caches a copy of the block (e.g. Node 1 corresponds to $2^1 = 0\text{x}0002$, Node 4 to $2^4 = 0\text{x}0010$, and Node 7 to $2^7 = 0\text{x}0080$).
+
+Initially, cache block address `0x9000` belongs to **Node 0** (the home node), and its directory state is **`U`** with mask `0x0000`.
+
+Trace the exact directory state transitions, sharing mask updates, and point-to-point network messages for the following sequence of operations:
+1. **Node 1 reads block `0x9000`**.
+2. **Node 4 reads block `0x9000`**.
+3. **Node 7 writes block `0x9000`**.
+4. **Node 2 reads block `0x9000`**.
+
+<ModelAnswer>
+**Step 1: Node 1 reads block `0x9000`**
+- Message: Node 1 sends a point-to-point `ReadReq` message to Home Node 0.
+- Home directory lookup: Prior state is `U`, sharers `0x0000`.
+- Home action: Home Node 0 fetches block `0x9000` from its local memory and sends a `DataReply` packet containing the block directly to Node 1.
+- State update: Directory transitions to **`Shared (S)`**; sets bit 1 in sharer mask (`0x0002`).
+- Result: Node 1 caches block in state `S`. Home directory: **`S`**, sharers: **`0x0002`** (Node 1).
+
+---
+
+**Step 2: Node 4 reads block `0x9000`**
+- Message: Node 4 sends a `ReadReq` message to Home Node 0.
+- Home directory lookup: State is `S`, sharers `0x0002`.
+- Home action: Because state is `S`, memory copy is clean. Home Node 0 sends `DataReply` to Node 4.
+- State update: Directory stays in **`Shared (S)`**; sets bit 4 in sharer mask (`0x0002 | 0x0010 = 0x0012`).
+- Result: Both Node 1 and Node 4 hold block in state `S`. Home directory: **`S`**, sharers: **`0x0012`** (Nodes 1, 4).
+
+---
+
+**Step 3: Node 7 writes block `0x9000`**
+- Message: Node 7 sends a `WriteReq` message to Home Node 0 requesting exclusive ownership.
+- Home directory lookup: State is `S`, sharers `0x0012` (Nodes 1 and 4).
+- Invalidation: Home Node 0 inspects the sharer mask and sends directed **`Invalidate`** messages **only to Node 1 and Node 4** (avoiding network-wide broadcast).
+- Acknowledgment: Node 1 and Node 4 invalidate their local copies and send `InvAck` messages to Node 7.
+- Data supply: Home Node 0 sends `DataReply` (or permission grant) to Node 7.
+- State update: Directory transitions to **`Exclusive (E)`**; clears previous sharers and sets bit 7 (`0x0080`).
+- Result: Node 7 holds block in state `M` (Modified). Home directory: **`E`**, owner: **`0x0080`** (Node 7).
+
+---
+
+**Step 4: Node 2 reads block `0x9000`**
+- Message: Node 2 sends a `ReadReq` message to Home Node 0.
+- Home directory lookup: State is `E`, owner is Node 7. Memory copy is stale!
+- Home action: Home Node 0 forwards a `Fetch` message to Node 7.
+- Owner action: Node 7 downgrades its cache state from `M` to `S`, writes back the dirty block to Home Node 0, and sends the updated data directly to Node 2.
+- State update: Home Node 0 updates main memory and sets directory state to **`Shared (S)`** with sharers `{Node 7, Node 2}` (`0x0080 | 0x0004 = 0x0084`).
+- Result: Node 7 and Node 2 both hold block in `S`. Home directory: **`S`**, sharers: **`0x0084`**.
+
+**Traffic advantage**: In Step 3, invalidations required only 2 targeted point-to-point packets rather than 15 broadcast messages across the network.
+</ModelAnswer>
+
+---
+
+### Problem 5: False sharing quantitative penalty and cache line alignment
+
+A team develops a multi-threaded metrics aggregator for a 4-core server. Each thread $i \in \{0, 1, 2, 3\}$ runs on a dedicated core and performs $1,000,000$ increment operations on an assigned counter.
+
+The original implementation allocates counters contiguously in an array:
+```c
+struct StatsUnpadded {
+  int64_t counter[4]; // 4 * 8 bytes = 32 bytes (resides in a single 64-byte cache line)
+};
+```
+
+Memory hierarchy parameters:
+- Core clock frequency: $1.0\text{ GHz}$ ($1\text{ ns}$ cycle).
+- L1 cache hit latency: $1\text{ cycle}$ ($1\text{ ns}$).
+- Remote cache-to-cache transfer penalty (bus invalidation and miss service): $100\text{ cycles}$ ($100\text{ ns}$).
+- Under concurrent execution without padding, ping-pong cache line invalidations cause each write to suffer an estimated $75\%$ cache miss rate ($p_{\text{miss}} = 0.75$).
+
+To eliminate false sharing, the structure is padded to align each counter onto its own 64-byte cache line:
+```c
+struct alignas(64) PaddedCounter {
+  int64_t counter;
+  uint8_t padding[56]; // 8 bytes data + 56 bytes padding = 64 bytes
+};
+PaddedCounter counters[4];
+```
+*(In C++, `alignas(64)` forces the compiler to pad `sizeof(PaddedCounter)` to a multiple of 64 bytes, ensuring every element in an array begins on an independent 64-byte cache line. The explicit `padding[56]` illustrates the internal byte layout).*
+
+With padding, each thread writes exclusively to its private cache line (100% L1 cache hits after initial load).
+
+Calculate:
+1. The average cycles per write and total execution time for the unpadded design.
+2. The average cycles per write and total execution time for the padded design.
+3. The speedup delivered by cache line padding and the memory footprint increase.
+
+<ModelAnswer>
+**Part 1: Unpadded design with false sharing:**
+
+- Average latency per write operation:
+  $$\text{Latency}_{\text{unpadded}} = (1 - p_{\text{miss}}) \times t_{\text{hit}} + p_{\text{miss}} \times t_{\text{miss}} = 0.25 \times 1\text{ cycle} + 0.75 \times 100\text{ cycles} = 0.25 + 75.0 = 75.25\text{ cycles}$$
+
+- Total execution time for $1,000,000$ writes:
+  $$T_{\text{unpadded}} = 1,000,000 \times 75.25\text{ cycles} \times 1\text{ ns/cycle} = 75,250,000\text{ ns} = 75.25\text{ ms}$$
+
+---
+
+**Part 2: Padded design without false sharing:**
+
+- Each thread's counter resides in a completely separate 64-byte cache block. No core issues `Invalidate` signals to any other core during execution.
+- Average latency per write operation = 1 cycle (1 ns).
+- Total execution time for $1,000,000$ writes:
+  $$T_{\text{padded}} = 1,000,000 \times 1\text{ cycle} \times 1\text{ ns/cycle} = 1,000,000\text{ ns} = 1.00\text{ ms}$$
+
+---
+
+**Part 3: Performance speedup and memory trade-off:**
+
+$$\text{Speedup} = \frac{T_{\text{unpadded}}}{T_{\text{padded}}} = \frac{75.25\text{ ms}}{1.00\text{ ms}} = 75.25\times$$
+
+- Memory footprint comparison:
+  - Unpadded: $4 \times 8\text{ bytes} = 32\text{ bytes}$.
+  - Padded: $4 \times 64\text{ bytes} = 256\text{ bytes}$.
+  - Memory increase: $256 - 32 = 224\text{ bytes}$.
+
+By allocating an additional 224 bytes of memory padding, the application eliminates false sharing bus traffic and runs **$75.25\times$ faster**.
+</ModelAnswer>
+
+---
+
+### Problem 6: SIMD vectorization speedup and branch divergence penalties
+
+A image filter processes an array of $1,024$ 32-bit floating-point pixels using a conditional threshold formula:
+
+```c
+for (int i = 0; i < 1024; i++) {
+  if (pixels[i] > 0.5f) {
+    pixels[i] = pixels[i] * 1.5f + 0.1f; // Path A (Taken): 2 floating-point ops (4 cycles)
+  } else {
+    pixels[i] = pixels[i] * 0.5f;        // Path B (Not Taken): 1 floating-point op (2 cycles)
+  }
+}
+```
+
+System parameters:
+- Across the image, $50\%$ of pixel values exceed $0.5\text{f}$ ($p = 0.5$).
+- The scalar processor takes 4 cycles to execute Path A and 2 cycles to execute Path B (assume 0 branch mispredictions).
+- The vector processor supports AVX-512 (512-bit registers), holding $W = 16$ single-precision (32-bit) floats per SIMD vector register.
+- In SIMD/SIMT architectures, conditional execution across vector lanes uses predication (mask registers). When a 16-element vector contains both true and false conditions (**branch divergence**), the hardware must execute **both Path A and Path B sequentially**, disabling inactive lanes with write masks.
+
+Calculate:
+1. Total clock cycles to process the $1,024$-pixel array on the scalar CPU.
+2. The probability of branch divergence in a 16-element vector, the execution cycles required per vector, and the total cycles to process the array on the SIMD processor.
+3. The actual SIMD speedup over scalar execution, and the SIMD execution efficiency ($\text{Speedup} / W \times 100\%$).
+
+<ModelAnswer>
+**Part 1: Scalar execution cycles:**
+
+- Total pixels = 1,024.
+- 512 pixels take Path A (4 cycles each) = $512 \times 4 = 2,048$ cycles.
+- 512 pixels take Path B (2 cycles each) = $512 \times 2 = 1,024$ cycles.
+$$\text{Cycles}_{\text{scalar}} = 2048 + 1024 = 3,072\text{ clock cycles}$$
+
+---
+
+**Part 2: SIMD execution with branch divergence:**
+
+- Total 16-element vectors = $1,024 / 16 = 64$ vectors.
+- Probability that all 16 elements in a vector are $> 0.5\text{f}$:
+  $$P(\text{all Path A}) = (0.5)^{16} \approx 0.000015\ (0.0015\%)$$
+- Probability that all 16 elements are $\le 0.5\text{f}$:
+  $$P(\text{all Path B}) = (0.5)^{16} \approx 0.000015\ (0.0015\%)$$
+- Probability that a vector diverges (contains both types of pixels):
+  $$P(\text{divergent}) = 1.0 - 2 \times (0.5)^{16} \approx 0.99997\ (99.997\%)$$
+
+Because divergence occurs in essentially $100\%$ of vectors, the SIMD unit must execute both Path A (4 cycles) with mask $M_1$ and Path B (2 cycles) with inverted mask $\neg M_1$:
+$$\text{Cycles per vector} = t_{\text{Path A}} + t_{\text{Path B}} = 4 + 2 = 6\text{ cycles}$$
+
+*(This model evaluates the floating-point arithmetic of the divergent execution paths under mask registers, omitting the single-cycle vector comparison instruction `vcmpps` and vector memory transfers to isolate the branch divergence serialization penalty).*
+
+Total SIMD execution cycles across all 64 vectors:
+$$\text{Cycles}_{\text{SIMD}} = 64\text{ vectors} \times 6\text{ cycles/vector} = 384\text{ clock cycles}$$
+
+---
+
+**Part 3: Speedup and SIMD efficiency:**
+
+$$\text{Speedup} = \frac{\text{Cycles}_{\text{scalar}}}{\text{Cycles}_{\text{SIMD}}} = \frac{3,072}{384} = 8.00\times$$
+
+$$\text{SIMD Efficiency} = \frac{\text{Speedup}}{W} \times 100\% = \frac{8.00}{16} \times 100\% = 50.0\%$$
+
+Although the vector register processes 16 elements simultaneously ($W = 16$), the speedup is limited to **$8\times$** ($50\%$ efficiency). Branch divergence forces the SIMD execution units to evaluate both conditional code blocks sequentially, cutting effective throughput in half.
+</ModelAnswer>
+
+---
+
+## Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="parallel-processing"
+  practice
+  questions={[
+    {
+      id: "par-p1",
+      prompt: "Under Flynn's taxonomy, which architectural category describes modern SIMD vector extensions and GPU shader cores?",
+      options: [
+        { id: "a", text: "SIMD (Single Instruction, Multiple Data): a single instruction stream operates on multiple distinct data elements simultaneously" },
+        { id: "b", text: "MIMD (Multiple Instruction, Multiple Data): multiple program counters executing asynchronous threads" },
+        { id: "c", text: "SISD (Single Instruction, Single Data): classic scalar uniprocessors" },
+        { id: "d", text: "MISD (Multiple Instruction, Single Data): redundant flight voting computers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: SIMD architectures broadcast a single instruction stream across multiple processing elements to operate concurrently on vectors or arrays of data. Option (b) describes multicore processors. Option (c) describes traditional single-core uniprocessors. Option (d) describes fault-tolerant voting architectures.",
+    },
+    {
+      id: "par-p2",
+      prompt: "According to Amdahl's law, if 20% of an application consists of strictly sequential code that cannot be parallelized, what is the maximum achievable speedup on an infinite number of processor cores?",
+      options: [
+        { id: "a", text: "5×" },
+        { id: "b", text: "20×" },
+        { id: "c", text: "80×" },
+        { id: "d", text: "Infinite speedup" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Under Amdahl's law, maximum speedup = 1 / (1 - p) = 1 / s. With a serial fraction s = 0.20 (20%), the ceiling is 1 / 0.20 = 5×. Options (b) and (c) confuse the serial percentage with the speedup factor. Option (d) ignores the sequential bottleneck.",
+    },
+    {
+      id: "par-p3",
+      prompt: "In the 4-state MESI cache coherence protocol, what state does a cache line transition to when a core writes to a line currently held in state Shared (S)?",
+      options: [
+        { id: "a", text: "It broadcasts an Invalidate signal to other caches and transitions to Modified (M)" },
+        { id: "b", text: "It transitions to Exclusive (E) without notifying other cores" },
+        { id: "c", text: "It flushes its entire cache to DRAM and transitions to Invalid (I)" },
+        { id: "d", text: "It stays in Shared (S) and updates memory using write-through" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: When writing to a Shared line, the writing core must broadcast an Invalidate transaction so all other cores discard their copies. The writing core then assumes exclusive ownership and marks the line Modified (M). Option (b) is impossible because other caches hold valid copies. Options (c) and (d) violate the MESI protocol rules.",
+    },
+    {
+      id: "par-p4",
+      prompt: "What is the phenomenon of 'false sharing' in a symmetric multicore system?",
+      options: [
+        { id: "a", text: "Two independent threads running on different cores update distinct variables that happen to reside within the same 64-byte cache block, causing continuous cache line invalidations" },
+        { id: "b", text: "Two operating systems attempt to boot on the same physical motherboard simultaneously" },
+        { id: "c", text: "A processor reads from an unmapped virtual address, triggering a spurious page fault" },
+        { id: "d", text: "A thread accesses a register that has been renamed by the out-of-order execution engine" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: False sharing occurs because cache coherence operates at cache block granularity (typically 64 bytes). If two threads modify different variables on the same cache line, each write invalidates the other core's cache line, causing heavy bus traffic and performance degradation. Options (b), (c), and (d) are unrelated system events.",
+    },
+    {
+      id: "par-p5",
+      prompt: "How does a Non-Uniform Memory Access (NUMA) architecture differ from a Uniform Memory Access (UMA) architecture?",
+      options: [
+        { id: "a", text: "Memory access latency varies depending on whether a core accesses memory attached to its local socket or memory attached to a remote socket" },
+        { id: "b", text: "NUMA processors do not use cache memory" },
+        { id: "c", text: "UMA systems connect nodes exclusively over the public Internet" },
+        { id: "d", text: "NUMA machines cannot execute multithreaded software" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a NUMA architecture, physical DRAM is partitioned across processor sockets. Accessing local memory is faster than accessing remote memory across interconnect links. In UMA, all CPUs share a centralized memory bus with identical access latencies. Options (b), (c), and (d) are incorrect.",
+    },
+  ]}
+/>

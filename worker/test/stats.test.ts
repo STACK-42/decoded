@@ -4,7 +4,7 @@ import worker, { type Env } from "../src/index";
 import { MIN_COUNT } from "../src/stats";
 
 const env = testEnv as unknown as Env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] };
-const API = "https://decoded-api.stack42.tech";
+const API = "https://api.csdecod.ing";
 const DAY = 24 * 60 * 60 * 1000;
 
 async function get(path: string) {

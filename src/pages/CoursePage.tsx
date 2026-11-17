@@ -12,6 +12,7 @@ import { CourseLearners } from "@/components/LearnerCounts";
 import { CourseCompanions } from "@/components/Companions";
 import { coursesWithBanks } from "@/content/questionBanks";
 import { readAttempts } from "@/lib/exams";
+import { CourseTools } from "@/components/tools/CourseTools";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -58,9 +59,10 @@ export default function CoursePage() {
               {course.description}
             </p>
 
-            <div className="mt-8 grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-x-14 empty:hidden">
+            <div className="mt-8 flex flex-wrap gap-x-14 gap-y-6 empty:hidden">
               {course.authors && <CourseAuthors authors={course.authors} />}
               <CoursePrerequisites courseSlug={course.slug} />
+              <CourseTools courseSlug={course.slug} />
             </div>
             {total > 0 && <CourseRegistration course={course} />}
             {total > 0 && <CourseCompanions course={course} />}
@@ -133,6 +135,7 @@ export default function CoursePage() {
             </div>
           )}
         </section>
+
       </main>
 
       <SiteFooter />

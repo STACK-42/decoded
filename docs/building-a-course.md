@@ -95,7 +95,7 @@ Each course has one GitHub issue that tracks its rounds, labelled [`course-itera
 Some rounds a course may also need:
 
 - **Exam preparation:** practice problems in the style of past exams, with full worked solutions.
-- **Projects:** a practical lesson where the reader builds something real with the course's ideas, like the [Signals From Zero project](https://decoded.stack42.tech/courses/computational-mathematics/sound-and-sampling).
+- **Projects:** a practical lesson where the reader builds something real with the course's ideas, like the [Signals From Zero project](https://csdecod.ing/courses/computational-mathematics/sound-and-sampling).
 - **Real-world material:** real images, real recordings or real data in place of drawn examples.
 - **Accessibility:** keyboard use, screen-reader labels and color contrast for every visualization.
 

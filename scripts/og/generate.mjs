@@ -20,7 +20,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 
-const SITE = "https://decoded.stack42.tech";
+const SITE = "https://csdecod.ing";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const DIST = path.join(ROOT, "dist");
 const require = createRequire(import.meta.url);
@@ -123,7 +123,7 @@ function footer(mod, extraLeft) {
     { justifyContent: "space-between", alignItems: "center", width: "100%" },
     extraLeft ??
       h("div", { gap: 18, alignItems: "center" }, ...mod.courses.map((c) => glyph(mod, c.slug, C[c.accent], 30))),
-    h("div", mono(16, C.muted, { letterSpacing: 2, textTransform: "none" }), "decoded.stack42.tech"),
+    h("div", mono(16, C.muted, { letterSpacing: 2, textTransform: "none" }), "csdecod.ing"),
   );
 }
 
