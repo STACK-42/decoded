@@ -7,7 +7,7 @@ import { Callout, Epigraph } from "@/components/mdx/MdxComponents";
 
 Exam performance does not depend on raw hours alone. It depends on whether your study routine works with the biology of human memory or fights against it. Most students prepare with passive rereading that builds an illusion of mastery, only to blank when faced with an empty exam page. Understanding how memory consolidates and practicing active retrieval turns study time into durable recall under pressure.
 
-## On the Memory of This Course
+## Why I Built This Course
 
 I have an older sister named Luzan. As a child, I was her opposite: playful, studying very little, average throughout school, and indifferent to academic demands. I focused on getting along with teachers and classmates, and I finished my assignments, but exams carried an overwhelming weight that I struggled to handle.
 
@@ -15,7 +15,7 @@ Whenever I stumbled, my mother pointed to Luzan as an example. During exam weeks
 
 I heard this story so often that it started to sound like folklore, a rare gift given to a fortunate few. By the time I was old enough to observe her life closely, she had already graduated, so I never saw her study routine in person.
 
-Later, as I studied how people perform under pressure, I realized her composure was an acquired skill. Most students never build that relationship with stress because nobody teaches them how. Anyone can learn to manage exam pressure, which is why I wrote this course.
+Later, as I studied how people perform under pressure, I realized her composure was an acquired skill rather than magic. She studied steadily across the term, using self-testing and spacing so that when finals week arrived, the material was already consolidated in long-term memory. Most students never build that relationship with preparation because nobody teaches them how. Anyone can learn to manage exam pressure, which is why I wrote this course.
 
 ---
 
@@ -27,9 +27,13 @@ The routine fails because it relies on **recognition**, which is the ability to 
 
 An exam tests **recall**: the ability to retrieve an answer, formula, or argument from memory when the page in front of you is blank.
 
-Consider how this plays out during an exam. If you flip through slides on how hash tables work, you easily recognize method names and assume you understand them. In the exam room, faced with a blank prompt asking how each method resolves [collisions](/courses/data-structures/hash-maps#keys-into-indexes) without slides to guide you, recognition provides nothing to write down. Confusing familiarity with recall causes most exam mistakes.
+Consider how this plays out during an exam. If you flip through slides on how hash tables store data, you easily recognize method names and assume you understand them. In the exam room, faced with a blank prompt asking how the structure resolves [collisions](/courses/data-structures/hash-maps#keys-into-indexes) when two keys share a bucket without slides to guide you, recognition provides nothing to write down. Confusing familiarity with recall causes most exam mistakes.
 
-## The Asset (Memory)
+<Callout tone="orange" label="Usual mistake: mistaking familiarity for recall">
+Rereading notes feels productive because the words look familiar. Notes in front of you only trigger recognition, but an exam requires recalling information from a blank sheet.
+</Callout>
+
+## Why Memory Fades
 
 A German psychologist named [Hermann Ebbinghaus](https://en.wikipedia.org/wiki/Hermann_Ebbinghaus) spent years memorizing nonsense syllables, sequences like "DAX" and "BOK", and testing himself at measured intervals to measure how quickly memory fades. The result is known as the **forgetting curve**, and it remains one of the most replicated findings in psychology.
 
@@ -44,21 +48,21 @@ Retrieving that information after a delay interrupts the drop and flattens the c
 
 Ebbinghaus published these findings in 1885. Despite more than a century of scientific confirmation, many students still prepare for exams by rereading notes the night before, ignoring how memory functions.
 
-<Callout tone="orange" label="Usual mistake: mistaking familiarity for recall">
-Rereading notes feels productive because the words look familiar. Notes in front of you only trigger recognition, but an exam requires recalling information from a blank sheet.
+<Callout tone="orange" label="Usual mistake: delaying your first review">
+Waiting several days before reviewing a new lecture allows the forgetting curve to erase up to 70 percent of the material. A five-minute recall check on the day of the lecture saves hours of relearning later.
 </Callout>
 
 ## How Memory Actually Works
 
-Memory operates like a muscle: it strengthens when you retrieve information, and remains weak when you only browse a page.
+Memory operates like a muscle: it strengthens when challenged to produce information, and stays weak when you only browse a page.
 
-Retrieving an answer from memory without notes strengthens the underlying neural pathway. When you reread a sentence, the answer sits directly in front of you. The brain skips the search step and builds almost no memory.
+Retrieving an answer from memory without notes exercises the underlying neural pathway. When you reread a sentence, the answer sits in plain view. The brain skips the search step and builds almost no lasting recall.
 
-Retrieving information from memory without looking at your notes is called **retrieval practice** ([read UCSD's guide](https://psychology.ucsd.edu/undergraduate-program/undergraduate-resources/academic-writing-resources/effective-studying/retrieval-practice.html)). Self-testing trains the brain to retrieve facts under exam conditions while building memory.
+This process of testing yourself without looking at notes is called **retrieval practice** ([read UCSD's guide](https://psychology.ucsd.edu/undergraduate-program/undergraduate-resources/academic-writing-resources/effective-studying/retrieval-practice.html)). It trains the brain to retrieve facts under exam conditions while revealing exactly what you still need to learn.
 
 Making mistakes during self-testing also improves retention. When you struggle to recall a fact, your brain activates related concepts and pinpoints the gap in memory. Checking the correct answer immediately attaches the missing detail to that active search.
 
-Here is how to turn passive review into active recall in a 15-minute study block, using a 20-slide lecture on [breadth-first search](/courses/algorithm-design-and-analysis/bfs-and-dfs#breadth-first-search-ripples-in-a-pond):
+Here is how to turn passive review into active recall in a 15-minute study block, right after class or after completing a first pass through a 20-slide lecture on [breadth-first search](/courses/algorithm-design-and-analysis/bfs-and-dfs#breadth-first-search-ripples-in-a-pond):
 
 1. **Minutes 1 to 2:** Close the slides. On a blank sheet of paper, write the topic at the top and write down every concept or step you can recall.
 2. **Minutes 3 to 9:** Trace an example by hand or explain the algorithm steps without peeking. If you get stuck on a step, mark a question mark and continue.
@@ -79,8 +83,6 @@ This advantage stems from **memory consolidation**: the biological process where
 Decades of cognitive psychology confirm that these two habits produce the largest gains in long-term retention.
 </Callout>
 
-[The One-Week Plan](/courses/the-exam-mind/the-one-week-plan) turns this into a schedule.
-
 ## Why You Keep Studying the Wrong Way
 
 Students return to passive study habits for a predictable reason.
@@ -93,6 +95,6 @@ Self-testing feels awkward by comparison. Reaching for a formula and coming up e
 When self-testing feels difficult, students often conclude the method is failing and revert to rereading notes. Effortful recall builds long-term retention. Effortless rereading only reinforces **the fluency illusion**.
 </Callout>
 
-<Callout tone="violet" label="Perspective: what exam performance depends on">
-Exam performance does not depend on raw study hours alone. It depends on your retrieval methods, your spacing schedule, and how you regulate stress during the test. The following lessons cover all three.
+<Callout tone="violet" label="Next step: turning memory science into a schedule">
+Durable recall comes from self-testing, distributed study, and regulating [stress](/courses/the-exam-mind/stress-and-anxiety) during the exam. [The One-Week Plan](/courses/the-exam-mind/the-one-week-plan) translates these mechanisms into a practical daily study schedule.
 </Callout>
