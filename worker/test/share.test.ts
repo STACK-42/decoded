@@ -4,9 +4,9 @@ import worker, { type Env } from "../src/index";
 import { resetShareCacheForTests } from "../src/share";
 
 const env = testEnv as unknown as Env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] };
-const API = "https://decoded-api.stack42.tech";
+const API = "https://api.csdecod.ing";
 const SHARE = "https://decoded-go.stack42.tech";
-const SITE = "https://decoded.stack42.tech";
+const SITE = "https://csdecod.ing";
 
 function call(url: string, init: RequestInit = {}): Promise<Response> {
   return worker.fetch(new Request(url, { redirect: "manual", ...init }), env);

@@ -12,7 +12,7 @@ routes = [
 ]
 
 [vars]
-SITE_ORIGIN = "https://decoded.stack42.tech"
+SITE_ORIGIN = "https://csdecod.ing"
 SHARE_ORIGIN = "https://decoded-go.stack42.tech"
 
 [[d1_databases]]
