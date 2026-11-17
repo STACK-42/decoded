@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, AutomatonDiagram, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { KleeneBuilder } from "@/components/mdx/TocVisualizers";
 
@@ -94,6 +94,15 @@ The union rule works with any combining condition, which shows that regular lang
   - **Every transition must be drawn:** If you omit a dead state, a rejected string that gets stuck mid-word never reaches a state you can flip. Add the dead state first, then flip.
   - **The machine must be deterministic:** Flipping final states on an NFA does **not** give its complement. If a string has one accepting path and one non-accepting path in the NFA, flipping final states leaves the non-accepting path ending in a newly final state, so the flipped NFA would accept that string too. Convert the NFA to a complete DFA first.
 </Callout>
+
+**Practice (intersection and complement):** Using FA1 ($r_1 = (a + b)^*a$, start $x_1$, final $x_2$) and FA2 ($r_2 = ((a+b)(a+b))^*$, start $y_1$, final $y_1$) from `KleeneBuilder` above:
+1. In the 4-state product machine ($z_1 = (x_1, y_1)$, $z_2 = (x_2, y_2)$, $z_3 = (x_1, y_2)$, $z_4 = (x_2, y_1)$), which states are final for the **intersection** $L(r_1) \cap L(r_2)$?
+2. Build the DFA for the **complement** of FA1 (all strings over $\{a, b\}$ that do *not* end in $a$).
+
+<ModelAnswer>
+1. For intersection, a pair is final only when **both** halves are final ($x_2$ in FA1 and $y_1$ in FA2). Only $z_4 = (x_2, y_1)$ satisfies both, so $F_{\cap} = \{z_4\}$ (words of even length that end in $a$).
+2. FA1 is already a complete DFA ($x_1$ and $x_2$ both have transitions for $a$ and $b$), so flip its accept set from $\{x_2\}$ to $\{x_1\}$. The complement accepts $\varepsilon$ (since $x_1$ is now final) and every string ending in $b$, rejecting every string ending in $a$.
+</ModelAnswer>
 
 ## Where this shows up today
 

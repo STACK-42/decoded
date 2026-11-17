@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { TgRunner, StateEliminator } from "@/components/mdx/TocVisualizers";
 
@@ -127,6 +127,18 @@ Every word it generates is a mix of single $b$'s and blocks $ab^*a$ that start a
 <Callout tone="sky" label="Order changes the expression, not the language">
   Eliminating states in a different order usually gives a different-looking expression. Both are correct, because they describe the same language. If your answer doesn't match the solution sheet letter for letter, list the first few words of each before deciding you're wrong.
 </Callout>
+
+**Practice (state elimination by hand):** Use state elimination on the 2-state machine with start state $1$, final state $2$, and edges $1 \xrightarrow{a} 1$, $1 \xrightarrow{b} 2$, $2 \xrightarrow{b} 2$, and $2 \xrightarrow{a} 1$. Eliminate state $1$ first, then state $2$.
+
+<ModelAnswer>
+1. **Add $-$ and $+$:** Connect $-\xrightarrow{\Lambda} 1$ and $2 \xrightarrow{\Lambda} +$.
+2. **Eliminate state $1$:** Incoming edges to $1$ are $-\xrightarrow{\Lambda} 1$ and $2 \xrightarrow{a} 1$; the self-loop on $1$ is $a$; the outgoing edge is $1 \xrightarrow{b} 2$.
+   - Pair $(-, 2)$ adds $-\xrightarrow{\Lambda a^* b} 2$, which simplifies to $a^*b$.
+   - Pair $(2, 2)$ adds a self-loop $2 \xrightarrow{a a^* b} 2$. Merging it with the existing loop $2 \xrightarrow{b} 2$ gives $b + aa^*b$.
+3. **Eliminate state $2$:** Now $2$ has incoming $-\xrightarrow{a^*b} 2$, loop $b + aa^*b$, and outgoing $2 \xrightarrow{\Lambda} +$. Bypassing $2$ yields:
+   $$a^*b(b + aa^*b)^*$$
+   Every word in this language ends in $b$ (for instance `b`, `ab`, `bb`, `bab`), matching the machine.
+</ModelAnswer>
 
 ## Where this shows up today
 

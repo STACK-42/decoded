@@ -1,4 +1,4 @@
-import { Callout, AutomatonDiagram } from "@/components/mdx/MdxComponents";
+import { Callout, AutomatonDiagram, ModelAnswer } from "@/components/mdx/MdxComponents";
 
 # States, Symbols, and Transitions
 
@@ -231,6 +231,36 @@ Try `a`, `ba`, `bbb`, `bab` in the diagram above too. The machine should accept 
   - **Forgetting the empty string:** Always check whether $\varepsilon$ belongs in the language. If it does, $q_0$ itself must be in $F$.
   - **Tracking too much history:** You do not need states for "saw two $a$'s" or "saw $ba$" when the rule only asks for *at least one* $a$. Every state should represent a distinction that changes the final answer.
 </Callout>
+
+## Practice by hand
+
+**1. Evaluate $\hat{\delta}$:** Using the ends-in-$ab$ DFA from earlier in this lesson ($\delta(q_0, b) = q_0$, $\delta(q_0, a) = q_1$, $\delta(q_1, a) = q_1$, $\delta(q_1, b) = q_2$), compute $\hat{\delta}(q_0, bba)$ step by step using the recursive definition. Is $bba \in L(M)$?
+
+<ModelAnswer>
+Peel one symbol at a time from the right:
+1. $\hat{\delta}(q_0, b) = \delta(\hat{\delta}(q_0, \varepsilon), b) = \delta(q_0, b) = q_0$
+2. $\hat{\delta}(q_0, bb) = \delta(\hat{\delta}(q_0, b), b) = \delta(q_0, b) = q_0$
+3. $\hat{\delta}(q_0, bba) = \delta(\hat{\delta}(q_0, bb), a) = \delta(q_0, a) = q_1$
+
+Since $F = \{q_2\}$ and $q_1 \notin F$, $bba \notin L(M)$ (it ends in $a$, not $ab$).
+</ModelAnswer>
+
+**2. Build a DFA table:** Write the five-tuple and complete transition table over $\Sigma = \{a, b\}$ for the language of strings with an **even number of $a$'s** (remembering that zero is even, so $\varepsilon$ is accepted).
+
+<ModelAnswer>
+You only need two conditions: seen an even number of $a$'s so far ($q_0$, start and accept), or seen an odd number of $a$'s so far ($q_1$).
+- $Q = \{q_0, q_1\}$, $\Sigma = \{a, b\}$, start state $q_0$, $F = \{q_0\}$.
+- Every $a$ flips between $q_0$ and $q_1$; every $b$ leaves the parity of $a$'s unchanged:
+
+$$
+\begin{array}{c|cc}
+\delta & a & b \\
+\hline
+q_0 & q_1 & q_0 \\
+q_1 & q_0 & q_1 \\
+\end{array}
+$$
+</ModelAnswer>
 
 <Callout tone="mint" label="What you now have">
   You can now write a DFA as a five-tuple, read its [transition table](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), apply $\hat{\delta}$ to trace any string, and build a new DFA from the conditions your language needs to track. Next, you'll see NFAs, where $\delta$ returns a set of states instead of one, and learn why they still recognize the exact same languages as DFAs.
