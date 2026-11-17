@@ -166,7 +166,7 @@ export function ProfoundQuotes() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Quote side */}
           <div>
-            <div className="eyebrow text-neon mb-6">Voices of the craft</div>
+            <div className="eyebrow mb-6 inline-block bg-neon px-2 py-1 text-[hsl(240_24%_5%)]">In their words</div>
             <div className="min-h-[220px] md:min-h-[260px] flex items-center">
               <blockquote
                 className={`font-body text-xl md:text-2xl lg:text-[1.65rem] italic leading-relaxed text-foreground/90 transition-opacity duration-700 ease-in-out ${
