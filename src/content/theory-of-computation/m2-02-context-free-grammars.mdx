@@ -14,7 +14,7 @@ In the bracket grammar, the inner $S$ inside `(S)` creates nested brackets like 
 
 These are **context-free grammars** (CFGs). Formally, a CFG is a four-tuple $G = (V, T, P, S)$ where every rule in $P$ has the shape $A \rightarrow \beta$: a single variable $A \in V$ on its left-hand side, and any string $\beta \in (V \cup T)^*$ of variables and terminals (including $\Lambda$) on its right-hand side. Because the left-hand side is always one lone variable, $A$ can be replaced wherever it appears, regardless of its neighbors (unlike a context-sensitive rule such as $aAb \rightarrow aab$, which checks the letters around $A$).
 
-The languages CFGs generate are the **context-free languages**, one level up from the [regular languages](/courses/theory-of-computation/kleenes-theorem) in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
+The languages CFGs generate are the **context-free languages**, one level up from the [regular languages](/courses/theory-of-computation/kleenes-theorem) in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). Exams test four skills with CFGs: reading the language a grammar generates, writing leftmost and rightmost derivations, drawing parse trees, and spotting ambiguity.
 
 ## What language does this grammar generate?
 
@@ -84,7 +84,7 @@ Tree 1 starts with $E \rightarrow E + E$ and puts $a * a$ under the right-hand $
 - **Leftmost 1 ($a + (a * a)$):** $E \Rightarrow E + E \Rightarrow a + E \Rightarrow a + E * E \Rightarrow a + a * E \Rightarrow a + a * a$
 - **Leftmost 2 ($(a + a) * a$):** $E \Rightarrow E * E \Rightarrow E + E * E \Rightarrow a + E * E \Rightarrow a + a * E \Rightarrow a + a * a$
 
-With $a = 2$, the first evaluates to $6$ and the second to $8$. A compiler that builds the tree from this grammar could compute either, which is why ambiguity matters in practice and not just on paper.
+With $a = 2$, the first evaluates to $6$ and the second to $8$. A compiler that builds the tree from this grammar could compute either, which is why a compiler cannot use an ambiguous grammar as written.
 
 To show a grammar is ambiguous, you only need **one** word with two parse trees (or two leftmost derivations). To show it isn't, you have to argue about every word, which is much harder, so exams almost always ask for the first.
 

@@ -6,7 +6,7 @@ import { CnfConverter } from "@/components/mdx/TocVisualizers";
 
 People write grammars to be readable, so real grammars are full of rules that make algorithms awkward: rules that produce nothing ($M \rightarrow \Lambda$), rules that just rename a variable ($A \rightarrow B$), and variables that never contribute to any word. A **normal form** is a fixed shape that every rule must have. Any [context-free grammar](/courses/theory-of-computation/context-free-grammars) can be rewritten into one without changing the language (apart from $\Lambda$, as you'll see), and once every rule has the same shape, proofs and parsing algorithms get much simpler.
 
-We convert any context-free grammar in two stages: clean the grammar up, then convert it to **Chomsky Normal Form**, and finally meet **Greibach Normal Form**.
+To standardize a context-free grammar, you clean it up in three steps and then convert it into **Chomsky Normal Form**. A second normal form, **Greibach Normal Form**, uses a different rule shape for top-down parsing.
 
 ## Removing Λ-productions
 
@@ -77,7 +77,7 @@ $$
 A \rightarrow BC \qquad \text{or} \qquad A \rightarrow a
 $$
 
-two variables (they can be the same variable, like $A \rightarrow BB$), or one terminal. So $S \rightarrow AS \mid a$, $A \rightarrow SA \mid b$ is in CNF, whereas $S \rightarrow AAS$ (three variables), $A \rightarrow aa$ (two terminals), and $B \rightarrow aC$ (a terminal paired with a variable) are not.
+Each right-hand side is either two variables (which can be the same variable, like $A \rightarrow BB$) or one terminal. So $S \rightarrow AS \mid a$, $A \rightarrow SA \mid b$ is in CNF, whereas $S \rightarrow AAS$ (three variables), $A \rightarrow aa$ (two terminals), and $B \rightarrow aC$ (a terminal paired with a variable) are not.
 
 After the three clean-ups, two more steps finish the conversion:
 
@@ -109,7 +109,7 @@ $$
 
 The "test a word" box checks a word against the original grammar and against the CNF grammar; the two answers should always agree (for non-empty words).
 
-### Why bother?
+### Why Chomsky Normal Form helps
 
 In CNF, every [parse tree](/courses/theory-of-computation/context-free-grammars#parse-trees) is a binary tree: each $A \rightarrow BC$ rule splits one variable into two, and each $A \rightarrow a$ rule turns one variable into one letter. Starting from 1 symbol ($S$), each $A \rightarrow BC$ step increases the symbol count by 1, so reaching $n$ variables takes $n - 1$ binary steps, and turning those $n$ variables into $n$ letters takes $n$ terminal steps. Every derivation of a word of length $n \ge 1$ therefore takes **exactly $2n - 1$ steps**, no matter how the grammar is written.
 
@@ -117,7 +117,7 @@ That fixed structure makes CNF the starting point for proofs about [context-free
 
 <Callout tone="orange" label="Order and shape mistakes in CNF">
   Three traps when converting to CNF by hand:
-  - **Order matters:** Remove $\Lambda$-productions before unit productions. Removing $\Lambda$-rules can create new unit rules (dropping $M$ from $A \rightarrow aM$ is fine, but dropping it from $A \rightarrow BM$ leaves $A \rightarrow B$), so doing it the other way round leaves unit rules behind.
+  - **Order matters:** Remove $\Lambda$-productions before unit productions. Removing $\Lambda$-rules can create new unit rules (dropping $M$ from $A \rightarrow aM$ is fine, but dropping it from $A \rightarrow BM$ leaves $A \rightarrow B$), so doing it the other way around leaves unit rules behind.
   - **No mixed rules:** $B \rightarrow Ac$ and $A \rightarrow aB$ are **not** in CNF. Replace the terminal with $T \rightarrow c$ or $T \rightarrow a$ so the right-hand side has two variables.
   - **Convert before running CYK:** CYK checks splits into two variables ($A \rightarrow BC$) and single letters ($A \rightarrow a$), so it only works after the grammar is in CNF.
 </Callout>
@@ -140,7 +140,7 @@ $$
 
 Now every right-hand side begins with a single terminal and has only variables after it.
 
-In GNF, every derivation step produces exactly one terminal, so a word of length $n$ takes exactly $n$ steps, and a parser always knows which letter the next rule must start with. That makes GNF very good for top-down parsing. The catch is that converting a general grammar to GNF is much harder than converting to CNF: if a rule begins with a variable ($S \rightarrow Ba$), you have to substitute $B$'s rules until a terminal appears in front, and **left recursion**, where a variable calls itself as the very first symbol of its own right-hand side (such as $E \rightarrow E + T \mid T$), would substitute forever unless you rewrite the left recursion to the right first ($E \rightarrow T \mid T E'$ with $E' \rightarrow + T \mid + T E'$).
+In GNF, every derivation step produces exactly one terminal, so a word of length $n$ takes exactly $n$ steps, and a parser always knows which letter the next rule must start with. That makes GNF useful for top-down parsing. Converting a general grammar to GNF takes more work than converting to CNF, though. If a rule starts with a variable ($S \rightarrow Ba$), you must expand $B$'s rules until a terminal appears in front. That breaks if the grammar has **left recursion**, where a variable begins its own right-hand side (such as $E \rightarrow E + T \mid T$), so you first rewrite left recursion to the right ($E \rightarrow T \mid T E'$ with $E' \rightarrow + T \mid + T E'$).
 
 <Callout tone="orange" label="GNF allows only one leading terminal">
   A common mistake is stopping as soon as a rule *starts* with a terminal, like $S \rightarrow abB$. GNF requires **one** terminal at the front followed purely by variables, so $b$ in the second position must still be replaced by a variable ($T_b \rightarrow b$), giving $S \rightarrow a T_b B$.

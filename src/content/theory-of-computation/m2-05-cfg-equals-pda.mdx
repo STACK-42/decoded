@@ -17,9 +17,9 @@ Together they say that the [context-free languages](/courses/theory-of-computati
 The proof of Theorem 1 is a construction, and you can carry it out by hand. Start from a grammar in [Chomsky Normal Form](/courses/theory-of-computation/normal-forms), so every rule is $X \rightarrow YZ$ or $X \rightarrow a$. The PDA uses one central POP box to run a leftmost derivation directly on the stack:
 
 1. START, then **PUSH $S$**, then go to the POP.
-2. For every rule $X \rightarrow YZ$: an edge labelled $X$ out of the POP, then **PUSH $Z$**, then **PUSH $Y$**, then back to the POP. Because a stack is LIFO, $Z$ goes in first so that $Y$ ends up on top and gets popped next, keeping the derivation left to right.
-3. For every rule $X \rightarrow a$: an edge labelled $X$ out of the POP into a READ box, and an edge labelled $a$ from that READ back to the POP. Expanding the leftmost variable to $a$ means the next unread letter on the tape must be $a$ (if it isn't, READ crashes).
-4. An edge labelled $\Delta$ out of the POP (the stack is empty) into a READ, and from there an edge labelled $\Delta$ (the input is used up) to ACCEPT.
+2. For every rule $X \rightarrow YZ$: an edge labeled $X$ out of the POP, then **PUSH $Z$**, then **PUSH $Y$**, then back to the POP. Because a stack is LIFO, $Z$ goes in first so that $Y$ ends up on top and gets popped next, keeping the derivation left to right.
+3. For every rule $X \rightarrow a$: an edge labeled $X$ out of the POP into a READ box, and an edge labeled $a$ from that READ back to the POP. Expanding the leftmost variable to $a$ means the next unread letter on the tape must be $a$ (if it isn't, READ crashes).
+4. An edge labeled $\Delta$ out of the POP (the stack is empty) into a READ, and from there an edge labeled $\Delta$ (the input is used up) to ACCEPT.
 
 Convert $S \rightarrow aSb \mid \Lambda$ to CNF first (leaving $\Lambda$ aside for a moment):
 
@@ -50,7 +50,7 @@ Because each rule is applied by one POP (steps 2 through 8 above), and a CNF der
 Now edit the grammar to `S -> AbA | BaB`, `A -> aA | a`, `B -> bB | b` from the [Context-Free Grammars lesson](/courses/theory-of-computation/context-free-grammars) and build again. There are several edges with the same label out of the POP, so the machine is nondeterministic: it has to guess which rule to use, just as you do when you derive a word by hand.
 
 <Callout tone="orange" label="Pushing in reverse order">
-  A frequent mistake in Theorem 1 is writing `PUSH Y` then `PUSH Z` for $X \rightarrow YZ$. That leaves $Z$ on top of the stack instead of $Y$, which turns the grammar backwards (turning $S \rightarrow aSb$ into $bSa$). Always push the right-hand side **backwards**, $Z$ first and $Y$ last, so the leftmost symbol $Y$ sits on top.
+  A frequent mistake in Theorem 1 is writing `PUSH Y` then `PUSH Z` for $X \rightarrow YZ$. That leaves $Z$ on top of the stack instead of $Y$, which flips the grammar in reverse (turning $S \rightarrow aSb$ into $bSa$). Always push the right-hand side **in reverse**, $Z$ first and $Y$ last, so the leftmost symbol $Y$ sits on top.
 </Callout>
 
 <Callout tone="orange" label="When Λ is in the language">
@@ -59,13 +59,15 @@ Now edit the grammar to `S -> AbA | BaB`, `A -> aA | a`, `B -> bB | b` from the 
 
 ## From a PDA to a grammar
 
-Theorem 2 is the harder direction, and exams usually ask for its statement rather than its construction. Still, the core idea is intuitive: define one variable $A_{p, q}$ for every pair of boxes $(p, q)$ in the PDA, representing all input strings that carry the machine from $p$ to $q$ starting and ending at the **same** stack height (with the stack never dipping below that height in between). A zero-step trip to the same box gives the base rule $A_{p, p} \rightarrow \Lambda$. Because everything pushed and popped during any trip sits above whatever was already on the stack, two trips glue together sequentially ($A_{p, q} \rightarrow A_{p, r} A_{r, q}$), and a push-then-pop pair that adds and later removes the same symbol wraps around an inner trip ($A_{p, q} \rightarrow a A_{r, s} b$). Anything a PDA can accept, a grammar built from those trip variables can generate.
+Theorem 2 is the harder direction, and exams usually ask for its statement instead of the full construction. The idea is to define one variable $A_{p, q}$ for every pair of boxes $(p, q)$ in the PDA, standing for all input strings that carry the machine from $p$ to $q$ starting and ending at the **same** stack height (without dipping below that height in between).
+
+A zero-step trip to the same box gives the base rule $A_{p, p} \rightarrow \Lambda$. Because everything pushed and popped during a trip sits above whatever was already on the stack, two trips glue together sequentially ($A_{p, q} \rightarrow A_{p, r} A_{r, q}$), and a push-then-pop pair that adds and later removes the same symbol wraps around an inner trip ($A_{p, q} \rightarrow a A_{r, s} b$). Any string a PDA accepts can be generated from those trip variables.
 
 ## What it means
 
 Every context-free grammar comes with a machine that recognizes its language, using one stack. That machine is usually nondeterministic. Real parsers can't guess, so they restrict the grammar enough that the next input letter always tells them which rule to use. Then the same machine becomes deterministic.
 
-Some languages need more than one stack. $a^nb^nc^n$ has to compare three counts, and a single stack can only compare two before it's used up: if you push $a$'s and pop them against $b$'s, the stack is empty when the $c$'s arrive so the count $n$ is gone; if you push $b$'s on top of the $a$'s instead, the LIFO stack buries the $a$'s underneath. So $a^nb^nc^n$ is context-sensitive, not context-free. A machine with two stacks turns out to be as powerful as a Turing machine, the model behind everything a computer can compute. That's where the Chomsky hierarchy, and courses after this one, go next.
+Some languages need more than one stack. $a^nb^nc^n$ has to compare three counts, and a single stack can only compare two before it's used up: if you push $a$'s and pop them against $b$'s, the stack is empty when the $c$'s arrive so the count $n$ is gone; if you push $b$'s on top of the $a$'s instead, the LIFO stack buries the $a$'s underneath. So $a^nb^nc^n$ is context-sensitive, not context-free. A machine with two stacks is as powerful as a Turing machine, the model behind everything a computer can compute, and Turing machines sit at the top of the Chomsky hierarchy in later courses.
 
 ## Where this shows up today
 

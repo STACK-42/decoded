@@ -11,8 +11,8 @@ import { PdaRunner } from "@/components/mdx/TocVisualizers";
 A PDA can be drawn as a flowchart. Before any step runs, the input tape holds the word followed by infinitely many blank symbols $\Delta$, the read head starts at the first letter, and the stack begins empty (full of $\Delta$). A run starts at START and moves from box to box:
 
 - **START** is where every run begins.
-- **READ** takes the next letter from the input tape and follows the edge labelled with that letter (without changing the stack). Once the word is used up, READ finds $\Delta$.
-- **POP** removes the top symbol from the stack and follows the edge labelled with it (without advancing the input tape). If the stack is empty, POP finds $\Delta$ and leaves the stack empty.
+- **READ** takes the next letter from the input tape and follows the edge labeled with that letter (without changing the stack). Once the word is used up, READ finds $\Delta$.
+- **POP** removes the top symbol from the stack and follows the edge labeled with it (without advancing the input tape). If the stack is empty, POP finds $\Delta$ and leaves the stack empty.
 - **PUSH x** puts $x$ on top of the stack (without consuming any input).
 - **ACCEPT** and **REJECT** end the run. Every machine here reads $\Delta$ on the tape before moving to ACCEPT so that the whole input must be consumed.
 
@@ -82,7 +82,7 @@ The stack is the counter that a finite automaton was missing. A [DFA](/courses/t
 
 Like an [NFA](/courses/theory-of-computation/nfa), a PDA may have several edges with the same label out of one READ or POP box. Then it accepts a word if **some** path reaches ACCEPT. The runner searches all the paths and shows one that works.
 
-Here is a PDA for **even-length palindromes**, words like $abba$ that read the same backwards. The first half is pushed onto the stack; the second half must match it, popped in reverse. The machine has no way to know where the middle is, so after every letter it nondeterministically guesses between "keep pushing" and "the middle was here, start matching".
+Here is a PDA for **even-length palindromes**, words like $abba$ that read the same forward and backward. The first half is pushed onto the stack; the second half must match it, popped in reverse. The machine has no way to know where the middle is, so after every letter it nondeterministically guesses between "keep pushing" and "the middle was here, start matching".
 
 <PdaRunner
   title="PDA for even palindromes"
@@ -148,7 +148,9 @@ Try `abab` or `aba` in the runner: for `aba`, pushing `a` leaves `a` on the stac
 
 ## The formal definition
 
-Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta$, start state $q_0$, **initial stack symbol** $Z_0$ (a marker placed at the bottom of the stack at startup so the machine can detect an empty stack, playing the same role $\Delta$ plays in the flowcharts), and final states $F$. Each transition $\delta(q, a, X) \ni (q', \gamma)$ reads an input letter $a \in \Sigma \cup \{\varepsilon\}$, pops the top symbol $X$ from the stack, moves to state $q'$, and pushes a stack string $\gamma \in \Gamma^*$ in $X$'s place ($\gamma = \varepsilon$ pops $X$ without replacing it, $\gamma = X$ leaves $X$ unchanged, and $\gamma = YX$ pushes $Y$ on top of $X$). A 7-tuple PDA accepts either by reaching a state in $F$ at the end of the input or by emptying its stack; both conventions define the exact same languages as the flowcharts above.
+Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states $Q$, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$, **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta$, start state $q_0$, **initial stack symbol** $Z_0$ (a bottom-of-stack marker placed at startup to detect an empty stack, like $\Delta$ in the flowcharts), and final states $F$.
+
+Each transition $\delta(q, a, X) \ni (q', \gamma)$ reads an input letter $a \in \Sigma \cup \{\varepsilon\}$, pops the top symbol $X$ from the stack, moves to state $q'$, and pushes a stack string $\gamma \in \Gamma^*$ in place of $X$ ($\gamma = \varepsilon$ pops $X$ without replacing it, $\gamma = X$ leaves $X$ unchanged, and $\gamma = YX$ pushes $Y$ on top of $X$). A 7-tuple PDA accepts either by reaching a state in $F$ at the end of the input or by emptying its stack; both conventions define the exact same languages as the flowcharts above.
 
 ## Where this shows up today
 

@@ -301,7 +301,7 @@ export const questions: Question[] = [
       { id: "d", text: "Nothing: the machine always crashes" },
     ],
     correctOptionId: "b",
-    explanation: "An empty stack pops Δ, just as READ finds Δ once the input is used up. An edge labelled Δ out of a POP box is how a machine checks that the stack is empty, which is the usual condition for accepting.",
+    explanation: "An empty stack pops Δ, just as READ finds Δ once the input is used up. An edge labeled Δ out of a POP box is how a machine checks that the stack is empty, which is the usual condition for accepting.",
   },
   {
     id: "theory-of-computation/context-free-quiz/q10",

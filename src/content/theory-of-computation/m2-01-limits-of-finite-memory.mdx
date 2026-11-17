@@ -2,11 +2,11 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication, Rege
 
 # The Limits of Finite Memory
 
-Module 1 showed that [DFAs](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), [NFAs](/courses/theory-of-computation/nfa) and [regex](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
+Module 1 showed that [DFAs](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), [NFAs](/courses/theory-of-computation/nfa) and [regex](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) describe the same languages, and that compilers and search tools convert between them.
 
 So here is a fair question. If regex is that powerful, why does every senior engineer tell you not to parse HTML with it? Why can't a regex check that the brackets in your code are balanced?
 
-A string of brackets is **balanced** when every opening `(` has a matching closing `)` later on, and as you read from left to right, closing brackets never outnumber opening ones. No amount of effort will produce a regex for that, because the task is impossible, and the reason fits in one word: *finite*.
+A string of brackets is **balanced** when every opening `(` has a matching closing `)` later on, and as you read from left to right, closing brackets never outnumber opening ones. No regex can match balanced brackets of arbitrary depth, because a finite automaton only has finite memory.
 
 ## What a DFA Can Remember
 
@@ -15,8 +15,6 @@ In a [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means),
 A DFA with 5 states can tell apart at most 5 different situations. Questions with a fixed set of answers fit inside that budget, no matter how long the input gets: "did I just see an $a$?" needs only 2 states (yes or no), and "is the number of $1$s even?" needs only 2 states (even so far or odd so far).
 
 Now try this question: *have I seen more opening brackets than closing ones, and by how much?* The answer can be $0, 1, 2, 3, \ldots$ with no upper limit. A machine with a fixed number of states cannot keep an answer that keeps growing.
-
-The rest of this lesson makes that idea precise.
 
 ## Try It: A Bracket Checker With 3 Levels of Memory
 
@@ -47,7 +45,7 @@ Trace a few strings through it step by step:
 
 You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever finite number of states $n$ you pick, there are $n + 1$ different opening counts $0, 1, 2, \dots, n$, so by the time a machine reads $n$ opening brackets, at least two different counts must land in the same state. Once two depths share a state, appending the matching number of `)` for the shallower one forces the machine to accept an unbalanced string too. The machine always runs out of memory before the input runs out of brackets.
 
-<Callout tone="violet" label="The key observation">
+<Callout tone="violet" label="Why any DFA fails here">
   This DFA does not fail because it was designed badly. Any DFA for this language fails the same way. A machine with n states can only count up to about n, and balanced brackets need a count with no limit.
 </Callout>
 
@@ -187,5 +185,5 @@ Add that one stack to a finite automaton and you get a new machine: the **pushdo
 </ApplicationsGrid>
 
 <Callout tone="mint" label="Where you stand">
-  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. $a^n b^n$ and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally later in this module, after the grammars that describe the same languages.
+  Finite automata only have finite memory, which is a built-in limit of the model. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. $a^n b^n$ and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally later in this module, after the grammars that describe the same languages.
 </Callout>
