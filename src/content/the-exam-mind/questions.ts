@@ -24,7 +24,7 @@ export const questions: Question[] = [
   {
     id: `${L}/the-problem-with-how-you-study/forgetting-curve`,
     lesson: "the-problem-with-how-you-study",
-    section: "the-asset-memory",
+    section: "why-memory-fades",
     prompt: "What does Ebbinghaus's forgetting curve show about material you learn and never review?",
     options: [
       { id: "a", text: "You forget it at a steady, linear rate over several months" },
