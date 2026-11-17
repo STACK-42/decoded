@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { PdaRunner } from "@/components/mdx/TocVisualizers";
 
@@ -134,6 +134,16 @@ In `abba`, `read1` has two edges for `a` (`pushA` and `popA`) and two for `b` (`
 - **The winning path:** Push `a` (stack: `a`), push `b` (stack: `ba`, top first), then on the third letter (`b`) guess the middle and take `popB`, which pops `b` (stack: `a`) and moves to `read2`. At `read2`, read the final `a`, go to `popA`, pop `a` (stack: empty), then `read2` finds $\Delta$ on the tape and `popEnd` finds $\Delta$ on the stack $\rightarrow$ `accept`.
 
 Try `abab` or `aba` in the runner: for `aba`, pushing `a` leaves `a` on the stack, and on `b` neither pushing `b` (stack `ba`, too tall for one remaining `a`) nor popping `b` (stack has `a`, not `b`) can succeed. Every guess crashes somewhere.
+
+**Practice (trace the palindrome PDA):** Trace the winning path for `baab` on the even-palindrome PDA above, listing the stack contents (top first) after each step.
+
+<ModelAnswer>
+1. `start` $\rightarrow$ `read1` reads `b` $\rightarrow$ `pushB` pushes `b` (stack: `b`).
+2. `read1` reads `a` $\rightarrow$ `pushA` pushes `a` (stack: `ab`, top is `a`).
+3. `read1` reads the second `a`, guesses the middle, and takes `popA` $\rightarrow$ pops `a` (stack: `b`) $\rightarrow$ `read2`.
+4. `read2` reads the final `b` $\rightarrow$ `popB` pops `b` (stack: empty) $\rightarrow$ `read2`.
+5. `read2` finds $\Delta$ on the tape $\rightarrow$ `popEnd` finds $\Delta$ on the stack $\rightarrow$ `accept`.
+</ModelAnswer>
 
 <Callout tone="orange" label="Common PDA design mistakes">
   Three traps when building or tracing a PDA:

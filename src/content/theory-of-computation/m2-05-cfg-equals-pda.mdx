@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { GrammarToPda } from "@/components/mdx/TocVisualizers";
 
@@ -56,6 +56,20 @@ Now edit the grammar to `S -> AbA | BaB`, `A -> aA | a`, `B -> bB | b` from the 
 <Callout tone="orange" label="When Λ is in the language">
   A CNF grammar can't generate $\Lambda$, so a PDA built from it rejects the empty word. Some textbooks fix this by adding a loop at the POP for $S \rightarrow \Lambda$, which is safe **only** when $S$ never appears on a right-hand side (if $S$ does appear on a right-hand side, as in $V_1 \rightarrow S T_2$ above, a shortcut erasing $S$ at the POP would let an inner $S$ vanish mid-derivation). The box above uses a version that is always safe: a second branch out of START that reads $\Delta$ and accepts, so it accepts the empty word and nothing else.
 </Callout>
+
+**Practice (count variable pops and trace the stack):** Using the CNF PDA for $S \rightarrow T_1 V_1 \mid T_1 T_2$, $V_1 \rightarrow S T_2$, $T_1 \rightarrow a$, $T_2 \rightarrow b$:
+1. How many variable pops occur before `pop Δ` when accepting `ab` ($n = 2$) and `aaabbb` ($n = 6$)?
+2. Trace the stack (top first) for `ab` at each return to POP.
+
+<ModelAnswer>
+1. Using $2n - 1$: `ab` ($n = 2$) takes $2(2) - 1 = 3$ variable pops, and `aaabbb` ($n = 6$) takes $2(6) - 1 = 11$ variable pops.
+2. Stack trace for `ab`:
+   - Start pushes $S$: stack `S` (sentential form: $S$).
+   - Pop $S$, apply $S \rightarrow T_1 T_2$, push $T_2$ then $T_1$: stack `T₁ T₂` ($T_1 T_2$).
+   - Pop $T_1$, apply $T_1 \rightarrow a$, READ `a`: stack `T₂` ($a T_2$).
+   - Pop $T_2$, apply $T_2 \rightarrow b$, READ `b`: stack empty ($ab$).
+   - Pop $\Delta$ $\rightarrow$ READ $\Delta$ $\rightarrow$ ACCEPT.
+</ModelAnswer>
 
 ## From a PDA to a grammar
 

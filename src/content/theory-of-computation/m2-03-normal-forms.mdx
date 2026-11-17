@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { CnfConverter } from "@/components/mdx/TocVisualizers";
 
@@ -121,6 +121,17 @@ That fixed structure makes CNF the starting point for proofs about [context-free
   - **No mixed rules:** $B \rightarrow Ac$ and $A \rightarrow aB$ are **not** in CNF. Replace the terminal with $T \rightarrow c$ or $T \rightarrow a$ so the right-hand side has two variables.
   - **Convert before running CYK:** CYK checks splits into two variables ($A \rightarrow BC$) and single letters ($A \rightarrow a$), so it only works after the grammar is in CNF.
 </Callout>
+
+**Practice (full conversion to CNF):** Convert $S \rightarrow aA \mid B$, $A \rightarrow a \mid \Lambda$, $B \rightarrow C$, $C \rightarrow bb$ to Chomsky Normal Form by hand, showing each cleanup step.
+
+<ModelAnswer>
+1. **Remove $\Lambda$-productions:** $A$ is nullable. Delete $A \rightarrow \Lambda$, and add the shortened copy $S \rightarrow a$ from $S \rightarrow aA$. Now: $S \rightarrow aA \mid a \mid B$, $A \rightarrow a$, $B \rightarrow C$, $C \rightarrow bb$.
+2. **Remove unit productions:** $S$ reaches $\{S, B, C\}$ and $B$ reaches $\{B, C\}$ via unit rules. Copy $C$'s non-unit rule $C \rightarrow bb$ to $S$ and $B$, then drop $S \rightarrow B$ and $B \rightarrow C$. Now: $S \rightarrow aA \mid a \mid bb$, $A \rightarrow a$, $B \rightarrow bb$, $C \rightarrow bb$.
+3. **Remove useless variables:** $B$ and $C$ are unreachable from $S$, so drop them. Remaining: $S \rightarrow aA \mid a \mid bb$, $A \rightarrow a$.
+4. **Isolate terminals and split long rules:** Introduce $T_a \rightarrow a$ and $T_b \rightarrow b$ for the length-2 rules, leaving every rule as two variables or one terminal:
+   $$S \rightarrow T_a A \mid T_b T_b \mid a \qquad A \rightarrow a \qquad T_a \rightarrow a \qquad T_b \rightarrow b$$
+   Check the language: both the original grammar and the CNF grammar generate $\{a, aa, bb\}$.
+</ModelAnswer>
 
 ## Greibach Normal Form
 

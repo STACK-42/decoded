@@ -1,4 +1,4 @@
-import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { Callout, ApplicationsGrid, ModelAnswer, PracticalApplication } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DerivationStepper, ParseTreeExplorer } from "@/components/mdx/TocVisualizers";
 
@@ -112,6 +112,16 @@ There is now only one tree for $a + a * a$, and it groups $a * a$ first, the way
   - **Leftmost vs rightmost is not ambiguity:** Finding one leftmost derivation and one rightmost derivation for the same word does **not** show ambiguity. Every parse tree has both. You need two *different* parse trees, or two different *leftmost* derivations.
   - **Testing too short a word:** Checking `a` or `a + a` in $E \rightarrow E + E \mid E * E \mid a$ gives only one tree, which proves nothing. To test for ambiguity, try a word with two operators such as `a + a * a` or `a + a + a`.
 </Callout>
+
+**Practice (proving ambiguity by hand):** Show that $S \rightarrow aS \mid Sa \mid a$ is ambiguous by finding two different leftmost derivations for `aa`.
+
+<ModelAnswer>
+Both leftmost derivations produce `aa`, starting with a different first rule at step 1:
+- **Derivation 1 (expand on the right):** $S \Rightarrow aS \Rightarrow aa$ (root $S$ has children $a$ and $S$, where the child $S$ rewrites to $a$).
+- **Derivation 2 (expand on the left):** $S \Rightarrow Sa \Rightarrow aa$ (root $S$ has children $S$ and $a$, where the child $S$ rewrites to $a$).
+
+Two distinct leftmost derivations correspond to two distinct parse trees for the same word `aa`, so the grammar is ambiguous.
+</ModelAnswer>
 
 ## Where this shows up today
 
