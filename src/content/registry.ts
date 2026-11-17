@@ -802,6 +802,7 @@ export const courses: Course[] = [
       "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
     accent: "orange",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
