@@ -211,7 +211,8 @@ export const questions: Question[] = [
       { id: "d", text: "To change the resolution" },
     ],
     correctOptionId: "b",
-    explanation: "Phosphor persistence is short, so the picture fades unless it's refreshed many times a second.",
+    explanation:
+      "Phosphor persistence is very brief, so the emitted light fades within milliseconds unless the electron beam redraws the frame repeatedly. The frame buffer retains its data in memory, the electron gun does not overheat from periodic scanning, and refreshing maintains visibility rather than altering resolution.",
   },
   {
     id: "computer-graphics/displays-quiz/q2",
@@ -224,7 +225,8 @@ export const questions: Question[] = [
       { id: "d", text: "Copying a row into the frame buffer" },
     ],
     correctOptionId: "c",
-    explanation: "Returning to the top-left after the whole frame is the vertical retrace.",
+    explanation:
+      "Horizontal retrace occurs when the electron beam turns off and returns to the left edge of the display to begin the next scan line. Drawing a line is the active sweep, returning to the top-left corner after completing the entire frame is the vertical retrace, and memory transfers to the frame buffer are handled by the graphics hardware rather than the beam.",
   },
   {
     id: "computer-graphics/displays-quiz/q3",
@@ -237,7 +239,8 @@ export const questions: Question[] = [
       { id: "d", text: "The refresh rate" },
     ],
     correctOptionId: "b",
-    explanation: "A list of line commands is a random-scan display file.",
+    explanation:
+      "The frame buffer is a dedicated block of memory that holds the color or intensity value of every addressable pixel on the display. A list of geometric line commands is a display file used by vector displays, while refresh rate and frame history are managed separately.",
   },
   {
     id: "computer-graphics/displays-quiz/q4",
@@ -250,7 +253,8 @@ export const questions: Question[] = [
       { id: "d", text: "The beam visits every pixel" },
     ],
     correctOptionId: "b",
-    explanation: "They only trace lines, so they can't fill areas with shading. Their lines are smooth, not jagged.",
+    explanation:
+      "Random-scan (vector) displays direct their beam only along line paths, making them incapable of filling solid areas or rendering realistic photographic scenes with continuous shading. Their lines are smooth rather than jagged, they do not require a massive frame buffer, and the beam visits only coordinates where lines exist.",
   },
   {
     id: "computer-graphics/displays-quiz/q5",
@@ -263,7 +267,8 @@ export const questions: Question[] = [
       { id: "d", text: "The refresh rate is too low" },
     ],
     correctOptionId: "b",
-    explanation: "An LCD only blocks light. Direct LED backlights can dim zones behind dark areas to fix this.",
+    explanation:
+      "An LCD panel relies on a continuous backlight. Because liquid crystal molecules cannot completely block light transmission, some backlight bleeds through even when pixels are set to black. The crystals themselves do not emit light, color filters do not cause light leakage, and refresh rate does not determine black levels.",
   },
   {
     id: "computer-graphics/displays-quiz/q6",
@@ -276,7 +281,8 @@ export const questions: Question[] = [
       { id: "d", text: "Direct-lit LED TV" },
     ],
     correctOptionId: "c",
-    explanation: "Plasma cells glow on their own. All the others are LCDs that need a backlight.",
+    explanation:
+      "Plasma displays are emissive: electrical current excites gas within each cell, creating ultraviolet light that excites phosphors to emit visible light directly at each subpixel. Standard LCDs, edge-lit LED displays, and direct-lit LED displays are transmissive, requiring a separate backlight behind the liquid crystal layer.",
   },
   {
     id: "computer-graphics/displays-quiz/q7",
@@ -289,7 +295,8 @@ export const questions: Question[] = [
       { id: "d", text: "A GIF with 256 colors" },
     ],
     correctOptionId: "b",
-    explanation: "Vectors are redrawn from their math at any size, so edges stay sharp on the billboard.",
+    explanation:
+      "Vector formats store geometric formulas (points, lines, and curves) rather than fixed pixel grids, allowing the logo to be rendered sharply at any physical size without loss of quality. Raster formats like JPEG, BMP, or GIF have fixed pixel dimensions and become blurry or pixelated when enlarged to billboard dimensions.",
   },
   {
     id: "computer-graphics/displays-quiz/q8",
@@ -302,7 +309,8 @@ export const questions: Question[] = [
       { id: "d", text: "Neither is possible" },
     ],
     correctOptionId: "b",
-    explanation: "Rasterizing happens every time a vector is shown. Tracing a raster into shapes means guessing where the shapes are.",
+    explanation:
+      "Vector-to-raster conversion (rasterization) is mathematically straightforward and runs constantly in hardware. Raster-to-vector conversion (tracing) requires image analysis software to guess boundary contours from discrete pixel grids, which often produces inaccurate or distorted shapes on complex images.",
   },
   {
     id: "computer-graphics/lines-quiz/q1",

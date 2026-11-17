@@ -3,75 +3,73 @@ import { ScanDisplay } from "@/components/mdx/GraphicsVisualizers";
 
 # The CRT and the Raster Scan
 
-Flat screens replaced them long ago, but the **cathode-ray tube (CRT)** is still where graphics courses start, because the way it drew a picture, one row at a time from top to bottom, became the way every display since is fed. Learn the CRT and the vocabulary of every modern screen falls out of it.
+Flat screens replaced them long ago, but the **cathode-ray tube (CRT)** remains where computer graphics courses begin. The CRT drew images row by row from top to bottom, establishing the scan pattern that still feeds modern digital displays. The core vocabulary of modern computer screens comes directly from how a CRT operates.
 
-Whatever its technology, the screen part of a computer is called the **display**, the **monitor** or the **video display unit (VDU)**. There are four types to know: the CRT in this lesson, and the LCD, LED and plasma panels in [a later one](/courses/computer-graphics/flat-panels).
+Whatever its underlying technology, the screen component of a computer is called the **display**, the **monitor**, or the **video display unit (VDU)**. Four display technologies are commonly taught in computer graphics: the CRT in this lesson, followed by LCD, LED-backlit LCD, and plasma panels in [a later lesson](/courses/computer-graphics/flat-panels).
 
 ## Inside the tube
 
-A CRT is a large sealed glass bottle with the air pumped out. Its name describes it: a **cathode** is the negatively charged metal part that gives off electrons when heated, and a stream of those electrons is a **cathode ray**. Three things matter:
+A CRT is a sealed glass vacuum tube. A heated, negatively charged metal filament called a **cathode** emits electrons. When accelerated and focused into a narrow stream, those electrons form a **cathode ray**. Three main assemblies guide the beam to create an image:
 
-1. **An electron gun** at the narrow back end fires a thin, focused beam of electrons. A color CRT has three guns, one each for red, green and blue.
-2. **Deflection coils** around the neck make magnetic fields that bend the beam up, down and sideways, so it can be aimed at any point on the screen. Some tubes bend it with electric fields from metal plates instead, called **electrostatic deflection**; TVs and computer monitors mostly used magnetic coils.
-3. **The screen** at the wide front end is coated on the inside with **phosphor**, a material that glows when electrons hit it. A color screen has tiny red, green and blue phosphor dots grouped together; each group is one pixel.
+1. **An electron gun** at the narrow rear of the tube emits and focuses the electron stream. A color CRT uses three separate guns, one each for red, green, and blue.
+2. **Deflection coils** mounted around the neck of the tube generate magnetic fields that bend the beam horizontally and vertically to reach any coordinate on the screen. Some laboratory tubes steer the beam with electric fields between metal plates, known as **electrostatic deflection**, but television sets and computer monitors use magnetic coils.
+3. **The screen** at the wide front of the tube is coated on the inside with **phosphor**, a crystalline material that glows when electrons strike it. A color screen arranges red, green, and blue phosphor dots into microscopic triads, where each triad forms one pixel.
 
-Where the beam strikes, the phosphor lights up. Fire the beam harder and the spot glows brighter.
+Where the beam strikes the phosphor coating, the spot lights up. Increasing the beam current produces a brighter glow at that point.
 
 ## Persistence and refresh
 
-Phosphor doesn't glow forever. It fades within a fraction of a second after the beam leaves. How long it keeps glowing is called its **persistence**.
+Phosphor does not glow indefinitely. It dims within a fraction of a second after the electron beam moves away. The duration that a phosphor continues to emit light is called its **persistence**.
 
-So the picture can't be drawn once and left. The beam has to keep going back over it, redrawing it before it fades. This is **refreshing** the screen, and the number of complete redraws per second is the **refresh rate**, measured in frames per second or hertz (Hz). CRTs typically refreshed 60 to 85 times a second. At 60 Hz, each frame gets $1 \div 60 \approx 0.0167$ seconds, about 16.7 milliseconds, to be drawn from top to bottom.
+Because phosphor dims quickly, the screen cannot be drawn once and left static. The beam must trace over the entire screen repeatedly before the glow fades. This continuous redrawing is called **refreshing** the screen, and the number of full redraws per second is the **refresh rate**, measured in hertz (Hz) or frames per second. CRTs typically refresh between 60 Hz and 85 Hz. At 60 Hz, the display has $1 \div 60 \approx 0.0167$ seconds, or roughly 16.7 milliseconds, to draw an entire frame from top to bottom.
 
-Two rates describe the sweep, and notes often name both:
+Two rates describe the sweep of the beam:
 
-- The **vertical refresh rate** is how many complete frames are drawn per second, top to bottom. This is the refresh rate above, such as 60 Hz.
-- The **horizontal refresh rate** (or scan rate) is how many rows are drawn per second, left to right. It's far higher, because every frame has hundreds of rows: 480 visible rows at 60 Hz is already $480 \times 60 = 28{,}800$ rows a second, and the standard 640 × 480 display ran at about 31,500, because the retrace time counts as rows too.
+- The **vertical refresh rate** is the number of complete frames drawn per second from top to bottom, such as 60 Hz.
+- The **horizontal refresh rate** (or scan rate) is the number of individual rows drawn per second from left to right. Because each frame contains hundreds of rows, this rate is much higher. A display with 480 visible rows refreshed at 60 Hz already requires $480 \times 60 = 28{,}800$ rows per second. Including the extra time needed to reposition the beam between rows, a standard 640 × 480 monitor runs at a horizontal scan rate of roughly 31.5 kHz.
 
-Both rates are set together by the monitor and the graphics card driving it. Bigger, sharper screens need a faster vertical rate to stay flicker-free, so a common recommendation was at least 60 Hz at 640 × 480 and at least 85 Hz at 1600 × 1200.
-
-Too slow a refresh, and the picture visibly **flickers** as the phosphor fades between visits, which tires the eyes. Larger screens and higher resolutions need faster refresh to cover the whole surface in time.
+The graphics adapter and the monitor set these rates together. Larger screens and higher resolutions require higher refresh rates to prevent visible **flicker**, which occurs when phosphor dims noticeably between sweeps and causes eye strain. A standard guideline recommended at least 60 Hz at 640 × 480 and at least 85 Hz at 1600 × 1200.
 
 <Callout tone="orange" label="Persistence is a balance">
-Long persistence reduces flicker but smears anything that moves, because old frames are still glowing when new ones arrive. Short persistence keeps motion sharp but needs a faster refresh. Try both ends of the persistence slider below.
+Long persistence reduces flicker but smears motion because earlier frames continue to glow when new ones arrive. Short persistence keeps moving objects sharp but requires a higher refresh rate to avoid visible flicker.
 </Callout>
 
 ## The raster scan
 
-A **raster-scan display** sweeps the beam across the screen in a fixed pattern, the same every frame:
+A **raster-scan display** sweeps the electron beam across the screen in a fixed, repeating pattern:
 
 1. Start at the top-left corner.
-2. Sweep left to right along one row, called a **scan line**, switching the beam on where a pixel should glow and off where it shouldn't.
-3. At the end of the row, switch the beam off and swing it back to the left edge of the next row down. This return trip is the **horizontal retrace**.
-4. Repeat until the bottom row is done.
-5. Switch the beam off and send it back to the top-left corner to start the next frame. This is the **vertical retrace**.
+2. Sweep from left to right along one row, called a **scan line**, turning the beam on where pixels should glow and off where they stay dark.
+3. At the end of the row, turn the beam off and move it back to the left edge of the next row down. This return stroke is the **horizontal retrace**.
+4. Repeat this sequence until the bottom row is complete.
+5. Turn the beam off and return it to the top-left corner to begin the next frame. This return trip is the **vertical retrace**.
 
 <Callout tone="orange" label="Retrace draws nothing">
-During both retraces the beam is switched off, so nothing is drawn; it's only travelling back. Keep the two apart by how often they happen: the horizontal retrace after every row, hundreds of times a frame, and the vertical retrace once per frame.
+The beam is blanked during both retraces, so it draws nothing while travelling back. The two retraces differ in frequency: a horizontal retrace occurs at the end of every row, hundreds of times per frame, while a vertical retrace occurs once per frame.
 </Callout>
 
 Press **Start the beam** and watch it draw a house:
 
 <ScanDisplay initialMode="raster" />
 
-Notice that the beam visits every position on the screen, including the empty sky around the house. It doesn't know where the picture is. It just sweeps, and turns on where it's told to.
+The beam visits every position on the screen, including the blank sky around the house. The sweep pattern is fixed; the hardware simply turns the beam on and off at predetermined coordinates.
 
 ## The frame buffer
 
-Told by what? While the beam sweeps, something has to say, for every position, whether to fire and how brightly. That's the job of the **frame buffer** (also called the **refresh buffer**): an area of memory that holds one value per pixel, the color for every point on the screen.
+As the beam sweeps across the screen, the display system needs a record of which pixels to illuminate and at what intensity. That record is stored in the **frame buffer** (also called the **refresh buffer**): a dedicated block of memory that holds one color value for every pixel on the display.
 
-The display hardware reads the frame buffer row by row, in step with the beam, and the program draws by writing values into it. In the visualizer, the grid of 0s and 1s next to the screen is the frame buffer for that house, one bit per pixel.
+The display controller reads the frame buffer row by row in lockstep with the electron beam, while software updates the image by writing values into this buffer. In the interactive visualizer above, the grid of 0s and 1s beside the screen represents the frame buffer for the house, storing one bit per pixel.
 
-The frame buffer's size follows straight from the [image size calculation](/courses/computer-graphics/image-size): resolution × bits per pixel. A 1920 × 1080 screen at 32 bits (4 bytes) per pixel needs $1920 \times 1080 \times 4 = 8{,}294{,}400$ bytes, and $8{,}294{,}400 \div 1024 \div 1024 \approx 7.9$ MB, for one frame. It may be its own memory on the graphics card or a reserved part of the computer's main [RAM](/courses/computer-organization/ram-and-rom).
+The memory required for a frame buffer follows directly from the [image size calculation](/courses/computer-graphics/image-size): horizontal resolution × vertical resolution × bytes per pixel. For example, a 1920 × 1080 display at 32 bits (4 bytes) per pixel requires $1920 \times 1080 \times 4 = 8{,}294{,}400$ bytes, which is $8{,}294{,}400 \div 1024 \div 1024 \approx 7.9$ MB for a single frame. This buffer can reside in dedicated video memory on a graphics card or in reserved system [RAM](/courses/computer-organization/ram-and-rom).
 
 ## Scan conversion and the display processor
 
-A program doesn't usually think in pixels. It says "draw a line from here to there" or "fill this circle". Something has to turn those shapes into the right pixel values in the frame buffer. That conversion is called **scan conversion** (or **rasterization**), and the [line-drawing algorithms](/courses/computer-graphics/dda) at the end of this course are exactly that.
+Software rarely specifies pictures pixel by pixel. Instead, programs issue geometric commands such as drawing a line between two coordinates or filling a polygon. Converting these geometric shapes into pixel values in the frame buffer is called **scan conversion** (or **rasterization**). The [line-drawing algorithms](/courses/computer-graphics/dda) later in this course perform this exact task.
 
-To save the CPU from doing all of this, systems add a **display processor** (also called a display processing unit or graphics controller) whose whole job is scan conversion and related work: line styles, filling areas with color, and reading input devices. Today's **GPU** (graphics processing unit) is the enormous descendant of that idea.
+To free the main CPU from calculating every pixel, computer systems use a **display processor** (also known as a display processing unit or graphics controller). Its primary role is scan conversion and basic rendering operations, including applying line styles, filling regions with color, and handling input coordinates. Modern **GPUs** (graphics processing units) developed directly from these early display processors.
 
 <PracticalApplication title="Modern screens" tool="LCD, OLED, HDMI">
-Flat panels have no beam, but they're still fed exactly like this: the graphics card sends the frame buffer out one row at a time, top to bottom, 60 or more times a second. "60 Hz" on a monitor is the refresh rate, and the short gap between frames is still called vertical blanking, after the CRT's retrace. Screen tearing in games happens when the frame buffer is updated halfway through that top-to-bottom read.
+Flat panels do not use electron beams, but video interfaces feed them in the same row-by-row sequence. A graphics card transmits pixels from the frame buffer row by row, from top to bottom, at 60 Hz or higher. The short pause between consecutive frames is still called the vertical blanking interval, directly preserving the timing of CRT retrace. In games, screen tearing occurs when the graphics card overwrites the frame buffer while the display controller is in the middle of sending a frame to the screen.
 </PracticalApplication>
 
-The raster scan isn't the only way to steer a beam. The [next lesson](/courses/computer-graphics/random-scan) shows a display that draws only the lines you ask for.
+The raster scan is not the only way to steer an electron beam. The [next lesson](/courses/computer-graphics/random-scan) examines vector displays that direct the beam only along the lines of the drawing.

@@ -3,60 +3,60 @@ import { SubpixelZoom, BacklightDemo, LcdCell } from "@/components/mdx/GraphicsV
 
 # Flat Panels: LCD, LED and Plasma
 
-A CRT is deep and heavy because the electron beam needs room to travel and bend. Flat panels drop the beam altogether. Every pixel sits in a fixed spot and is switched directly. The four display types you need to know are the CRT from the [earlier lesson](/courses/computer-graphics/crt-and-raster-scan), and the three below.
+A cathode-ray tube requires significant depth and weight because its electron beam needs space to travel and deflect. Flat-panel displays eliminate the beam entirely. Every pixel occupies a fixed physical position on a flat substrate and is switched electronically. The four display technologies standard in graphics courses are the CRT covered in the [previous lesson](/courses/computer-graphics/crt-and-raster-scan), followed by LCD, LED-backlit LCD, and plasma panels.
 
-All of them make color the same way: each pixel is split into three **subpixels**, red, green and blue, set to different brightnesses. They're too small to see one by one, so your eye blends them into a single color. A 1920 × 1080 screen has $1920 \times 1080 = 2{,}073{,}600$ pixels, so $2{,}073{,}600 \times 3 = 6{,}220{,}800$ subpixels, each set separately.
+All flat-panel color displays construct images the same way: each pixel is divided into three **subpixels** (red, green, and blue) whose brightness levels can be controlled independently. Because subpixels are microscopic, human vision blends their emissions into a single perceived color. On a 1920 × 1080 display, $1920 \times 1080 = 2{,}073{,}600$ pixels contain $2{,}073{,}600 \times 3 = 6{,}220{,}800$ individual subpixels, each driven by its own control circuit.
 
 <SubpixelZoom />
 
 ## LCD: liquid crystal display
 
-A **liquid crystal** is a strange material: it flows like a liquid, but its molecules line up in an orderly pattern like a crystal. And an electric voltage can change how they line up.
+A **liquid crystal** is a state of matter that flows like a liquid while its molecules maintain crystalline orientation. Applying an electric voltage rotates these molecules, changing how light passes through them.
 
-An LCD doesn't make light. It controls light coming from behind:
+Liquid crystal displays do not emit their own light. Instead, they act as light valves that modulate illumination from a light source behind the panel:
 
-1. A **backlight** shines white light at the back of the panel.
-2. A **polarizing filter** lets through only light waves vibrating in one direction. Picture a fence with vertical slots: a rope shaken up and down passes through, a rope shaken side to side doesn't.
-3. In each subpixel, a layer of liquid crystal twists that light. The voltage on the subpixel sets how much it twists.
-4. A second polarizing filter, turned 90°, lets through only light that was twisted the right amount. So the voltage decides how much light gets out: fully, partly or not at all.
-5. A **color filter** over each subpixel makes it red, green or blue.
+1. A **backlight** illuminates the entire rear surface with white light.
+2. A rear **polarizing filter** transmits only light waves vibrating in a single plane. (Imagine a picket fence with vertical slits: a rope oscillating up and down passes freely, while sideways waves are blocked.)
+3. A layer of liquid crystals in each subpixel cell twists the polarization angle of the incoming light. The voltage applied across the cell determines the degree of rotation.
+4. A front polarizing filter, oriented at 90° relative to the rear polarizer, passes only light that has been rotated to match its axis. Varying the voltage controls whether light is blocked completely, passed partially, or transmitted at full intensity.
+5. A passive **color filter** (red, green, or blue) over each subpixel tints the outgoing light.
 
-Follow the light through the layers of one red subpixel, and turn up the voltage:
+The interactive diagram below traces polarized light through a single red subpixel cell as the control voltage changes:
 
 <LcdCell />
 
-Because the crystals only block or pass light, an LCD uses very little power, which is why it took over battery-powered devices.
+Because liquid crystals merely modulate an existing light path rather than generating light, an LCD consumes very little electrical power, making it the dominant technology for battery-operated devices.
 
 ## "LED" screens are LCDs
 
-Here's the part notes often blur. Most screens sold as **"LED TVs"** are LCDs that use **light-emitting diodes** as their backlight instead of older fluorescent tubes. An LED is a small **semiconductor**, a material like the silicon in chips whose electrical behavior can be controlled, that emits light when current passes through it. LEDs are tiny, so a display can be built by arranging many of them, which is why they're used in TVs, phones and traffic lights. There are two ways to arrange them behind an LCD panel:
+Textbooks and consumer marketing often cause confusion around **LED displays**. Most commercial "LED TVs" are standard liquid crystal displays that use **light-emitting diodes** (LEDs) as their backlight in place of older cold-cathode fluorescent lamps (CCFLs). An LED is a compact **semiconductor** diode that emits light when forward electrical current passes through it. Manufacturers arrange backlighting LEDs in two primary configurations:
 
-- **Edge LED**: a row of LEDs along the edges of the screen, with a light guide that spreads their light across the back of the panel. Thin and cheap.
-- **Direct LED**: LEDs spread in a grid directly behind the panel. Thicker, but zones can be dimmed separately (**local dimming**), so dark parts of the picture get dark backlight.
+- **Edge LED**: A strip of LEDs lines the perimeter of the screen, and an acrylic light guide distributes illumination across the rear of the LCD panel. This design allows displays to be thin and inexpensive to produce.
+- **Direct LED**: An array of LEDs covers the entire area directly behind the panel. While thicker, this design permits **local dimming**, where individual zones of LEDs dim or turn off behind dark regions of the image to improve contrast.
 
-Switch between them on a night scene with a bright moon:
+Switch between edge and direct lighting on a night scene with a bright moon:
 
 <BacklightDemo />
 
-The liquid crystals can't block all the light behind them. With edge lighting, the whole panel is lit, so black areas glow gray. Direct lighting turns down the LEDs behind the dark sky and gets much deeper blacks.
+Liquid crystals cannot block 100% of the light from behind. On an edge-lit panel, the backlight remains continuously on across the whole screen, causing dark areas to appear faintly gray. Direct backlights selectively turn off LEDs behind dark regions, producing significantly deeper black levels.
 
-<Callout tone="orange" label="Watch the claims">
-"LED uses more power than LCD" is a mix-up. An LED-backlit LCD usually uses less power than the old fluorescent-backlit kind. Screens where every pixel is its own LED, with no backlight at all, are a different technology: **OLED** in phones and TVs, and large LED video walls in stadiums. Those can switch a pixel fully off for perfect black.
+<Callout tone="orange" label="LED backlighting vs true LED displays">
+A common misconception claims that LED displays consume more power than LCDs. In practice, LED-backlit LCDs consume less power than older fluorescent-backlit panels. Displays where every pixel is an independent light-emitting diode without any separate backlight belong to a different category: **OLED** (organic light-emitting diode) panels in smartphones and televisions, and large LED display boards in sports arenas. Because each pixel emits its own light, OLED displays can turn off individual pixels completely to produce true black.
 </Callout>
 
 ## Plasma
 
-A **plasma display** (also called a **gas-discharge display**) is a flat panel made of millions of tiny sealed cells, each holding a little neon and xenon gas. A voltage across a cell turns its gas into **plasma**, gas so energized that it conducts electricity and gives off light, here mostly **ultraviolet**, light just beyond violet that our eyes can't see. That ultraviolet hits a red, green or blue phosphor coating inside the cell, and the phosphor glows. It's the same glowing phosphor as a CRT, lit by gas instead of a beam. Each pixel is three such cells.
+A **plasma display** (also called a **gas-discharge display**) consists of a flat matrix of sealed glass chambers containing neon and xenon gas. Applying voltage across electrodes ionizes the gas into **plasma**, an electrically conductive state that emits **ultraviolet** radiation. This invisible ultraviolet light strikes a phosphor coating inside each cell, causing it to fluoresce in red, green, or blue. Like a CRT, plasma uses glowing phosphors to produce color, but excites them with ionized gas rather than a sweeping electron beam.
 
-Plasma screens made their own light, so they had deep blacks and wide **viewing angles**: the picture kept its colors even when seen from far to the side. They were also heavy, power-hungry and hard to make small, and LCD and OLED have replaced them.
+Because each cell emits its own light, plasma displays delivered high contrast ratios, deep blacks, and exceptionally wide **viewing angles**, maintaining color accuracy even when viewed from sharp angles. However, they were heavy, consumed high power, generated substantial heat, and could not easily be fabricated at small resolutions, leading manufacturers to replace them with LCD and OLED panels.
 
 ## Side by side
 
 | | Makes its own light? | Strengths | Weaknesses |
 |---|---|---|---|
-| CRT | yes (phosphor) | fast response, deep blacks | deep, heavy, flickers |
-| LCD | no, needs a backlight | thin, low power, cheap | blacks glow gray, narrower viewing angles |
-| LED-backlit LCD | no, LED backlight | thinner, local dimming (direct) | still an LCD |
-| Plasma | yes (gas + phosphor) | deep blacks, wide angles | heavy, high power, discontinued |
+| CRT | Yes (phosphor) | Fast response, deep blacks | Deep, heavy, flickers |
+| LCD | No, needs a backlight | Thin, low power, inexpensive | Blacks glow gray, narrower viewing angles |
+| LED-backlit LCD | No, LED backlight | Thinner, local dimming (direct) | Still fundamentally an LCD |
+| Plasma | Yes (gas + phosphor) | Deep blacks, wide viewing angles | Heavy, high power consumption, discontinued |
 
-Every one of these is a raster display: a grid of pixels refreshed from a frame buffer. The [next lesson](/courses/computer-graphics/raster-and-vector-images) turns from screens to the two ways of storing the images they show.
+Every technology reviewed here operates as a raster display: an addressable array of pixels refreshed continuously from a frame buffer. The [next lesson](/courses/computer-graphics/raster-and-vector-images) examines how image data itself is structured into raster and vector representations.
