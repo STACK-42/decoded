@@ -64,18 +64,7 @@ $$
 *Cost: 4 NAND gates.*
 
 ### 5. XOR from NAND (Minimal 4-gate realization)
-A naive conversion of $A \oplus B = A'B + AB'$ requires 5 NAND gates. However, switching theory provides a celebrated **4-gate minimal NAND XOR**:
-
-```text
-A ----+------------------\
-      |                   NAND2 ---+
-      +---\               /        |
-           NAND1 (N1) ---+         |
-      +---/               \        +---\
-      |                   NAND3 ------- NAND4 ---> A ⊕ B
-B ----+------------------/             /
-                                      /
-```
+A naive conversion of $A \oplus B = A'B + AB'$ requires 5 NAND gates. However, switching theory provides a celebrated **4-gate minimal NAND XOR**, where Gate 1 ($N_1 = (AB)'$) feeds into both Gate 2 (along with $A$) and Gate 3 (along with $B$), and their outputs feed into Gate 4 to produce $A \oplus B$:
 
 **Algebraic Proof of the 4-NAND XOR:**
 1. Gate 1 computes:
@@ -140,19 +129,10 @@ By De Morgan's laws, every universal gate has two equivalent graphic symbols:
    - **Standard symbol:** OR shape with an output bubble.
    - **Dual symbol (Invert-AND):** AND shape with bubbles on all inputs.
 
-```text
-NAND Equivalence:
-    ---[ & ]o---   ≡   ---o\
-                            )---
-                       ---o/
-    Standard NAND        Invert-OR (De Morgan)
-
-NOR Equivalence:
-    ---\   \
-        )   )o--   ≡   ---o[ & ]---
-    ---/___/           ---o
-    Standard NOR         Invert-AND (De Morgan)
-```
+| Gate | Standard Symbol | Dual Equivalent (De Morgan) | Boolean Identity |
+| :--- | :--- | :--- | :--- |
+| **NAND** | AND gate with output inversion bubble | OR gate with inverted inputs (Invert-OR) | $(AB)' = A' + B'$ |
+| **NOR** | OR gate with output inversion bubble | AND gate with inverted inputs (Invert-AND) | $(A + B)' = A' B'$ |
 
 ### The Bubble-Pushing conversion rules
 

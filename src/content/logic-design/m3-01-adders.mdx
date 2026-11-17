@@ -214,17 +214,12 @@ For a 4-bit addition $A = A_3 A_2 A_1 A_0$ and $B = B_3 B_2 B_1 B_0$:
 - Stage 2 adds $A_2 + B_2 + C_2$, producing $S_2$ and $C_3$.
 - Stage 3 adds $A_3 + B_3 + C_3$, producing $S_3$ and the final carry $C_4$.
 
-```
-           A3   B3          A2   B2          A1   B1          A0   B0
-            │    │           │    │           │    │           │    │
-            ▼    ▼           ▼    ▼           ▼    ▼           ▼    ▼
-          ┌────────┐       ┌────────┐       ┌────────┐       ┌────────┐
-C4 ◄──────┤ FA 3   │◄──C3──┤ FA 2   │◄──C2──┤ FA 1   │◄──C1──┤ FA 0   │◄──── C0 = 0
-          └───┬────┘       └───┬────┘       └───┬────┘       └───┬────┘
-              │                │                │                │
-              ▼                ▼                ▼                ▼
-             S3               S2               S1               S0
-```
+| Stage | Bit Inputs | Carry-in | Sum Output | Carry-out to Next Stage |
+| :---: | :---: | :---: | :---: | :---: |
+| **FA 0 (LSB)** | $A_0, B_0$ | $C_0 = 0$ | $S_0 = A_0 \oplus B_0 \oplus C_0$ | $C_1 \to \text{FA 1}$ |
+| **FA 1** | $A_1, B_1$ | $C_1$ (from FA 0) | $S_1 = A_1 \oplus B_1 \oplus C_1$ | $C_2 \to \text{FA 2}$ |
+| **FA 2** | $A_2, B_2$ | $C_2$ (from FA 1) | $S_2 = A_2 \oplus B_2 \oplus C_2$ | $C_3 \to \text{FA 3}$ |
+| **FA 3 (MSB)** | $A_3, B_3$ | $C_3$ (from FA 2) | $S_3 = A_3 \oplus B_3 \oplus C_3$ | $C_4 = C_{\text{out}}$ |
 
 ### Worked example: 4-bit addition
 
@@ -256,21 +251,6 @@ B_i \oplus 1 = B_i' \qquad (\text{inverts})
 $$
 
 By introducing a single mode control line $M$ connected to both the initial carry $C_0$ and one input of an XOR gate on each $B_i$ line:
-
-```
-                  M (0 = Add, 1 = Subtract)
-         ┌────────┴──────────────────────────┐
-         │         │               │         │
-         │         ▼               ▼         ▼
-         │      ┌─────┐         ┌─────┐   ┌─────┐
-         │      │ XOR │         │ XOR │   │ XOR │  ... on all B inputs
-         │      └──┬──┘         └──┬──┘   └──┬──┘
-         │         │ B3' or B3     │ B2'     │ B1'
-         │         ▼               ▼         ▼
-         │     ┌───────┐       ┌───────┐ ┌───────┐
-         │     │ FA 3  │◄──C3──┤ FA 2  │◄┤ FA 1  │◄── ... ◄── C0 = M
-         │     └───┬───┘       └───┬───┘ └───┬───┘
-```
 
 - **When $M = 0$ (Addition Mode):**
   - $B_i \oplus 0 = B_i$ (the $B$ inputs enter each full adder unmodified).

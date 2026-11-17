@@ -194,22 +194,12 @@ $$
 C_4 = G_G + P_G C_0
 $$
 
-```
-   ┌─────────────── 16-bit Multilevel CLA ───────────────┐
-   │                                                     │
-   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │  │Block 3   │  │Block 2   │  │Block 1   │  │Block 0   │
-   │  │Bits 15-12│  │Bits 11-8 │  │Bits 7-4  │  │Bits 3-0  │
-   │  └──┬────┬──┘  └──┬────┬──┘  └──┬────┬──┘  └──┬────┬──┘
-   │     │P3  │G3      │P2  │G2      │P1  │G1      │P0  │G0
-   │     ▼    ▼        ▼    ▼        ▼    ▼        ▼    ▼
-   │  ┌─────────────────────────────────────────────────┐
-   │  │   Second-Level Lookahead Carry Generator (74182)│
-   │  └──┬──────────────┬──────────────┬────────────────┘
-   │     │ C12          │ C8           │ C4
-   │     └──────────────┼──────────────┘
-   └────────────────────┼────────────────────────────────┘
-```
+| Adder Block | Bit Range | Block Outputs ($P_G, G_G$) | Fast Carry Received from 74182 |
+| :--- | :---: | :---: | :--- |
+| **Block 0** | Bits 3–0 | $P_{G0}, G_{G0}$ | $C_0$ (system carry-in) |
+| **Block 1** | Bits 7–4 | $P_{G1}, G_{G1}$ | $C_4 = G_{G0} + P_{G0} C_0$ |
+| **Block 2** | Bits 11–8 | $P_{G2}, G_{G2}$ | $C_8 = G_{G1} + P_{G1} C_4$ |
+| **Block 3** | Bits 15–12 | $P_{G3}, G_{G3}$ | $C_{12} = G_{G2} + P_{G2} C_8$ |
 
 A second-level lookahead unit, such as the classic **74182 Look-Ahead Carry Generator** IC, takes the $(P_G, G_G)$ pairs from four 4-bit adder blocks (such as 74181 or 74283 adders) and computes the block carries $C_4, C_8, C_{12}, C_{16}$ simultaneously:
 
