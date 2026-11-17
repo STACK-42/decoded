@@ -5,6 +5,7 @@ import { MDXProvider } from "@mdx-js/react";
 import "katex/dist/katex.min.css";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
+import { LabTimer } from "@/components/lesson/LabTimer";
 import { useProgress } from "@/hooks/useProgress";
 import { CodeBlock } from "@/components/mdx/MdxComponents";
 import { CourseNav } from "@/components/lesson/CourseNav";
@@ -193,6 +194,10 @@ export default function LessonPage() {
             <span>{lesson.duration} read</span>
             <LessonLearners course={course.slug} lesson={lesson.slug} />
           </div>
+
+          {kind === "practical" && (
+            <LabTimer key={`${course.slug}/${lesson.slug}`} id={`${course.slug}/${lesson.slug}`} accent={course.accent} />
+          )}
 
           <MDXProvider components={mdxComponents}>
             {/* delegates clicks on the links inside; they stay ordinary, keyboard-reachable <a>s */}
