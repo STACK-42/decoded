@@ -2,25 +2,25 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication, Rege
 
 # The Limits of Finite Memory
 
-Module 1 showed that [DFAs](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), [NFAs](/courses/theory-of-computation/nfa) and regex are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
+Module 1 showed that [DFAs](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), [NFAs](/courses/theory-of-computation/nfa) and [regex](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
 
 So here is a fair question. If regex is that powerful, why does every senior engineer tell you not to parse HTML with it? Why can't a regex check that the brackets in your code are balanced?
 
-No amount of effort will produce such a regex, because the task is **impossible**, and the reason fits in one word: *finite*.
+A string of brackets is **balanced** when every opening `(` has a matching closing `)` later on, and as you read from left to right, closing brackets never outnumber opening ones. No amount of effort will produce a regex for that, because the task is impossible, and the reason fits in one word: *finite*.
 
 ## What a DFA Can Remember
 
-Look again at the five-tuple. $Q$ is a **finite** set of states. That is the machine's entire memory. It has no variables, no counter, no scratch paper. The only thing it knows about everything it has read so far is *which state it is in right now*.
+In a [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), the set of states $Q$ is **finite**. That is the machine's entire memory. It has no variables, no counter, no scratch paper. The only thing it knows about everything it has read so far is *which state it is in right now*.
 
-A DFA with 5 states can tell apart at most 5 different situations. That is enough for "did I just see an $a$", or "is the number of $1$s even". Those questions have a fixed number of answers, no matter how long the input gets.
+A DFA with 5 states can tell apart at most 5 different situations. Questions with a fixed set of answers fit inside that budget, no matter how long the input gets: "did I just see an $a$?" needs only 2 states (yes or no), and "is the number of $1$s even?" needs only 2 states (even so far or odd so far).
 
-Now try this question: *have I seen more opening brackets than closing ones, and by how much?* The answer can be 0, 1, 2, 3, ... with no upper limit. A machine with a fixed number of states cannot keep an answer that keeps growing.
+Now try this question: *have I seen more opening brackets than closing ones, and by how much?* The answer can be $0, 1, 2, 3, \ldots$ with no upper limit. A machine with a fixed number of states cannot keep an answer that keeps growing.
 
 The rest of this lesson makes that idea precise.
 
 ## Try It: A Bracket Checker With 3 Levels of Memory
 
-Here is a DFA over $\Sigma = \{(, )\}$. Each state means "how many brackets are currently open". $d_0$ means none, $d_1$ means one, $d_2$ means two. $x$ is a dead state: once you fall in, you never leave.
+Here is a DFA over $\Sigma = \{(, )\}$. Each state means "how many brackets are currently open". $d_0$ means none, $d_1$ means one, $d_2$ means two. $x$ is a [dead state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes): once you fall in, you never leave.
 
 <AutomatonDiagram
   states={["d0", "d1", "d2", "x"]}
@@ -39,11 +39,13 @@ Here is a DFA over $\Sigma = \{(, )\}$. Each state means "how many brackets are 
   accepting={["d0"]}
 />
 
-Run these through it: `()`, `(())`, `()()`, `)(`. All correct.
+Trace a few strings through it step by step:
+- `(())` (**accepted**): $d_0 \xrightarrow{(} d_1 \xrightarrow{(} d_2 \xrightarrow{)} d_1 \xrightarrow{)} d_0$. It finishes in the accept state $d_0$.
+- `(()` (**rejected**): $d_0 \xrightarrow{(} d_1 \xrightarrow{(} d_2 \xrightarrow{)} d_1$. One bracket is still open, so it finishes in $d_1 \notin F$.
+- `)(` (**rejected**): $d_0 \xrightarrow{)} x \xrightarrow{(} x$. Closing before opening drops straight into the dead state $x$.
+- `((()))` (**rejected**): $d_0 \xrightarrow{(} d_1 \xrightarrow{(} d_2 \xrightarrow{(} x \xrightarrow{)} x \xrightarrow{)} x \xrightarrow{)} x$. Even though `((()))` is balanced, on the third `(` there is no state for "three open", so it falls into $x$ and stays there.
 
-Now run `((()))`. It is perfectly balanced, and the machine rejects it. On the third `(` there is no state that means "three open", so it falls into $x$.
-
-You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever number of states you pick, someone can write a string that nests one level deeper. The machine always runs out of memory before the input runs out of brackets.
+You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever finite number of states $n$ you pick, there are $n + 1$ different opening counts $0, 1, 2, \dots, n$, so by the time a machine reads $n$ opening brackets, at least two different counts must land in the same state. Once two depths share a state, appending the matching number of `)` for the shallower one forces the machine to accept an unbalanced string too. The machine always runs out of memory before the input runs out of brackets.
 
 <Callout tone="violet" label="The key observation">
   This DFA does not fail because it was designed badly. Any DFA for this language fails the same way. A machine with n states can only count up to about n, and balanced brackets need a count with no limit.
@@ -79,21 +81,21 @@ If you got 10/10, look at your pattern. It grew by one layer for every level of 
 
 ### The intuition first
 
-Take a DFA with $p$ states. Feed it a string of length $p$ or more. Reading $p$ symbols means the machine passes through $p + 1$ states (the start state, plus one after each symbol). But there are only $p$ different states. So at least one state appears twice.
+Take a DFA with $p$ states. Feed it a string of length $p$ or more. As the machine reads the first $p$ symbols, it passes through $p + 1$ states (the start state, plus one state after each of the first $p$ symbols). Because there are only $p$ different states, at least one state $q$ must appear twice in that prefix.
 
 This is the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle#the-principle): put $p + 1$ pigeons into $p$ holes, and some hole gets two pigeons.
 
-A repeated state means the machine walked a **loop**, and a loop can be walked again, or skipped entirely. The DFA can't tell the difference, because it remembers only the state and not how many times it went around.
+A repeated state $q$ means the machine walked a **loop** from $q$ back to $q$. Because the DFA remembers only which state it sits in and not how many times it has visited $q$, it cannot tell the difference between skipping the loop ($0$ times), walking it once, or walking it $i$ times. Every trip around the loop lands back in $q$, so the remaining tail of the input finishes in the exact same state.
 
 ### The formal statement
 
 If $L$ is a [regular language](/courses/theory-of-computation/kleenes-theorem), then there is a number $p \geq 1$ (the **pumping length**) such that every string $w \in L$ with $|w| \geq p$ can be split into three parts, $w = xyz$, where:
 
-1. $|y| \geq 1$: the loop part is not empty
-2. $|xy| \leq p$: the loop happens within the first $p$ symbols
-3. $xy^iz \in L$ for every $i \geq 0$: you can repeat the loop any number of times, including zero, and stay in the language
+1. $|y| \geq 1$: the loop part is not empty (at least one symbol is needed to leave $q$ and return to $q$)
+2. $|xy| \leq p$: the loop happens within the first $p$ symbols (because the pigeonhole repeat already occurred among the first $p + 1$ states)
+3. $xy^iz \in L$ for every $i \geq 0$: you can skip the loop ($i = 0$, since $y^0 = \varepsilon$, leaving $xz$) or repeat it ($i = 2, 3, \ldots$) and still end in the same [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram)
 
-Map it back to the picture. $x$ is the path to the repeated state. $y$ is the loop. $z$ is the rest of the path to the [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Condition 2 holds because the pigeonhole argument already forces a repeat inside the first $p$ symbols.
+Map it back to the picture: $x$ is the path from the start state to the first visit to $q$, $y$ is the loop from $q$ back to $q$, and $z$ is the rest of the path from $q$ to acceptance. (What if $L$ is a finite regular language, like $\{ab\}$? Pick $p = 3$, larger than the longest string in $L$; then no string $w \in L$ has $|w| \geq p$, so the "every string with $|w| \geq p$" claim holds vacuously without needing any loop.)
 
 ### Using it on $a^nb^n$
 
@@ -105,28 +107,30 @@ $$
 
 Some number of $a$s, then exactly the same number of $b$s. Replace $a$ with `(` and $b$ with `)`, and this is a slice of the bracket language.
 
-The proof is by contradiction. Assume $L$ is regular, then break it.
+The proof uses [proof by contradiction](/courses/discrete-mathematics/direct-and-indirect-proof#proof-by-contradiction): assume $L$ is regular, then derive an impossibility.
 
-**Step 1.** If $L$ is regular, the lemma gives us some pumping length $p$. We do not know its value, so the argument must work for any $p$.
+**Step 1.** If $L$ is regular, the lemma gives us some pumping length $p \geq 1$. We do not know its value, so our choice of string in Step 2 must work for *any* $p$.
 
-**Step 2.** We choose the string. Pick $w = a^pb^p$. It is in $L$ and its length is $2p \geq p$, so the lemma applies.
+**Step 2.** Choose $w = a^pb^p$. Why not a fixed string like $a^5b^5$? If $p = 10$, then $|a^5b^5| = 10$ works, but if $p = 20$, $a^5b^5$ is too short and the lemma does not apply. Writing $w = a^pb^p$ in terms of $p$ guarantees $w \in L$ and $|w| = 2p \geq p$ for every $p \geq 1$.
 
-**Step 3.** The lemma says $w = xyz$ with $|xy| \leq p$. The first $p$ symbols of $w$ are all $a$s. So $x$ and $y$ are made only of $a$s. Write $y = a^k$ with $k \geq 1$.
+**Step 3.** The lemma guarantees $w = xyz$ with $|y| \geq 1$ and $|xy| \leq p$. Because the first $p$ symbols of $w = a^pb^p$ are all $a$s, both $x$ and $y$ must sit inside that opening block of $a$s. So $x = a^j$, $y = a^k$ for some $k \geq 1$, and $z = a^{p - j - k}b^p$.
 
-**Step 4.** Pump once: $i = 2$. Then
+**Step 4.** Pump once with $i = 2$ (repeating the loop an extra time):
 
 $$
-xy^2z = a^{p+k}b^p
+xy^2z = a^j a^{2k} a^{p - j - k} b^p = a^{p+k}b^p
 $$
 
-That string has $k$ more $a$s than $b$s. Since $k \geq 1$, it is **not** in $L$.
+That string has $k$ more $a$s than $b$s. Since $k \geq 1$, it is **not** in $L$. (Pumping down with $i = 0$ breaks balance too: $xy^0z = xz = a^{p-k}b^p$, which has $k$ fewer $a$s than $b$s.)
 
-**Step 5.** The lemma promised $xy^2z \in L$. We just showed it is not. So the assumption was wrong. $L$ is **not regular**.
+**Step 5.** Condition 3 promised $xy^2z \in L$. We just showed $xy^2z \notin L$. That contradiction proves the assumption was wrong: $L$ is **not regular**.
 
 No DFA, NFA or regex in the strict sense can recognize it, however clever or large.
 
-<Callout tone="orange" label="The common mistake">
-  The pumping lemma only works in one direction. If a language is regular, it pumps. But a language that pumps is not automatically regular, because some non-regular languages pass the pumping test. So you use the lemma to prove a language is NOT regular. You never use it to prove that a language IS regular. For that, you build the DFA.
+<Callout tone="orange" label="Common pumping-lemma mistakes">
+  Two mistakes ruin pumping-lemma proofs on exams:
+  - **Using the wrong direction:** If a language is regular, it pumps. A language that pumps is not automatically regular, because some non-regular languages also satisfy all three conditions. Never use the lemma to prove a language *is* regular; to do that, build a DFA, NFA, or regex.
+  - **Picking $p$ or picking $x, y, z$ yourself:** You do not get to choose $p = 5$, and you do not get to choose where $y$ sits inside $w$. You only pick $w$ (in terms of $p$), then show that *every* valid split $xyz$ with $|y| \geq 1$ and $|xy| \leq p$ fails for some $i$.
 </Callout>
 
 <Callout tone="sky" label="Who you are arguing against">
@@ -157,7 +161,7 @@ console.log(isBalanced("(((((((((())))))))))")); // true, at any depth
 
 Paste it into your browser console and try any depth you like. It never breaks.
 
-Compare it with the DFA. The loop reads one symbol at a time, just like $\delta$. It moves left to right and never goes back. The **only** new thing is the `stack`: memory that can grow as large as the input needs, but that you can only touch at the top.
+Compare it with the DFA. The loop reads one symbol at a time, just like $\delta$. It moves left to right and never goes back. The **only** new thing is the [stack](/courses/data-structures/stacks#the-interface): **LIFO** (last in, first out) memory that can grow as large as the input needs, where you can only push to or pop from the top.
 
 Add that one stack to a finite automaton and you get a new machine: the **pushdown automaton**, or **PDA**. It recognizes exactly the **context-free languages**, the class that contains $a^nb^n$, balanced brackets, arithmetic expressions, and the grammar of almost every programming language. The next lesson starts with the grammars for these languages; the machine comes later in this module.
 
@@ -183,5 +187,5 @@ Add that one stack to a finite automaton and you get a new machine: the **pushdo
 </ApplicationsGrid>
 
 <Callout tone="mint" label="Where you stand">
-  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. a^n b^n and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally later in this module, after the grammars that describe the same languages.
+  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. $a^n b^n$ and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally later in this module, after the grammars that describe the same languages.
 </Callout>

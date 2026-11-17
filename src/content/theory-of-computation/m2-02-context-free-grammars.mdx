@@ -4,31 +4,45 @@ import { DerivationStepper, ParseTreeExplorer } from "@/components/mdx/TocVisual
 
 # Context-Free Grammars
 
-The last lesson proved that no finite automaton can recognize $a^nb^n$ or balanced brackets. A grammar describes both in one line each:
+The last lesson proved that no finite automaton can recognize $a^nb^n$ or balanced brackets. A [grammar](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar) describes both in one line each (writing $\Lambda$ for the [empty string](/courses/theory-of-computation/language-of-languages#string-word)):
 
 $$
 S \rightarrow aSb \mid \Lambda \qquad\qquad S \rightarrow (S)S \mid \Lambda
 $$
 
-These are **context-free grammars** (CFGs): every rule has a single variable on its left-hand side, so a variable can be replaced wherever it appears, whatever is around it. The languages they generate are the **context-free languages**, one level up from the [regular languages](/courses/theory-of-computation/kleenes-theorem) in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
+In the bracket grammar, the inner $S$ inside `(S)` creates nested brackets like `(())`, while the trailing $S$ puts pairs side by side like `()()`. Using $S \rightarrow (S) \mid \Lambda$ alone could never generate `()()`.
+
+These are **context-free grammars** (CFGs). Formally, a CFG is a four-tuple $G = (V, T, P, S)$ where every rule in $P$ has the shape $A \rightarrow \beta$: a single variable $A \in V$ on its left-hand side, and any string $\beta \in (V \cup T)^*$ of variables and terminals (including $\Lambda$) on its right-hand side. Because the left-hand side is always one lone variable, $A$ can be replaced wherever it appears, regardless of its neighbors (unlike a context-sensitive rule such as $aAb \rightarrow aab$, which checks the letters around $A$).
+
+The languages CFGs generate are the **context-free languages**, one level up from the [regular languages](/courses/theory-of-computation/kleenes-theorem) in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
 
 ## What language does this grammar generate?
 
-The method from the Grammars lesson still works: derive the shortest words, spot the pattern, then check that every rule keeps it. Two grammars from past exercise sheets:
+The method from the [Grammars lesson](/courses/theory-of-computation/grammars#two-exam-questions-youll-meet) still works: derive the shortest words, spot the pattern, then check that every rule keeps it. Practice reading two grammars:
 
 $$
 S \rightarrow XaXaX \qquad X \rightarrow aX \mid bX \mid \Lambda
 $$
 
-$X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because it can add $a$'s and $b$'s in any order and stop. So $S$ is "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), $(a + b)^*a(a + b)^*a(a + b)^*$.
+$X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because at each step it can emit $a$ or $b$ in any order and stop with $X \rightarrow \Lambda$. Walk through two derivations:
+- Shortest word: pick $X \rightarrow \Lambda$ for all three $X$'s: $S \Rightarrow XaXaX \Rightarrow aXaX \Rightarrow aaX \Rightarrow aa$.
+- Mixed word `baab`: $S \Rightarrow XaXaX \Rightarrow bXaXaX \Rightarrow baXaX \Rightarrow baaX \Rightarrow baabX \Rightarrow baab$.
+
+Every derivation must start with $S \rightarrow XaXaX$, which locks in two $a$'s that no rule can delete, while the three $X$'s fill the gaps with anything (including more $a$'s). So $S$ generates "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), $(a + b)^*a(a + b)^*a(a + b)^*$.
 
 $$
 S \rightarrow AbA \mid BaB \qquad A \rightarrow aA \mid a \qquad B \rightarrow bB \mid b
 $$
 
-$A$ generates one or more $a$'s and $B$ one or more $b$'s. So the language is the words made of $a$'s with one $b$ somewhere in the middle, or $b$'s with one $a$ in the middle: $aba$, $bab$, $aaba$, $abaa$, and so on. Neither the first nor the last letter can be the odd one out.
+Here $A$ has no $\Lambda$-rule: its base rule is $A \rightarrow a$, so $A$ generates **one or more** $a$'s ($a^+$), and $B$ generates **one or more** $b$'s ($b^+$). For example, $S \Rightarrow AbA \Rightarrow aAbA \Rightarrow aabA \Rightarrow aaba$. Neither the first nor the last letter can be the odd one out, because $A$ forces at least one $a$ on both sides of $b$ (so `ab` and `ba` are impossible). Thus the language is the words made of $a$'s with one $b$ strictly inside, or $b$'s with one $a$ strictly inside: $aba$, $bab$, $aaba$, $abaa$, and so on.
 
 Both of these happen to be regular. A CFG can describe regular languages too; it's languages like $a^nb^n$ that need one.
+
+<Callout tone="orange" label="Base rules and extra letters">
+  Two traps show up when reading a CFG by eye:
+  - **Allows $\Lambda$ vs needs at least one:** $X \rightarrow aX \mid bX \mid \Lambda$ can produce $\Lambda$, whereas $A \rightarrow aA \mid a$ must produce at least one $a$. That single difference is why `ab` is outside the second grammar above.
+  - **"At least" vs "exactly":** Seeing $S \rightarrow XaXaX$ makes students guess "exactly two $a$'s". Because $X$ itself generates both $a$'s and $b$'s, extra $a$'s can appear anywhere around or between the two fixed $a$'s.
+</Callout>
 
 ## Leftmost and rightmost derivations
 
@@ -36,17 +50,28 @@ When a [sentential form](/courses/theory-of-computation/grammars#derivations) ha
 
 <DerivationStepper grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" showSide />
 
-Both derivations apply the same rules to the same variables. Only the order differs. The leftmost one finishes the first $A$ (all four $a$'s) before touching the second; the rightmost one builds the trailing $aaa$ first.
+Both derivations apply the same rules to the same variables. Only the order differs. Writing both out step by step for $aaaabaaa$:
+
+- **Leftmost** (always rewrite the left $A$ first until it finishes):
+  $$S \Rightarrow AbA \Rightarrow aAbA \Rightarrow aaAbA \Rightarrow aaaAbA \Rightarrow aaaabA \Rightarrow aaaabaA \Rightarrow aaaabaaA \Rightarrow aaaabaaa$$
+- **Rightmost** (always rewrite the right $A$ first, noticing that $A \rightarrow aA$ grows its $a$'s to the left of $A$):
+  $$S \Rightarrow AbA \Rightarrow AbaA \Rightarrow AbaaA \Rightarrow Abaaa \Rightarrow aAbaaa \Rightarrow aaAbaaa \Rightarrow aaaAbaaa \Rightarrow aaaabaaa$$
+
+<Callout tone="orange" label="One variable per step, in strict order">
+  Two common mistakes in derivation questions: rewriting two variables in a single $\Rightarrow$ step, and switching sides halfway through (for instance, expanding the right $A$ before the left $A$ is finished in a leftmost derivation). Each $\Rightarrow$ replaces **one** variable, and it must always be the leftmost (or rightmost) one remaining.
+</Callout>
 
 ## Parse trees
 
-A **parse tree** records which rule rewrote each variable, without the order. The root is the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar), every inner node is a variable whose children are the right-hand side of the rule used on it, and the leaves, read left to right, spell the word (a $\Lambda$ leaf contributes nothing). Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, which is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
+A **parse tree** is a [rooted tree](/courses/discrete-mathematics/trees#rooted-trees) that records which rule rewrote each variable, without recording the order. The root is the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar), every internal node is a variable whose children (left to right) are the right-hand side of the rule used on it, and the **leaves** (nodes with no children) hold terminals or $\Lambda$. Reading the leaves from left to right gives the **yield** of the tree, which spells the derived word (a $\Lambda$ leaf contributes the empty string, so it adds no character to the word).
+
+Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, because the tree already fixes which rule rewrites each variable: walking those choices top-down while expanding the leftmost remaining variable gives a unique leftmost derivation (and picking the rightmost gives a unique rightmost one). That is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
 
 <ParseTreeExplorer grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" />
 
 ## Ambiguity
 
-A grammar is **ambiguous** if some word has two different parse trees. The textbook example is arithmetic:
+A grammar is **ambiguous** if some word has two different parse trees (equivalently, two different leftmost derivations, or two different rightmost derivations). The textbook example is arithmetic:
 
 $$
 E \rightarrow E + E \mid E * E \mid (E) \mid a
@@ -54,22 +79,38 @@ $$
 
 <ParseTreeExplorer grammar="E -> E+E | E*E | (E) | a" target="a+a*a" />
 
-Tree 1 starts with $E \rightarrow E + E$ and puts $a * a$ under the right-hand $E$: it reads as $a + (a * a)$. Tree 2 starts with $E \rightarrow E * E$ and puts $a + a$ under the left $E$: it reads as $(a + a) * a$. With $a = 2$, the first is $6$ and the second is $8$. A compiler that builds the tree from this grammar could compute either, which is why ambiguity matters in practice and not just on paper.
+Tree 1 starts with $E \rightarrow E + E$ and puts $a * a$ under the right-hand $E$, so it groups as $a + (a * a)$. Tree 2 starts with $E \rightarrow E * E$ and puts $a + a$ under the left $E$, so it groups as $(a + a) * a$. Their two leftmost derivations are visibly different right at step 1:
+
+- **Leftmost 1 ($a + (a * a)$):** $E \Rightarrow E + E \Rightarrow a + E \Rightarrow a + E * E \Rightarrow a + a * E \Rightarrow a + a * a$
+- **Leftmost 2 ($(a + a) * a$):** $E \Rightarrow E * E \Rightarrow E + E * E \Rightarrow a + E * E \Rightarrow a + a * E \Rightarrow a + a * a$
+
+With $a = 2$, the first evaluates to $6$ and the second to $8$. A compiler that builds the tree from this grammar could compute either, which is why ambiguity matters in practice and not just on paper.
 
 To show a grammar is ambiguous, you only need **one** word with two parse trees (or two leftmost derivations). To show it isn't, you have to argue about every word, which is much harder, so exams almost always ask for the first.
 
-Ambiguity is usually fixed by rewriting the grammar so that precedence is built in. Each level handles one operator, and lower levels bind tighter:
+Ambiguity is usually fixed by rewriting the grammar so that precedence and associativity are built into separate layers of variables:
 
 $$
 E \rightarrow E + T \mid T \qquad T \rightarrow T * F \mid F \qquad F \rightarrow (E) \mid a
 $$
 
+Read $E$ as **expression** (a sum), $T$ as **term** (a product), and $F$ as **factor** (an atom $a$ or a bracketed expression). Notice why the ambiguity disappears: $T$ can never generate an unparenthesized $+$, and $F$ can never generate an unparenthesized $+$ or $*$. So for $a + a * a$, the top rule *must* be $E \rightarrow E + T$ (because $T$ alone cannot produce the $+$), leaving only one leftmost derivation:
+
+$$
+E \Rightarrow E + T \Rightarrow T + T \Rightarrow F + T \Rightarrow a + T \Rightarrow a + T * F \Rightarrow a + F * F \Rightarrow a + a * F \Rightarrow a + a * a
+$$
+
+Even `a + a + a`, which had two trees in $E \rightarrow E + E$ (`(a + a) + a` vs `a + (a + a)`), now has only one tree, `(a + a) + a`, because $E \rightarrow E + T$ puts the recursive $E$ on the left and forces the right side $T$ to be $+$-free.
+
 <ParseTreeExplorer grammar={"E -> E+T | T\nT -> T*F | F\nF -> (E) | a"} target="a+a*a" />
 
-There is now only one tree for $a + a * a$, and it groups $a * a$ first, the way arithmetic does. Try `(a+a)*a`: the brackets are the only way to make the addition happen first.
+There is now only one tree for $a + a * a$, and it groups $a * a$ first, the way arithmetic does. Try `(a+a)*a`: the brackets inside $F \rightarrow (E)$ are the only way to make the addition happen first.
 
 <Callout tone="orange" label="Ambiguous grammar, not ambiguous language">
-  Ambiguity is a property of a grammar. The two expression grammars above generate exactly the same language; one is ambiguous and the other isn't. (Some context-free languages have no unambiguous grammar at all, but that's beyond this course.)
+  Three exam traps about ambiguity:
+  - **Grammar vs language:** Ambiguity is a property of a grammar. The two expression grammars above generate the exact same language; one is ambiguous and the other isn't. (Some context-free languages have no unambiguous grammar at all, though that is outside this course.)
+  - **Leftmost vs rightmost is not ambiguity:** Finding one leftmost derivation and one rightmost derivation for the same word does **not** show ambiguity. Every parse tree has both. You need two *different* parse trees, or two different *leftmost* derivations.
+  - **Testing too short a word:** Checking `a` or `a + a` in $E \rightarrow E + E \mid E * E \mid a$ gives only one tree, which proves nothing. To test for ambiguity, try a word with two operators such as `a + a * a` or `a + a + a`.
 </Callout>
 
 ## Where this shows up today
