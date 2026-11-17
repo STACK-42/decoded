@@ -15,7 +15,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ThemeToggle", () => {
-  it("switches between themes and remembers the choice", async () => {
+  // The test setup's matchMedia never matches, so the system theme here is light.
+  it("goes back to following the system when you pick the system's theme", async () => {
     render(
       <ThemeProvider attribute="class" defaultTheme="dark">
         <ThemeToggle />
@@ -24,6 +25,18 @@ describe("ThemeToggle", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Switch to light theme" }));
     expect(await screen.findByRole("button", { name: "Switch to dark theme" })).toBeTruthy();
     expect(document.documentElement.classList.contains("light")).toBe(true);
-    expect(localStorage.getItem("theme")).toBe("light");
+    expect(localStorage.getItem("theme")).toBe("system");
+  });
+
+  it("remembers a theme that differs from the system's", async () => {
+    render(
+      <ThemeProvider attribute="class" defaultTheme="system">
+        <ThemeToggle />
+      </ThemeProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Switch to dark theme" }));
+    expect(await screen.findByRole("button", { name: "Switch to light theme" })).toBeTruthy();
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(localStorage.getItem("theme")).toBe("dark");
   });
 });
