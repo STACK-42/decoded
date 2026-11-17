@@ -6,7 +6,7 @@ import { DerivationStepper } from "@/components/mdx/TocVisualizers";
 
 The last lesson described languages as sets: either you list the strings, or you write a rule in set notation like $\{w \in \Sigma^* \mid w \text{ starts with } a\}$. Set notation is precise, but it only tells you how to *check* a string. It doesn't tell you how to *produce* one.
 
-In 1956 the linguist Noam Chomsky proposed a different way to pin down a language: give a finite set of rewriting rules that generate exactly its strings, and nothing else. He called this a **grammar**. His paper was about English, but the idea became the standard way to define programming languages, file formats and network protocols.
+In 1956 the linguist Noam Chomsky proposed a different way to define a language: give a finite set of rewriting rules that generate its strings, and nothing else. He called this a **grammar**. His paper was about English, but the idea became the standard way to specify programming languages, file formats, and network protocols.
 
 ## The four parts of a grammar
 
@@ -96,24 +96,24 @@ Chomsky's other contribution was to sort grammars by how much freedom their rule
 | 0 | Unrestricted | $\alpha \rightarrow \beta$, anything | Turing machine | Anything a program can enumerate |
 
 Why do those four restrictions separate four different machines?
-- **Type 3 (Regular):** every rule produces at most one terminal and keeps at most one variable at the right end ($A \rightarrow aB$ or $A \rightarrow a$), which is called a **right-linear grammar**. (A **left-linear grammar** puts the variable on the left instead, $A \rightarrow Ba$, which has the exact same power as long as you don't mix both in one grammar.) Because there is only ever one active variable at the frontier, a machine only needs to remember *which variable it is currently in*, so finite memory is enough.
+- **Type 3 (Regular):** every rule produces at most one terminal and keeps at most one variable at the right end ($A \rightarrow aB$, $A \rightarrow a$, or $A \rightarrow \varepsilon$), which is called a **right-linear grammar**. (A **left-linear grammar** puts the variable on the left instead, $A \rightarrow Ba$, which has the same power as long as you don't mix both in one grammar.) Because there is at most one active variable at the end of the working string, a machine only needs to remember *which variable it is currently in*, so finite memory is enough.
 - **Type 2 (Context-free):** the left-hand side is still a single variable $A$, so you can rewrite $A$ anywhere it appears, regardless of its neighbors. Allowing terminals on *both* sides of $A$, as in $S \rightarrow aSb$, forces a recognizer to match the left side against the right side later, which needs a stack (a pushdown automaton).
 - **Type 1 (Context-sensitive):** the left-hand side can require surrounding symbols ($\alpha \rightarrow \beta$), and rules cannot shrink the working string ($\lvert\alpha\rvert \le \lvert\beta\rvert$, except optionally $S \rightarrow \varepsilon$ if $S$ never appears on a right-hand side). Because strings never get shorter during derivation, a recognizer only ever needs a tape proportional to the input length (a **linear-bounded automaton**).
 - **Type 0 (Unrestricted):** any string of variables and terminals (with at least one variable on the left) can rewrite to anything, including shrinking or erasing symbols, giving the full power of a Turing machine.
 
-Each type contains the ones below it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and so on. The examples in the last column sit exactly one level up: $a^nb^n$ is context-free but not regular, and $a^nb^nc^n$ is context-sensitive but not context-free.
+Each type contains the ones below it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and so on. The examples in the last column sit one level up each time: $a^nb^n$ is context-free and not regular, and $a^nb^nc^n$ is context-sensitive and not context-free.
 
 This table is also a map of this course. Module 1 covers type 3 and Module 2 covers type 2. Types 1 and 0, and the Turing machine, belong to later courses on computability.
 
 <Callout tone="orange" label="Why the left-hand side matters">
-  "Context-free" means a rule like $A \rightarrow \beta$ can be applied wherever $A$ appears, whatever surrounds it. A context-sensitive rule such as $aAb \rightarrow aab$ only fires when $A$ sits between an $a$ and a $b$. That dependence on the neighbours is the "context".
+  "Context-free" means a rule like $A \rightarrow \beta$ can be applied wherever $A$ appears, whatever surrounds it. A context-sensitive rule such as $aAb \rightarrow aab$ only fires when $A$ sits between an $a$ and a $b$. That dependence on the neighbors is the "context".
 </Callout>
 
 ## A regular grammar is a finite automaton
 
-Type 3 rules have a shape you're about to read closely in the [next lesson](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). In a state diagram, circles are states (with a start arrow into the start state and a double circle marking an accept state) and labelled arrows move from state to state as symbols are read.
+Type 3 rules have a shape you're about to read closely in the [next lesson](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). In a state diagram, circles are states (with a start arrow into the start state and a double circle marking an accept state) and labeled arrows move from state to state as symbols are read.
 
-In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labelled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
+In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labeled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
 
 <AutomatonDiagram
   states={["S", "F"]}
@@ -126,7 +126,7 @@ In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from 
   accepting={["F"]}
 />
 
-Run `aab` through it step by step: start in `S`, read `a` and loop to `S` ($S \Rightarrow aS$), read `a` and loop to `S` ($aS \Rightarrow aaS$), read `b` and move to `F` ($aaS \Rightarrow aab$), then finish in the double-circle accept state `F`. Now try `aba`: after reading `ab` you sit in `F`, and there is no arrow leaving `F` for the trailing `a`, so the string fails (matching the grammar, since once $S \rightarrow b$ ends the derivation, no further $a$ can be generated). That correspondence works for every right-linear grammar, which is why regular grammars, finite automata and regular expressions all describe the same family of languages.
+Run `aab` through it step by step: start in `S`, read `a` and loop to `S` ($S \Rightarrow aS$), read `a` and loop to `S` ($aS \Rightarrow aaS$), then read `b` and move to `F` ($aaS \Rightarrow aab$). You finish in the double-circle accept state `F`. Now try `aba`: after reading `ab` you sit in `F`, and no arrow leaves `F` for the trailing `a`, so the string fails. The grammar matches that behavior, because once $S \rightarrow b$ ends the derivation, no further $a$ can appear. That match holds for every right-linear grammar, which is why regular grammars, finite automata, and regular expressions all describe the same family of languages.
 
 ## Two exam questions you'll meet
 

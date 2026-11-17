@@ -2,13 +2,13 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } fro
 
 # The Language of Languages
 
-Before any CPU or GPU was built, and before any automaton or algorithm, mathematicians needed to agree on what they were talking about. They kept running into the same problem: how do you precisely describe an infinite collection of strings with a finite set of rules?
+Before anyone built a CPU, an automaton, or an algorithm, mathematicians had to agree on the objects they were studying. The problem they kept hitting was simple: how do you describe an infinite collection of strings with a finite set of rules?
 
-Natural language fails here. "All strings that start with *a* and end with *b*" describes a language well enough for a person, but a machine needs something it can check mechanically. Every symbol in the notation you're about to learn exists to remove that vagueness. In short, we need a precise language for describing languages.
+Natural language fails here. "All strings that start with *a* and end with *b*" works for a person, but a machine needs a rule it can check mechanically. Every symbol in the notation below removes that vagueness.
 
 ## The Three-Level Hierarchy
 
-Everything in [formal language theory](https://en.wikipedia.org/wiki/Formal_language) is built on three linked concepts, and the rest of the course rests on them.
+[Formal language theory](https://en.wikipedia.org/wiki/Formal_language) rests on three connected concepts, and the rest of the course builds on them.
 
 ### Alphabet: $\Sigma$
 
@@ -26,21 +26,21 @@ $$
 \Sigma = \{x\}
 $$
 
-The symbol $\Sigma$ (sigma) is just the conventional name. The alphabet is the raw material: the only symbols your machine is allowed to see. Think of it as the keys on a keyboard. If your keyboard only has two keys, those are the only characters you can type.
+The symbol $\Sigma$ (sigma) is the conventional name. The alphabet is the raw material: the only symbols your machine is allowed to see. Think of it as the keys on a keyboard. If your keyboard has only two keys, those are the only characters you can type.
 
-Two restrictions matter in that definition. First, $\Sigma$ must be **finite**, because a machine can only store rules for a finite list of symbols. Second, $\Sigma$ must be **non-empty**, because an alphabet with zero symbols can never build any non-empty strings. A symbol does not have to be a single letter: in a vending machine, a coin like `$5` or a token like `if` in a compiler can act as one indivisible symbol in $\Sigma$.
+Two restrictions matter in that definition. First, $\Sigma$ must be **finite**, because a machine can only store rules for a finite list of symbols. Second, $\Sigma$ must be **non-empty**, because an alphabet with zero symbols can never build any non-empty strings. A symbol does not have to be a single letter: in a vending machine, a coin like `$5` or a token like `if` in a compiler can act as one single symbol in $\Sigma$.
 
 ### String (Word)
 
-A **string** (also called a **word**) is a **finite sequence of symbols drawn from the alphabet**. You concatenate letters, left to right, and you get a string. Unlike a set, order and repeats *do* matter in a string: $ab$ is different from $ba$, and $aa$ is different from $a$.
+A **string** (also called a **word**) is a **finite sequence of symbols from the alphabet**. You join letters left to right to form a string. Unlike a set, order and repeats *do* matter in a string: $ab$ is different from $ba$, and $aa$ is different from $a$.
 
 $$
 \Sigma = \{a, b\} \implies ab,\ bba,\ aaab,\ \varepsilon\ \text{ are all valid strings}
 $$
 
-Two things to know right away. The **length** of a string $w$, written $|w|$, is the number of symbols in it, so $|abb| = 3$ and $|a| = 1$.
+The **length** of a string $w$, written $|w|$, is the number of symbols in it, so $|abb| = 3$ and $|a| = 1$.
 
-The other is the string that confuses everyone: the **empty string** $\varepsilon$ (epsilon), a string of zero symbols. (Some textbooks write $\Lambda$, capital lambda, for the exact same string; Module 2 uses $\Lambda$ in grammar derivations, and both mean the zero-symbol string.) Be careful, because $\varepsilon$ is not "nothing". It exists, it is a valid string over every alphabet, and it has length zero:
+The **empty string** $\varepsilon$ (epsilon) is the string with zero symbols. (Some textbooks write $\Lambda$, capital lambda, for the same string; Module 2 uses $\Lambda$ in grammar derivations, and both mean the zero-symbol string.) Do not treat $\varepsilon$ as "nothing". It exists, it is a valid string over every alphabet, and its length is zero:
 
 $$
 |\varepsilon| = 0
@@ -66,7 +66,7 @@ $$
 L = \{w \in \Sigma^* \mid w \text{ starts with } a\}
 $$
 
-Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule (read the vertical bar $\mid$ as "such that", and $\Sigma^*$ as every possible string over $\Sigma$, defined right below). Since you can't list an infinite language, formal language theory is almost entirely about finding compact, mechanical rules that describe one.
+Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule (read the vertical bar $\mid$ as "such that", and $\Sigma^*$ as every possible string over $\Sigma$, defined right below). Since you can't list an infinite language, formal language theory is mostly about finding short, exact rules that describe one.
 
 <table>
   <thead>
@@ -134,10 +134,8 @@ $$
 L \subseteq \Sigma^*
 $$
 
-That sums up the whole hierarchy: a language is a subset of the universe of possible strings.
-
 <Callout tone="violet" label="Why Σ* exists">
-  Think of $\Sigma^*$ as your entire string universe. Without it, you would have to define what a valid string is every single time you create a language. With it, you just write $L \subseteq \Sigma^*$, and everyone instantly knows your language is a piece of that universe.
+  Think of $\Sigma^*$ as your entire string universe. Without it, you would have to define what counts as a valid string every time you introduce a language. Writing $L \subseteq \Sigma^*$ settles that in one line.
 </Callout>
 
 
@@ -157,7 +155,7 @@ $$
 XY = \{uv \mid u \in X \text{ and } v \in Y\}
 $$
 
-Let's work an example step by step with $X = \{a,\ bb\}$ and $Y = \{c,\ dd\}$:
+Here is a step-by-step example with $X = \{a,\ bb\}$ and $Y = \{c,\ dd\}$:
 
 1. Take the first string from $X$, which is $a$, and join it with each string in $Y$: $a \cdot c = ac$ and $a \cdot dd = add$.
 2. Take the second string from $X$, which is $bb$, and join it with each string in $Y$: $bb \cdot c = bbc$ and $bb \cdot dd = bbdd$.
@@ -185,7 +183,7 @@ And $w^0 = \varepsilon$ for any string $w$, and $L^0 = \{\varepsilon\}$ for any 
 
 ## Regular Expressions: The First Compact Notation
 
-You've probably met [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) through `grep`. A **regular expression** is also a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and built from three operations: union, concatenation, and Kleene star.
+You may know [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) from `grep`. In math, a **regular expression** is a formal notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and built from three operations: union, concatenation, and Kleene star.
 
 A regular expression over $\Sigma$ is defined by three rules:
 
@@ -201,7 +199,7 @@ A regular expression over $\Sigma$ is defined by three rules:
 
 **Closure.** Nothing else is a regular expression.
 
-Those three rules generate every regular expression ever written. The regex in your editor, the pattern in your validation code and the search in your terminal are all instances of this recursive definition.
+Those three rules generate every regular expression, from a search pattern in your terminal to an input check in your code.
 
 Write $L(r)$ for the language described by a regular expression $r$. Here is a worked example over $\Sigma = \{a, b\}$:
 
@@ -254,7 +252,7 @@ $$
 | $XY$           | Concatenation     | $\{uv \mid u \in X,\ v \in Y\}$                          |
 
 <Callout tone="mint" label="What you just built">
-  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different mechanism for deciding which strings belong to a language and which don't.
+  You now have the three building blocks that the rest of this course uses: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different way to decide which strings belong to a language.
 </Callout>
 
 ## Optional Further Reading

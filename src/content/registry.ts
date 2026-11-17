@@ -350,10 +350,10 @@ export const courses: Course[] = [
       },
       {
         title: "Finite Automata",
-        blurb: "The first formal computing model — and the engine behind every regex.",
+        blurb: "The first formal computing model, and the engine behind every regex.",
         lessons: [
           { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
-          { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
+          { slug: "nfa", title: "NFA: Nondeterministic Automata", duration: "12 min", Component: TocNfa },
           { slug: "regular-expressions", title: "Reading and Writing Regular Expressions", duration: "15 min", kind: "practical", Component: TocRegularExpressions },
           { slug: "transition-graphs", title: "Transition Graphs", duration: "14 min", Component: TocTransitionGraphs },
           { slug: "kleenes-theorem", title: "Kleene's Theorem", duration: "15 min", Component: TocKleenesTheorem },
