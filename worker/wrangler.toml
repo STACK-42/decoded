@@ -9,6 +9,8 @@ routes = [
   { pattern = "decoded-api.stack42.tech", custom_domain = true },
   # Shared profile and invite links, so each gets its own link preview. See src/share.ts.
   { pattern = "decoded-go.stack42.tech", custom_domain = true },
+  # The site's old domain, redirected to the new one. See src/index.ts.
+  { pattern = "decoded.stack42.tech", custom_domain = true },
 ]
 
 [vars]
