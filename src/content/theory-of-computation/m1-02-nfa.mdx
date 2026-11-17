@@ -47,7 +47,7 @@ Here is a small NFA over $\Sigma = \{a, b\}$ that accepts strings ending in $ab$
 
 From a DFA's point of view, something is wrong here: $q_0$ has *two* arrows labeled $a$, one looping back and one going to $q_1$. A DFA can't have that. An NFA handles it by splitting: when you read $a$ from $q_0$, the machine simultaneously stays at $q_0$ and moves to $q_1$.
 
-Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition returns $\emptyset$, meaning that copy dies while the others keep going.
+Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition returns $\emptyset$, meaning that copy dies while the others keep going. (Note: if you test a word where *every* copy dies before the end, like `aba`, the diagram above displays `REJECTED` because zero surviving copies remain.)
 
 Trace the string $aab$:
 
@@ -98,6 +98,8 @@ q_1 & \emptyset & \{q_1\} & \emptyset \\
 $$
 
 State $q_0$ accepts $a$'s, state $q_1$ accepts $b$'s, and the $\varepsilon$-arrow $q_0 \xrightarrow{\varepsilon} q_1$ connects them without redesigning either half. Before reading anything, the $\varepsilon$-closures are $E(q_0) = \{q_0, q_1\}$ and $E(q_1) = \{q_1\}$.
+
+To trace a word through an $\varepsilon$-NFA systematically, start with the active set $S_0 = E(q_0)$. For each symbol $c$ in the word, follow every $c$-arrow from every state in the current active set, take the union, and then apply $E(\cdot)$ to that union (including any free $\varepsilon$-moves reachable *after* reading $c$).
 
 Watch how three strings trace through this machine:
 - **$\varepsilon$ (accepted):** Start in $q_0$ and immediately take the $\varepsilon$-closure to $\{q_0, q_1\}$. No symbols are left, and $q_1 \in F$, so $\varepsilon$ is accepted.
@@ -152,7 +154,17 @@ It's the same language, now as a complete DFA with every cell filled.
 
 Two extra cases show up on other NFAs when you do subset construction by hand:
 - **What if every state in a subset has no arrow for a symbol?** Their union is $\emptyset$. In the DFA, $\emptyset$ becomes a real state (its [trap state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes)): every symbol takes $\emptyset$ back to $\emptyset$, and $\emptyset$ is never an accept state.
-- **What if the NFA has $\varepsilon$-transitions?** Start the DFA at $E(q_0)$ instead of $\{q_0\}$, and after taking the union of transitions on a symbol, take the $\varepsilon$-closure of that union.
+- **What if the NFA has $\varepsilon$-transitions?** Start the DFA at $E(q_0)$ instead of $\{q_0\}$, and after taking the union of transitions on a symbol, take the $\varepsilon$-closure of that union. On the $a^*b^*$ $\varepsilon$-NFA above ($E(q_0) = \{q_0, q_1\}$, $E(q_1) = \{q_1\}$), starting at $\{q_0, q_1\}$ (final, since $q_1 \in F$) sends $a \mapsto E(\{q_0\}) = \{q_0, q_1\}$ and $b \mapsto E(\{q_1\}) = \{q_1\}$ (final); from $\{q_1\}$, $a \mapsto \emptyset$ (trap) and $b \mapsto \{q_1\}$:
+
+$$
+\begin{array}{c|cc}
+\delta_{\text{DFA}} & a & b \\
+\hline
+\{q_0, q_1\} \text{ (start, final)} & \{q_0, q_1\} & \{q_1\} \\
+\{q_1\} \text{ (final)} & \emptyset & \{q_1\} \\
+\emptyset & \emptyset & \emptyset \\
+\end{array}
+$$
 
 <Callout tone="orange" label="Subset construction mistakes">
   When converting an NFA to a DFA on an exam, watch for two slips:
@@ -181,41 +193,43 @@ The standard pipeline followed by most serious regex engines:
 1. Write regex
 2. Convert to NFA
 3. Convert NFA to DFA via subset construction
-4. Minimize the DFA (merge states that behave identically to shrink the table)
+4. Minimize the DFA (merge states whose future behavior is identical on every remaining suffix to shrink the table; the algorithm itself belongs to a later compilers topic)
 5. Simulate
 
 Tools like `lex`, `flex`, and `ripgrep`'s regex engine follow this exact pipeline.
 
 ## Practice: subset construction by hand
 
-Convert this 3-state NFA over $\Sigma = \{a, b\}$ (strings starting with $ab$) into a complete DFA using the subset construction. Start state is $q_0$, $F = \{q_2\}$:
+Convert this 3-state NFA over $\Sigma = \{a, b\}$ into a complete DFA using the subset construction. Start state is $q_0$, $F = \{q_2\}$:
 
 $$
 \begin{array}{c|cc}
 \delta & a & b \\
 \hline
-q_0 & \{q_1\} & \emptyset \\
-q_1 & \emptyset & \{q_2\} \\
-q_2 & \{q_2\} & \{q_2\} \\
+q_0 & \{q_1, q_2\} & \emptyset \\
+q_1 & \{q_1\} & \{q_2\} \\
+q_2 & \emptyset & \{q_2\} \\
 \end{array}
 $$
 
 <ModelAnswer>
 Start from $\{q_0\}$ and expand each reachable subset on $a$ and $b$:
-- From $\{q_0\}$: on $a \rightarrow \{q_1\}$; on $b \rightarrow \emptyset$ (a dead state!).
-- From $\{q_1\}$: on $a \rightarrow \emptyset$; on $b \rightarrow \{q_2\}$.
-- From $\{q_2\}$: on $a \rightarrow \{q_2\}$; on $b \rightarrow \{q_2\}$.
+- From $\{q_0\}$: on $a \rightarrow \{q_1, q_2\}$ (multi-state subset!); on $b \rightarrow \emptyset$ (trap state!).
+- From $\{q_1, q_2\}$: on $a \rightarrow \{q_1\} \cup \emptyset = \{q_1\}$; on $b \rightarrow \{q_2\} \cup \{q_2\} = \{q_2\}$.
+- From $\{q_1\}$: on $a \rightarrow \{q_1\}$; on $b \rightarrow \{q_2\}$.
+- From $\{q_2\}$: on $a \rightarrow \emptyset$; on $b \rightarrow \{q_2\}$.
 - From $\emptyset$: on $a \rightarrow \emptyset$; on $b \rightarrow \emptyset$.
 
-Only $\{q_2\}$ contains the NFA accept state $q_2$, so $F_{\text{DFA}} = \{\{q_2\}\}$, with start state $\{q_0\}$:
+Every subset containing $q_2$ is final, so $F_{\text{DFA}} = \{\{q_1, q_2\},\ \{q_2\}\}$ and start state is $\{q_0\}$:
 
 $$
 \begin{array}{c|cc}
 \delta_{\text{DFA}} & a & b \\
 \hline
-\{q_0\} & \{q_1\} & \emptyset \\
-\{q_1\} & \emptyset & \{q_2\} \\
-\{q_2\} & \{q_2\} & \{q_2\} \\
+\{q_0\} & \{q_1, q_2\} & \emptyset \\
+\{q_1, q_2\} \text{ (final)} & \{q_1\} & \{q_2\} \\
+\{q_1\} & \{q_1\} & \{q_2\} \\
+\{q_2\} \text{ (final)} & \emptyset & \{q_2\} \\
 \emptyset & \emptyset & \emptyset \\
 \end{array}
 $$

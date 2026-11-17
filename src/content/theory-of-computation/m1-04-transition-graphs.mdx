@@ -10,9 +10,9 @@ A [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) is 
 
 Even an [NFA](/courses/theory-of-computation/nfa) keeps two strict rules: every edge still reads at most one letter (or $\varepsilon$), and there is only one start state. A **transition graph** drops both rules as well, so it has:
 
-- a finite set of states, **at least one** of which is a start state (marked $-$ in textbook diagrams, or with an incoming arrow below), and a set of final states (marked $+$, or double circles below; the set can even be empty);
+- a finite set of states, **at least one** of which is a start state (marked $-$ in textbook diagrams, or labeled `start` below), and a set of final states (marked $+$, or double circles labeled `final` below; the set can even be empty);
 - an [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$;
-- edges labeled with **words** over $\Sigma$ instead of single letters. A label can also be $\Lambda$ (capital lambda, the [empty word](/courses/theory-of-computation/language-of-languages#string-word) $\varepsilon$), which lets the machine move without reading anything.
+- edges labeled with **words** over $\Sigma$ instead of single letters. A label can also be $\Lambda$ (capital lambda, the same [empty word](/courses/theory-of-computation/language-of-languages#string-word) written $\varepsilon$ in earlier lessons), which lets the machine move without reading anything.
 
 A word $w$ is **accepted** if you can cut it into pieces, $w = w_1 w_2 \ldots w_k$, so that some path from a start state to a final state has edges labeled $w_1$, $w_2$, ..., $w_k$ in that order (where any $\Lambda$-edge contributes $\Lambda$ without consuming letters from $w$). If no such cut and path exist, the word is rejected.
 
@@ -75,7 +75,7 @@ To find its language, trace what each start state can reach:
 Because you may start at either $x$ or $y$, the full language is their union: $ab(aa)^* + b^*(aa)^* = (ab + b^*)(aa)^*$.
 
 Check two edge cases by hand:
-- **$\varepsilon$ (accepted):** Start at $y$, take $y \xrightarrow{\Lambda} z$ (zero characters consumed), and take zero $aa$-loops to finish at final state $z$.
+- **$\Lambda$ (accepted):** Start at $y$, take $y \xrightarrow{\Lambda} z$ (zero characters consumed), and take zero $aa$-loops to finish at final state $z$.
 - **`ba` (rejected):** Starting at $x$ fails immediately because $x$'s only edge needs `ab`. Starting at $y$, reading `b` keeps you at $y$ with `a` left; taking $\Lambda$ to $z$ still leaves `a`, and $z$'s only loop needs two `a`'s (`aa`), not one.
 
 <Callout tone="orange" label="Λ is not a letter, and reaching + mid-word isn't enough">
@@ -86,10 +86,10 @@ Check two edge cases by hand:
 
 Exams often draw a TG and ask for its [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter). The method is **state elimination**: replace the TG by a **generalized transition graph** (GTG), where edges can be labeled with full regular expressions instead of just words, and remove states one at a time until a single edge is left.
 
-1. Add a new start state $-$ with $\Lambda$-edges into every old start state, and a new final state $+$ with $\Lambda$-edges out of every old final state. Why? Old start states often have incoming arrows (like state 1 below) and old final states can have outgoing arrows or multiple copies. Fresh $-$ and $+$ states guarantee one clean entry with no incoming arrows and one clean exit with no outgoing arrows.
+1. Add a new start state $-$ with $\Lambda$-edges into every old start state, and a new final state $+$ with $\Lambda$-edges out of every old final state. (Note: $-$ and $+$ are state names here, distinct from the union operator $+$ inside edge labels.) Why? Old start states often have incoming arrows (like state 1 below) and old final states can have outgoing arrows or multiple copies. Fresh $-$ and $+$ states guarantee one clean entry with no incoming arrows and one clean exit with no outgoing arrows.
 2. If two edges join the same pair of states (including two self-loops on the same state), merge them: labels $r_1$ and $r_2$ become one edge labeled $r_1 + r_2$.
-3. Pick an interior state $q$ to remove (never $-$ or $+$). For every pair of an incoming edge $p \rightarrow q$ labeled $r_1$ and an outgoing edge $q \rightarrow s$ labeled $r_3$ (including when $p = s$), add a shortcut edge $p \rightarrow s$ labeled $r_1 r_2^* r_3$, where $r_2$ is the self-loop on $q$. If $q$ has no self-loop, omit the middle starred part and just write $r_1 r_3$. If $p \rightarrow s$ already had an edge, join the two with $+$. Then delete $q$ and its edges.
-4. Repeat steps 2 and 3 until only $-$ and $+$ are left. The label on the single edge $-\rightarrow +$ is the answer.
+3. Pick an interior state $q$ to remove (never $-$ or $+$). For every pair of distinct edges entering and leaving $q$, namely $p \rightarrow q$ ($p \neq q$) labeled $r_1$ and $q \rightarrow s$ ($s \neq q$) labeled $r_3$ (including when $p = s$), add a shortcut edge $p \rightarrow s$ labeled $r_1 r_2^* r_3$, where $r_2$ is the self-loop on $q$. If $q$ has no self-loop, omit the middle starred part and just write $r_1 r_3$. If $p \rightarrow s$ already had an edge, join the two with $+$. Then delete $q$ and its edges.
+4. Repeat steps 2 and 3 until only $-$ and $+$ are left. The label on the single edge $-\rightarrow +$ is the answer (or $\emptyset$ if no edge connects $-$ to $+$).
 
 Step 3 is the one to understand. If you could go from $p$ to $q$ on $r_1$, circle around $q$ any number of times on $r_2$, and leave to $s$ on $r_3$, then bypassing $q$ does all of that in one step: $r_1 r_2^* r_3$.
 
@@ -114,7 +114,7 @@ Here is the finite automaton for "an even number of $a$'s" over $\{a, b\}$. Stat
 Follow the algorithm on this machine step by step:
 1. **Add $-$ and $+$:** Connect $-\xrightarrow{\Lambda} 1$ and $1 \xrightarrow{\Lambda} +$ (the old start/final markers on 1 are now replaced by $-$ and $+$).
 2. **Eliminate state 2:** State 2 has one incoming edge ($1 \xrightarrow{a} 2$), a self-loop ($2 \xrightarrow{b} 2$), and one outgoing edge ($2 \xrightarrow{a} 1$). Here $p = s = 1$, so the shortcut creates a new self-loop $1 \rightarrow 1$ labeled $ab^*a$. Merge it with the existing loop $1 \xrightarrow{b} 1$ to get a single loop on state 1 labeled $b + ab^*a$.
-3. **Eliminate state 1:** Now state 1 has one incoming edge ($-\xrightarrow{\Lambda} 1$), one self-loop ($b + ab^*a$), and one outgoing edge ($1 \xrightarrow{\Lambda} +$). Bypassing state 1 gives $-\rightarrow +$ labeled $\Lambda (b + ab^*a)^* \Lambda = (b + ab^*a)^*$.
+3. **Eliminate state 1:** Now state 1 has one incoming edge ($-\xrightarrow{\Lambda} 1$), one self-loop ($b + ab^*a$), and one outgoing edge ($1 \xrightarrow{\Lambda} +$). Bypassing state 1 gives $-\rightarrow +$ labeled $\Lambda (b + ab^*a)^* \Lambda = (b + ab^*a)^*$ (because $\Lambda$ is the empty word, concatenating it on either side drops out: $\Lambda r = r \Lambda = r$).
 
 Every word it generates is a mix of single $b$'s and blocks $ab^*a$ that start and end with an $a$, so every word has an even number of $a$'s (for instance, $\varepsilon$ takes zero repetitions, and `aba` comes from one pass through $ab^*a$).
 

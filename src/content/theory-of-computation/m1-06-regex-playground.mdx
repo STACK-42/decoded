@@ -63,11 +63,13 @@ Phone extensions in your company's system follow the format `DDD-DDDD` (three di
     { string: "999-0000", shouldMatch: true },
     { string: "12-4567", shouldMatch: false, note: "only 2 digits before hyphen" },
     { string: "123-456", shouldMatch: false, note: "only 3 digits after hyphen" },
+    { string: "1234-5678", shouldMatch: false, note: "4 digits before hyphen, catches missing ^" },
+    { string: "123-45678", shouldMatch: false, note: "5 digits after hyphen, catches missing $" },
     { string: "123-456-7", shouldMatch: false, note: "extra digits" },
     { string: "abc-defg", shouldMatch: false, note: "letters, not digits" },
   ]}
-  placeholder="\d{3}-\d{4}"
-  solutionHint="Use \\d to match a digit, and {n} to match exactly n repetitions. Escape the hyphen as a literal character."
+  placeholder="^\d{3}-\d{4}$"
+  solutionHint="Use \\d to match a digit, {n} to match exactly n repetitions, and ^...$ anchors so longer numbers like 1234-5678 do not match as substrings. Outside [...], - matches a literal hyphen directly."
 />
 
 <Callout tone="orange" label="Forgetting anchors (^ and $)">
@@ -89,9 +91,9 @@ Why does it blow up on `"aaaa...!"`? Look at just three `a`'s followed by `!` (`
     { string: "a".repeat(25) + "!", shouldMatch: false, note: "25 a's then !, watch the timeout" },
   ]}
   placeholder="(a+)+$"
-  solutionHint="This is a demonstration, not an exercise to 'solve'. Try (a+)+$ and watch it hang on the long string with a '!' at the end. Then try a*.* as a non-catastrophic alternative."
+  solutionHint="This is a demonstration, not an exercise to 'solve'. Try (a+)+$ and watch it hang on the long string with a '!' at the end. Then try ^a+$ as a non-catastrophic alternative that matches the exact same strings."
 />
 
 <Callout tone="sky" label="Why DFAs don't hang on ReDoS">
-  Knowing automata changes how you read regex. When catastrophic backtracking takes down production, you can explain *why*: someone wrote an ambiguous nested quantifier that a backtracking NFA engine had to explore along exponentially many paths. By contrast, a DFA engine (like `ripgrep` or Go's `regexp`) tracks all active states in one pass in $O(n)$ time. If you are stuck on a backtracking engine, you can fix the bug by rewriting the pattern without nested ambiguity (`^a+$`).
+  Knowing automata changes how you read regex. When catastrophic backtracking takes down production, you can explain *why*: someone wrote an ambiguous nested quantifier that a backtracking NFA engine had to explore along exponentially many paths. By contrast, a DFA engine (like `ripgrep` or Go's `regexp`) tracks the single active DFA state in $O(n)$ time (or simulates the NFA active state set without backtracking). If you are stuck on a backtracking engine, you can fix the bug by rewriting the pattern without nested ambiguity (`^a+$`).
 </Callout>

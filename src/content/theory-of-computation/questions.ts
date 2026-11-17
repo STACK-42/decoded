@@ -336,7 +336,7 @@ export const questions: Question[] = [
       { id: "d", text: "Users prefer DFAs" },
     ],
     correctOptionId: "b",
-    explanation: "A DFA runs in O(m) time on a string of length m with one table lookup per character, whereas a backtracking NFA engine can take exponential time and an active-set NFA simulator still takes O(nm). DFAs actually use up to 2ⁿ states in the worst case (more memory, not less).",
+    explanation: "A DFA runs in O(m) time on a string of length m with one table lookup per character, whereas a backtracking NFA engine can take exponential time and an active-set simulator over an n-state NFA still takes up to O(nm) time. DFAs actually use up to 2ⁿ states in the worst case (more memory, not less).",
   },
   {
     id: "theory-of-computation/finite-automata-quiz/q7",
@@ -347,12 +347,12 @@ export const questions: Question[] = [
     prompt: "A regex pattern froze production for 30 seconds on a specific input. What is the most likely cause, and how do you fix it?",
     options: [
       { id: "a", text: "The engine ran out of memory; add more RAM" },
-      { id: "b", text: "Catastrophic backtracking in an NFA-like pattern; rewrite for a DFA-compilable form" },
+      { id: "b", text: "Catastrophic backtracking in an ambiguous nested pattern; rewrite without nested ambiguity (or use a non-backtracking DFA engine)" },
       { id: "c", text: "The input string was too long; truncate it" },
       { id: "d", text: "The regex compiler has a bug; upgrade your tool" },
     ],
     correctOptionId: "b",
-    explanation: "This is ReDoS (Regular Expression Denial of Service): ambiguous nested quantifiers like (a+)+$ force a backtracking engine to try 2ⁿ⁻¹ splits on a 25-character failing input, which takes CPU time rather than running out of RAM, happens even on short 25-character strings, and is a property of backtracking rather than a compiler bug.",
+    explanation: "This is ReDoS (Regular Expression Denial of Service): ambiguous nested quantifiers like (a+)+$ force a backtracking engine to try 2ⁿ⁻¹ splits on a 25-character failing input, which takes CPU time rather than running out of RAM, happens even on short 25-character strings, and is a property of backtracking rather than a compiler bug. Rewriting to ^a+$ removes the ambiguity.",
   },
   {
     id: "theory-of-computation/finite-automata-quiz/q8",
@@ -362,13 +362,13 @@ export const questions: Question[] = [
     difficulty: 1,
     prompt: "Which word is NOT in the language of the regular expression a* + b*?",
     options: [
-      { id: "a", text: "Λ (the empty word)" },
+      { id: "a", text: "ε (the empty word)" },
       { id: "b", text: "aaa" },
       { id: "c", text: "ab" },
       { id: "d", text: "bbbb" },
     ],
     correctOptionId: "c",
-    explanation: "a* + b* means 'only a's, or only b's'. The word ab mixes them, so it is not in the language. Λ (zero repeats from either side), aaa (from a*), and bbbb (from b*) are all in the language.",
+    explanation: "a* + b* means 'only a's, or only b's'. The word ab mixes them, so it is not in the language. ε (zero repeats from either side), aaa (from a*), and bbbb (from b*) are all in the language.",
   },
   {
     id: "theory-of-computation/finite-automata-quiz/q9",

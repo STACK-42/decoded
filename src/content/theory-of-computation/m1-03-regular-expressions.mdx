@@ -21,7 +21,8 @@ Course notes and exams use textbook notation, which differs from the regex in yo
 | $r_1 + r_2$ | union: $r_1$ or $r_2$ | $a + b$ | $\{a, b\}$ |
 | $r_1 r_2$ | concatenation: $r_1$ then $r_2$ | $ab$ | $\{ab\}$ |
 | $r^*$ | zero or more repetitions of $r$ | $a^*$ | $\{\varepsilon, a, aa, \ldots\}$ |
-| $\varepsilon$ (or $\lambda$, $\Lambda$) | the empty string | $a + \varepsilon$ | $\{\varepsilon, a\}$ |
+| $\varepsilon$ (or $\Lambda$, $\lambda$ in some books) | the empty string | $a + \varepsilon$ | $\{\varepsilon, a\}$ |
+| $\emptyset$ | the empty language (zero strings) | $\emptyset$ | $\{\}$ |
 
 Star binds tightest, then concatenation, then union. So $ab^*$ means $a(b^*)$, which is one $a$ followed by any number of $b$'s ($\{a, ab, abb, \ldots\}$), while $(ab)^*$ repeats the whole pair ($\{\varepsilon, ab, abab, \ldots\}$). Likewise, $a + bc$ means $a + (bc) = \{a, bc\}$, whereas $(a + b)c = \{ac, bc\}$. When in doubt, add brackets.
 
@@ -30,7 +31,7 @@ Star binds tightest, then concatenation, then union. So $ab^*$ means $a(b^*)$, w
 Read from the outside in. Find the top-level operator (the last operation applied, usually union `+` outside parentheses, or concatenation if there is no unparenthesized `+`), say what each part contributes, then combine. Four examples:
 
 - **$a^* + b^*$:** The top-level operator is `+` (union), joining $a^*$ and $b^*$. Every word comes entirely from $a^*$ or entirely from $b^*$: "only $a$'s, or only $b$'s" ($\varepsilon$, $a$, $b$, $aa$, $bb$, and so on). Both halves allow zero repetitions, so $\varepsilon$ is in the language, while a word like $ab$ mixes the two and is **not** in the language.
-- **$a^*ab^*$:** There is no top-level `+`, so the expression is a concatenation of three pieces: $a^*$, then $a$, then $b^*$. Because $a^*$ can contribute $\varepsilon$, the shortest word is $a$. The required middle $a$ guarantees at least one $a$, followed by zero or more $b$'s: $a$, $aa$, $ab$, $aaa$, $aab$, $abb$, and so on (in tool syntax, `a+b*`). Every $a$ must appear before every $b$, so $ba$ is not in the language.
+- **$a^*ab^*$:** There is no top-level `+`, so the expression is a concatenation of three pieces: $a^*$, then $a$, then $b^*$. Because $a^*$ can contribute $\varepsilon$, the shortest word is $a$. The required middle $a$ guarantees at least one $a$, followed by zero or more $b$'s: $a$, $aa$, $ab$, $aaa$, $aab$, $abb$, and so on. Every $a$ must appear before every $b$, so $ba$ is not in the language.
 - **$(a + b)^*ba(a + b)^*$:** Since $(a + b)^*$ matches any string over $\{a, b\}$ (the [Kleene star](/courses/theory-of-computation/language-of-languages#kleene-star-sigma) of the alphabet), this concatenation reads as "anything, then $ba$, then anything": every word that **contains** $ba$ somewhere.
 - **$ab^*ab^*a$:** Concatenation of five pieces ($a$, $b^*$, $a$, $b^*$, $a$). That fixes three $a$'s (at the start, somewhere in the middle, and at the end) with zero or more $b$'s in the two gaps: every word over $\{a, b\}$ that starts with $a$, ends with $a$, and has **exactly three** $a$'s.
 
@@ -89,6 +90,8 @@ When writing an expression from a word description, work in three steps:
   answer="a(a+b)*b+b(a+b)*a"
   hint="Two shapes, joined with +. Each shape fixes the first and last letter and allows anything between."
 />
+
+To express an **optional** symbol in textbook notation, write $(\varepsilon + a)$ (either the empty string or $a$). When typing into the fourth challenge below, paste `ε` (or `Λ`) directly into the box, since typing letters like `e` treats them as symbols in the alphabet.
 
 <ReChallenge
   prompt="No word has a double letter (no aa and no bb anywhere). The empty word counts."

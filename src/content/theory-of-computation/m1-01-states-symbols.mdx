@@ -74,10 +74,10 @@ $$
 $$
 
 $$
-q_0 = q_0 \qquad F = \{q_2\}
+\text{start state} = q_0 \qquad F = \{q_2\}
 $$
 
-The fourth component of the tuple says which state in $Q$ is the start state, which here happens to be named $q_0$ (in another machine, the start state could just as well be named $s$ or $A$).
+The fourth component of the tuple names which state in $Q$ is the start state, which here happens to be $q_0$ (in another machine, the start state could just as well be named $s$ or $A$).
 
 And the transition function $\delta$ as a table, with one entry for every state and symbol:
 
@@ -112,10 +112,10 @@ $$
 Reading the [empty string](/courses/theory-of-computation/language-of-languages#string-word) from any state leaves you in that state, because zero symbols have been consumed.
 
 $$
-\hat{\delta}(q,\ wa) = \delta(\hat{\delta}(q,\ w),\ a)
+\hat{\delta}(q,\ wc) = \delta(\hat{\delta}(q,\ w),\ c)
 $$
 
-Reading a non-empty string $wa$ (any prefix $w \in \Sigma^*$ followed by a final symbol $a \in \Sigma$) works in two steps: first process $w$ from $q$ to get an intermediate state $\hat{\delta}(q, w)$, then take one final step from there on $a$ using $\delta$.
+Reading a non-empty string $wc$ (any prefix $w \in \Sigma^*$ followed by a final symbol $c \in \Sigma$) works in two steps: first process $w$ from $q$ to get an intermediate state $\hat{\delta}(q, w)$, then take one final step from there on $c$ using $\delta$.
 
 The definition is recursive: it builds up the computation one symbol at a time, exactly as you did by hand in [How to Read a Machine](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand). $\hat{\delta}$ is the formal name for that process.
 
@@ -163,9 +163,9 @@ $$
 \delta : Q \times \Sigma \rightarrow Q
 $$
 
-The return type is $Q$, not the power set of $Q$, so one input pair always gives one state, which is the entire rule of determinism.
+The return type is $Q$, not the [power set](/courses/discrete-mathematics/sets#power-sets) of $Q$ (the set of all subsets of $Q$, defined in the next lesson), so one input pair always gives one state, which is the entire rule of determinism.
 
-Two consequences follow. First, a DFA simulator is a simple loop: read one character, look up the next state in a table, and never backtrack. That's why regex engines built on DFAs run in [time linear in the length of the input](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations). Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
+Two consequences follow. First, a DFA simulator is a simple loop: read one character, look up the next state in a table, and never backtrack (never rewind to try an alternative path). That's why regex engines built on DFAs run in [time linear in the length of the input](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations). Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
 
 <Callout tone="sky" label="Historical note">
   The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire, before it was used to describe computation. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The [parking meter](/courses/theory-of-computation/how-to-read-a-machine#a-first-example-a-parking-meter), the regex engine, and the original neuron model are all instances of the same five-tuple.
@@ -177,7 +177,7 @@ To build a DFA from a language description, follow four steps:
 
 **Step 1: Identify the conditions.** What does the machine need to remember to make the right decision at the end? Each distinct condition becomes a state. Track only the conditions that affect the final answer, not the full history of what it has seen.
 
-**Step 2: Name the states.** One state per condition. Add a [trap state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes) (also called a **dead state** or **sink state**, one with self-loops on every symbol) if the machine can reach a point where acceptance is impossible regardless of what follows. For example, a machine for "starts with $a$" needs a dead state the moment the first symbol is $b$, whereas "at least one $a$" does not because an $a$ can still show up later.
+**Step 2: Name the states.** One state per condition. Add a [trap state](/courses/theory-of-computation/how-to-read-a-machine#two-important-notes) (also called a **dead state** or **sink state**, one with self-loops on every symbol) if the machine can reach a point where acceptance is impossible regardless of what follows. For example, a machine for "starts with $a$" over $\{a, b\}$ needs three states: start $q_0$, accept state $q_1$ (once an $a$ starts the string, every $a$ or $b$ stays in $q_1$), and `dead` (if the first letter is $b$, stay in `dead` forever: $\delta(q_0, b) = \text{dead}$ and $\delta(\text{dead}, a) = \delta(\text{dead}, b) = \text{dead}$). By contrast, "at least one $a$" below needs no dead state because an $a$ can still show up later.
 
 **Step 3: Fill the transition table.** For every state, for every symbol, decide: if I am in this condition and I read this symbol, what condition am I in now?
 
