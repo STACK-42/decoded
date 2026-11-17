@@ -3,7 +3,7 @@ import { RgbMixer, AlphaBlend } from "@/components/mdx/GraphicsVisualizers";
 
 # Color Pixels: RGB, High Color and Alpha
 
-A grayscale pixel requires one number for its brightness. A color pixel requires three numbers, because electronic displays produce colors by mixing three primary light sources: **red, green and blue**, or **RGB**. Combining full red and full green light produces yellow. Combining all three at maximum intensity produces white. Turning all three off produces black.
+A grayscale pixel requires one number for its brightness. A color pixel requires three numbers, because electronic displays produce colors by mixing three primary light sources: **red, green and blue**, or **RGB**. Unlike paint (which absorbs light), screens **add** colored light together: combining full red and full green light produces yellow. Combining all three at maximum intensity produces white. Turning all three off produces black.
 
 ## 24-bit true color
 
@@ -17,7 +17,7 @@ Mix a pixel color in the interactive tool below. Each channel displays its value
 
 <RgbMixer />
 
-The six-character code under the swatch writes the same 3 bytes in hexadecimal notation, using two digits per channel. Web stylesheets and graphic design applications use this notation (such as `#FF8040`): red `FF` is $15 \times 16 + 15 = 255$, green `80` is $8 \times 16 + 0 = 128$, and blue `40` is $4 \times 16 + 0 = 64$.
+The six-character code under the swatch writes the same 3 bytes in hexadecimal (base-16) notation, using two digits per channel. Web stylesheets and graphic design applications use this notation (such as `#FF8040`, where `F` equals 15): red `FF` is $15 \times 16 + 15 = 255$, green `80` is $8 \times 16 + 0 = 128$, and blue `40` is $4 \times 16 + 0 = 64$.
 
 ## 16-bit high color: 5, 6 and 5 bits
 
@@ -29,7 +29,7 @@ $$
 
 Green receives the extra bit because human vision is most sensitive to green wavelengths, making fine gradations in green the most noticeable. In the mixer above, the right-hand swatch shows the color after rounding down to 5-6-5 and expanding back to 8 bits per channel. Many colors shift slightly because the lowest bits of each channel were discarded.
 
-Consider packing the mixer's initial color, $(255, 128, 64)$, into 16 bits. Retain the top 5 bits of red, the top 6 bits of green, and the top 5 bits of blue. That corresponds to integer division by 8, 4, and 8, discarding remainders:
+Consider packing the mixer's initial color, $(255, 128, 64)$, into 16 bits. Retain the top 5 bits of red, the top 6 bits of green, and the top 5 bits of blue. Dropping the lowest 3 bits corresponds to integer division by $2^3 = 8$, and dropping the lowest 2 bits corresponds to integer division by $2^2 = 4$, discarding remainders:
 
 | Channel | 8-bit value | In binary | Bits kept | Value kept |
 |---|---|---|---|---|
@@ -37,7 +37,7 @@ Consider packing the mixer's initial color, $(255, 128, 64)$, into 16 bits. Reta
 | Green | 128 | `10000000` | `100000` | 32 |
 | Blue | 64 | `01000000` | `01000` | 8 |
 
-Packed together in memory, the 16 bits form `11111 100000 01000`. To unpack the color for display, each value is shifted back to the high bits of an 8-bit byte, and the empty lower bits are filled with a copy of its highest bits. Consequently, 31 expands to 255, 32 expands to 130, and 8 expands to 66. Green returns as 130 rather than 128, which creates the slight color difference shown in the preview.
+Packed together in memory, the 16 bits form `11111 100000 01000`. To unpack a 5-bit or 6-bit value back into an 8-bit byte for display, hardware shifts those bits to the top of the byte and fills the empty lower 3 or 2 bits with a copy of the value's highest bits (`11111` becomes `11111111` = 255, `100000` becomes `10000010` = 130, and `01000` becomes `01000010` = 66). Copying the highest bits instead of filling with zeros ensures that the maximum 5-bit value `31` expands all the way to `255` rather than `248`. Green returns as 130 rather than 128, which creates the slight color difference shown in the preview.
 
 <Callout tone="orange" label="Check your arithmetic">
 Although 65,536 equals $256 \times 256$, high color does not store two 8-bit channels. It distributes the 16 bits across all three color channels as $32 \times 64 \times 32$ levels.
@@ -53,31 +53,31 @@ $$
 \text{result} = \frac{\alpha}{255} \times \text{new color} + \left(1 - \frac{\alpha}{255}\right) \times \text{background}
 $$
 
-For example, draw orange $(255, 107, 53)$ with alpha 128 over background blue $(126, 184, 255)$. The blending weight is $128 \div 255 \approx 0.502$. For the red channel:
+For example, draw orange $(255, 107, 53)$ with alpha 128 over background blue $(126, 184, 255)$. Keep the exact fraction $\frac{128}{255}$ for the red channel calculation:
 
 $$
-0.502 \times 255 + (1 - 0.502) \times 126 \approx 128.0 + 62.7 = 191
+\frac{128}{255} \times 255 + \left(1 - \frac{128}{255}\right) \times 126 = 128 + \frac{127}{255} \times 126 \approx 128 + 62.75 \approx 191
 $$
 
 Applying the same calculation to green and blue yields $(191, 145, 154)$. Adjust the alpha slider below to see the orange square blend into the blue square behind it:
 
 <AlphaBlend />
 
-At alpha 128, roughly half of each color shows through. Because a 32-bit pixel occupies 4 bytes, it aligns naturally with 32-bit and 64-bit processor memory boundaries. Graphics hardware often processes images in 32-bit format for memory speed even when transparency is unused.
+At alpha 128, roughly half of each color shows through. Because a 32-bit pixel occupies 4 bytes, it matches the 32-bit and 64-bit chunks that modern CPUs fetch in a single memory read. Graphics hardware often processes images in 32-bit format for memory speed even when transparency is unused.
 
 <Callout tone="orange" label="Alpha runs the other way">
-Alpha measures opacity rather than transparency: 255 means fully opaque, while 0 means completely invisible. CSS writes alpha on a scale from 0.0 to 1.0, so `rgba(0, 0, 0, 0.5)` corresponds to 128 out of 255. In addition, 32-bit color displays the same 16.7 million distinct hues as 24-bit color; the fourth byte encodes transparency alone.
+Alpha measures opacity rather than transparency: 255 means fully opaque, while 0 means completely invisible. CSS writes alpha on a scale from 0.0 to 1.0, so `rgba(0, 0, 0, 0.5)` corresponds to 128 out of 255. In addition, 32-bit color displays the same 16.7 million distinct colors as 24-bit color; the fourth byte carries opacity information alone.
 </Callout>
 
 <PracticalApplication title="Transparent images and overlays" tool="PNG, CSS rgba(), video compositing">
-Transparent PNG logos, CSS `rgba()` elements, and video subtitle overlays all rely on this blending formula evaluated at every pixel. Graphics processors execute these blends across millions of pixels simultaneously using [SIMD instructions](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values).
+Transparent PNG logos, CSS `rgba()` elements, and video subtitle overlays all rely on this blending formula evaluated at every pixel. Graphics processors execute these blends across millions of pixels at once using [SIMD instructions](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) (Single Instruction, Multiple Data).
 </PracticalApplication>
 
 ## The whole family
 
 | Format | Bytes per pixel | What the bits mean |
 |---|---|---|
-| 1-bit | ⅛ | on or off |
+| 1-bit | 1/8 | on or off |
 | 8-bit grayscale | 1 | one brightness, 0 to 255 |
 | 8-bit indexed | 1 | which of 256 palette colors |
 | 16-bit high color | 2 | red 5, green 6, blue 5 |

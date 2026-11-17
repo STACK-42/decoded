@@ -3,7 +3,7 @@ import { LineStepper } from "@/components/mdx/GraphicsVisualizers";
 
 # Bresenham's Line Algorithm
 
-While [DDA](/courses/computer-graphics/dda) simplifies line drawing, it still requires floating-point additions and explicit rounding at every pixel. Jack Bresenham developed an algorithm that plots the exact same discrete pixels using **only integer arithmetic**: additions, subtractions, and bit shifts. By avoiding floating-point units entirely, Bresenham's formulation delivered high performance on early hardware and remains the fundamental standard for rasterizing lines.
+While [DDA](/courses/computer-graphics/dda) simplifies line drawing, it still requires floating-point additions and explicit rounding at every pixel. Jack Bresenham developed an algorithm that plots the exact same discrete pixels using **only integer arithmetic**: additions, subtractions, and [bit shifts](/courses/microprocessors/arithmetic-and-logic#shifts-and-rotates) (since doubling integers like $2\Delta y$ and $2\Delta x$ is a single 1-bit left shift on hardware). By avoiding floating-point units entirely, Bresenham's formulation delivered high performance on early hardware and remains the fundamental standard for rasterizing lines.
 
 ## The core decision
 
@@ -18,7 +18,7 @@ DDA resolves this by computing floating-point $y$ and rounding. Bresenham's algo
 
 ## The decision parameter
 
-Given $\Delta x = x_2 - x_1$ and $\Delta y = y_2 - y_1$, the initial decision parameter is:
+The derivation in the next section yields an integer decision rule starting from $\Delta x = x_2 - x_1$ and $\Delta y = y_2 - y_1$:
 
 $$
 p_0 = 2\Delta y - \Delta x
@@ -27,31 +27,34 @@ $$
 At each successive step $k$:
 
 - If $p_k < 0$, the continuous line lies below the midpoint: **stay** on the current row ($y_{k+1} = y_k$), and update $p_{k+1} = p_k + 2\Delta y$.
-- If $p_k \ge 0$, the continuous line has reached or crossed the midpoint: **move up** one row ($y_{k+1} = y_k + 1$), and update $p_{k+1} = p_k + 2\Delta y - 2\Delta x$.
+- If $p_k \ge 0$, the continuous line lies on or above the midpoint: **move up** one row ($y_{k+1} = y_k + 1$), and update $p_{k+1} = p_k + 2\Delta y - 2\Delta x$.
 
 Every quantity in this formulation is an integer. The constants $2\Delta y$ and $2\Delta y - 2\Delta x$ are precalculated once before the loop begins, reducing each per-pixel step to a single sign comparison and an integer addition.
 
 ## Derivation of the formula
 
-At column $x_k + 1$, the mathematical line has continuous height $y = m(x_k + 1) + c$. Define the vertical distances from this line to the lower and upper pixel centers:
+At column $x_k + 1$, the mathematical line has continuous height $y = m(x_k + 1) + c$. Define the vertical offsets from this line to the lower pixel center $y_k$ and upper pixel center $y_k + 1$:
 
 $$
 d_1 = y - y_k \qquad d_2 = (y_k + 1) - y
 $$
 
-The upper pixel is closer whenever the difference $d_1 - d_2 \ge 0$. Expanding this difference:
+Because $d_1$ measures how far the line is above the lower pixel, $d_1 \ge d_2$ means the lower pixel is farther away, so the upper pixel is closer (or tied). Expanding $d_1 - d_2$:
 
 $$
 d_1 - d_2 = (y - y_k) - (y_k + 1 - y) = 2y - 2y_k - 1 = 2m(x_k + 1) - 2y_k + 2c - 1
 $$
 
-This expression contains the rational fraction $m = \Delta y / \Delta x$. Multiplying the entire relation by $\Delta x$ (which is strictly positive for lines advancing left-to-right) clears the denominator without altering the sign of the comparison. This scaled value forms the decision parameter $p_k$:
+This expression contains the fraction $m = \Delta y / \Delta x$. Multiplying through by $\Delta x$ (which is positive for lines moving left-to-right) clears the denominator without changing the sign, giving $p_k$:
 
 $$
-p_k = \Delta x\,(d_1 - d_2) = 2\Delta y \cdot x_k - 2\Delta x \cdot y_k + b
+\begin{aligned}
+p_k = \Delta x\,(d_1 - d_2) &= 2\Delta y\,(x_k + 1) - 2\Delta x\,y_k + \Delta x(2c - 1) \\
+&= 2\Delta y \cdot x_k - 2\Delta x \cdot y_k + b
+\end{aligned}
 $$
 
-where $b = 2\Delta y + \Delta x(2c - 1)$ is a constant that is identical for all steps.
+where $b = 2\Delta y + \Delta x(2c - 1)$ is a constant that stays the same across every step.
 
 ### Recursive update rules
 
@@ -66,7 +69,11 @@ $$
 
 ### Initial parameter value
 
-Because the starting endpoint $(x_0, y_0)$ lies exactly on the line, $c = y_0 - m x_0 = y_0 - (\Delta y / \Delta x) x_0$. Substituting this value into the expression for $p_0$ cancels all terms except $p_0 = 2\Delta y - \Delta x$.
+Because the starting endpoint $(x_0, y_0)$ lies on the line, $c = y_0 - (\Delta y / \Delta x) x_0$, so $\Delta x \cdot c = \Delta x\,y_0 - \Delta y\,x_0$. Substituting into $p_0 = 2\Delta y\,x_0 - 2\Delta x\,y_0 + 2\Delta y + 2\Delta x\,c - \Delta x$:
+
+$$
+p_0 = 2\Delta y\,x_0 - 2\Delta x\,y_0 + 2\Delta y + 2\Delta x\,y_0 - 2\Delta y\,x_0 - \Delta x = 2\Delta y - \Delta x
+$$
 
 Bresenham's algorithm preserves the exact nearest-pixel decision of DDA, but scales the metric by $\Delta x$ so that all operations execute in integer arithmetic.
 
@@ -95,7 +102,7 @@ $$
 | 9 | 10 | 14 ≥ 0, move up | (29, 17) |
 | 10 | 6 | 10 ≥ 0, move up | (30, 18) |
 
-In the interactive stepper, the two candidate pixels prior to each step are outlined in violet, with their midpoint indicated by a central dot. Once evaluated, the selected pixel illuminates in neon. Whenever the continuous line passes above the midpoint, $p_k \ge 0$ and the upper pixel is chosen.
+In the interactive stepper, the two candidate pixels prior to each step are outlined in violet, with their midpoint indicated by a central dot. Once evaluated, the selected pixel illuminates in neon. Whenever the continuous line passes on or above the midpoint, $p_k \ge 0$ and the upper pixel is chosen. (Row $k = 10$ reaches the final endpoint `(30, 18)` from step 9's decision, so $p_{10} = 6$ is not used for another step.)
 
 The algorithm generates eleven discrete pixels connecting the endpoints using only integer arithmetic, avoiding all floating-point operations.
 
@@ -105,13 +112,13 @@ Evaluating endpoints $(5, 4)$ and $(12, 7)$ (the first DDA example) with Bresenh
 
 ## Steep lines and general octants
 
-The basic derivation assumes lines in the first octant ($0 \le m \le 1$ with $x_1 < x_2$). Other orientations adapt the same logic:
+The basic derivation assumes lines in the **first octant** (the $0°$ to $45°$ wedge where $x$ increases rightward and $0 \le m \le 1$). Dividing the circle around a point into eight $45°$ wedges gives eight octants, and other orientations adapt the same logic:
 
 - **Steep lines ($\lvert m \rvert > 1$)**: Swap coordinate roles. The inner loop steps along $y$ by single units, using the decision parameter to determine whether $x$ increments.
 - **Negative slopes and backward paths**: Increment coordinates by $-1$ instead of $+1$ along the appropriate axis. The decision logic remains identical using absolute values $\lvert\Delta x\rvert$ and $\lvert\Delta y\rvert$.
 
 <Callout tone="orange" label="Exam verification step">
-When solving Bresenham problems on paper, verify three primary formulas: initial parameter $p_0 = 2\Delta y - \Delta x$; if $p < 0$, add $2\Delta y$; if $p \ge 0$, add $2\Delta y - 2\Delta x$ and advance the secondary coordinate. Finally, confirm that the last tabulated pixel matches the terminating endpoint $(x_2, y_2)$.
+For gentle lines ($\lvert\Delta x\rvert \ge \lvert\Delta y\rvert$), verify three formulas: initial parameter $p_0 = 2\Delta y - \Delta x$; if $p < 0$, add $2\Delta y$; if $p \ge 0$, add $2\Delta y - 2\Delta x$ and advance $y$. For steep lines ($\lvert\Delta y\rvert > \lvert\Delta x\rvert$), swap the roles of $\Delta x$ and $\Delta y$ first. Finally, confirm that the last tabulated pixel matches the terminating endpoint $(x_2, y_2)$.
 </Callout>
 
 ## DDA compared with Bresenham
@@ -121,12 +128,12 @@ When solving Bresenham problems on paper, verify three primary formulas: initial
 | Arithmetic | Floating-point operations | Integer arithmetic only |
 | Cost per pixel | Additions and rounding operations | One comparison and one addition |
 | Numerical accuracy | Accumulates fractional rounding drift | Exact integer precision |
-| Algorithmic complexity | Intuitive continuous formulation | Requires parameter derivation |
+| Derivation effort | Intuitive continuous formulation | Requires parameter derivation |
 
 Graphics literature also features the **Gupta-Sproull algorithm**, an extension of Bresenham's technique incorporating [antialiasing](/courses/computer-graphics/aliasing#antialiasing-partial-coverage-partial-color). As it advances along the line, Gupta-Sproull calculates perpendicular distances to neighboring pixels and shades them proportionally, producing smooth boundaries without jagged steps.
 
 <PracticalApplication title="Hardware implementations" tool="Plotters, printers, graphics libraries">
-Jack Bresenham developed this algorithm in 1962 for digital pen plotters. Today, Bresenham's principles power line rendering across 2D graphics libraries, raster printing engines, and embedded microcontrollers. The same midpoint decision strategy extends naturally to rasterizing circles (the midpoint circle algorithm) and ellipses.
+Jack Bresenham developed this algorithm in 1962 for early digital pen plotters, whose stepping motors moved the pen in discrete grid steps. Today, Bresenham's principles power line rendering across 2D graphics libraries, raster printing engines, and embedded microcontrollers. The same midpoint decision strategy extends naturally to rasterizing circles (the midpoint circle algorithm) and ellipses.
 </PracticalApplication>
 
 You have now examined three progressive methods for rasterizing lines between coordinate endpoints, each solving the computational shortcomings of its predecessor. [Test your mastery](/courses/computer-graphics/lines-quiz) on line drawing and rasterization.

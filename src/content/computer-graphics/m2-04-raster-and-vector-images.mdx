@@ -3,14 +3,14 @@ import { VectorVsRaster } from "@/components/mdx/GraphicsVisualizers";
 
 # Raster and Vector Images
 
-Digital images are stored in two distinct ways, directly reflecting the two display paradigms from the [previous lessons](/courses/computer-graphics/random-scan):
+Every image file in Module 0 was stored as a grid of pixels. In fact, digital images are stored in two distinct ways, directly reflecting the two display paradigms from the [previous lessons](/courses/computer-graphics/random-scan):
 
-- A **raster image** (or **bitmap**) is a rectangular grid of pixels, where each pixel has an explicit recorded color value. In essence, it is a frame buffer stored in a file.
-- A **vector image** is a collection of geometric primitives defined by mathematical equations: points, lines, curves, polygons, and fill properties. In essence, it is a display file stored in a file.
+- A **raster image** (or **bitmap**) is a rectangular grid of pixels, where each pixel has an explicit recorded color value. In essence, it is a frame buffer saved to a file.
+- A **vector image** is a collection of geometric shapes (**primitives**) defined by mathematical equations: points, lines, curves, polygons, and fill properties. In essence, it is a display file saved to disk.
 
-To store a green circle, a raster file records the color value for each of several hundred individual pixels covering the disc. A vector file records only the formula: a circle centered at $(8, 8)$ with radius $8$ and a solid green fill. Both approaches render the same visual circle on screen, but their underlying representations are fundamentally different.
+To store a green circle, a raster file records a color value for every pixel in its bounding rectangle, both inside the circle and in the background around it. A vector file records only the recipe: a circle centered at $(8, 8)$ with radius $8$ and a solid green fill. Both approaches render the same visual circle on screen, but their underlying representations are fundamentally different.
 
-File size illustrates the distinction. When stored as an uncompressed 16 × 16 true-color raster, the circle requires $16 \times 16 \times 3 = 768$ bytes. To render that circle sharply across a 1600 × 1600 grid, the raster requires $1600 \times 1600 \times 3 = 7{,}680{,}000$ bytes (about 7.3 MB). In contrast, the vector definition requires the same small set of numbers (center coordinates, radius, stroke width, and fill color) regardless of whether the circle is rendered across sixteen pixels or sixteen thousand.
+File size illustrates the distinction. When stored as an uncompressed 16 × 16 true-color raster, the 256-pixel grid requires $16 \times 16 \times 3 = 768$ bytes. To render that circle sharply across a 1600 × 1600 grid, the raster requires $1600 \times 1600 \times 3 = 7{,}680{,}000$ bytes (about 7.3 MB). In contrast, the vector definition stores the same small set of numbers (center coordinates, radius, and fill color) whether the circle is drawn across 256 pixels ($16 \times 16$) or over 2.5 million pixels ($1600 \times 1600$).
 
 ## Zoom in
 
@@ -24,28 +24,28 @@ This illustrates the central rule: **vector images scale indefinitely without lo
 
 ## Raster images
 
-Photographic images are naturally rasterized because digital camera sensors are physical grids of light-sensitive photodiodes that capture one color reading per pixel.
+Photographic images are naturally rasterized because digital camera sensors are physical grids of light-sensitive cells that capture one color reading per pixel.
 
 - **Strengths**: Excels at capturing continuous tones, subtle gradations, and intricate surface textures. Any standard image editor can modify individual pixel values directly.
-- **Weaknesses**: Fixed resolution. Enlarging a raster image either reveals blocky pixel borders or requires interpolation algorithms that blur edges. File sizes grow directly with higher pixel dimensions and increased [bit depth](/courses/computer-graphics/bit-depth).
+- **Weaknesses**: Fixed pixel dimensions. Enlarging a raster image either reveals blocky pixel borders or requires averaging neighboring pixels (**interpolation**), which blurs edges. File sizes grow directly with higher pixel dimensions and increased [bit depth](/courses/computer-graphics/bit-depth).
 - **Common formats**: JPEG, PNG, GIF, BMP, TIFF, and WebP.
 
 ## Vector images
 
-A vector file encodes geometric descriptions, such as the circle equation $(x - 8)^2 + (y - 8)^2 = 8^2$, accompanied by styling attributes for borders and fills.
+A vector file stores numeric shape descriptions, such as center `(8, 8)` and radius `8` for the circle $(x - 8)^2 + (y - 8)^2 = 8^2$, accompanied by styling attributes for borders and fills.
 
 - **Strengths**: Infinite scalability. A single vector logo scales cleanly from a business card to a billboard without re-exporting. Storage requirements are typically small because simple shapes require only a few numerical parameters. Every shape remains an editable independent object.
-- **Weaknesses**: Cannot efficiently represent photographs. Approximating the subtle color changes in human skin or natural scenery with vector polygons requires millions of micro-paths, resulting in unwieldy files.
+- **Weaknesses**: Cannot efficiently represent photographs. Approximating the subtle color changes in human skin or natural scenery with vector polygons requires millions of tiny shapes, resulting in unwieldy files.
 - **Common formats**: SVG (Scalable Vector Graphics, the web standard), EPS (Encapsulated PostScript, common in commercial print), AI (Adobe Illustrator format), and PDF (which can encapsulate both vector paths and embedded raster data).
 
 ## Converting between them
 
-**Rasterizing**, converting vector data to raster pixels, is computationally straightforward and predictable. Vector design tools export drawings to formats like PNG or JPEG by evaluating equations across a discrete pixel grid. Furthermore, because computer screens are raster displays, rendering engines rasterize vector graphics automatically every time they are displayed on screen. This process is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor), the subject of the line-drawing algorithms in the next module.
+**Rasterizing**, converting vector data to raster pixels, is straightforward and predictable. Vector design tools export drawings to formats like PNG or JPEG by evaluating equations across a discrete pixel grid. Because computer screens are raster displays, rendering engines also rasterize vector graphics automatically every time they appear on screen. This process is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor), the subject of the line-drawing algorithms in the next module.
 
-**Vectorizing** (or **image tracing**), converting raster pixels into vector paths, is an algorithmic challenge. Software algorithms (such as automated path tracing in vector editors) must detect color boundaries, estimate curves, and reconstruct geometric primitives from noisy pixel arrays. Tracing works reliably only on high-contrast graphics with sharp edges, such as line art and flat logos; on photographs, it produces either heavily simplified shapes or massive files. For this reason, designers create logos and branding as vectors from the beginning.
+**Vectorizing** (or **image tracing**), converting raster pixels into vector paths, is an algorithmic challenge. Tracing algorithms (such as Illustrator's Image Trace) must detect color boundaries, estimate curves, and reconstruct geometric primitives from noisy pixel arrays. Tracing works reliably only on high-contrast graphics with sharp edges, such as line art and flat logos; on photographs, it produces either heavily simplified shapes or massive files. For this reason, designers create logos and branding as vectors from the beginning.
 
 <Callout tone="orange" label="Resolution applies only to rasters">
-The concept of pixel resolution applies exclusively to raster graphics. Because vector primitives contain no pixels, a vector file has no native resolution until it is rasterized onto a specific display or printer grid.
+Pixel dimensions and PPI apply exclusively to raster graphics. Because vector primitives contain no pixels, a vector file has no fixed pixel dimensions or native PPI until it is rasterized onto a specific display or printer grid.
 
 Embedding a JPEG photograph inside an SVG or PDF document does not convert the image into vectors. The file format simply wraps the raster pixel array in an outer container, and the photograph blurs identically when magnified.
 </Callout>

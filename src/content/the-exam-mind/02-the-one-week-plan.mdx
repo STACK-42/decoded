@@ -1,100 +1,122 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 
 # The One-Week Plan
 
-No single study schedule fits every student. Course loads, exam dates, and available hours vary widely. Instead of copying an artificial calendar, rely on four principles that apply to any technical course, even when starting late. Your schedule should fit your constraints while respecting how human memory works.
+Exam week hits fast, and copying someone else's hour-by-hour timetable breaks the moment two deadlines collide or one topic takes twice as long as expected. You need a simple planning system that adapts to your own exam dates and works even if you are starting late.
 
 ## Before You Plan Anything: Build the Map
 
-Before reviewing specific material, build a **subject map**: a single-page overview of what a course covers, how many main topics it has, how they connect, and roughly how much exam weight each topic carries. Skip the proofs and equations at this stage to observe the overall shape of the course.
+Before reviewing specific material, build a **subject map**: a single-page overview of what a course covers, how many main topics it has, how they connect, and roughly how many exam marks each topic carries. Skip proofs and equations at this stage so you can see the overall shape of the course.
 
-Studying without this overview forces your **working memory**, the active workspace your brain uses to hold and connect ideas, to perform two competing tasks. It tries to grasp the formulas on the page while guessing how they relate to the rest of the syllabus. That background uncertainty drains cognitive bandwidth. A subject map frees working memory by giving each concept a clear place to attach.
+Studying without this overview forces your **working memory**, the active workspace your brain uses to hold and connect ideas, to do two jobs at once. It tries to grasp the formulas on the page while guessing how they fit into the rest of the syllabus. That background guessing drains mental energy. A subject map frees working memory by giving each concept a clear place to attach.
 
 Here is how to build a map step by step, using Numerical Analysis as an example:
 
 1. **Gather the syllabus:** Lay out the lecture titles or textbook table of contents in one sitting without reading chapters in detail.
-2. **Group lectures into four or five clusters:** On one sheet of paper, organize topics into logical blocks. In Numerical Analysis, those blocks might be [root finding](/courses/computational-mathematics/polynomials-and-roots#roots), linear systems (such as finding a [matrix inverse](/courses/computational-mathematics/determinants-and-inverses#the-inverse)), interpolation, integration, and differential equations.
-3. **Write the core problem at the top:** State what the entire course solves in a single sentence. For Numerical Analysis, the goal is approximation: computing useful answers when exact solutions are impossible or too slow.
-4. **Estimate exam weight:** Beside each cluster, note how many past exam questions or lecture hours belong to it so you identify high-yield areas.
-5. **Apply the Feynman test:** State what each cluster accomplishes in plain language before opening any lecture notes.
+2. **Group lectures into four or five clusters:** On one sheet of paper, organize topics into logical blocks. In Numerical Analysis, those blocks might be [root finding](/courses/computational-mathematics/polynomials-and-roots#roots) (finding where $f(x) = 0$), linear systems (such as finding a [matrix inverse](/courses/computational-mathematics/determinants-and-inverses#the-inverse)), curve fitting, numerical integration, and differential equations.
+3. **Write the core problem at the top:** State what the entire course solves in a single sentence. For Numerical Analysis, the goal is approximation: computing useful numerical answers when exact solutions are impossible or too slow.
+4. **Estimate exam weight:** Beside each cluster, note how many past exam questions or lecture hours belong to it so you spot the most-tested areas.
+5. **Apply the Feynman test:** State what each cluster accomplishes in plain language before opening the full lecture notes. If you attended lectures, test what core idea stuck. If a cluster is completely unfamiliar, skim a single summary sentence or syllabus objective so you grasp what problem it solves before diving into details.
 
-The **Feynman test** requires explaining the central idea and each main cluster out loud in simple terms, as though teaching a beginner. When you stumble over jargon or repeat slide headers without explaining their meaning, you have identified the exact knowledge gap that requires study.
+On one sheet of paper, that finished map looks like a short structured outline:
+
+- **Core problem:** Compute useful numerical answers when exact algebra fails or runs too slowly.
+- **Cluster 1: Root finding (roughly 25% of past marks):** Bisection and Newton's method for solving $f(x) = 0$.
+- **Cluster 2: Linear systems (roughly 25%):** Solving $Ax = b$ reliably when matrices are large.
+- **Cluster 3: Curve fitting and interpolation (roughly 20%):** Fitting functions through measured data points.
+- **Cluster 4: Numerical integration & differential equations (roughly 30%):** Approximating areas and step-by-step change.
+
+The **Feynman test** requires explaining the central idea and each main cluster out loud in simple words, as though teaching a beginner. When you stumble over jargon or repeat slide titles without explaining what they mean, you have found the exact gap that needs study.
 
 <Callout tone="violet" label="Why the Feynman test works before studying">
-Memorizing five root-finding algorithms without understanding approximation leaves you unprepared for unfamiliar exam questions. Explaining the central idea out loud builds a conceptual framework that organizes every formula below it.
+Memorizing five root-finding algorithms without understanding approximation leaves you stuck on unfamiliar exam questions. Explaining the central idea out loud builds a clear mental picture that organizes every formula below it.
 </Callout>
 
 <Callout tone="orange" label="Usual mistake: diving straight into page one">
-Starting at lecture one feels like immediate progress. Several days later, students find themselves trapped in isolated equations with no sense of course structure or remaining workload.
+Starting at lecture one feels like immediate progress. Several days later, students find themselves trapped in isolated equations with no sense of course structure or how much syllabus remains.
 </Callout>
 
-Building a subject map takes one to two hours, and it saves substantial time throughout the rest of exam week.
+Building a subject map for one course takes about 20 to 30 minutes, and it saves hours of aimless reading during exam week.
 
 ## Now Plan the Week
 
-Once you have the map, you can build a realistic study schedule using four core rules.
+Once you have the map, build a realistic study schedule using four rules.
 
-**Rule 1: Build a topic checklist.** Convert your subject map into a specific list of topics to review. Finals stress often stems from uncertainty about remaining material. Checking items off an explicit list removes that ambiguity and helps you schedule study hours accurately.
+**Rule 1: Build a topic checklist.** Convert your subject map into a specific list of topics to review. Finals stress often comes from not knowing how much material is left. Checking items off a clear list removes that guesswork and helps you budget study hours.
 
-**Rule 2: Plan backward from exam dates.** Allocate your earliest study sessions to your first scheduled exam. Avoid starting with a later exam simply because the material feels more comfortable or interesting.
+**Rule 2: Plan backward from exam dates.** Give your earliest study sessions to your first scheduled exam. Avoid starting with a later exam simply because that material feels easier or more interesting.
 
-**Rule 3: Slice large exams scheduled later in the week.** When a demanding subject sits third or fourth in your exam schedule, allocate 60 to 90 minutes to it each day while preparing for earlier tests. Distributing review over several days supports [memory consolidation](/courses/the-exam-mind/the-problem-with-how-you-study#how-memory-actually-works), ensuring high-weight concepts receive multiple sleep cycles rather than an exhausting last-minute cram session.
+**Rule 3: Slice large exams scheduled later in the week.** When a demanding subject sits third or fourth in your exam schedule, give it 60 to 90 minutes each day while preparing for earlier tests. Spreading review across days supports [memory consolidation](/courses/the-exam-mind/the-problem-with-how-you-study#how-memory-actually-works), giving hard topics multiple sleep cycles instead of an exhausting cram session.
 
-**Rule 4: Prioritize topics by exam frequency and personal weakness.** Evaluate each checklist item by how frequently it appears on past papers and your current confidence level. A mastered topic that rarely appears goes to the bottom of your schedule. An unmastered concept that appears every semester deserves immediate focus.
+**Rule 4: Prioritize topics by exam frequency and personal weakness.** Rank every checklist item using past papers and your confidence level:
 
-<Callout tone="mint" label="A practical shortcut: mining past exams">
-Collect past exams from the last three to five years and group questions by topic. Instructors have predictable exam habits, and recurring question patterns emerge clearly across archives. Identifying these high-yield topics directs your study time where points concentrate.
+1. **Frequent on past exams + weak for you:** Study these first.
+2. **Frequent on past exams + fairly solid:** Keep them sharp with short timed recall checks.
+3. **Rare on past exams + weak for you:** Cover these after the frequent topics are secure.
+4. **Rare on past exams + already solid:** Leave these for last, or skip them if time is tight.
+
+<Callout tone="violet" label="Why past exams reveal what to prioritize">
+Collect past exams from the last three to five years and group questions by topic. Instructors have predictable habits, and recurring question types stand out quickly across past papers. Focusing on those recurring topics puts your study hours where most marks live.
 </Callout>
 
-Here is how these four rules function across a seven-day exam schedule with three courses: Operating Systems on Wednesday (Day 3), Computer Networks on Friday (Day 5), and Discrete Mathematics on Sunday (Day 7).
+Here is how these four rules work across a seven-day exam schedule with three courses: Operating Systems on Wednesday (Day 3), Computer Networks on Friday (Day 5), and Discrete Mathematics on Sunday (Day 7). In this schedule, a **primary study block** means two or three focused 60-minute recall sessions on that day's main exam.
 
-1. **Sunday evening (planning, 45 minutes):** Convert subject maps into checklists. Classify each topic as high or low frequency using past papers, and weak or solid using a quick Feynman check.
-2. **Monday and Tuesday (Days 1 to 2):** Devote primary study blocks to Operating Systems, focusing first on high-frequency, weak topics using retrieval practice. Add one 90-minute afternoon block targeting difficult Discrete Mathematics concepts like [proof techniques](/courses/discrete-mathematics/direct-and-indirect-proof#what-a-proof-is).
-3. **Wednesday (Day 3):** Take the Operating Systems exam in the morning. Rest for two hours, then start primary study blocks for Computer Networks, followed by one 90-minute Discrete Mathematics session.
-4. **Thursday (Day 4):** Focus primary blocks on weak areas in Computer Networks, along with a 90-minute block on Discrete Mathematics. By Thursday evening, Discrete Mathematics has received six hours of distributed practice across four nights of sleep consolidation.
-5. **Friday (Day 5):** Take the Computer Networks exam, recover, then transition full study focus to Discrete Mathematics. Having already completed difficult topics throughout the week, the remaining review stays manageable.
-6. **Saturday (Day 6):** Run timed retrieval practice on remaining weak Discrete Mathematics topics during the day, transition to light review by early evening, and stop in time for a complete night of sleep.
+1. **Sunday evening (planning, 60 to 90 minutes total):** Build your one-page subject maps for the three courses and turn them into checklists. Tag each topic as frequent or rare using past papers, and weak or solid using a quick Feynman check.
+2. **Monday and Tuesday (Days 1 to 2):** Devote primary study blocks to Operating Systems, starting with frequent, weak topics using retrieval practice. Add a 90-minute afternoon block **each day** targeting difficult Discrete Mathematics concepts like [proof techniques](/courses/discrete-mathematics/direct-and-indirect-proof#what-a-proof-is).
+3. **Wednesday (Day 3):** Take the Operating Systems exam in the morning. Rest for two hours to recover from exam fatigue. Use the first afternoon session for low-effort prep like sorting past Computer Networks questions by topic, then run primary recall blocks for Networks and a 90-minute Discrete Mathematics session.
+4. **Thursday (Day 4):** Focus primary blocks on weak areas in Computer Networks, along with another 90-minute block on Discrete Mathematics. By Thursday evening, Discrete Mathematics has received six hours of spread-out practice (90 minutes each on Monday, Tuesday, Wednesday, and Thursday) across three nights of sleep, with a fourth night ahead.
+5. **Friday (Day 5):** Take the Computer Networks exam, rest, then shift full study focus to Discrete Mathematics. Having already worked through the hardest proof topics earlier in the week, the remaining review stays manageable.
+6. **Saturday (Day 6):** Run timed retrieval practice on remaining weak Discrete Mathematics topics during the day, switch to light review by early evening, and stop in time for a full night of sleep.
+7. **Sunday (Day 7):** Take the Discrete Mathematics exam.
+
+Discrete Mathematics gets the daily 90-minute slice from Day 1 because formal proofs need multiple nights of sleep to become comfortable. Computer Networks is conceptual and fits well into primary study blocks from Wednesday afternoon through Thursday.
 
 <Callout tone="orange" label="Usual mistake: planning by comfort instead of the calendar">
-Students often spend their first study days reviewing comfortable topics to feel productive, or panic and spend all their time on a difficult exam at the end of the week while ignoring Exam 1. Plan backward from the exam schedule and focus your effort on high-frequency topics that need work.
+Students often spend their first study days reviewing comfortable topics to feel productive, or panic and spend all their time on a difficult exam at the end of the week while ignoring Exam 1. Plan backward from the exam schedule and focus your effort on frequent topics that need work.
 </Callout>
 
-## The Environment Is Not a Detail
+## Protect Your Study Environment
 
-Many students organize their study sessions using the **Pomodoro** technique: working with full attention for 25 minutes, taking a 5-minute break, and scheduling a longer rest after four rounds. Whether you work in 25-minute sprints or 60-minute blocks, physical environment determines how much attention you can sustain. In particular, keeping a phone in the room undermines concentration.
+Many students organize study sessions with the **Pomodoro** technique: working with full attention for 25 minutes, taking a 5-minute break, and taking a longer rest after four rounds. Use 25-minute Pomodoro sprints when you feel tired or reluctant to start, and switch to 60-minute blocks when working through long proofs or multi-step code problems. Whichever timer you pick, use a physical kitchen timer or a desktop timer rather than a smartphone. Keeping a phone within reach undermines concentration.
 
-[Research](https://www.journals.uchicago.edu/doi/full/10.1086/691462) shows that having a smartphone on your desk, even when silenced or turned face down, reduces your **cognitive capacity**: the limited pool of mental bandwidth available to reason, process working memory, and retain concepts.
+[Research](https://www.journals.uchicago.edu/doi/full/10.1086/691462) shows that having a smartphone on your desk, even silenced and face down, shrinks your **cognitive capacity**: the total mental bandwidth you have available to reason and solve problems.
 
-The presence of a phone exerts a measurable cost. Because you associate devices with communication and updates, seeing the phone in your peripheral vision triggers an impulse to check it. Resisting that urge requires deliberate executive control, depleting the same cognitive reserves needed to work through technical proofs.
+The phone costs you focus even without ringing. Because you associate it with messages and updates, seeing it in the corner of your eye triggers an urge to check it. Resisting that urge draws on your **working memory**, leaving less of that mental scratchpad for the problem on your desk.
 
-Checking a notification introduces a second penalty known as **attentional residue**: part of your mental focus remains tethered to the message long after returning to your notes. Even a brief ten-second glance leaves working memory divided while you attempt to analyze complex algorithms.
+Checking a notification adds a second cost called **attentional residue**: part of your attention stays stuck on the message long after you return to your notes. Even a ten-second glance leaves working memory divided while you analyze complex algorithms.
 
 <Callout tone="orange" label="Usual mistake: face-down on silent">
-Placing a phone face down on silent feels disciplined, but keeping it within arm's reach still divides attention and constrains working memory. Leave the phone in another room during study blocks, and install site blockers on your computer.
+Placing a phone face down on silent feels disciplined, yet keeping it within arm's reach still divides attention and shrinks working memory. Leave the phone in another room (or inside a closed bag across the room if you live in a single dorm room), and turn on site blockers on your computer during study blocks.
 </Callout>
 
 ## What to Do the Night Before
 
-The evening before an exam is reserved for light review, brief retrieval checks on existing summaries, and confirming core formulas. It is not the time to introduce new topics.
+The evening before an exam is for light review, brief recall checks on existing summaries, and confirming core formulas. It is not the time to learn new topics.
 
-Trying to force brand-new chapters into memory the night before fails for two reasons. First, unfamiliar material crammed under late-night stress forms fragile, tangled traces that easily interfere with related concepts you already studied cleanly. Second, staying up late to reread the same chapter steals the deep sleep your brain needs to lock in everything you already reviewed over the rest of the week. Trading two hours of sleep for one unfamiliar chapter hurts your recall across the whole exam.
+Trying to force brand-new chapters into memory the night before fails for two reasons. First, unfamiliar material crammed under late-night stress forms weak, tangled memories that easily collide with concepts you already learned cleanly. Second, staying up late to push through that new chapter steals the deep sleep your brain needs to lock in everything you reviewed earlier in the week. Trading two hours of sleep for one unfamiliar chapter hurts your recall across the whole exam.
 
 Here is what a calm night before looks like:
 
-1. **Early evening (45 to 60 minutes):** Run light retrieval practice on core formulas, definitions, and errors logged earlier in the week.
-2. **Handle uncovered topics calmly:** If you notice an unstudied topic, note its name, recognize that cramming it now will compromise sleep, and continue your routine.
-3. **Prepare materials one hour before bed:** Put away your notes. Pack pencils, student ID, and an approved calculator so the exam morning requires minimal decision-making.
+1. **Early evening (45 to 60 minutes):** Run light retrieval practice on core formulas, definitions, and questions you missed during practice earlier in the week.
+2. **Handle uncovered topics calmly:** If you spot an unstudied topic, write its name down on a sheet of paper and set it aside. Putting the thought on paper stops you from worrying in bed, letting you accept the omission and protect your sleep.
+3. **Prepare materials one hour before bed:** Put away your notes. Pack pencils, student ID, and an approved calculator so exam morning needs fewer decisions.
 4. **Sleep on schedule:** Go to bed at your regular time.
 
 <Callout tone="orange" label="Usual mistake: cramming a missed chapter at midnight">
-Attempting to learn an untouched topic at midnight feels productive, but it sacrifices the sleep required to consolidate material reviewed earlier in the week.
+Trying to learn an untouched topic at midnight feels productive, yet it sacrifices the sleep needed to consolidate material reviewed earlier in the week.
 </Callout>
 
 The most valuable preparation on exam eve is [sleep](/courses/the-exam-mind/exam-day#sleep-is-not-optional). Taking a test while sleep-deprived impairs working memory and increases careless errors across every question.
 
 <Callout tone="mint" label="Practical summary: the core habits">
-Build a subject map before reading. Work from an exam-weighted checklist. Sequence study sessions according to exam dates rather than comfort. Remove distractions from your desk. Prioritize a full night of sleep before test day. Consistently applying these core habits protects your grades from avoidable losses.
+Build a subject map before reading. Work from an exam-weighted checklist. Plan backward from exam dates rather than comfort. Keep your phone out of sight and out of reach, and protect a full night of sleep before test day.
 </Callout>
+
+## Try It Now
+
+<ModelAnswer prompt="You have an exam in three days and four remaining checklist topics: (A) a topic that appeared on 4 of the last 5 exams and you still miss half the steps; (B) a rare bonus topic you already know well; (C) a frequent topic you can explain smoothly; (D) a rare topic you never studied. In what order should you schedule them, and why?">
+Schedule **A** first, **C** second (brief recall checks to keep it fresh), **D** third if time allows, and **B** last or skip it. Rule 4 puts frequent, weak topics at the top because they carry the highest expected marks for your study hours, while rare topics you already know give almost no return.
+</ModelAnswer>
 
 ## Optional Further Reading
 

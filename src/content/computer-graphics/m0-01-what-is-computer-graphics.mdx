@@ -11,20 +11,20 @@ This course begins with the smallest unit, a single dot, and builds up to the al
 
 ## A screen is a grid of dots
 
-Looking closely at a digital display, or examining it under magnification, shows that the smooth picture is a grid of tiny squares. Each square is a **pixel**, short for *picture element*: the smallest controllable unit of a display. A pixel displays exactly one color at a time.
+Looking closely at a digital display, or examining it under magnification, shows that the smooth image is a grid of tiny squares. Each square is a **pixel**, short for *picture element*: the smallest controllable unit of a display. A pixel displays exactly one color at a time.
 
 All digital imagery builds on this foundation. Drag the slider below to see how a smooth curve resolves into discrete square steps:
 
 <PixelZoom />
 
-This demonstrates the core challenge of computer graphics. The geometric shapes we want to draw (circles, lines, and text glyphs) are continuous mathematical curves. The display, however, can only light discrete square cells. Computer graphics is largely the work of choosing which squares best represent those continuous shapes.
+The geometric shapes we want to draw (circles, lines, and letter shapes) are continuous mathematical curves, while the display can only light discrete square cells. Drawing them on a screen means choosing which square cells best represent those continuous shapes.
 
-## Four words that sound alike
+## Four terms people mix up
 
-People often use these terms as synonyms, but each has a distinct technical meaning:
+People often use these words as synonyms, but each has a distinct technical meaning:
 
 - An **image** is any visual content stored digitally: a photo, a scan, a screenshot, or a digital painting. Inside a computer, an image is stored as a grid of pixel values. File formats such as JPEG, PNG, GIF and BMP are all ways to store images.
-- A **picture** is a standalone visual representation created by drawing, painting, photography or printing. The word typically refers to a single complete piece of art or a framed work.
+- A **picture** is a standalone visual representation created by drawing, painting, photography or printing, typically a single complete piece of art or a framed work. (In casual speech, people also say "picture" for any visual on a screen.)
 - A **graph** is a visual representation of data: charts, plots and diagrams that display relationships or trends in numbers.
 - A **photo** (short for photograph) is an image captured by a camera with an optical lens and sensor, recording a real-world scene.
 
@@ -34,16 +34,16 @@ Every digital photo on your phone is an image, but many images are not photos. A
 
 Computer graphics falls into two broad categories based on user control.
 
-**Interactive graphics** provides a two-way exchange between user and computer. You provide input with a mouse, touch screen, keyboard or game controller, and the program redraws the picture in response, often dozens of times each second. Video games, interactive maps, buttons that highlight on hover, and touch drawing applications are all interactive.
+**Interactive graphics** provides a two-way exchange between user and computer. You provide input with a mouse, touch screen, keyboard or game controller, and the program redraws the image in response, often dozens of times each second. Video games, interactive maps, buttons that highlight on hover, and touch drawing applications are all interactive.
 
-**Passive graphics** (or non-interactive graphics) displays pictures without responding to ongoing user input while running. A chart in a PDF document, a printed logo, a diagram on a static web page, and a simple screen saver are passive. Passive graphics can still include motion: a recorded film or looping animation moves across time, but the viewer cannot alter its path.
+**Passive graphics** (or non-interactive graphics) displays images without responding to ongoing user input while running. A chart in a PDF document, a diagram on a static web page, and a looping screen saver are passive (as are printed logos and brochures). Passive graphics can still include motion: a recorded film or looping animation moves across time, but the viewer cannot alter its path.
 
 <InteractiveVsPassive />
 
 <Callout tone="orange" label="Common mix-up">
-Motion alone does not make graphics interactive. A film moves continuously on screen, but it is passive because the viewer cannot alter what happens. The distinguishing factor is input response: does the picture change based on your actions?
+Motion alone does not make graphics interactive. A film moves continuously on screen, but it is passive because the viewer cannot alter what happens. The distinguishing factor is input response: does the image change based on your actions?
 
-Some course notes classify any animated sequence as interactive, citing movie animation or animated weather forecasts as examples. If an exam follows that phrasing, use its expected answer, but understand the real distinction used in practice.
+Some textbooks and older exam keys classify any animated sequence as interactive, citing movie animation or moving weather charts as examples. Keep the input-control test in mind for real systems, while watching for that wording on tests.
 </Callout>
 
 ## Where it's used
@@ -56,7 +56,7 @@ Computer-aided design tools let engineers and architects construct precise bluep
 Windows, icons, buttons and menus are graphical elements. A graphical user interface (GUI) replaces typed terminal commands with visual controls you can point to and tap.
 </PracticalApplication>
 <PracticalApplication title="Games, film and virtual reality" tool="Game engines, renderers">
-Video games redraw the entire screen 60 or more times per second in response to player actions. Animated films **render** each frame by computing light and shadows from a 3D model, a process that can take hours per frame on a server cluster.
+Video games redraw the entire screen 60 or more times per second in response to player actions. Animated films **render** (compute from a 3D model) each **frame** (one still image in the sequence) by calculating light and shadows, a process that can take hours per frame on a server cluster.
 </PracticalApplication>
 <PracticalApplication title="Data visualization" tool="Charts, maps, medical scans">
 Converting numerical tables into charts, weather maps or MRI scans lets people spot trends and anomalies visually rather than reading columns of numbers.
@@ -68,8 +68,8 @@ Artwork created using digital tools, including digital illustrations, 3D charact
 Manipulating existing images to improve quality or extract data: sharpening soft photos, removing sensor noise, or identifying faces.
 </PracticalApplication>
 <PracticalApplication title="Training and simulators" tool="Flight simulators">
-Flight simulators and interactive training environments let trainees practice complex procedures using a virtual simulation of real equipment.
+Flight simulators and interactive training environments let trainees practice complex procedures using a simulation of real equipment.
 </PracticalApplication>
 </ApplicationsGrid>
 
-The [next lesson](/courses/computer-graphics/pixels-and-the-image-grid) opens an image file and examines how its pixels are arranged in memory.
+The [next lesson](/courses/computer-graphics/pixels-and-the-image-grid) examines how pixels are arranged in a rectangular grid and flattened into computer memory.

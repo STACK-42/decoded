@@ -3,14 +3,14 @@ import { CoordinatePicker } from "@/components/mdx/GraphicsVisualizers";
 
 # Pixel Coordinates
 
-To address or modify any pixel on a screen, graphics software uses a **coordinate system**, assigning each location a pair of numerical **coordinates** $(x, y)$. In two dimensions, every location receives an **x-coordinate** (horizontal position) and a **y-coordinate** (vertical position). A **color model** like [RGB](/courses/computer-graphics/color-pixels) maps numbers to colors in the same way a coordinate system maps numbers to positions.
+Earlier modules stored pixels in a flat list and swept rows top to bottom. To draw lines and shapes, graphics software needs a **coordinate system** that names each pixel with a pair of numbers $(x, y)$: an **x-coordinate** (horizontal position) and a **y-coordinate** (vertical position).
 
 ## Naming a pixel
 
 A digital image is arranged as a two-dimensional grid of rows and columns. The position of each pixel is determined by its column and row index:
 
 - **x represents the column index**, counted from left to right starting at 0.
-- **y represents the row index**, counted from 0 starting from one edge of the screen.
+- **y represents the row index**, counted from 0 starting from either the top or bottom edge of the screen.
 
 By standard convention, the horizontal coordinate comes first: $(x, y)$ means $(\text{column}, \text{row})$.
 
@@ -18,8 +18,8 @@ By standard convention, the horizontal coordinate comes first: $(x, y)$ means $(
 
 Different graphics environments define the vertical origin differently:
 
-- **Screen coordinates** (used by web browsers, HTML canvas, Windows GDI, and image formats like PNG and BMP) place **(0, 0) at the top-left corner**, with $y$ increasing downwards. This matches the top-to-bottom sweep of raster displays and Western reading order.
-- **Cartesian coordinates** (used in mathematics and GPU graphics APIs like **OpenGL**) place **(0, 0) at the bottom-left corner**, with $y$ increasing upwards, matching standard algebraic graphing.
+- **Screen coordinates** (used by web browsers, HTML canvas, Windows desktop drawing, and image formats like PNG and BMP) place **(0, 0) at the top-left corner**, with $y$ increasing downwards. This matches the top-to-bottom sweep of raster displays and Western reading order.
+- **Cartesian coordinates** (used in mathematics and GPU drawing interfaces such as **OpenGL**) place **(0, 0) at the bottom-left corner**, with $y$ increasing upwards, matching standard algebraic graphing.
 
 Click a pixel in the visualizer below and toggle between conventions. The physical pixel remains unchanged, but its coordinates update:
 
@@ -34,7 +34,7 @@ $$
 In a grid 7 rows tall, row 5 counting down from the top corresponds to row $(7 - 1) - 5 = 1$ counting up from the bottom.
 
 <Callout tone="orange" label="The upside-down texture bug">
-Passing an image from a top-left origin system into a bottom-left graphics pipeline without adjustment renders the picture upside down. When loading image **textures** (bitmap artwork mapped onto 3D polygon meshes) in OpenGL, developers must either flip the pixel rows in memory or calculate $(H - 1) - y$ before rendering.
+Passing an image from a top-left origin system into a bottom-left renderer without flipping rows draws the picture upside down. When loading image **textures** (2D bitmap artwork wrapped onto 3D surfaces) in OpenGL, developers must either flip the pixel rows in memory or calculate $(H - 1) - y$ before rendering.
 </Callout>
 
 ## Is a pixel a point or a square?
@@ -44,7 +44,7 @@ A physical pixel covers a small rectangular area on screen, whereas a mathematic
 - In many systems, integer coordinates identify the **centers** of pixels: coordinate $(3, 5)$ lands directly at the center of the pixel in column 3, row 5.
 - In others, including the HTML canvas 2D context, integer coordinates lie on the **grid lines between pixels**. Under this rule, pixel $(3, 5)$ occupies the unit square bounded from $x = 3$ to $x = 4$ and $y = 5$ to $y = 6$, placing the center of the pixel at $(3.5, 5.5)$.
 
-This distinction affects single-pixel line rendering. On an HTML canvas, drawing a horizontal line from $(100, 100)$ to $(120, 100)$ places the path directly on the boundary between row 99 and row 100. The renderer distributes the single-pixel line across both rows, producing a two-pixel-tall blurred gray band instead of a crisp black stroke. Offsetting the coordinates by half a pixel to $(100.5, 100.5)$ and $(120.5, 100.5)$ centers the stroke directly inside row 100, yielding a sharp, single-pixel black line. The [next lesson](/courses/computer-graphics/aliasing) details how renderers compute this partial coverage.
+This distinction affects single-pixel line rendering. On an HTML canvas, drawing a horizontal line from $(100, 100)$ to $(120, 100)$ places the path directly on the border between row 99 and row 100. Because the stroke covers half of each row, the renderer blends both rows to 50% gray (a shading rule explained in the next lesson), producing a two-pixel-tall gray band instead of a crisp black line. Offsetting the coordinates by half a pixel to $(100.5, 100.5)$ and $(120.5, 100.5)$ shifts $y$ into the middle of row 100 and places both endpoints at pixel centers, yielding a sharp, single-pixel black line. The [next lesson](/courses/computer-graphics/aliasing) details how renderers compute this partial coverage.
 
 <Callout tone="sky" label="Coordinate convention in this course">
 The line-drawing lessons that follow use the Cartesian convention ($y$ increasing upwards, $(0, 0)$ at the bottom-left) with integer coordinates placed at pixel centers, matching standard computer graphics textbooks and classroom derivations.

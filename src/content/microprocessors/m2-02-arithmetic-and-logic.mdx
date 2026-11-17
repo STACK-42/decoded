@@ -3,7 +3,7 @@ import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Arithmetic and Logic Instructions
 
-These are the instructions that send computation to the [ALU](/courses/computer-organization/inside-the-cpu). Most binary operations take two operands and overwrite the first with the calculation result: `ADD AX, BX` computes the sum $AX + BX$ and stores it in `AX`.
+Every program eventually comes down to doing math or manipulating bits: adding totals, calculating memory offsets, or isolating status bits. These operations route data directly through the processor's internal [ALU](/courses/computer-organization/inside-the-cpu). Most two-operand instructions overwrite the first operand with the calculation result: `ADD AX, BX` computes the sum $AX + BX$ and stores it in `AX`.
 
 ## Add and subtract
 

@@ -802,6 +802,7 @@ export const courses: Course[] = [
       "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
     accent: "orange",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -994,6 +995,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -1194,7 +1196,7 @@ export const courses: Course[] = [
       "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
     accent: "sky",
     status: "available",
-    rounds: 4,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

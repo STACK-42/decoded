@@ -57,7 +57,7 @@ MISD is rarely used in standard computing because executing multiple distinct in
 
 ## SIMD: one instruction, many values
 
-Consider brightening a 4K digital photograph ($3840 \times 2160 = 8,294,400\text{ pixels}$). Adding a brightness constant to every pixel on a traditional scalar (SISD) processor requires looping over eight million pixels:
+Consider brightening a [4K digital photograph](/courses/computer-graphics/screen-resolution#reading-a-resolution) ($3840 \times 2160 = 8,294,400\text{ pixels}$). Adding a brightness constant to every pixel on a traditional scalar (SISD) processor requires looping over eight million pixels:
 
 ```c
 for (int i = 0; i < 8294400; i++) {
