@@ -954,20 +954,6 @@ export const questions: Question[] = [
     explanation: "Finite automata power regex engines (grep, sed, search bars). Parsers need the extra stack of a pushdown automaton, the CPU is modelled by the Turing machine, and cryptography rests on complexity classes such as P vs NP.",
   },
   {
-    id: "theory-of-computation/language-of-languages/epsilon-vs-empty-set",
-    lesson: "language-of-languages",
-    section: "string-word",
-    prompt: "Which statement about ε and ∅ is true?",
-    options: [
-      { id: "a", text: "They are two names for the same thing" },
-      { id: "b", text: "ε is a set and ∅ is a string" },
-      { id: "c", text: "ε is a string with no symbols; ∅ is a set with no strings, so {ε} has one member and ∅ has none" },
-      { id: "d", text: "ε has length 1, because it is one symbol" },
-    ],
-    correctOptionId: "c",
-    explanation: "The empty string ε is a real string of length 0. The empty set ∅ contains nothing at all. So the language {ε} contains one string, while ∅ contains none. Writing ε as a symbol doesn't make it length 1: |ε| = 0.",
-  },
-  {
     id: "theory-of-computation/language-of-languages/concatenate-languages",
     lesson: "language-of-languages",
     section: "concatenation",

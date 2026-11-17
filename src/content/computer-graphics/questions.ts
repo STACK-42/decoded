@@ -1261,7 +1261,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/what-is-computer-graphics/chart-words",
     lesson: "what-is-computer-graphics",
-    section: "four-words-that-sound-alike",
+    section: "four-terms-people-mix-up",
     prompt: "You make a bar chart in a spreadsheet and save it as a PNG. Which words fit it?",
     options: [
       { id: "a", text: "A photo and a graph" },
@@ -1373,7 +1373,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/image-size/jpeg-in-memory",
     lesson: "image-size",
-    section: "uncompressed-means-before-compression",
+    section: "uncompressed-memory-versus-file-compression",
     prompt: "A 4000 × 3000 true color photo is a 2 MB JPEG on disk. Roughly how much memory does it take once an editor opens it?",
     options: [
       { id: "a", text: "2 MB, the size of the file" },
@@ -1624,7 +1624,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/slope-and-the-line-equation/truncate",
     lesson: "slope-and-the-line-equation",
-    section: "rounding-or-truncating",
+    section: "rounding-vs-truncation",
     prompt: "A line-drawing program computes y = 7.6 and stores it in a C++ int. Which row is the pixel lit in?",
     options: [
       { id: "a", text: "Row 8, because 7.6 rounds to 8" },
@@ -1638,7 +1638,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/dda/steep-second-pixel",
     lesson: "dda",
-    section: "idea-2-step-along-the-longer-direction",
+    section: "idea-2-step-along-the-dominant-axis",
     prompt: "DDA draws from (2, 3) to (5, 9), rounding halves up. Which pixel does it light second?",
     options: [
       { id: "a", text: "(2.5, 4)" },
@@ -1652,7 +1652,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/dda/drift",
     lesson: "dda",
-    section: "what-dda-still-gets-wrong",
+    section: "limitations-of-dda",
     prompt: "Why can DDA's pixels drift away from the true line on a long line?",
     options: [
       { id: "a", text: "It adds a rounded increment over and over, so the rounding error builds up" },
@@ -1680,7 +1680,7 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/bresenham/steep",
     lesson: "bresenham",
-    section: "steep-lines-and-other-directions",
+    section: "steep-lines-and-general-octants",
     prompt: "How does Bresenham's algorithm draw a steep line such as (2, 1) to (6, 12)?",
     options: [
       { id: "a", text: "It can't: steep lines need DDA" },
