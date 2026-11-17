@@ -384,6 +384,7 @@ export const courses: Course[] = [
     description:
       "Everything about computing is interaction. The more precisely you speak to the machine, the more effective you become. That fluency has three layers: physical, language and systems. It comes from years of watching what separates fluent users from frustrated ones.",
     accent: "orange",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
