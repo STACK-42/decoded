@@ -1,4 +1,4 @@
-import { Callout, Epigraph, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 
 # The Physical Layer
 
@@ -64,3 +64,19 @@ A few everyday shortcuts remove dozens of these breaks per hour: `Ctrl+L` (`Cmd+
 <Callout tone="orange" label="Usual mistake: memorizing a full list at once">
 Printing a list of 40 shortcuts and trying to memorize them in one sitting rarely works. Wait until you catch yourself reaching for the mouse for the same action three times in one day, look up the single shortcut for it, and use it until it feels automatic before adding the next.
 </Callout>
+
+## Practice by hand
+
+**1. Calculate WPM from characters:** One standard word is five characters, including spaces and punctuation. Suppose you type 300 characters in 1 minute and 30 seconds (1.5 minutes) with zero uncorrected errors. How many standard words did you type, and what is your WPM? Then suppose on a second run you type 200 characters in 1 minute, leaving 5 uncorrected errors behind: is your net speed still 40 WPM?
+
+<ModelAnswer>
+- **First run:** Divide characters by 5 to get standard words: $300 \div 5 = 60$ words. Divide by 1.5 minutes: $60 \div 1.5 = 40\text{ WPM}$.
+- **Second run:** $200 \div 5 = 40$ raw words in 1 minute, so the raw speed is 40 WPM, but uncorrected errors lower your score below 40 WPM. Pushing faster while leaving errors trains your fingers to repeat mistakes and forces constant Backspace corrections later.
+</ModelAnswer>
+
+**2. Replace repeated mouse trips with shortcuts:** You are reading documentation in a browser, copying a line into a text editor, switching back to the browser, and reopening a tab you closed by accident. Which shortcuts replace those mouse actions, and how should you build the habit?
+
+<ModelAnswer>
+- Use `Ctrl+C` (`Cmd+C` on macOS) to copy, `Alt+Tab` (`Cmd+Tab`) to switch between the browser and editor, `Ctrl+V` (`Cmd+V`) to paste, and `Ctrl+Shift+T` (`Cmd+Shift+T`) to reopen the closed tab. (`Ctrl+L` or `Cmd+L` also jumps straight to the browser address bar when you need a new URL.)
+- Build the habit one shortcut at a time: notice when you reach for the mouse three times in one day for the same task, learn that single shortcut, and repeat it until it feels automatic before adding another.
+</ModelAnswer>

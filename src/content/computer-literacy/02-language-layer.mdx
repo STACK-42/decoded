@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 
 # The Language Layer
 
@@ -69,3 +69,20 @@ Asking an AI to write your prompt, outline, or solution from a blank page skips 
 <Callout tone="violet" label="The amplification rule">
 Think first, write something imperfect, then use the tool to refine it. That way the machine amplifies your thinking and you keep doing the thinking yourself.
 </Callout>
+
+## Practice by hand
+
+**1. Trace absolute and relative paths:** Your terminal's current working directory is `/Users/maya/courses/notes`, and the file you want to run lives at `/Users/maya/projects/app.py`. Write the absolute path to `app.py`, write the relative path using `..`, and explain why typing `python3 app.py` directly from `/Users/maya/courses/notes` fails with `No such file or directory`.
+
+<ModelAnswer>
+- **Absolute path:** `/Users/maya/projects/app.py`. It starts from the root directory `/`, so it reaches the same file from any working directory.
+- **Relative path:** `../../projects/app.py`. The first `..` steps up from `notes` to `/Users/maya/courses`, the second `..` steps up to `/Users/maya`, and `projects/app.py` steps down into `projects` to reach `app.py`.
+- **Why `python3 app.py` fails:** Without a path prefix, `app.py` is resolved relative to your current working directory (`/Users/maya/courses/notes`), which does not contain `app.py`. Running `pwd` and `ls` shows where you are before running a relative command.
+</ModelAnswer>
+
+**2. Turn a crash into a query and a prompt:** A Python script crashes with `KeyError: 'user_id'`. Write a structured search query for official Python documentation, then write a clear three-part AI prompt you could send after inspecting your own code first.
+
+<ModelAnswer>
+- **Search query:** `python "KeyError" site:docs.python.org` (or `python "KeyError: 'user_id'"` if searching for that exact key pattern across projects). Wrapping the exact error name in quotes keeps the indexed term intact instead of paraphrasing it into loose words such as "dictionary key missing".
+- **Three-part prompt:** *"I know Python dictionaries and loops. My script loops over parsed JSON rows and hits `KeyError: 'user_id'` on `row['user_id']`. Show how to safely check for missing keys and trace a 4-line example."* It states what you know, names the exact failure, and asks for a concrete trace.
+</ModelAnswer>

@@ -1,0 +1,14 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/computer-literacy/questions";
+
+# Quiz: The Three Layers of Fluency
+
+Fifteen questions on Module 0: typing speed and shortcuts (physical layer), structured search, paths, regular expressions, and prompts (language layer), and tracebacks, local vs. cloud boundaries, and UI patterns (systems layer). Get 12 right to pass. Each answer locks in when you click it and shows an explanation.
+
+<Quiz
+  courseSlug="computer-literacy"
+  lessonSlug="fluency-quiz"
+  passThreshold={12/15}
+  questions={questionsForQuiz(questions, "fluency-quiz")}
+/>

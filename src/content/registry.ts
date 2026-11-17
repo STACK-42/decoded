@@ -25,6 +25,7 @@ const TocContextFreeQuiz = lesson(() => import("@/content/theory-of-computation/
 const LitTyping = lesson(() => import("@/content/computer-literacy/01-physical-layer.mdx"));
 const LitLanguage = lesson(() => import("@/content/computer-literacy/02-language-layer.mdx"));
 const LitSystems = lesson(() => import("@/content/computer-literacy/03-systems-layer.mdx"));
+const LitQuiz = lesson(() => import("@/content/computer-literacy/04-fluency-quiz.mdx"));
 const AdaWhatIsAnAlgorithm = lesson(() => import("@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx"));
 const AdaCountingSteps = lesson(() => import("@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx"));
 const AdaJavaLabToolkit = lesson(() => import("@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx"));
@@ -392,6 +393,7 @@ export const courses: Course[] = [
           { slug: "physical-layer", title: "The Physical Layer", duration: "6 min", Component: LitTyping },
           { slug: "language-layer", title: "The Language Layer", duration: "7 min", Component: LitLanguage },
           { slug: "systems-layer",  title: "The Systems Layer",  duration: "7 min", Component: LitSystems },
+          { slug: "fluency-quiz",   title: "Quiz: The Three Layers of Fluency", duration: "8 min", kind: "quiz", Component: LitQuiz },
         ],
       },
     ],
