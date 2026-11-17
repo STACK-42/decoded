@@ -3,9 +3,7 @@ import { AddressingModes, AsmRunner } from "@/components/mdx/MicroprocessorVisua
 
 # Addressing Modes
 
-Every microprocessor instruction that operates on data must identify where to find its operands. An **addressing mode** is the method an instruction uses to specify the location of an operand, whether that operand sits directly in the instruction, inside a CPU register, or at a specific location in memory.
-
-A processor provides multiple addressing modes because programs organize data in different structures: simple scalar variables, pointers, record fields, one-dimensional lists, and two-dimensional grids each require a different way to compute an address.
+A program rarely keeps all its data in simple isolated variables. Sometimes a number is hardcoded in the instruction, sometimes it sits in a register, sometimes it belongs to an array, and sometimes it hides inside a record behind a pointer. To fetch any of these without inventing a separate instruction for every data structure, a CPU provides different ways to locate operands. Each method is an **addressing mode**.
 
 When an operand is located in memory, the processor must determine its 16-bit offset within the current segment before accessing RAM. This computed offset is called the **effective address** (EA). The Bus Interface Unit then combines the effective address with the appropriate segment register to generate the 20-bit [physical address](/courses/microprocessors/segments-and-addresses).
 
@@ -53,7 +51,7 @@ $$
 
 ### Computing offsets: LEA versus MOV
 
-The 8086 includes a dedicated instruction called **Load Effective Address** (LEA). It is vital to understand the difference between `LEA` and `MOV`:
+The 8086 includes a dedicated instruction called **Load Effective Address** (LEA). `LEA` and `MOV` differ in whether they access memory:
 
 - `MOV AX, [BX+SI+4]` calculates the effective address ($\text{BX} + \text{SI} + 4$), combines it with the data segment register (`DS`) to form a 20-bit physical address, accesses system RAM, and copies the 16-bit word stored at that memory location into register `AX`.
 - `LEA AX, [BX+SI+4]` calculates the effective address ($\text{BX} + \text{SI} + 4$) using the processor's internal address generation hardware and writes that calculated offset directly into register `AX`. It never accesses memory and never reads data from RAM.

@@ -3,7 +3,7 @@ import { FlagsLab } from "@/components/mdx/MicroprocessorVisualizers";
 
 # The Flags Register
 
-After calculating an arithmetic sum, you might notice key facts about the result: the answer is zero, or it turned negative, or it exceeded the storage limit. The CPU detects these exact conditions automatically after each arithmetic or logic instruction. It records these outcomes in single-bit **flags**, clustered together inside a dedicated 16-bit **flags register** (also known as the Program Status Word).
+After calculating an arithmetic sum, you might notice specific details about the result: the answer is zero, or it turned negative, or it exceeded the storage limit. The CPU detects these exact conditions automatically after each arithmetic or logic instruction. It records these outcomes in single-bit **flags**, clustered together inside a dedicated 16-bit **flags register** (also known as the Program Status Word).
 
 A **flag** is a single binary bit inside the processor that records a status outcome or configures an operating behavior.
 
@@ -60,7 +60,7 @@ Consider adding two 8-bit numbers: `AL = 0FFh` and `BL = 01h`.
 
 The 8-bit destination register `AL` retains only the lower 8 bits: `00h` (`0000 0000b`). The 9th bit is the carry out.
 
-Let us evaluate every status flag:
+The status flags reflect these changes:
 
 - **CF = 1**: Bit 7 produced a carry out into bit 8. In unsigned arithmetic, $255 + 1 = 256$, which cannot fit into an 8-bit register ($0 \dots 255$). The carry flag captures this overflow.
 - **OF = 0**: In signed two's complement, `0FFh` is $-1$ and `01h` is $+1$. Their mathematical sum is $(-1) + (+1) = 0$. The value $0$ fits comfortably in an 8-bit signed integer (range $-128$ to $+127$). There was no signed overflow.
@@ -84,7 +84,7 @@ Now consider adding `AL = 7Fh` and `BL = 01h`.
 
 The 8-bit result stored in AL is `80h` (`1000 0000b`).
 
-Let us evaluate the flags:
+The status flags update accordingly:
 
 - **CF = 0**: There is no carry out of bit 7. For unsigned numbers, $127 + 1 = 128$, which fits within $0 \dots 255$.
 - **OF = 1**: In signed two's complement, $7\text{Fh}$ is $+127$, the largest positive 8-bit integer. Adding $+1$ mathematically yields $+128$. But in 8-bit two's complement, the pattern `1000 0000b` represents $-128$. Adding two positive numbers produced a negative number! The result exceeded the valid signed range ($-128$ to $+127$), so signed overflow occurred.

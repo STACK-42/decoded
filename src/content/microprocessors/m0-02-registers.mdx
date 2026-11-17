@@ -3,7 +3,9 @@ import { RegisterSplit, AsmRunner } from "@/components/mdx/MicroprocessorVisuali
 
 # The 8086's Registers
 
-Assembly programming is largely the art of moving numbers into and out of **registers**. A **register** is a small, high-speed storage location built from [flip-flops](/courses/logic-design/flip-flops) directly inside the processor. Accessing memory takes multiple clock cycles over external buses, but accessing a register happens in a fraction of a cycle.
+Every time a processor reaches out to system memory across the external bus, it wastes time waiting for electrical signals to travel across the circuit board. To calculate at full speed, a CPU needs tiny storage cells sitting directly on the silicon die next to the arithmetic circuits. These internal scratchpad locations are **registers**.
+
+A register is built from high-speed [flip-flops](/courses/logic-design/flip-flops) inside the processor. Accessing memory takes multiple clock cycles over external buses, but accessing a register happens in a fraction of a clock cycle.
 
 The 8086 contains fourteen 16-bit registers organized into four distinct functional groups:
 
