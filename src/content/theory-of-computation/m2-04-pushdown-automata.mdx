@@ -8,13 +8,13 @@ import { PdaRunner } from "@/components/mdx/TocVisualizers";
 
 ## The pieces
 
-The textbook notation draws a PDA as a flowchart. Before any step runs, the input tape holds the word followed by infinitely many blank symbols $\Delta$, the read head starts at the first letter, and the stack begins empty (full of $\Delta$). A run starts at START and moves from box to box:
+A PDA can be drawn as a flowchart. Before any step runs, the input tape holds the word followed by infinitely many blank symbols $\Delta$, the read head starts at the first letter, and the stack begins empty (full of $\Delta$). A run starts at START and moves from box to box:
 
 - **START** is where every run begins.
 - **READ** takes the next letter from the input tape and follows the edge labelled with that letter (without changing the stack). Once the word is used up, READ finds $\Delta$.
 - **POP** removes the top symbol from the stack and follows the edge labelled with it (without advancing the input tape). If the stack is empty, POP finds $\Delta$ and leaves the stack empty.
 - **PUSH x** puts $x$ on top of the stack (without consuming any input).
-- **ACCEPT** and **REJECT** end the run.
+- **ACCEPT** and **REJECT** end the run. Every machine here reads $\Delta$ on the tape before moving to ACCEPT so that the whole input must be consumed.
 
 If a READ or POP finds a symbol with no matching edge, the machine **crashes**, which rejects that path. Leaving edges out is the normal way to say "this cannot happen in a valid word".
 
@@ -143,12 +143,12 @@ Try `abab` or `aba` in the runner: for `aba`, pushing `a` leaves `a` on the stac
 </Callout>
 
 <Callout tone="violet" label="Here nondeterminism adds power">
-  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some [context-free languages](/courses/theory-of-computation/context-free-grammars), including the even palindromes, can only be recognized by a nondeterministic PDA. A deterministic PDA reading $abba$ left to right can't know where the first half ends.
+  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some [context-free languages](/courses/theory-of-computation/context-free-grammars), including the even palindromes $ww^R$, can only be recognized by a nondeterministic PDA. Reading $abba$ left to right, a prefix like $ab$ could be the whole first half (as in $abba$) or part of a longer one (as in $abbabba$); without a center marker (compare $wcw^R$, where $c$ signals "start popping" and a deterministic PDA works), a deterministic machine can't know where the first half ends.
 </Callout>
 
 ## The formal definition
 
-Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta$, start state $q_0$, **initial stack symbol** $Z_0$ (a marker placed at the bottom of the stack at startup so the machine can detect an empty stack, playing the same role $\Delta$ plays in the flowcharts), and final states $F$. Each transition reads an input letter (or $\varepsilon$), pops the top of the stack, and pushes a string of stack symbols in its place. The flowchart and the 7-tuple describe the same machines; the flowchart just splits each transition into separate READ, POP and PUSH steps.
+Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), **stack alphabet** $\Gamma$ (the symbols allowed on the stack, which often includes helper markers or grammar variables beyond $\Sigma$), transition function $\delta$, start state $q_0$, **initial stack symbol** $Z_0$ (a marker placed at the bottom of the stack at startup so the machine can detect an empty stack, playing the same role $\Delta$ plays in the flowcharts), and final states $F$. Each transition $\delta(q, a, X) \ni (q', \gamma)$ reads an input letter $a \in \Sigma \cup \{\varepsilon\}$, pops the top symbol $X$ from the stack, moves to state $q'$, and pushes a stack string $\gamma \in \Gamma^*$ in $X$'s place ($\gamma = \varepsilon$ pops $X$ without replacing it, $\gamma = X$ leaves $X$ unchanged, and $\gamma = YX$ pushes $Y$ on top of $X$). A 7-tuple PDA accepts either by reaching a state in $F$ at the end of the input or by emptying its stack; both conventions define the exact same languages as the flowcharts above.
 
 ## Where this shows up today
 
