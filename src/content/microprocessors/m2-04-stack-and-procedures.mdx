@@ -1,20 +1,24 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # The Stack and Procedures
 
-A **stack** is a pile of plates: you can only put a plate on top, and only take the top one off. The last item in is the first out, which is called **LIFO** (last in, first out) or FILO.
+Programs frequently need temporary scratchpad storage to hold intermediate values, pass parameters to functions, and remember where to resume when a subroutine finishes. The hardware architecture reserves a dedicated memory area for this called the **stack**.
 
-On the 8086, the stack lives in memory, in the [stack segment](/courses/microprocessors/segments-and-addresses). SS says where the segment is, and **SP** says where the top is.
+A **stack** behaves like a spring-loaded pile of trays in a cafeteria: you can only place a new tray on top, and you can only retrieve the tray that is currently on top. This ordering principle is called **LIFO** (last-in, first-out), meaning the item stored most recently is always the first item removed.
+
+On the 8086 processor, the stack resides in system memory within a dedicated 64 KB block called the **stack segment (SS)**. The base address of this segment is stored in the `SS` register, while the offset pointing directly to the current top item on the stack is held in the **stack pointer (SP)** register.
 
 ## PUSH and POP
 
-- `PUSH AX`: SP goes **down** by 2, and AX is written there.
-- `POP BX`: the top value is read into BX, and SP goes **up** by 2.
+The CPU manipulates the stack using two primary instructions:
 
-The stack grows downward in memory, toward lower addresses. It's odd at first, but it means code and data can grow up from the bottom while the stack grows down from the top. Each entry is 16 bits, and that's why the step is 2.
+- `PUSH source`: The processor first decrements `SP` by 2 ($SP = SP - 2$), then writes the 16-bit word to memory at address `SS:SP`.
+- `POP destination`: The processor reads the 16-bit word from memory at address `SS:SP` into the destination register, then increments `SP` by 2 ($SP = SP + 2$).
 
-Watch SP as it goes.
+The stack grows downward in memory, from higher memory addresses toward lower memory addresses. When a program starts, `SP` is initialized to the top of the stack segment (such as `0FFFEh`). As data is pushed, `SP` counts down toward zero. This inverted direction allows program code and global data to grow upward from the bottom of memory while the stack grows downward from the top, sharing the unused space in between until they meet.
+
+Watch `SP` as you step through this sequence:
 
 <AsmRunner stack source={`MOV AX, 11h
 MOV BX, 22h
@@ -25,16 +29,24 @@ MOV BX, 0
 POP AX          ; gets 22h, the last one pushed
 POP BX          ; gets 11h`} />
 
-Notice that the values came back swapped. That's a handy way to exchange two registers, and it shows the LIFO order.
+Notice that when values are popped back into registers, they return in reverse order. `BX` was pushed last, so `POP AX` retrieves `22h`, effectively exchanging the values between registers.
+
+<Callout tone="orange" label="Trap: 8086 stack operations must be 16-bit words">
+On the 8086 microprocessor, stack pushes and pops operate exclusively on 16-bit words. An instruction like `PUSH AL` or `POP CL` does not exist in the instruction set and will cause an assembler error. If you need to preserve an 8-bit register, you must push its parent 16-bit register (such as `PUSH AX` to save `AL`), decrementing SP by 2 bytes.
+</Callout>
 
 ## CALL and RET
 
-A **procedure** (or function) is code you can run from many places. But when it finishes, how does it know where to return to? It can't be a fixed `JMP`, since the caller changes each time.
+A reusable block of code designed to perform a specific task and return control to the caller is called a **procedure** (or **subroutine**). When a procedure finishes, the CPU must know where to jump back to resume execution. Because a procedure can be called from many different places in a program, the return destination cannot be a hardcoded jump.
 
-The solution is the stack:
+The processor solves this by saving the **return address** (the address of the instruction immediately following the call) onto the stack:
 
-- `CALL f` pushes the address of the next instruction, then jumps to `f`.
-- `RET` pops that address back into IP.
+- In a **near call vs far call**:
+  - A near call (`CALL label`) invokes a procedure located within the same code segment. The processor decrements `SP` by 2, pushes the 16-bit instruction pointer (`IP`) containing the return address onto the stack, and loads the target procedure's offset into `IP`.
+  - A far call (`CALL FAR label`) invokes a procedure located in a different code segment. The processor decrements `SP` by 4, pushes both the code segment (`CS`) and the offset (`IP`) onto the stack, and loads the new segment and offset into `CS:IP`.
+- The `RET` instruction reverses this operation:
+  - A near `RET` pops the 16-bit return address from the stack directly into `IP`, resuming execution immediately after the `CALL`.
+  - A far `RET` pops both `IP` and `CS` from the stack.
 
 <AsmRunner stack source={`MOV AX, 3
 CALL double
@@ -45,11 +57,17 @@ double:
 ADD AX, AX
 RET`} />
 
-Since the return addresses go on a stack, one procedure can call another, and the returns happen in the right order. This is also how recursion works. And a recursive function that never stops overflows this very stack, which is where the name **stack overflow** comes from.
+Because return addresses are stacked in LIFO order, procedures can call other procedures to arbitrary depths. When procedure A calls B, and B calls C, the return address for B sits on top of the return address for A. As each procedure finishes with `RET`, execution unwinds in exact reverse order.
+
+If a recursive procedure calls itself without a base case, or if a loop pushes data indefinitely without popping, the stack grows until it exhausts its allocated segment. Exceeding the stack memory boundaries causes a fatal runtime fault called a **stack overflow**.
 
 ## Saving registers
 
-A procedure shares registers with its caller, so it could accidentally overwrite values the caller is still using. The convention is to save anything you'll use on the way in, and restore it on the way out, in reverse order.
+When a program calls a procedure, both routines share the same register set. If the procedure modifies `CX` while the caller was using `CX` for a loop counter, the caller's state is corrupted. Software standards define a **calling convention**, which specifies how parameters are passed and which registers must be preserved:
+
+- **Callee-saved vs caller-saved**:
+  - A **callee-saved** register is one that the called procedure must preserve. If the procedure needs to use that register, it must push its current value onto the stack upon entering and pop it back before returning.
+  - A **caller-saved** register is one that the procedure is free to overwrite. If the caller still needs its contents after the procedure returns, the caller must push it onto the stack before issuing `CALL` and pop it afterward.
 
 <AsmRunner stack source={`MOV CX, 5
 CALL work
@@ -62,8 +80,134 @@ ADD AX, CX
 POP CX          ; restore it
 RET`} />
 
-<Callout tone="orange" label="Security">
-Local variables in C sit on the stack too, close to the return address. If a program writes past the end of a local array, it can overwrite that address, so `RET` jumps wherever an attacker chooses. This is a **buffer overflow**, one of the most famous bugs in computing.
+When high-level languages like C compile functions with local variables and parameters, the compiler builds a structured block on the stack called a **stack frame** (or **activation record**).
+
+Because `SP` changes dynamically whenever values are pushed or popped inside the procedure, using `SP` to locate variables is unreliable. Instead, compilers designate the **base pointer (BP)** register as a stable anchor pointer that remains fixed throughout the function execution:
+
+1. **Prologue**: Upon entering the procedure, the code saves the caller's frame pointer and establishes its own:
+   ```nasm
+   PUSH BP          ; save caller's base pointer
+   MOV BP, SP       ; establish new stack frame anchor
+   SUB SP, 4        ; allocate 4 bytes for local variables
+   ```
+2. **Accessing data**:
+   - Function arguments pushed by the caller prior to the call are accessed at positive offsets from `BP`: `[BP+4]` is the first parameter (located above the 2-byte return address and 2-byte saved `BP`).
+   - Local scratchpad variables allocated on the stack are accessed at negative offsets from `BP`: `[BP-2]` and `[BP-4]`.
+3. **Epilogue**: Before returning, the procedure deallocates its locals and restores the caller's frame:
+   ```nasm
+   MOV SP, BP       ; discard local variables
+   POP BP           ; restore caller's base pointer
+   RET              ; return to caller
+   ```
+
+<Callout tone="orange" label="Trap: stack imbalance corrupts the return address">
+Every `PUSH` inside a procedure must be paired with an exact corresponding `POP` before `RET` executes. If you push a register like `DX` to save it, but forget to pop it before `RET`, the `RET` instruction will pop that saved data value from the top of the stack into the instruction pointer (`IP`) instead of the actual return address. The CPU will jump to an arbitrary memory address and crash.
 </Callout>
 
-Compilers use **BP** to find a procedure's arguments and local variables. SP moves around as things are pushed, but BP stays put, so `[BP+4]` always means the same thing during the call.
+<Callout tone="violet" label="How buffer overflows exploit the stack">
+In a stack frame, local arrays sit right beside the saved base pointer and the return address. If a program accepts user input into a local character buffer without checking its length, an attacker can input more bytes than the buffer can hold. The extra bytes overflow the buffer and overwrite the saved return address on the stack. When the function finishes and executes `RET`, the processor does not jump back to the caller; it jumps to whatever malicious instruction address the attacker injected into the return address slot. This vulnerability is a **buffer overflow**.
+</Callout>
+
+## Practice by hand
+
+Practice tracking stack pointer arithmetic and call frames with these step-by-step tracing exercises.
+
+### Problem 1: Stack pointer tracking across nested calls
+
+An 8086 program begins with the stack pointer set to `SP = 1000h`. The code executes the following instructions:
+
+```nasm
+0100h: MOV AX, 1234h
+0103h: PUSH AX
+0104h: CALL proc_A     ; next instruction is at offset 0107h
+0107h: POP BX
+...
+proc_A:
+0200h: PUSH BP
+0201h: MOV BP, SP
+0203h: POP BP
+0204h: RET
+```
+
+Assume this is a near call within the same segment.
+
+1. What is the value of `SP` immediately after `PUSH AX` executes at `0103h`, and what 16-bit value is stored at that memory address?
+2. When `CALL proc_A` executes at `0104h`:
+   - What value does the processor push onto the stack?
+   - What is the value of `SP` immediately after the call transfers control to `0200h`?
+3. What is the value of `SP` immediately after `PUSH BP` executes at `0200h`?
+4. When `RET` executes at `0204h`:
+   - What value is popped into `IP`?
+   - What is the value of `SP` immediately after `RET` finishes?
+5. After `POP BX` executes at `0107h`, what value is stored in `BX`, and what is the final value of `SP`?
+
+<ModelAnswer>
+1. **After `PUSH AX`**:
+   - `PUSH` decrements `SP` by 2: $\text{SP} = 1000\text{h} - 2 = \text{0FFEh}$.
+   - The 16-bit word stored at memory location `0FFEh` is `1234h` (`34h` at `0FFEh`, `12h` at `0FFFh` in little-endian order).
+
+2. **When `CALL proc_A` executes**:
+   - The processor pushes the return address onto the stack. The return address is the address of the instruction following the `CALL`, which is `0107h`.
+   - `SP` is decremented by 2: $\text{SP} = \text{0FFEh} - 2 = \text{0FFCh}$.
+   - Memory at `0FFCh` holds `0107h`.
+
+3. **After `PUSH BP` at `0200h`**:
+   - `SP` is decremented by 2: $\text{SP} = \text{0FFCh} - 2 = \text{0FFAh}$.
+   - Memory at `0FFAh` holds the previous value of `BP`.
+
+4. **When `POP BP` and `RET` execute**:
+   - `POP BP` restores `BP` and increments `SP` by 2: $\text{SP} = \text{0FFAh} + 2 = \text{0FFCh}$.
+   - When `RET` executes, it pops the 16-bit word at `SS:SP` (`0FFCh`, containing `0107h`) into `IP`, restoring execution to offset `0107h`.
+   - `RET` increments `SP` by 2: $\text{SP} = \text{0FFCh} + 2 = \text{0FFEh}$.
+
+5. **After `POP BX` at `0107h`**:
+   - `POP BX` pops the 16-bit word at `SS:SP` (`0FFEh`, which holds `1234h`) into register `BX`. `BX = 1234h`.
+   - `SP` is incremented by 2: $\text{SP} = \text{0FFEh} + 2 = \text{1000h}$.
+   - The stack pointer is restored to its exact original value of `1000h`.
+</ModelAnswer>
+
+### Problem 2: Stack imbalance diagnosis
+
+A programmer writes a subroutine intended to compute $AX = (AX + BX) \times 2$ while preserving register `BX`:
+
+```nasm
+calc:
+    PUSH BX
+    ADD AX, BX
+    SHL AX, 1
+    RET
+```
+
+The calling program invokes the subroutine from offset `0050h`:
+
+```nasm
+0050h: CALL calc     ; next instruction at 0053h
+0053h: MOV DX, AX
+```
+
+1. Explain exactly what happens to `SP` and the instruction pointer when `RET` executes inside `calc`.
+2. Why does the program fail to return to `0053h`?
+3. Provide the corrected `calc` subroutine.
+
+<ModelAnswer>
+1. **What happens during RET**:
+   - When `CALL calc` executed at `0050h`, the CPU pushed the 16-bit return address `0053h` onto the stack and decremented `SP` by 2 (e.g. from `1000h` to `0FFEh`).
+   - Inside `calc`, `PUSH BX` decremented `SP` by another 2 bytes (to `0FFCh`) and stored the value of `BX` at `0FFCh`.
+   - When `RET` executes, it blindly pops the 16-bit word from the current top of the stack (`SS:SP`, which is `0FFCh`) into the instruction pointer `IP`.
+   - Because `SP` still points to `0FFCh`, `RET` pops the saved value of `BX` into `IP`, and increments `SP` to `0FFEh`.
+
+2. **Why it fails**:
+   The procedure suffers from a **stack imbalance**. The number of pushes (1) does not equal the number of pops (0). The true return address `0053h` is stranded at `0FFEh`. Instead of resuming at `0053h`, the processor jumps to whatever numeric address was in `BX`, leading to a crash or undefined execution.
+
+3. **Corrected subroutine**:
+   Add `POP BX` before `RET` to restore the register and restore the stack pointer to the return address:
+
+   ```nasm
+   calc:
+       PUSH BX          ; save BX
+       ADD AX, BX
+       SHL AX, 1
+       POP BX           ; restore BX before returning
+       RET              ; pops 0053h into IP cleanly
+   ```
+</ModelAnswer>
