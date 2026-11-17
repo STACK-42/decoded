@@ -2,11 +2,15 @@ import { Callout } from "@/components/mdx/MdxComponents";
 
 # The Systems Layer
 
-The [physical layer](/courses/computer-literacy/physical-layer) gets your input in without friction, and the [language layer](/courses/computer-literacy/language-layer) states clearly what you want. The third layer is understanding what is actually happening underneath. It is the layer that turns frustration into **diagnosis**: working backward from a symptom on screen to the part of the system that failed, instead of guessing at random or restarting until the problem hides.
+The [physical layer](/courses/computer-literacy/physical-layer) gets your input in smoothly, and the [language layer](/courses/computer-literacy/language-layer) states clearly what you want. The third layer is understanding what is happening underneath. It turns frustration into **diagnosis**: working backward from what failed on screen to the part of the system that caused it, instead of guessing at random or restarting until the problem hides.
 
 ## Reading error messages
 
-One of the most important skills here is reading **error messages**: the diagnostic output a program prints when an operation cannot finish. What looks like noise at first is structured information made of three parts: an **error type or code** (a short label for what went wrong, such as HTTP `404 Not Found` for a missing web page or `PermissionError` when access is blocked), a human-readable message, and often a **stack trace** (also called a **traceback**, which lists the chain of active function calls, file names, and line numbers at the moment the program stopped).
+One of the most useful skills here is reading **error messages**: the report a program prints when an operation fails. At first, an error message can look like noise, but it is structured information with up to three parts:
+
+- An **error type or code**: a short label for what went wrong, such as HTTP `404 Not Found` for a missing web page or `PermissionError` when access is blocked.
+- A plain-text message explaining what failed.
+- A **stack trace** (also called a **traceback**): the list of active function calls, file names, and line numbers at the moment the program stopped.
 
 Trace a real Python error step by step:
 
@@ -17,30 +21,30 @@ Traceback (most recent call last):
 FileNotFoundError: [Errno 2] No such file or directory: 'data/scores.csv'
 ```
 
-1. **Read the error summary first.** In Python, the actual error type and reason sit on the *last* line: `FileNotFoundError`, followed by the exact path `'data/scores.csv'` it failed to open. (In languages such as Java and JavaScript, the summary usually sits at the *top* with the call chain below it.)
-2. **Find your own file and line number.** `File "report.py", line 4` points directly to the line in your script that triggered the failure, separating your code from built-in or third-party library internals.
-3. **Test the failed assumption.** The script looked for `data/scores.csv` relative to your current directory. From there you have three clear checks: does the `data` folder exist here, is the filename spelled identically, and did you run the command from the directory that holds `data`?
+1. **Read the error summary first.** In Python, the error type and reason are on the *last* line: `FileNotFoundError`, followed by the exact path `'data/scores.csv'` it failed to open. (In languages such as Java and JavaScript, the summary is usually at the *top* with the call chain below it.)
+2. **Find your own file and line number.** `File "report.py", line 4` points directly to the line in your script that caused the failure, separating your own code from library code.
+3. **Check what the program expected.** The script looked for `data/scores.csv` relative to your current directory. From there you have three checks: does the `data` folder exist here, is the filename spelled the exact same way, and did you run the command from the directory that holds `data`?
 
-Instead of closing the error or handing the problem off right away, treating errors as signals lets you build intuition so each new failure is faster to diagnose.
+Each time you read an error as a clue, the next failure gets easier to diagnose.
 
-<Callout tone="orange" label="Usual mistake: dismissing the message or ignoring the summary">
-Closing an error popup without reading it, or searching "my code crashed" instead of the error text, throws away the exact clue the machine gave you. Even when a traceback looks twenty lines long, start by reading the error summary line and the first file path that belongs to you.
+<Callout tone="orange" label="Usual mistake: closing the message or skipping the summary">
+Closing an error popup without reading it, or searching "my code crashed" instead of the error text, throws away the exact clue the machine gave you. Even when a traceback is twenty lines long, start by reading the error summary line and the first file path that belongs to you.
 </Callout>
 
 ## Knowing where things run
 
-Many everyday computer problems happen when three boundaries blur together:
+Many everyday computer problems happen when people mix up three boundaries:
 
-- **Local vs. in the cloud:** **local** software runs on your own machine's processor and stores data on your own drive, so it works offline and stays on that device. Software **in the cloud** runs on remote servers over the internet; your screen displays the interface while the work and data live on a server somewhere else.
-- **App vs. browser tab:** a **native app** (a desktop or mobile application) is installed directly on your operating system and can access local folders you approve. A **web app** runs inside a **browser tab** inside strict security boundaries (a sandbox), so it cannot freely read your hard drive unless you explicitly upload or select a file.
+- **Local vs. in the cloud:** **local** software runs on your own computer's processor and stores data on your own drive, so it works offline and stays on that device. Software **in the cloud** runs on remote servers over the internet; your screen shows the interface while the work and data live on a server somewhere else.
+- **App vs. browser tab:** a **native app** (a desktop or mobile application) is installed directly on your operating system and can access local folders you approve. A **web app** runs inside a **browser tab** under strict security limits (a sandbox), so it cannot read your drive unless you pick or upload a file.
 - **Saved vs. synced:** **saved** means your changes have been written to storage on the machine in front of you. **Synced** means those saved changes have also been uploaded to a remote server and copied down to your other devices.
 
-Walk through a situation where mixing these up causes panic: you edit a document on a train with no internet connection, press `Ctrl+S`, see "Saved," and close your laptop. When you open your desktop computer at home, the new paragraphs are gone. Nothing was deleted. Your edits were **saved** locally on the laptop's disk, while the **sync** step stayed queued waiting for an internet connection.
+Walk through a situation where mixing these up causes panic: you edit a document on a train with no internet connection, press `Ctrl+S`, see "Saved," and close your laptop. When you open your desktop computer at home, the new paragraphs are gone. Nothing was deleted. Your edits were **saved** locally on the laptop's disk, while the **sync** step waited for an internet connection.
 
-Once you see those boundaries, your mental model of the system holds steady, and you stop feeling lost when something behaves unexpectedly. The program managing files, memory, permissions, and running apps on your device is the [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system), which has its own course.
+Once you see those boundaries, you stop feeling lost when something behaves strangely, because you know where your data lives. The program managing files, memory, permissions, and running apps on your device is the [operating system](/courses/operating-systems/what-an-os-does#what-is-an-operating-system), which has its own course.
 
 <Callout tone="orange" label="Usual mistake: treating saved and synced as the same thing">
-Assuming that hitting Save puts your file everywhere leads to missing work and duplicate "conflicted copy" files when you switch devices offline. In the same way, expecting a web app in a browser tab to see local folders on its own leads to confusion until you notice that the browser isolates tabs from your disk.
+Assuming that pressing Save puts your file everywhere leads to missing work and duplicate "conflicted copy" files when you switch devices offline. Likewise, a web app in a browser tab cannot see your local folders on its own because the browser keeps tabs separate from your disk.
 </Callout>
 
 ## Visual interface grammar
@@ -48,24 +52,24 @@ Assuming that hitting Save puts your file everywhere leads to missing work and d
 Written language has rules for how sentences are built, and interfaces have **patterns** (sometimes called **visual interface grammar** or **UI patterns**) in the same way. Four shared elements tell you where you are and what you can do next:
 
 - **Navigation bar:** a strip across the top or edge holding links to the main sections of an app or site.
-- **Sidebar:** a vertical panel showing a hierarchy, such as folders, chapters, or project items.
-- **Menu (and context menu):** a drop-down or right-click list of actions that apply to the current screen or the specific item you selected.
-- **Breadcrumbs:** a trail such as `Courses > Computer Literacy > The Systems Layer` that shows your place in a hierarchy and lets you step up a level in one click.
+- **Sidebar:** a vertical panel showing a nested list, such as folders, chapters, or project items.
+- **Menu (and context menu):** a drop-down or right-click list of actions for the current screen or the item you selected.
+- **Breadcrumbs:** a trail such as `Courses > Computer Literacy > The Systems Layer` that shows where you are in a nested path and lets you step up a level in one click.
 
-Shared icons follow the same grammar across nearly all software: a gear opens settings, a magnifying glass opens search, three dots (`...`) hide extra actions, and grayed-out buttons tell you an action is unavailable in the current state.
+Shared icons follow the same grammar across nearly all software: a gear opens settings, a magnifying glass opens search, three dots (`...`) hide extra actions, and grayed-out buttons tell you an action is not allowed right now.
 
-Most people approach a new application as if it were completely unfamiliar. They lean on tutorials or trial and error because they do not recognize the structure underneath. Once you know these patterns, you can translate from tools you already know in three steps:
+Most people approach a new application as if it were completely unfamiliar. They rely on tutorials or trial and error because they do not recognize the structure underneath. Once you know these patterns, you can translate from tools you already know in three steps:
 
 1. Check the top menu bar (`File`, `Edit`, `View`) for saving, undoing, and showing hidden panels.
 2. Check the left sidebar for your files, layers, or sections.
-3. Select an object in the center workspace and look at the right panel or right-click menu for properties tied to that object.
+3. Select an object in the center workspace and look at the right panel or right-click menu for settings tied to that object.
 
 Every new tool then feels like a variation of one you already know, and you start *translating* instead of learning from scratch.
 
 <Callout tone="orange" label="Usual mistake: memorizing click paths instead of structure">
-Learning an app as a fixed recipe ("click the blue icon third from the left") breaks the moment an update moves a button or you switch to another program. Read what each region of the screen represents instead, and your habits transfer across tools.
+Learning an app as a fixed recipe ("click the blue icon third from the left") breaks the moment an update moves a button or you switch to another program. Learn what each part of the screen does instead, and your habits will carry over to new tools.
 </Callout>
 
 <Callout tone="mint" label="The end state">
-None of these layers are learned in a day. Over months your skill grows, and so does your relationship with the machine: it stops feeling external and unpredictable and starts to feel like an extension of your thinking.
+You do not learn any of these layers in a day. Over months of practice, the computer becomes predictable, and you can focus on your work without fighting the mechanics.
 </Callout>
