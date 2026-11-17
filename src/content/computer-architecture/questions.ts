@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "architecture-and-organization",
+    section: "structure-and-function",
     prompt: "Which of these is part of a computer's architecture, not its organization?",
     options: [
       { id: "a", text: "The instruction set" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "measuring-performance",
+    section: "working-out-weighted-cpi",
     prompt: "A program's instructions are 50% ALU at 1 cycle, 30% load/store at 3 cycles and 20% branch at 2 cycles. What is the CPI?",
     options: [
       { id: "a", text: "1.8" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "measuring-performance",
+    section: "mips-and-mflops-pitfalls",
     prompt: "A 500 MHz machine has a CPI of 2. What is its MIPS?",
     options: [
       { id: "a", text: "1000" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "risc-and-cisc",
+    section: "core-principles-of-risc",
     prompt: "Which is typical of RISC?",
     options: [
       { id: "a", text: "Variable-length instructions" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "control-unit",
+    section: "microprogrammed-control",
     prompt: "What's the main advantage of a microprogrammed control unit over a hardwired one?",
     options: [
       { id: "a", text: "It's faster" },
@@ -132,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q10",
     quiz: "final-quiz",
+    lesson: "io-methods",
+    section: "3-direct-memory-access-dma",
     prompt: "Which I/O method lets the CPU transfer a large block with just one interrupt?",
     options: [
       { id: "a", text: "Polling" },
@@ -140,11 +152,13 @@ export const questions: Question[] = [
       { id: "d", text: "Handshaking" },
     ],
     correctOptionId: "c",
-    explanation: "The DMA controller moves the whole block and interrupts when it's finished.",
+    explanation: "Direct Memory Access (DMA) delegates block transfers directly to a dedicated controller. The CPU programs the starting address and word count, and the DMA controller transfers the entire block directly to or from RAM across the system bus, generating a single interrupt only when the entire transfer finishes. Polling (a) continuously burns CPU cycles checking status flags without interrupts. Programmed interrupt-driven I/O (b) generates an interrupt for every single word or byte transferred, consuming substantial CPU overhead. Handshaking (d) is an electrical signal coordination protocol used between masters and slaves, not an independent block transfer mechanism.",
   },
   {
     id: "computer-architecture/final-quiz/q11",
     quiz: "final-quiz",
+    lesson: "pipelining",
+    section: "how-much-faster",
     prompt: "A 5-stage pipeline runs 20 instructions with no hazards. How many cycles does that take?",
     options: [
       { id: "a", text: "20" },
@@ -153,20 +167,82 @@ export const questions: Question[] = [
       { id: "d", text: "100" },
     ],
     correctOptionId: "b",
-    explanation: "k + n - 1 = 5 + 20 - 1 = 24. The first takes 5, and one finishes per cycle after that.",
+    explanation: "For k pipeline stages and n instructions, the cycle count is k + n - 1 = 5 + 20 - 1 = 24. The first instruction requires 5 cycles to traverse all stages and fill the pipeline; after that, exactly one instruction completes on every subsequent cycle. 20 (a) assumes zero pipeline fill latency, 25 (c) mistakenly adds k + n without subtracting 1, and 100 (d) is the unpipelined execution cost (20 × 5).",
   },
   {
     id: "computer-architecture/final-quiz/q12",
     quiz: "final-quiz",
+    lesson: "pipeline-hazards",
+    section: "2-data-forwarding-bypassing",
     prompt: "Which hazard does forwarding fix, and which remains?",
     options: [
       { id: "a", text: "It fixes all data hazards" },
-      { id: "b", text: "It fixes most data hazards, but a load followed at once by a use still needs one stall" },
+      { id: "b", text: "It fixes most data hazards, but a load followed immediately by a use still requires one stall" },
       { id: "c", text: "It fixes control hazards only" },
       { id: "d", text: "It fixes structural hazards only" },
     ],
     correctOptionId: "b",
-    explanation: "A loaded value only exists after MEM, which is one cycle too late for the next instruction's EX.",
+    explanation: "Data forwarding eliminates stalls between arithmetic instructions by bypassing results directly from the ALU output (EX/MEM) to the ALU input. However, a load instruction only receives data from memory at the end of the MEM stage, which is one cycle too late for an immediately following instruction entering EX. Even with forwarding, a load-use hazard requires a mandatory 1-cycle stall bubble. Forwarding does not eliminate all data hazards (disproving a), and does not resolve control (c) or structural (d) hazards.",
+  },
+  {
+    id: "computer-architecture/final-quiz/q13",
+    quiz: "final-quiz",
+    lesson: "buses-and-arbitration",
+    section: "1-daisy-chaining-serial-grant",
+    prompt: "In a centralized daisy-chain bus arbitration scheme, which device has the highest priority?",
+    options: [
+      { id: "a", text: "The device physically closest to the bus arbiter on the grant line" },
+      { id: "b", text: "The device with the highest clock frequency" },
+      { id: "c", text: "The device with the lowest numerical interrupt vector" },
+      { id: "d", text: "The device physically farthest from the bus arbiter" },
+    ],
+    correctOptionId: "a",
+    explanation: "In a daisy chain, the grant signal originates at the arbiter and propagates serially through each device in physical order. The device closest to the arbiter inspects the grant line first and intercepts it if requesting, starving all downstream devices. Clock frequency (b) and vector numbers (c) play no role in daisy-chain physical grant propagation, and the farthest device (d) has the lowest priority.",
+  },
+  {
+    id: "computer-architecture/final-quiz/q14",
+    quiz: "final-quiz",
+    lesson: "buses-and-arbitration",
+    section: "split-transaction-protocols",
+    prompt: "What is the primary benefit of a split-transaction bus compared to a circuit-switched bus?",
+    options: [
+      { id: "a", text: "The bus is released during memory access latency, allowing other masters to use the bus while memory reads the data" },
+      { id: "b", text: "It eliminates the need for address lines entirely" },
+      { id: "c", text: "It doubles the physical clock frequency of the memory chips" },
+      { id: "d", text: "It prevents all possible cache coherence conflicts" },
+    ],
+    correctOptionId: "a",
+    explanation: "A split-transaction (pipelined) bus decouples memory requests from memory responses. The master issues a request and immediately releases the bus. While memory takes tens or hundreds of cycles to retrieve the data, other masters utilize the bus for unrelated transactions, dramatically improving overall bus utilization and throughput. Address lines are still required (disproving b), chip internal clock frequency is unchanged (disproving c), and cache coherence still requires snooping or directory tracking (disproving d).",
+  },
+  {
+    id: "computer-architecture/final-quiz/q15",
+    quiz: "final-quiz",
+    lesson: "parallel-processing",
+    section: "the-limit-amdahls-law",
+    prompt: "If 10% of a program must run sequentially, what is the maximum theoretical speedup achievable according to Amdahl's law on a system with 1,000 processor cores?",
+    options: [
+      { id: "a", text: "10×" },
+      { id: "b", text: "100×" },
+      { id: "c", text: "1,000×" },
+      { id: "d", text: "90×" },
+    ],
+    correctOptionId: "a",
+    explanation: "Under Amdahl's law, maximum speedup = 1 / ((1 - p) + p/N). With a serial fraction of 1 - p = 0.10, the speedup can never exceed 1 / 0.10 = 10×, regardless of how many cores are deployed. With 1,000 cores, speedup is 1 / (0.10 + 0.90/1000) = 1 / 0.1009 ≈ 9.91×, strictly bounded by the 10× ceiling. 100×, 1,000×, and 90× all ignore the dominant sequential bottleneck.",
+  },
+  {
+    id: "computer-architecture/final-quiz/q16",
+    quiz: "final-quiz",
+    lesson: "parallel-processing",
+    section: "the-cache-coherence-problem-and-the-mesi-protocol",
+    prompt: "In the MESI cache coherence protocol, what action occurs when a processor core writes to a cache block that it currently holds in state Shared (S)?",
+    options: [
+      { id: "a", text: "It broadcasts an Invalidate signal on the bus to invalidate other copies, and transitions to Modified (M)" },
+      { id: "b", text: "It flushes its entire cache to main DRAM and transitions to Invalid (I)" },
+      { id: "c", text: "It transitions silently to Exclusive (E) without communicating on the bus" },
+      { id: "d", text: "It halts execution until all other cores reach an operating system barrier" },
+    ],
+    correctOptionId: "a",
+    explanation: "When a core writes to a cache block in state Shared (S), other caches may hold copies of that block. To prevent stale data, the writing core broadcasts an Invalidate signal across the bus, causing other caches to mark their copies Invalid (I). The writing core then assumes exclusive ownership and transitions the block to Modified (M). Flushing the cache (b) is unnecessary, a silent transition to Exclusive (c) is prohibited because it would leave stale copies in other caches, and operating system barriers (d) are software synchronization constructs, not hardware coherence actions.",
   },
   {
     id: "computer-architecture/hardware-datapath-quiz/q1",

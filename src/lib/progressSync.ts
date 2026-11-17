@@ -17,7 +17,7 @@ import {
   type QuizScores,
 } from "@/lib/progressStore";
 
-export const API_URL = import.meta.env.VITE_API_URL ?? "https://decoded-api.stack42.tech";
+export const API_URL = import.meta.env.VITE_API_URL ?? "https://api.csdecod.ing";
 
 const ACCOUNT_KEY = "decoded:account:v1";
 

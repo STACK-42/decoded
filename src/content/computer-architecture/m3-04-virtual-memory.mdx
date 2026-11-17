@@ -131,7 +131,7 @@ The TLB is a small, highly associative hardware cache (typically 64 to 512 entri
 1. When the CPU emits a virtual address, the MMU queries the TLB tag array using the $VPN$.
 2. **TLB Hit**: If the translation is present and valid, the TLB outputs the $PFN$ in less than 1 clock cycle. The physical address is assembled immediately with zero main memory overhead.
 3. **TLB Miss**: If the translation is absent from the TLB, the hardware must perform a **page table walk**:
-   - **Hardware Page Table Walker** (x86, ARM): Dedicated finite-state machines in the MMU traverse the hierarchical page tables in memory, load the missing PTE into the TLB, and retry the memory access.
+   - **Hardware Page Table Walker** (x86, ARM): Dedicated [finite-state machines](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) in the MMU traverse the hierarchical page tables in memory, load the missing PTE into the TLB, and retry the memory access.
    - **Software-Managed TLB** (MIPS, SPARC): The MMU generates a TLB Miss trap exception. The operating system kernel executes a short, optimized trap handler that fetches the PTE and inserts it into the TLB using privileged instructions.
 
 <Callout tone="orange" label="Confusing TLB misses with page faults">

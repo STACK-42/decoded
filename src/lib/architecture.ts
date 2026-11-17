@@ -564,6 +564,827 @@ export function calculateBusBandwidth(
   };
 }
 
+/** Calculates maximum bus clock frequency constrained by propagation delay, setup time, clock-to-output, and clock skew. */
+export function calculateBusClockSkewLimit(
+  tPropNs: number,
+  tSetupNs: number,
+  tCoNs: number,
+  tSkewNs: number
+): {
+  minClockPeriodNs: number;
+  maxClockFrequencyMHz: number;
+} {
+  const minClockPeriodNs = tPropNs + tSetupNs + tCoNs + tSkewNs;
+  const maxClockFrequencyMHz = 1000 / minClockPeriodNs;
+  return {
+    minClockPeriodNs,
+    maxClockFrequencyMHz,
+  };
+}
+
+/** Calculates throughput and speedup for split-transaction (pipelined) bus vs conventional circuit-switched bus. */
+export function calculateSplitTransactionThroughput(
+  busWidthBytes: number,
+  busClockHz: number,
+  requestCycles: number,
+  responseCycles: number,
+  memoryLatencyCycles: number
+): {
+  circuitSwitchedCycles: number;
+  circuitSwitchedThroughputMBps: number;
+  circuitSwitchedEfficiencyPercent: number;
+  splitCycles: number;
+  splitThroughputMBps: number;
+  splitEfficiencyPercent: number;
+  speedup: number;
+} {
+  const dataBytes = busWidthBytes * responseCycles;
+  const circuitSwitchedCycles = requestCycles + memoryLatencyCycles + responseCycles;
+  const circuitSwitchedSec = circuitSwitchedCycles / busClockHz;
+  const circuitSwitchedThroughputMBps = dataBytes / 1e6 / circuitSwitchedSec;
+  const circuitSwitchedEfficiencyPercent = (responseCycles / circuitSwitchedCycles) * 100;
+
+  const splitCycles = requestCycles + responseCycles;
+  const splitSec = splitCycles / busClockHz;
+  const splitThroughputMBps = dataBytes / 1e6 / splitSec;
+  const splitEfficiencyPercent = (responseCycles / splitCycles) * 100;
+
+  const speedup = splitThroughputMBps / circuitSwitchedThroughputMBps;
+  return {
+    circuitSwitchedCycles,
+    circuitSwitchedThroughputMBps,
+    circuitSwitchedEfficiencyPercent,
+    splitCycles,
+    splitThroughputMBps,
+    splitEfficiencyPercent,
+    speedup,
+  };
+}
+
+/** Evaluates UART / I/O FIFO buffer overrun margin under maximum interrupt service latency. */
+export function calculateFifoOverrunMargin(
+  baudRate: number,
+  bitsPerByte: number,
+  maxLatencySec: number,
+  fifoCapacity: number,
+  triggerThreshold: number
+): {
+  byteArrivalIntervalSec: number;
+  bytesArrivedDuringLatency: number;
+  headroomBytes: number;
+  isOverrun: boolean;
+  remainingMarginBytes: number;
+} {
+  const byteRate = baudRate / bitsPerByte;
+  const byteArrivalIntervalSec = 1 / byteRate;
+  const bytesArrivedDuringLatency = Math.ceil(maxLatencySec * byteRate);
+  const headroomBytes = fifoCapacity - triggerThreshold;
+  const isOverrun = bytesArrivedDuringLatency > headroomBytes;
+  const remainingMarginBytes = headroomBytes - bytesArrivedDuringLatency;
+  return {
+    byteArrivalIntervalSec,
+    bytesArrivedDuringLatency,
+    headroomBytes,
+    isOverrun,
+    remainingMarginBytes,
+  };
+}
+
+/** Calculates daisy-chain interrupt dispatch latency for a device at index i. */
+export function calculateDaisyChainLatency(
+  deviceIndex: number,
+  instructionCompleteNs: number,
+  intaAssertNs: number,
+  perDevicePropNs: number,
+  vectorDriveNs: number,
+  cpuLatchSetupNs: number
+): {
+  totalDispatchLatencyNs: number;
+  daisyChainPropagationNs: number;
+} {
+  const daisyChainPropagationNs = deviceIndex * perDevicePropNs;
+  const totalDispatchLatencyNs =
+    instructionCompleteNs +
+    intaAssertNs +
+    daisyChainPropagationNs +
+    vectorDriveNs +
+    cpuLatchSetupNs;
+  return {
+    totalDispatchLatencyNs,
+    daisyChainPropagationNs,
+  };
+}
+
+/** Calculates maximum devices supported on a daisy chain within an acquisition timing budget. */
+export function calculateMaxDaisyChainDevices(
+  budgetNs: number,
+  intaAssertNs: number,
+  perDevicePropNs: number,
+  vectorDriveNs: number,
+  cpuLatchSetupNs: number
+): number {
+  const fixedOverheadNs = intaAssertNs + vectorDriveNs + cpuLatchSetupNs;
+  if (budgetNs < fixedOverheadNs) return 0;
+  const maxHops = Math.floor((budgetNs - fixedOverheadNs) / perDevicePropNs);
+  return maxHops + 1;
+}
+
+/** Simulates distributed self-selection arbitration with active-high wired-OR logic. */
+export function simulateDistributedArbitration(
+  priorities: number[],
+  bitWidth: number
+): {
+  winnerIndex: number;
+  winnerPriority: number;
+  steps: Array<{
+    bitIndex: number;
+    busValue: number;
+    activeDeviceIndices: number[];
+    withdrawnDeviceIndices: number[];
+  }>;
+} {
+  let active = priorities.map((_, i) => i);
+  const steps: Array<{
+    bitIndex: number;
+    busValue: number;
+    activeDeviceIndices: number[];
+    withdrawnDeviceIndices: number[];
+  }> = [];
+
+  for (let b = bitWidth - 1; b >= 0; b--) {
+    const bitMask = 1 << b;
+    const busValue = active.some((idx) => (priorities[idx] & bitMask) !== 0) ? 1 : 0;
+    const stillActive: number[] = [];
+    const withdrawn: number[] = [];
+
+    for (const idx of active) {
+      const devBit = (priorities[idx] & bitMask) !== 0 ? 1 : 0;
+      if (devBit === busValue) {
+        stillActive.push(idx);
+      } else {
+        withdrawn.push(idx);
+      }
+    }
+
+    steps.push({
+      bitIndex: b,
+      busValue,
+      activeDeviceIndices: [...stillActive],
+      withdrawnDeviceIndices: withdrawn,
+    });
+
+    active = stillActive;
+  }
+
+  const winnerIndex = active[0] ?? -1;
+  const winnerPriority = winnerIndex >= 0 ? priorities[winnerIndex] : -1;
+
+  return {
+    winnerIndex,
+    winnerPriority,
+    steps,
+  };
+}
+
+/** Calculates effective CPI under DMA cycle stealing memory bus contention. */
+export function calculateDmaCycleStealImpact(
+  cpuFreqHz: number,
+  baseCpi: number,
+  busFreqHz: number,
+  busWidthBytes: number,
+  dmaThroughputBytesPerSec: number,
+  instructionsPerMemoryAccess: number,
+  collisionProbability: number
+): {
+  maxBusThroughputBytesPerSec: number;
+  dmaBusUtilizationPercent: number;
+  cpuBusUtilizationPercent: number;
+  combinedBusDemandPercent: number;
+  stallCyclesPerCollision: number;
+  averageStallCyclesPerInstruction: number;
+  effectiveCpi: number;
+  slowdownPercent: number;
+} {
+  const maxBusThroughputBytesPerSec = busFreqHz * busWidthBytes;
+  const dmaBusUtilizationPercent = (dmaThroughputBytesPerSec / maxBusThroughputBytesPerSec) * 100;
+
+  const baselineInstructionRate = cpuFreqHz / baseCpi;
+  const cpuMemoryRequestsPerSec = baselineInstructionRate / instructionsPerMemoryAccess;
+  const cpuBusUtilizationPercent = (cpuMemoryRequestsPerSec / busFreqHz) * 100;
+  const combinedBusDemandPercent = dmaBusUtilizationPercent + cpuBusUtilizationPercent;
+
+  const busCycleTimeSec = 1 / busFreqHz;
+  const cpuCycleTimeSec = 1 / cpuFreqHz;
+  const stallCyclesPerCollision = busCycleTimeSec / cpuCycleTimeSec;
+
+  const probMemoryAccess = 1 / instructionsPerMemoryAccess;
+  const averageStallCyclesPerInstruction =
+    probMemoryAccess * collisionProbability * stallCyclesPerCollision;
+  const effectiveCpi = baseCpi + averageStallCyclesPerInstruction;
+  const slowdownPercent = ((effectiveCpi - baseCpi) / baseCpi) * 100;
+
+  return {
+    maxBusThroughputBytesPerSec,
+    dmaBusUtilizationPercent,
+    cpuBusUtilizationPercent,
+    combinedBusDemandPercent,
+    stallCyclesPerCollision,
+    averageStallCyclesPerInstruction,
+    effectiveCpi,
+    slowdownPercent,
+  };
+}
+
+/* -------------------------------- parallelism -------------------------- */
+
+/** Calculates speedup, execution times, and efficiency for pipelined vs unpipelined execution. */
+export function calculatePipelineSpeedup(
+  stageDelaysPs: number[],
+  registerDelayPs: number,
+  numInstructions: number
+): {
+  numStages: number;
+  unpipelinedCycleTimePs: number;
+  pipelinedCycleTimePs: number;
+  unpipelinedTotalTimePs: number;
+  pipelinedTotalTimePs: number;
+  speedup: number;
+  asymptoticSpeedup: number;
+  efficiencyPercent: number;
+  throughputMips: number;
+} {
+  const numStages = stageDelaysPs.length;
+  const unpipelinedCycleTimePs = stageDelaysPs.reduce((sum, d) => sum + d, 0);
+  const maxStageDelayPs = Math.max(...stageDelaysPs);
+  const pipelinedCycleTimePs = maxStageDelayPs + registerDelayPs;
+
+  const unpipelinedTotalTimePs = numInstructions * unpipelinedCycleTimePs;
+  const pipelinedTotalTimePs = (numStages + numInstructions - 1) * pipelinedCycleTimePs;
+
+  const speedup = unpipelinedTotalTimePs / pipelinedTotalTimePs;
+  const asymptoticSpeedup = unpipelinedCycleTimePs / pipelinedCycleTimePs;
+  const efficiencyPercent = (speedup / numStages) * 100;
+  const throughputMips = numInstructions / (pipelinedTotalTimePs * 1e-12 * 1e6);
+
+  return {
+    numStages,
+    unpipelinedCycleTimePs,
+    pipelinedCycleTimePs,
+    unpipelinedTotalTimePs,
+    pipelinedTotalTimePs,
+    speedup,
+    asymptoticSpeedup,
+    efficiencyPercent,
+    throughputMips,
+  };
+}
+
+/** Evaluates effective CPI factoring in data hazard stalls, branch misprediction flushes, and structural stalls. */
+export function calculatePipelineCpiWithHazards(params: {
+  loadFrequency: number;
+  loadUseHazardFraction: number;
+  branchFrequency: number;
+  mispredictRate: number;
+  branchPenaltyCycles: number;
+  structuralStallPerInstruction?: number;
+}): {
+  idealCpi: number;
+  dataStallCyclesPerInstruction: number;
+  controlStallCyclesPerInstruction: number;
+  structuralStallCyclesPerInstruction: number;
+  effectiveCpi: number;
+  pipelineEfficiencyPercent: number;
+} {
+  const idealCpi = 1.0;
+  const dataStallCyclesPerInstruction =
+    params.loadFrequency * params.loadUseHazardFraction * 1.0;
+  const controlStallCyclesPerInstruction =
+    params.branchFrequency * params.mispredictRate * params.branchPenaltyCycles;
+  const structuralStallCyclesPerInstruction = params.structuralStallPerInstruction ?? 0;
+
+  const effectiveCpi =
+    idealCpi +
+    dataStallCyclesPerInstruction +
+    controlStallCyclesPerInstruction +
+    structuralStallCyclesPerInstruction;
+
+  const pipelineEfficiencyPercent = (idealCpi / effectiveCpi) * 100;
+
+  return {
+    idealCpi,
+    dataStallCyclesPerInstruction,
+    controlStallCyclesPerInstruction,
+    structuralStallCyclesPerInstruction,
+    effectiveCpi,
+    pipelineEfficiencyPercent,
+  };
+}
+
+/** Computes Amdahl's Law speedup and parallel efficiency across processor configurations. */
+export function calculateAmdahlScaling(
+  parallelFraction: number,
+  processorCounts: number[]
+): {
+  asymptoticSpeedup: number;
+  scaling: {
+    processors: number;
+    speedup: number;
+    efficiencyPercent: number;
+  }[];
+} {
+  const serialFraction = 1 - parallelFraction;
+  const asymptoticSpeedup = 1 / serialFraction;
+
+  const scaling = processorCounts.map((p) => {
+    const speedup = 1 / (serialFraction + parallelFraction / p);
+    const efficiencyPercent = (speedup / p) * 100;
+    return {
+      processors: p,
+      speedup,
+      efficiencyPercent,
+    };
+  });
+
+  return {
+    asymptoticSpeedup,
+    scaling,
+  };
+}
+
+/** Computes Gustafson's Law scaled speedup under weak scaling (problem size scales with processors). */
+export function calculateGustafsonSpeedup(
+  serialFraction: number,
+  processors: number
+): {
+  scaledSpeedup: number;
+  efficiencyPercent: number;
+} {
+  const scaledSpeedup = processors - serialFraction * (processors - 1);
+  const efficiencyPercent = (scaledSpeedup / processors) * 100;
+
+  return {
+    scaledSpeedup,
+    efficiencyPercent,
+  };
+}
+
+export type MesiState = "M" | "E" | "S" | "I";
+export type MesiBusAction = "BusRd" | "BusRdX" | "Invalidate" | "None" | "Flush";
+
+export interface MesiStep {
+  step: number;
+  coreId: number;
+  op: "read" | "write";
+  priorStates: MesiState[];
+  nextStates: MesiState[];
+  busAction: MesiBusAction;
+  dataSuppliedBy: "Memory" | `Core ${number}` | "Local Cache";
+}
+
+/** Simulates the MESI cache coherence protocol across multiple cores for a single cache line. */
+export function simulateMesiCoherence(
+  numCores: number,
+  operations: { coreId: number; op: "read" | "write" }[]
+): MesiStep[] {
+  let states: MesiState[] = Array(numCores).fill("I");
+  const steps: MesiStep[] = [];
+
+  operations.forEach((opRecord, idx) => {
+    const { coreId, op } = opRecord;
+    const priorStates = [...states];
+    const nextStates = [...states];
+    let busAction: MesiBusAction = "None";
+    let dataSuppliedBy: "Memory" | `Core ${number}` | "Local Cache" = "Memory";
+
+    const currentState = priorStates[coreId];
+
+    if (op === "read") {
+      if (currentState === "M" || currentState === "E" || currentState === "S") {
+        // Hit
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else {
+        // Miss: issue BusRd
+        busAction = "BusRd";
+        const modifiedOwner = priorStates.findIndex((s) => s === "M");
+        if (modifiedOwner !== -1) {
+          // Flush dirty block to memory/bus; modified owner transitions to S
+          nextStates[modifiedOwner] = "S";
+          dataSuppliedBy = `Core ${modifiedOwner}`;
+          nextStates[coreId] = "S";
+        } else {
+          const hasShared = priorStates.some((s) => s === "S" || s === "E");
+          if (hasShared) {
+            // Downgrade any E to S
+            for (let c = 0; c < numCores; c++) {
+              if (priorStates[c] === "E") nextStates[c] = "S";
+            }
+            nextStates[coreId] = "S";
+            dataSuppliedBy = "Memory";
+          } else {
+            // No other core has it: transitions to Exclusive
+            nextStates[coreId] = "E";
+            dataSuppliedBy = "Memory";
+          }
+        }
+      }
+    } else {
+      // op === "write"
+      if (currentState === "M") {
+        // Hit: already modified
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else if (currentState === "E") {
+        // Hit: silent upgrade to M
+        nextStates[coreId] = "M";
+        busAction = "None";
+        dataSuppliedBy = "Local Cache";
+      } else if (currentState === "S") {
+        // Write miss / upgrade: issue Invalidate
+        busAction = "Invalidate";
+        for (let c = 0; c < numCores; c++) {
+          if (c !== coreId && priorStates[c] === "S") {
+            nextStates[c] = "I";
+          }
+        }
+        nextStates[coreId] = "M";
+        dataSuppliedBy = "Local Cache";
+      } else {
+        // currentState === "I": write miss, issue BusRdX
+        busAction = "BusRdX";
+        const modifiedOwner = priorStates.findIndex((s) => s === "M");
+        if (modifiedOwner !== -1) {
+          dataSuppliedBy = `Core ${modifiedOwner}`;
+        } else {
+          dataSuppliedBy = "Memory";
+        }
+        for (let c = 0; c < numCores; c++) {
+          if (c !== coreId) {
+            nextStates[c] = "I";
+          }
+        }
+        nextStates[coreId] = "M";
+      }
+    }
+
+    states = nextStates;
+    steps.push({
+      step: idx + 1,
+      coreId,
+      op,
+      priorStates,
+      nextStates,
+      busAction,
+      dataSuppliedBy,
+    });
+  });
+
+  return steps;
+}
+
+/* ------------------- bernstein dependencies & branch prediction ----------- */
+
+export type BernsteinResult = {
+  raw: string[]; // Read-After-Write (true dependencies): i1 writes, i2 reads
+  war: string[]; // Write-After-Read (anti-dependencies): i1 reads, i2 writes
+  waw: string[]; // Write-After-Write (output dependencies): i1 writes, i2 writes
+  canParallelize: boolean;
+};
+
+/** Checks Bernstein's conditions for parallel/reordered execution between two instructions. */
+export function checkBernsteinConditions(
+  i1Reads: string[],
+  i1Writes: string[],
+  i2Reads: string[],
+  i2Writes: string[]
+): BernsteinResult {
+  const raw = i1Writes.filter((w) => i2Reads.includes(w));
+  const war = i1Reads.filter((r) => i2Writes.includes(r));
+  const waw = i1Writes.filter((w) => i2Writes.includes(w));
+  const canParallelize = raw.length === 0 && war.length === 0 && waw.length === 0;
+  return { raw, war, waw, canParallelize };
+}
+
+export type BranchPredictorTrace = {
+  step: number;
+  outcome: boolean; // true = taken, false = not taken
+  pred1Bit: boolean;
+  pred2Bit: boolean;
+  state1Bit: boolean; // true = taken, false = not taken
+  state2Bit: 0 | 1 | 2 | 3; // 00: Strongly Not Taken, 01: Weakly Not Taken, 10: Weakly Taken, 11: Strongly Taken
+  correct1Bit: boolean;
+  correct2Bit: boolean;
+};
+
+export type BranchPredictorResult = {
+  steps: BranchPredictorTrace[];
+  accuracy1BitPercent: number;
+  accuracy2BitPercent: number;
+};
+
+/** Simulates 1-bit and 2-bit saturating counter branch predictors on a sequence of branch outcomes. */
+export function simulateBranchPredictors(
+  outcomes: boolean[],
+  initial2BitState: 0 | 1 | 2 | 3 = 3 // 3 = Strongly Taken (11)
+): BranchPredictorResult {
+  let state1Bit = true; // initially Taken
+  let state2Bit = initial2BitState;
+
+  const steps: BranchPredictorTrace[] = [];
+  let correct1Bit = 0;
+  let correct2Bit = 0;
+
+  outcomes.forEach((outcome, idx) => {
+    const pred1 = state1Bit;
+    const pred2 = state2Bit >= 2; // 2 or 3 = Taken; 0 or 1 = Not Taken
+
+    const is1Correct = pred1 === outcome;
+    const is2Correct = pred2 === outcome;
+
+    if (is1Correct) correct1Bit++;
+    if (is2Correct) correct2Bit++;
+
+    // update 1-bit predictor
+    const priorState1 = state1Bit;
+    state1Bit = outcome;
+
+    // update 2-bit saturating counter
+    const priorState2 = state2Bit;
+    if (outcome) {
+      // taken: saturate toward 3
+      if (state2Bit < 3) (state2Bit as number)++;
+    } else {
+      // not taken: saturate toward 0
+      if (state2Bit > 0) (state2Bit as number)--;
+    }
+
+    steps.push({
+      step: idx + 1,
+      outcome,
+      pred1Bit: pred1,
+      pred2Bit: pred2,
+      state1Bit: priorState1,
+      state2Bit: priorState2,
+      correct1Bit: is1Correct,
+      correct2Bit: is2Correct,
+    });
+  });
+
+  const accuracy1BitPercent = (correct1Bit / outcomes.length) * 100;
+  const accuracy2BitPercent = (correct2Bit / outcomes.length) * 100;
+
+  return { steps, accuracy1BitPercent, accuracy2BitPercent };
+}
+
+/* ---------------- module 5 practice: advanced pipeline & parallel helpers -- */
+
+export type PipelineRegisterSizing = {
+  ifIdBits: number;
+  idExBits: number;
+  exMemBits: number;
+  memWbBits: number;
+  totalBits: number;
+};
+
+/** Calculates bit width of interstage pipeline registers in a standard RISC datapath. */
+export function calculatePipelineRegisterBits(params?: {
+  addressBits?: number;
+  dataBits?: number;
+  regIndexBits?: number;
+  includePcInIdEx?: boolean;
+  exControlBits?: number;
+  memControlBits?: number;
+  wbControlBits?: number;
+}): PipelineRegisterSizing {
+  const addressBits = params?.addressBits ?? 32;
+  const dataBits = params?.dataBits ?? 32;
+  const regIndexBits = params?.regIndexBits ?? 5; // 32 general purpose registers
+  const includePcInIdEx = params?.includePcInIdEx ?? true;
+  const exControlBits = params?.exControlBits ?? 4; // ALUOp(2), ALUSrc(1), RegDst(1)
+  const memControlBits = params?.memControlBits ?? 3; // Branch(1), MemRead(1), MemWrite(1)
+  const wbControlBits = params?.wbControlBits ?? 2; // RegWrite(1), MemtoReg(1)
+
+  // IF/ID: PC+4 (addressBits) + Instruction Word (dataBits)
+  const ifIdBits = addressBits + dataBits;
+
+  // ID/EX: PC+4 (if included) + ReadData1 + ReadData2 + SignExtendedImmediate + Rs + Rt + Rd + Control
+  const idExBits =
+    (includePcInIdEx ? addressBits : 0) +
+    dataBits + // ReadData1
+    dataBits + // ReadData2
+    dataBits + // SignExtImm
+    regIndexBits + // Rs
+    regIndexBits + // Rt
+    regIndexBits + // Rd
+    (exControlBits + memControlBits + wbControlBits);
+
+  // EX/MEM: Branch Target + Zero/Condition Flag(1) + ALU Result + WriteData + Rd + MemControl + WbControl
+  const exMemBits =
+    addressBits + // Branch target address
+    1 + // Zero flag
+    dataBits + // ALU result
+    dataBits + // Write data (Rt value for store)
+    regIndexBits + // Destination register Rd
+    (memControlBits + wbControlBits);
+
+  // MEM/WB: Memory Read Data + ALU Result + Rd + WbControl
+  const memWbBits =
+    dataBits + // Mem read data
+    dataBits + // ALU result
+    regIndexBits + // Destination register Rd
+    wbControlBits;
+
+  const totalBits = ifIdBits + idExBits + exMemBits + memWbBits;
+
+  return { ifIdBits, idExBits, exMemBits, memWbBits, totalBits };
+}
+
+/** Determines optimal pipeline depth balancing clock frequency scaling against branch hazard penalties. */
+export function calculateOptimalPipelineStages(params: {
+  combinationalDelayPs: number;
+  registerDelayPs: number;
+  branchFrequency: number;
+  branchMispredictRate: number;
+  branchPenaltyRatio?: number; // stage penalty fraction (e.g. 0.4 means penalty = Math.round(0.4 * k))
+  penaltyFn?: (k: number) => number;
+  maxStagesToTest?: number;
+}): {
+  optimalStages: number;
+  optimalClockPeriodPs: number;
+  optimalCpi: number;
+  optimalTimePerInstructionPs: number;
+  stageEvaluations: {
+    stages: number;
+    clockPeriodPs: number;
+    cpi: number;
+    timePerInstructionPs: number;
+  }[];
+} {
+  const penaltyRatio = params.branchPenaltyRatio ?? 0.4;
+  const maxStages = params.maxStagesToTest ?? 40;
+  const stageEvaluations: {
+    stages: number;
+    clockPeriodPs: number;
+    cpi: number;
+    timePerInstructionPs: number;
+  }[] = [];
+
+  let bestStages = 1;
+  let bestTime = Infinity;
+  let bestClockPeriod = 0;
+  let bestCpi = 1;
+
+  for (let k = 1; k <= maxStages; k++) {
+    const clockPeriodPs = params.combinationalDelayPs / k + params.registerDelayPs;
+    // Base CPI is 1.0. Branch penalty cycles scale roughly with pipeline depth to branch resolution stage
+    const penaltyCycles = params.penaltyFn
+      ? params.penaltyFn(k)
+      : Math.max(1, Math.round(penaltyRatio * (k - 1)));
+    const branchStall = params.branchFrequency * params.branchMispredictRate * penaltyCycles;
+    const cpi = 1.0 + branchStall;
+    const timePerInstructionPs = cpi * clockPeriodPs;
+
+    stageEvaluations.push({
+      stages: k,
+      clockPeriodPs,
+      cpi,
+      timePerInstructionPs,
+    });
+
+    if (timePerInstructionPs < bestTime) {
+      bestTime = timePerInstructionPs;
+      bestStages = k;
+      bestClockPeriod = clockPeriodPs;
+      bestCpi = cpi;
+    }
+  }
+
+  return {
+    optimalStages: bestStages,
+    optimalClockPeriodPs: bestClockPeriod,
+    optimalCpi: bestCpi,
+    optimalTimePerInstructionPs: bestTime,
+    stageEvaluations,
+  };
+}
+
+export type ForwardSource = "00" | "10" | "01"; // 00: ID/EX (no forward), 10: EX/MEM forward, 01: MEM/WB forward
+
+/** Calculates forwarding unit multiplexer control lines and resolves double hazards. */
+export function calculateForwardingControl(params: {
+  idExRs1: number;
+  idExRs2: number;
+  exMemRd: number;
+  exMemRegWrite: boolean;
+  memWbRd: number;
+  memWbRegWrite: boolean;
+}): {
+  forwardA: ForwardSource;
+  forwardB: ForwardSource;
+  explanationA: string;
+  explanationB: string;
+} {
+  let forwardA: ForwardSource = "00";
+  let explanationA = "No forwarding: operand read from ID/EX register";
+
+  // Check ForwardA
+  // Priority 1: EX/MEM hazard (most recent result)
+  if (params.exMemRegWrite && params.exMemRd !== 0 && params.exMemRd === params.idExRs1) {
+    forwardA = "10";
+    explanationA = `Forwarded from EX/MEM stage (R${params.exMemRd})`;
+  } else if (params.memWbRegWrite && params.memWbRd !== 0 && params.memWbRd === params.idExRs1) {
+    forwardA = "01";
+    explanationA = `Forwarded from MEM/WB stage (R${params.memWbRd})`;
+  }
+
+  let forwardB: ForwardSource = "00";
+  let explanationB = "No forwarding: operand read from ID/EX register";
+
+  // Check ForwardB
+  if (params.exMemRegWrite && params.exMemRd !== 0 && params.exMemRd === params.idExRs2) {
+    forwardB = "10";
+    explanationB = `Forwarded from EX/MEM stage (R${params.exMemRd})`;
+  } else if (params.memWbRegWrite && params.memWbRd !== 0 && params.memWbRd === params.idExRs2) {
+    forwardB = "01";
+    explanationB = `Forwarded from MEM/WB stage (R${params.memWbRd})`;
+  }
+
+  return { forwardA, forwardB, explanationA, explanationB };
+}
+
+/** Calculates SIMD warp execution cycles under branch divergence where lanes take opposing paths. */
+export function calculateSimdBranchDivergence(params: {
+  vectorWidth: number;
+  takenProbability: number;
+  takenCycles: number;
+  notTakenCycles: number;
+}): {
+  probAllTaken: number;
+  probAllNotTaken: number;
+  probDivergent: number;
+  averageSimdCycles: number;
+  idealScalarEquivalentCycles: number;
+  simdEfficiencyPercent: number;
+} {
+  const p = params.takenProbability;
+  const w = params.vectorWidth;
+
+  const probAllTaken = Math.pow(p, w);
+  const probAllNotTaken = Math.pow(1 - p, w);
+  const probDivergent = Math.max(0, 1 - probAllTaken - probAllNotTaken);
+
+  // Divergent warps execute both taken and not taken blocks under mask
+  const divergentCycles = params.takenCycles + params.notTakenCycles;
+  const averageSimdCycles =
+    probAllTaken * params.takenCycles +
+    probAllNotTaken * params.notTakenCycles +
+    probDivergent * divergentCycles;
+
+  const idealScalarEquivalentCycles = p * params.takenCycles + (1 - p) * params.notTakenCycles;
+  const simdEfficiencyPercent = (idealScalarEquivalentCycles / averageSimdCycles) * 100;
+
+  return {
+    probAllTaken,
+    probAllNotTaken,
+    probDivergent,
+    averageSimdCycles,
+    idealScalarEquivalentCycles,
+    simdEfficiencyPercent,
+  };
+}
+
+/** Evaluates the performance penalty of false sharing and cache ping-ponging vs cache line padding. */
+export function calculateFalseSharingOverhead(params: {
+  writesPerThread: number;
+  threads: number;
+  cacheMissPenaltyCycles: number;
+  hitCycles: number;
+}): {
+  cyclesWithoutPadding: number;
+  cyclesWithPadding: number;
+  speedup: number;
+} {
+  // Without padding, almost every concurrent write causes an invalidation miss across threads
+  // Average miss probability ~ (threads - 1) / threads under heavy concurrent writing
+  const missProb = (params.threads - 1) / params.threads;
+  const avgCyclesPerWriteUnpadded =
+    missProb * params.cacheMissPenaltyCycles + (1 - missProb) * params.hitCycles;
+  const cyclesWithoutPadding = params.writesPerThread * avgCyclesPerWriteUnpadded;
+
+  // With padding, each thread exclusively accesses its own private cache line: 100% L1 cache hits after initial fetch
+  const cyclesWithPadding = params.writesPerThread * params.hitCycles;
+  const speedup = cyclesWithoutPadding / cyclesWithPadding;
+
+  return {
+    cyclesWithoutPadding,
+    cyclesWithPadding,
+    speedup,
+  };
+}
+
+
+
+
 
 
 

@@ -419,7 +419,7 @@ $$\text{GM} = \sqrt[n]{\prod_{i=1}^n r_i}$$
   $$\text{GM}_B = \sqrt[3]{2.00 \times 4.00 \times 2.00} = \sqrt[3]{16.0} \approx 2.520$$
 
 Computer $A$ is faster overall by a factor of:
-$$\frac{\text{GM}_A}{\text{GM}_B} = \frac{3.684}{2.520} \approx 1.462\times \text{ (46.2% faster)}$$
+$$\frac{\text{GM}_A}{\text{GM}_B} = \frac{3.684}{2.520} \approx 1.462\times \text{ (46.2\% faster)}$$
 
 **Part 3: Flaw of arithmetic mean for normalized metrics:**
 If one used the arithmetic mean of ratios, the result would depend arbitrarily on which machine is chosen as the baseline. If Computer $A$ were chosen as the reference, normalized ratios for Computer $B$ would be $20/50 = 0.4$, $100/50 = 2.0$, and $100/250 = 0.4$, giving an arithmetic mean of $(0.4 + 2.0 + 0.4)/3 = 0.933 < 1.0$, suggesting Computer $B$ is faster, while relative to $R$ the arithmetic mean for $A$ is $(5+2+5)/3 = 4.0$ vs $(2+4+2)/3 = 2.67$ for $B$, suggesting $A$ is faster.

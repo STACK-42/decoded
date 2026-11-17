@@ -48,7 +48,7 @@ Use ML when:
 
 Before adding a probabilistic engine, an architect must check that ML is really needed. Don't use ML if:
 
-1. **Simple rules are enough.** A regular expression, a lookup table or a simple heuristic works and is easy to audit.
+1. **Simple rules are enough.** A [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), a lookup table or a simple heuristic works and is easy to audit.
 2. **Data is scarce.** Clean, representative, labelled historical data doesn't exist or costs too much.
 3. **Full <Term id="interpretability">interpretability</Term> is required.** The business or the law needs a complete trace of the exact logic, as in medical diagnosis or aerospace triggers.
 4. **The environment has no stable patterns.** The process creating the data has no statistical regularities, or changes faster than you can retrain (the lecture's example: predicting dice rolls). ML needs <Term id="stationarity">stationarity</Term>.
@@ -92,7 +92,7 @@ Before adding a probabilistic engine, an architect must check that ML is really 
 | Dimension | Traditional software | Machine learning systems |
 | --- | --- | --- |
 | Where the logic comes from | written explicitly by engineers | emerges from code + data + hyperparameters (training settings people choose, such as how long to train) |
-| How it fails | loudly: stack traces, null pointers, crashes | silently: valid output, wrong behavior or bias |
+| How it fails | loudly: [stack traces](/courses/computer-literacy/systems-layer#reading-error-messages), null pointers, crashes | silently: valid output, wrong behavior or bias |
 | How it's tested | unit tests check exact outputs | statistical evaluation checks probabilistic bounds |
 | How it decays | when dependencies or APIs change | as soon as real-world data drifts |
 | Artifact size | megabytes (binaries, containers) | gigabytes to terabytes (model weights) |

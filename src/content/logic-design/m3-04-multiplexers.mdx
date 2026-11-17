@@ -134,26 +134,6 @@ When an application requires selecting from more inputs than a single IC provide
 
 To choose from 16 inputs ($I_0\dots I_{15}$) with 4 select lines ($S_3, S_2, S_1, S_0$), five 4-to-1 multiplexers can be arranged in a two-tier tree with zero external gates:
 
-```
-Inputs I0 - I3   ───►┌─────────┐
-                     │ 4:1 MUX │───► D0
-S1, S0 ───────────┬─►└─────────┘
-                  │
-Inputs I4 - I7   ─┼─►┌─────────┐
-                  │  │ 4:1 MUX │───► D1
-                  ├─►└─────────┘     ┌─────────┐
-                  │                  │ 4:1 MUX │───► Final Output Y
-Inputs I8 - I11  ─┼─►┌─────────┐     │         │
-                  │  │ 4:1 MUX │───► D2│         │
-                  ├─►└─────────┘  ┌─►└─────────┘
-                  │               │   ▲
-Inputs I12 - I15 ─┼─►┌─────────┐  │   │
-                  │  │ 4:1 MUX │──┼─► D3
-                  └─►└─────────┘  │
-                                  │
-S3, S2 ───────────────────────────┴─────────────
-```
-
 - **First Tier (4 MUXes):** The four lower multiplexers receive data inputs $I_0\dots I_{15}$. Their select lines are wired in parallel to the two least significant address bits ($S_1, S_0$).
 - **Second Tier (1 MUX):** The fifth multiplexer receives the four intermediate outputs ($D_0, D_1, D_2, D_3$) as its data inputs. Its select lines are connected to the two most significant address bits ($S_3, S_2$).
 

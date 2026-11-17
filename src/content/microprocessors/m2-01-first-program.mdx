@@ -1,19 +1,30 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { AsmRunner } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Your First Program
 
-Assembly is the most direct language there is. Each line is usually one machine instruction, turned into binary by a program called an **assembler**. The basic form of a line is:
+When you program in high-level languages like C or Python, you write text that the compiler turns into dozens of hidden machine operations. Assembly language removes that abstraction. Each line of human-readable program text, known as **source code**, corresponds almost one-to-one with the raw numerical binary instructions executed by the processor, known as **machine code**. A translation tool called an **assembler** reads the source code and turns it into executable machine code.
+
+Every line of assembly code follows a consistent structure:
 
 ```nasm
 label:  INSTRUCTION  destination, source   ; comment
 ```
 
-Labels and comments are optional. Anything after a `;` is ignored.
+Each line can have four parts:
+
+1. A **label** is a symbolic name for a memory address or instruction location, written with a trailing colon when naming code (such as `start:` or `loop:`). Instead of calculating exact memory addresses by hand, you give a location a name and jump or refer to it.
+2. An instruction begins with a **mnemonic**, which is a short, memorable word abbreviation that represents a specific machine instruction opcode. For example, `MOV` stands for move (copy data), and `ADD` stands for addition.
+3. Operands follow the mnemonic. On the 8086, the destination operand sits on the left and receives the result of the operation: `destination, source`.
+4. A **comment** is a note for human readers that begins with a semicolon `;`. The assembler ignores everything from the semicolon to the end of the line.
+
+Assembly programs also contain statements written for the assembler tool itself rather than for the processor. A **directive** (or pseudo-operation) tells the assembler how to organize memory, define variables, or configure segments, but it does not generate a CPU machine instruction. Common directives include `db` (define byte) to allocate data in memory and `segment` to mark program boundaries.
 
 ## Hello, world
 
-Printing text is a job for the operating system, so we make a [system call](/courses/operating-systems/services-and-system-calls#system-calls): we ask DOS to do it using an **interrupt** instruction. Before making the call, we leave a note in the registers saying what we want.
+A microprocessor running inside a computer cannot print text to the monitor on its own; reading keystrokes and drawing pixels are managed by the operating system. An application program communicates with the operating system to request protected services like console output by making a **system call**.
+
+On an 8086 processor running MS-DOS, system calls are triggered by software interrupts. When an interrupt executes, the processor pauses the running program and jumps to a specialized operating system routine known as an **interrupt service routine (ISR)**. The primary entry point for MS-DOS services is the **DOS interrupt (INT 21h)**. Before triggering the interrupt, your program places service codes and parameters into specific registers to select which function the operating system should execute.
 
 <AsmRunner source={`msg db "Hello, World$"
 LEA DX, msg      ; DX = where the text starts
@@ -22,25 +33,38 @@ INT 21h          ; call DOS
 MOV AH, 4Ch      ; 4Ch means: end the program
 INT 21h          ; call DOS`} />
 
-Going through it:
+Walking through the program line by line:
 
-- `msg db "Hello, World$"` reserves one byte per character (**d**efine **b**yte). The `$` marks the end of the string for DOS.
-- `LEA DX, msg` loads the address of the string into DX.
-- `MOV AH, 09h` picks a service, since `INT 21h` is a whole menu of them.
-- `INT 21h` hands control to DOS, which looks at AH and does the job.
+1. `msg db "Hello, World$"`: The `db` directive allocates consecutive bytes in memory holding the ASCII character values for each letter, ending with the dollar sign character `$`.
+2. `LEA DX, msg`: The Load Effective Address instruction calculates the 16-bit offset of `msg` in the data segment and places it into register `DX`.
+3. `MOV AH, 09h`: The high byte of the accumulator register, `AH`, holds the service number. Setting `AH = 09h` requests the DOS string display routine.
+4. `INT 21h`: The processor triggers the DOS interrupt. The DOS interrupt service routine reads the service number in `AH`, inspects the pointer in register pair `DS:DX`, and streams bytes one by one to the console display until it encounters the terminator character `$` (ASCII value `24h`).
+5. `MOV AH, 4Ch`: Setting `AH = 4Ch` requests the program termination service.
+6. `INT 21h`: DOS shuts down the program and returns control cleanly to the command prompt.
 
-Here are the DOS services you'll use most:
+<Callout tone="orange" label="Trap: forgetting the $ terminator">
+DOS service 09h does not track string lengths with a byte count. It streams characters continuously until it encounters a literal `$` (`24h`). If you forget the `$` at the end of your string, DOS will not stop at the last character. It will keep reading through whatever data happens to follow in memory, printing random ASCII symbols, control characters, or beeping the speaker until it happens upon a byte with value `24h` by chance, or triggers a memory fault.
+</Callout>
 
-| AH | Service | Takes or gives |
-|---|---|---|
-| 01h | Read a key | Gives the character in AL |
-| 02h | Print a character | Takes the character in DL |
-| 09h | Print a string | Takes its address in DX |
-| 4Ch | End the program | |
+Here are the primary DOS services used in 8086 assembly:
+
+| AH value | Service name | Register inputs | Register outputs |
+|---|---|---|---|
+| `01h` | Read character from keyboard | None | `AL` receives ASCII character (echoed to screen) |
+| `02h` | Write character to screen | `DL` = ASCII character | None |
+| `09h` | Write string to screen | `DX` = offset address of `$`-terminated string | None |
+| `4Ch` | Terminate program | `AL` = exit return code (optional) | Returns control to DOS |
 
 ## How a full program is laid out
 
-In a real file, you tell the assembler about the [segments](/courses/microprocessors/segments-and-addresses). Only the code segment is required.
+In larger projects, you organize memory into distinct regions using **segment directives**, such as `segment` and `ends`. These directives group variables and machine code into distinct logical blocks:
+
+- A **.EXE file** is a structured executable format used for larger programs. It supports multiple separate memory segments for code, data, and stack. Because DOS can place these segments at different physical base addresses each time the program runs, an `.EXE` program must explicitly initialize its data segment register (`DS`) before reading any variables.
+- A **.COM file** is a compact executable format limited to a single 64 KB memory segment. All code, data variables, and the stack share that same segment. Segment registers `CS`, `DS`, `ES`, and `SS` all point to the same base address, so no segment setup instructions are required.
+
+When DOS loads a `.COM` program into memory, it automatically builds a 256-byte header called the **Program Segment Prefix (PSP)** in offsets `0000h` through `00FFh`. The PSP stores operating system data, including command-line arguments, environment pointers, and exit addresses. Because the PSP occupies the first 256 bytes, the program code must begin immediately after it at offset `100h`. The **origin directive (org 100h)** tells the assembler to set its location counter to offset `100h`, ensuring all memory labels calculate addresses matching where the code will sit in memory.
+
+Here is how an `.EXE` program initializes segments:
 
 ```nasm
 data segment
@@ -49,21 +73,23 @@ data ends
 
 code segment
     assume cs:code, ds:data
-    mov ax, data         ; DS can't take a number directly,
-    mov ds, ax           ; so go through AX
+    mov ax, data         ; DS cannot take an immediate number directly,
+    mov ds, ax           ; so route the address through AX
 
     mov ah, 01h          ; read a key into AL
     int 21h
-    mov char, al         ; save its code in memory
+    mov char, al         ; save its ASCII code in memory
 
-    mov ah, 4Ch          ; exit
+    mov ah, 4Ch          ; exit service
     int 21h
 code ends
 ```
 
-The first two lines of code are a standard opening: the operating system doesn't set DS for you.
+<Callout tone="orange" label="Trap: moving immediate values directly into DS">
+The 8086 processor architecture has no instruction opcode to load an immediate number directly into a segment register. Writing `MOV DS, data` is invalid and will cause an assembler syntax error. You must always load the segment address into a general-purpose register first, such as `AX`, and then copy it into `DS`: `MOV AX, data` followed by `MOV DS, AX`.
+</Callout>
 
-There's also a shorter style, a `.COM` program, where everything shares one 64 KB segment and starts at offset 100h. You begin with `org 100h`, and no segment setup is needed. The simulators in this course work like this.
+In contrast, a `.COM` program is much simpler because it uses a single shared segment:
 
 ```nasm
 org 100h
@@ -74,8 +100,8 @@ ret
 msg db "Hello, World$"
 ```
 
-<Callout tone="orange" label="Instructions and data share memory">
-In that last example, the string sits right after the code. If the `ret` weren't there, the CPU would carry on and try to run "Hello" as instructions, since [memory doesn't label which is which](/courses/computer-organization/machine-cycle).
+<Callout tone="orange" label="Trap: falling through into raw data bytes">
+In a `.COM` program where data sits right after instructions, the microprocessor cannot distinguish code from data; [the fetch-execute cycle](/courses/computer-organization/machine-cycle) executes whatever bytes the instruction pointer points to. If the `ret` or exit service `4Ch` is missing, the CPU will fetch the ASCII characters of "Hello" (`48h`, `65h`, `6Ch`...) and interpret them as machine opcodes, resulting in corrupted registers and program crashes.
 </Callout>
 
 ## Types of instruction
@@ -92,3 +118,78 @@ The 8086's instructions fall into a few families. The rest of this module covers
 | String | `MOVSB`, `CMPSB`, `SCASB`, `LODSB`, `REP` |
 | Processor control | `STC`, `CLC`, `STD`, `CLD`, `STI`, `CLI` |
 | Interrupt | `INT`, `INTO`, `IRET` |
+
+## Practice by hand
+
+Step through these practical assembly programming scenarios to test your understanding of DOS interrupts and program structure.
+
+### Problem 1: Character I/O and uppercase conversion
+
+Write an 8086 assembly sequence that reads a single lowercase ASCII character from the keyboard using DOS service `01h`, converts it to its uppercase equivalent using arithmetic, and prints the resulting uppercase character to the screen using DOS service `02h`.
+
+1. Which register receives the character from service `01h`?
+2. What mathematical operation on the character's ASCII code converts lowercase to uppercase?
+3. Which register must hold the character when invoking service `02h`?
+4. Write the complete instruction sequence.
+
+<ModelAnswer>
+1. **Input register**:
+   DOS service `01h` returns the ASCII code of the pressed key in register `AL`.
+
+2. **ASCII conversion**:
+   In the ASCII character set:
+   - Lowercase `'a'` has ASCII code `61h` (`0110 0001b`, decimal 97).
+   - Uppercase `'A'` has ASCII code `41h` (`0100 0001b`, decimal 65).
+   The difference between any lowercase letter and its uppercase counterpart is exactly `20h` (decimal 32, corresponding to bit 5). Subtracting `20h` from `AL` converts a lowercase letter to uppercase (`SUB AL, 20h`).
+
+3. **Output register**:
+   DOS service `02h` prints the character stored in register `DL`. Therefore, before calling `INT 21h`, the character must be moved from `AL` into `DL`.
+
+4. **Assembly sequence**:
+   ```nasm
+   MOV AH, 01h      ; service 01h: read key into AL
+   INT 21h          ; AL now holds character (e.g. 'b' = 62h)
+
+   SUB AL, 20h      ; convert to uppercase ('B' = 42h)
+
+   MOV DL, AL       ; service 02h takes character in DL
+   MOV AH, 02h      ; service 02h: print single character
+   INT 21h          ; DOS prints the uppercase character
+   ```
+</ModelAnswer>
+
+### Problem 2: Diagnosing buggy assembly code
+
+A student wrote the following `.COM` program intended to display the message `"PASS"` and then terminate:
+
+```nasm
+org 100h
+MOV DX, msg
+MOV AH, 09h
+INT 21h
+msg db "PASS"
+```
+
+When assembled and run, the program prints `"PASS"` followed by garbled symbols on the screen, beeps repeatedly, and finally hangs the computer. Identify the two fatal errors in this program and provide the corrected code.
+
+<ModelAnswer>
+1. **Missing string terminator**:
+   DOS service `09h` requires strings to be terminated by the dollar sign character `$` (`24h`). The definition `msg db "PASS"` lacks a terminating `$`. As a result, DOS prints the four bytes for `"PASS"` and then continues reading and printing subsequent bytes in memory as characters until it happens to encounter a `24h` byte.
+
+2. **Falling through into data**:
+   The instruction immediately preceding `msg` is `INT 21h`. After DOS returns from printing the string, the processor increments the instruction pointer to the next memory address, which points directly to the ASCII bytes of `msg` (`50h 41h 53h 53h`). The CPU attempts to decode and execute these data bytes as machine instructions (`50h` is `PUSH AX`, `53h` is `PUSH BX`). Because no exit service (`MOV AH, 4Ch; INT 21h`) or return instruction (`RET`) stops execution, the CPU runs wild through memory.
+
+3. **Corrected code**:
+   ```nasm
+   org 100h
+   MOV DX, msg
+   MOV AH, 09h
+   INT 21h
+
+   MOV AH, 4Ch      ; clean exit service
+   INT 21h
+
+   msg db "PASS$"   ; terminated with '$'
+   ```
+   Alternatively, in a `.COM` program, `RET` can be placed before `msg` to exit cleanly to DOS.
+</ModelAnswer>

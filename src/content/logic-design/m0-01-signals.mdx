@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
-import { AdcSampler, VoltageBands, BusContentionVisualizer, ClockExplorer, SerialParallel } from "@/components/mdx/LogicVisualizers";
+import { AdcSampler, VoltageBands, BusContentionVisualizer, ClockExplorer, SerialParallel, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # Signals: Why Computers Use Only Two Values
 
@@ -13,22 +13,11 @@ An **analog** signal works like the dimmer switch: it changes continuously over 
 
 A **digital** signal works like the standard switch: it uses a separate set of values. In binary digital systems, the signal uses only two states, labeled **HIGH** and **LOW**, **1** and **0**, or **TRUE** and **FALSE**.
 
-```
-Analog (Continuous Voltage):
-   Voltage
-      ^    _ . - . _
-      |  /           \       _
-      | /             \     / \
-      |/               \- -/   \
-      +----------------------------> Time
-
-Digital (Discrete Binary Levels):
-   Voltage
-      ^   +-------+       +---+
-HIGH -|---|       |       |   |
-      |   |       |       |   |
- LOW -+---+       +-------+   +----> Time
-```
+<TimingDiagram
+  signals={[
+    { name: "Digital", bits: [0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0], tone: "stroke-mint" },
+  ]}
+/>
 
 Most electronic systems move between both realms:
 
@@ -75,29 +64,18 @@ $$\Delta V_{tolerance} = V_{threshold} - V_{nominal} = 1.75\text{ V} - 1.50\text
 
 A small voltage spike of $+0.26\text{ V}$ lifts the wire to $1.76\text{ V}$, passing $1.75\text{ V}$. The receiving gate misreads the digit as 4 instead of 3. In a computer running billions of operations every second, calculations would quickly corrupt.
 
-```
-10 Decimal Voltage Levels (Fragile):
-   4.5 V -- [ 9 ]
-   4.0 V -- [ 8 ]
-   3.5 V -- [ 7 ]
-   3.0 V -- [ 6 ]
-   2.5 V -- [ 5 ]
-   2.0 V -- [ 4 ]   <-- A small 0.26 V noise spike flips a 3 into a 4
-   1.75V ---------------- Threshold between 3 and 4
-   1.5 V -- [ 3 ]
-   1.0 V -- [ 2 ]
-   0.5 V -- [ 1 ]
-   0.0 V -- [ 0 ]
-
-2 Binary Voltage Bands (Tolerant):
-   3.3 V --+
-           | HIGH band (Valid 1)
-   2.0 V --+
-   ------- Forbidden Region (Undefined) -------
-   0.8 V --+
-           | LOW band (Valid 0)
-   0.0 V --+
-```
+| Decimal 10-Level System ($5.0\text{ V}$) | Binary 2-Band System ($3.3\text{ V}$ LVCMOS) |
+| :--- | :--- |
+| **$4.5\text{ V}$:** Digit 9 | **$2.0\text{ V} - 3.3\text{ V}$:** Valid HIGH (Logic 1) |
+| **$4.0\text{ V}$:** Digit 8 | |
+| **$3.5\text{ V}$:** Digit 7 | |
+| **$3.0\text{ V}$:** Digit 6 | |
+| **$2.5\text{ V}$:** Digit 5 | |
+| **$2.0\text{ V}$:** Digit 4 *(Threshold at $1.75\text{ V}$; a $0.26\text{ V}$ noise spike flips 3 to 4)* | |
+| **$1.5\text{ V}$:** Digit 3 | **$0.8\text{ V} - 2.0\text{ V}$:** Forbidden Region (Undefined) |
+| **$1.0\text{ V}$:** Digit 2 | |
+| **$0.5\text{ V}$:** Digit 1 | |
+| **$0.0\text{ V}$:** Digit 0 | **$0.0\text{ V} - 0.8\text{ V}$:** Valid LOW (Logic 0) |
 
 By restricting the system to only two values, engineers establish wide buffer zones called **logic levels**. A circuit does not have to measure an exact voltage; it only needs to detect whether a voltage falls into the upper band or the lower band.
 
@@ -118,22 +96,13 @@ Four standard parameters govern these boundaries:
 
 The positive power supply connected to the chip is labeled $V_{CC}$ (in bipolar and TTL circuits) or $V_{DD}$ (in CMOS circuits). The repeated letters identify the transistor terminal receiving the supply voltage: $V_{CC}$ connects to the **C**ollector of bipolar transistors, while $V_{DD}$ connects to the **D**rain of field-effect transistors. A single-letter subscript such as $V_C$ or $V_D$ refers to the voltage measured at that specific pin on a single transistor, whereas the doubled letter denotes the overall power supply rail feeding that terminal across the entire chip. Similarly, the zero-volt reference line is labeled $\text{GND}$ ($0\text{ V}$), or sometimes $V_{EE}$ (**E**mitter) in bipolar logic and $V_{SS}$ (**S**ource) in CMOS.
 
-```
-Logic Level Boundaries:
-
-       Transmitter Output                     Receiver Input
-  V_CC +------------------+              V_CC +------------------+
-       |   Valid HIGH     |                   |   Valid HIGH     |
-V_OH --+------------------+                   |   (Reads 1)      |
-       |                  |             V_IH -+------------------+
-       |                  |                   |                  |
-       |  Output Margin   |                   | Forbidden Region |
-       |                  |                   |  (Indeterminate) |
-       |                  |             V_IL -+------------------+
-V_OL --+------------------+                   |   Valid LOW      |
-       |   Valid LOW      |                   |   (Reads 0)      |
-   GND +------------------+               GND +------------------+
-```
+| Voltage Region | Transmitter Output | Receiver Input | Logical Interpretation |
+| :--- | :--- | :--- | :--- |
+| **Valid HIGH** | $V_{OH(min)} \dots V_{CC}$ | $V_{IH(min)} \dots V_{CC}$ | Reliable Logic 1 |
+| **Output Margin ($V_{NH}$)** | $V_{IH(min)} \dots V_{OH(min)}$ | — | High noise tolerance budget |
+| **Forbidden Region** | — | $V_{IL(max)} \dots V_{IH(min)}$ | Indeterminate / Undefined |
+| **Output Margin ($V_{NL}$)** | $V_{OL(max)} \dots V_{IL(max)}$ | — | Low noise tolerance budget |
+| **Valid LOW** | $\text{GND} \dots V_{OL(max)}$ | $\text{GND} \dots V_{IL(max)}$ | Reliable Logic 0 |
 
 ### The forbidden region and shoot-through current
 
@@ -247,19 +216,6 @@ Digital design defaults to positive logic unless stated otherwise. However, acti
 
 Active-LOW signals are widely used because of how output circuits are built:
 
-```
-Push-Pull Output (Totem Pole):         Open-Drain Output with Pull-Up Resistor:
-         V_CC                                    V_CC
-          |                                       |
-       [PMOS] (Pulls UP)                     [Pull-up Resistor R]
-          |                                       |
-Output ---+                            Output ----+--------- Bus Wire
-          |                                       |
-       [NMOS] (Pulls DOWN)                     [NMOS] (Only pulls DOWN)
-          |                                       |
-         GND                                     GND
-```
-
 1. **Push-pull outputs (totem pole):** Use an active pull-up transistor and an active pull-down transistor, stacked vertically like a totem pole between power and ground. Connecting two push-pull outputs directly together is forbidden. If Gate A outputs HIGH ($5\text{ V}$) while Gate B outputs LOW ($0\text{ V}$), current flows directly from $V_{CC}$ to $\text{GND}$ through the chips. This short circuit is called **bus contention**, and it burns out the transistors.
 2. **Open-drain outputs:** Omit the upper pull-up transistor entirely. The chip can only pull the wire to $\text{GND}$ (LOW) or turn OFF completely, entering a **high-impedance state (Hi-Z)**. In Hi-Z, the output switch is open: it neither drives voltage nor sinks current, acting like a disconnected wire so other chips can safely control the line.
 3. **Pull-up resistor:** A single external resistor (typically $2.2\text{ k}\Omega$ to $10\text{ k}\Omega$) connects the shared wire to $V_{CC}$.
@@ -310,16 +266,12 @@ The full rules for translating patterns of bits into integers, negative numbers,
 
 Most digital systems follow a repeating pulse train called the **clock**. The clock coordinates when gates evaluate and when storage elements capture new bits.
 
-```
-Periodic Clock Waveform:
-   Voltage
-      ^    <-- t_w -->
-      |   +-----------+               +-----------+
-HIGH -|---|           |               |           |
-      |   |           |               |           |
- LOW -+---+           +---------------+           +-----> Time
-          <---------- Period (T) ------>
-```
+<TimingDiagram
+  signals={[
+    { name: "CLK", bits: [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0], tone: "stroke-mint" },
+  ]}
+  marks={[1, 3, 5]}
+/>
 
 Four fundamental measurements describe a periodic clock signal:
 
@@ -360,23 +312,7 @@ In circuit diagrams, clock transitions look like vertical lines. In physical har
 - **Parasitic capacitance ($C$):** Unintended capacitance between wires and ground charges and discharges through line resistance $R$, producing a sloped exponential ramp governed by time constant $\tau = RC$ (where resistance in ohms multiplied by capacitance in farads gives seconds: $\Omega \times \text{F} = \text{s}$).
 - **Parasitic inductance ($L$):** Stray magnetic loops in wires and chip leads generate an opposing voltage whenever electric current switches rapidly ($\Delta V = L \frac{di}{dt}$, where $\frac{di}{dt}$ is the rate of change of current over time), producing sudden voltage spikes called inductive kickback or ground bounce.
 
-```
-Real-World Pulse Transitions:
-
-     Voltage
-       ^             Overshoot
-       |                .-.
- 100% -| - - - - - - - / - \ - - - - - - - - - - - - - - -
-  90% -| - - - - - - -/-- - - - - - - - -\ - - - - - - - -
-       |             /                    \
-  50% -| - - - - - -/- - - - - - - - - - - \ - - - - - - -
-       |           /                        \
-  10% -| - - - - -/ - - - - - - - - - - - - -\- - - - - -
-   0% -+---------+                            \-----.-.--> Time
-                 |<-t_r->|                    |<-t_f>|  Undershoot
-```
-
-Two timing parameters quantify how quickly a real signal switches:
+Two timing parameters quantify how quickly a real signal switches (which you can observe directly in the "Real Pulse" tab of the Clock Explorer below):
 
 - **Rise time ($t_r$):** The time required for the pulse to transition from $10\%$ to $90\%$ of its steady-state amplitude.
 - **Fall time ($t_f$):** The time required for the pulse to transition from $90\%$ to $10\%$ of its steady-state amplitude.
@@ -400,24 +336,7 @@ High-speed signals that transition in fractions of a nanosecond can run into sig
 
 ## Moving bits: serial and parallel transmission
 
-When binary data moves between two chips or across a network, two architectures transport the bits:
-
-```
-Parallel Transmission (8 bits in 1 clock cycle):
-   Wire 7: Bit 7 ------------------------->
-   Wire 6: Bit 6 ------------------------->
-   Wire 5: Bit 5 ------------------------->
-   Wire 4: Bit 4 ------------------------->
-   Wire 3: Bit 3 ------------------------->
-   Wire 2: Bit 2 ------------------------->
-   Wire 1: Bit 1 ------------------------->
-   Wire 0: Bit 0 ------------------------->
-   GND:    Common Ground Return ----------->
-
-Serial Transmission (8 bits in 8 clock cycles):
-   Single Wire: Bit 0, Bit 1, Bit 2, Bit 3, Bit 4, Bit 5, Bit 6, Bit 7 --->
-   GND:         Common Ground Return -------------------------------------->
-```
+When binary data moves between two chips or across a network, two architectures transport the bits: **serial transmission** (sending bits sequentially one after another over a single line) and **parallel transmission** (sending all bits simultaneously across multiple lines in a single clock cycle). Step through and compare both architectures in the interactive simulator below.
 
 *Note on Ground:* In both serial and parallel transmission, a common ground reference line is strictly required. Voltage is an electrical potential difference between two conductors. Without a shared ground return line, the receiver cannot measure incoming voltage and current cannot loop back to complete the circuit.
 

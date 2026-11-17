@@ -3,52 +3,44 @@ import { ScanDisplay } from "@/components/mdx/GraphicsVisualizers";
 
 # Random Scan Displays
 
-A raster display sweeps every row whether there's anything there or not. A **random-scan display**, also called a **vector display**, works the other way round: the beam goes only where the picture is, tracing each line directly from one endpoint to the other, like a pen drawing on paper.
+A raster CRT sweeps across every row regardless of what is on screen. A **random-scan display**, also known as a **vector display**, is a CRT that steers its electron beam differently: the beam travels only where lines appear in the drawing, tracing each line segment directly from one coordinate to another like a mechanical pen drawing on paper.
 
-"Random" here doesn't mean unpredictable. It means the beam can be sent to any point in any order, as in random-access memory, instead of following a fixed sweep.
+Here, "random" does not mean chaotic or unpredictable. It means the beam can jump directly to any coordinate on the screen, like addressing [random-access memory](/courses/computer-organization/ram-and-rom#primary-memory-four-kinds-of-chip), rather than following a predetermined top-to-bottom raster sweep.
 
 ## The display file
 
-A random-scan system doesn't store pixels. It stores a list of drawing commands, called the **display file** (or display list): "line from (2, 13) to (13, 13)", "line from (13, 13) to (13, 6)", and so on.
+A random-scan system does not store a grid of pixels. Instead, it stores an ordered list of drawing commands called the **display file** (also called a display list or display program): instructions like "line from (2, 13) to (13, 13)" and "line from (13, 13) to (13, 6)".
 
-1. The application program describes the picture to a **graphics package**, a library of ready-made drawing functions.
-2. The graphics package translates it into line commands and stores them as the display file in memory.
-3. The **display processor** reads the display file, one command at a time, and steers the beam along each line.
-4. When it reaches the end of the list, it jumps back to the first command and traces everything again, to refresh the phosphor.
+1. Your program describes the drawing to a **graphics package** (a software library providing drawing commands).
+2. The graphics package converts those shapes into basic line instructions and writes them to the display file in memory.
+3. A dedicated **display processor** (often called a **display processing unit** or **graphics controller** in vector hardware) reads commands sequentially from the display file and steers the electron beam directly along each line.
+4. When the display processor reaches the end of the list, it loops back to the first instruction, repeatedly redrawing the picture to maintain phosphor glow.
 
-Here is the same house as in the [last lesson](/courses/computer-graphics/crt-and-raster-scan), drawn from its display file. The highlighted command is the one being traced:
+The interactive visualizer below draws the house using its display file. The highlighted line indicates the command currently being traced by the beam:
 
 <ScanDisplay initialMode="random" />
 
-Switch between the two modes and compare. The raster beam crosses every position on the screen; the random-scan beam never touches the empty sky.
+Switch between raster and random modes to see the difference. The raster beam sweeps across every pixel position on the screen, including the blank sky, while the random-scan beam visits only the lines defining the house.
 
 ## Raster against random
 
 | | Raster scan | Random scan |
 |---|---|---|
-| Beam path | every row, top to bottom, every frame | only along the lines in the picture |
-| Stores | a frame buffer: one value per pixel | a display file: a list of line commands |
-| Lines look | jagged on diagonals (stair steps) | perfectly smooth |
-| Can show | anything: realistic images, millions of colors, shading and shadows | lines only, no realistic shaded scenes |
-| Refresh time | fixed, whatever is on screen | grows with the number of lines |
-| Resolution | lower, limited by the frame buffer | high, since lines are drawn directly |
-| Memory | a whole frame buffer | only the display file |
+| Beam path | Every row, top to bottom, every frame | Only along the lines in the picture |
+| Memory stored | A frame buffer: one value per pixel | A display file: a list of line commands |
+| Line appearance | Jagged on diagonals (stair steps) | Smooth continuous lines |
+| Shading and photos | Realistic shaded scenes, millions of colors | Lines only, no realistic shaded scenes |
+| Refresh time | Fixed, regardless of screen content | Increases with the number of lines |
+| Hardware bottleneck | Needed costly RAM for early frame buffers | Needed fast deflection amplifiers for jumps |
 
-The key trade-off: **random scan draws lines beautifully but can't fill areas**, so it can't show a photo or a realistic scene. A very complicated drawing also has so many lines that the beam can't trace them all fast enough, and the picture flickers. Raster scan can show anything, at the cost of jagged diagonal edges.
+The core trade-off comes down to scene complexity versus filled surfaces. **Random-scan displays draw crisp, unstepped lines, but they cannot fill solid regions or render photographs**: trying to hatch a solid shape with hundreds of tight lines pushes the display file past the phosphor's brief glow time, making the screen flicker before the beam finishes the loop. Raster displays handle arbitrary filled shapes, lighting, and photos in fixed refresh time, at the cost of stair-stepping on diagonal edges.
 
-As exam answers, the usual lists are:
-
-- **Raster, advantages:** realistic images, millions of colors, shadows and shaded scenes are possible.
-- **Raster, disadvantages:** lower resolution, and expensive.
-- **Random, advantages:** the beam goes only where the picture is, smooth line drawings, high resolution.
-- **Random, disadvantages:** can't display realistic shaded scenes.
-
-<Callout tone="orange" label="Which one is expensive?">
-Raster is listed as expensive because of its frame buffer: one value for every pixel on the screen was a lot of memory when memory was costly. A random-scan display stores only a short list of lines, but needs precise, fast beam-steering hardware, so each was expensive for a different reason. Once memory got cheap, raster became the cheap option, since the rest of it is ordinary TV technology.
+<Callout tone="orange" label="Which display was expensive?">
+Older textbooks often list raster displays as expensive because of the frame buffer. Storing a dedicated color value for every pixel on screen required substantial memory when RAM was costly. In contrast, early random-scan systems saved memory by storing only short command lists, but needed complex, high-speed deflection amplifiers so the beam could jump rapidly to arbitrary coordinates rather than sweeping steadily row by row. When semiconductor memory prices dropped, raster displays became far cheaper because the rest of the unit reused mass-produced television components.
 </Callout>
 
 <Callout tone="sky" label="Why raster won">
-Real pictures are full of filled areas, shading and texture, and memory got cheap. Once a frame buffer was affordable, raster could do everything vector could and much more, so random-scan displays survive only in history and in the **oscilloscope**, a lab instrument that draws an electrical signal as a moving line. The idea didn't die, though: a display file is a [vector image](/courses/computer-graphics/raster-and-vector-images), and those are everywhere.
+Real-world images depend on filled surfaces, shading, and texture. Once memory became inexpensive, raster displays handled both text and realistic pictures at low cost. Dedicated random-scan hardware now survives primarily in the **oscilloscope**, a laboratory instrument that plots electrical waveforms as continuous curves. The underlying concept remains central to modern graphics: a display file is the hardware ancestor of the [vector image](/courses/computer-graphics/raster-and-vector-images), which remains the standard for fonts and scalable illustrations.
 </Callout>
 
-The [next lesson](/courses/computer-graphics/flat-panels) leaves the tube behind for the flat screens that replaced it.
+The [next lesson](/courses/computer-graphics/flat-panels) moves from cathode-ray tubes to the flat-panel displays used today.

@@ -3,8 +3,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import worker, { type Env } from "../src/index";
 
 const env = testEnv as unknown as Env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] };
-const API = "https://decoded-api.stack42.tech";
-const SITE = "https://decoded.stack42.tech";
+const API = "https://api.csdecod.ing";
+const SITE = "https://csdecod.ing";
 
 function call(path: string, init: RequestInit = {}): Promise<Response> {
   return worker.fetch(new Request(`${API}${path}`, { redirect: "manual", ...init }), env);
