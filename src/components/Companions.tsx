@@ -17,6 +17,7 @@ import { flattenLessons, getLesson, type Course } from "@/content/registry";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useRegistration } from "@/hooks/useRegistration";
 import { createInvite, removeCompanion, sinceLabel, useCompanions, type Companion, type InviteError } from "@/lib/companions";
+import { copyLink, inviteShareUrl } from "@/lib/shareLinks";
 
 const accentBg: Record<Course["accent"], string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -97,17 +98,10 @@ function InviteButton({ course }: { course: Course }) {
     const result = await createInvite(course.slug);
     setBusy(false);
     if ("error" in result) return setError(result.error);
-    setLink(`${window.location.origin}/invite/${result.token}`);
+    setLink(inviteShareUrl(result.token));
   };
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link!);
-      toast.success("Link copied");
-    } catch {
-      toast.error("Couldn't copy. Select the link and copy it yourself.");
-    }
-  };
+  const copy = () => copyLink(link!);
 
   if (link) {
     return (

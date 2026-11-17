@@ -1,0 +1,238 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, DiagramTabs, ChangeImpact } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Dependency Inversion Principle
+
+> A. High-level modules should not depend on low-level modules. Both should depend on abstractions.
+>
+> B. Abstractions should not depend on details. Details should depend on abstractions.
+
+Two words first:
+
+- <Term id="high-level-policy">High-level policy</Term> is the code with the important rules: the sensor fusion algorithm.
+- <Term id="low-level-detail">Low-level details</Term> are the code tied to particular hardware or suppliers: one radar's CAN driver.
+
+The <Term id="dip">Dependency Inversion Principle</Term> says the important code should never be written in terms of the replaceable code.
+
+## Traditional versus inverted dependencies
+
+| Traditional layering | Inverted dependencies |
+| --- | --- |
+| high-level policy calls low-level supplier drivers directly | high-level policy *owns* an abstraction; low-level details implement it |
+| a new sensor supplier forces a rewrite of the fusion logic | a new supplier = a new implementation; fusion logic stays untouched |
+| source-code dependency follows the call direction: policy → detail | source-code dependency points *against* the call: detail → abstraction ← policy |
+
+The word "inversion" refers to that last row. At runtime, fusion still *calls* the radar. But in the source code, the radar's code now *depends on* (imports) the fusion package's interface, not the other way round.
+
+Why it matters in cars:
+
+- **Supplier independence.** Carmakers swap radar, camera or LiDAR suppliers between model generations without breaking core logic.
+- **Hardware/software decoupling.** The same <Term id="adas">ADAS</Term> software runs on different chips through standard <Term id="abstraction">abstractions</Term>.
+- **SIL / HIL simulation.** High-level policies can be tested against simulated sensors with no physical hardware (<Term id="sil-hil">SIL/HIL testing</Term>).
+- **Industry standards.** AUTOSAR ports/RTE and Android Automotive's VHAL are real-world DIP.
+
+## The violation: fusion tied to supplier drivers
+
+```java
+public class SensorFusion {                                          // HIGH-LEVEL policy
+    private final SupplierARadarDriver radar = new SupplierARadarDriver("CAN1");    // concrete detail
+    private final SupplierBCameraDriver camera = new SupplierBCameraDriver("ETH0"); // concrete detail
+
+    public ObjectList fuse() {
+        List<ObjectList> inputs = new ArrayList<>();
+        // Parsing supplier-specific CAN frames inside high-level fusion logic
+        CanFrame frame = radar.readFrame(0x3A5);
+        double rangeM = (frame.getBytes(0, 2) * 0.05);               // supplier A scaling
+        double azimuthDeg = (frame.getBytes(2, 2) * 0.01) - 90.0;    // supplier A offset
+        inputs.add(ObjectList.single(rangeM, azimuthDeg, SensorType.RADAR));
+        // Supplier B camera: different API, coordinate frame and units
+        SupplierBCameraDriver.Detection[] dets = camera.getDetectionsV2();
+        inputs.add(convertSupplierBDetections(dets));                // mm → m, image frame → vehicle frame
+        return associateAndTrack(inputs);                            // core safety fusion algorithm
+    }
+}
+```
+
+The dependencies point down a chain: `SensorFusion` → `SupplierARadarDriver` → CAN bus (the classic in-car network), and `SensorFusion` → `SupplierBCameraDriver` → automotive Ethernet.
+
+| Hardware change | Impact on `SensorFusion` |
+| --- | --- |
+| switch to a supplier C radar | reopen and rewrite fusion: new CAN IDs, drivers, byte decoders |
+| radar moves from CAN to Ethernet | edit the fusion module again |
+| automated SIL / HIL testing | impossible without hardware or messy mocks, because `new` is hard-coded |
+| add LiDAR for Level 3 | splice yet another supplier protocol into the fusion loop |
+
+The most safety-critical code, `associateAndTrack`, is reopened and re-tested for every minor hardware swap. That violates [SRP](/courses/advanced-software-engineering/design-principles-and-srp) and [OCP](/courses/advanced-software-engineering/open-closed-principle) too.
+
+## The fix, in three steps
+
+**Step 1: fusion owns the abstraction.** The high-level module defines the interface it needs, in its own terms, *in its own package*.
+
+```java
+package adas.fusion;   // in the policy package!
+
+public interface ObjectSensor {
+    /** Contract: detections in the VEHICLE frame (ISO 8855, the standard coordinate system for vehicles), SI units, timestamped.
+     *  Returns an empty list, never null. */
+    ObjectList detectObjects(Timestamp cycle);
+    SensorType type();
+}
+
+public class SensorFusion {
+    private final List<ObjectSensor> sensors;
+
+    public SensorFusion(List<ObjectSensor> sensors) {
+        this.sensors = List.copyOf(sensors);          // injected
+    }
+
+    public ObjectList fuse(Timestamp cycleTime) {
+        List<ObjectList> inputs = sensors.stream()
+            .map(s -> s.detectObjects(cycleTime))
+            .toList();
+        return associateAndTrack(inputs);             // 100% stable
+    }
+}
+```
+
+**Step 2: <Term id="adapter">adapters</Term> implement the abstraction.** Each supplier's decoding and scaling lives in its own adapter.
+
+```java
+package sensors.suppliera;
+public class SupplierARadarAdapter implements ObjectSensor {   // decoding and scaling live HERE
+    private final SupplierARadarDriver driver;
+    public ObjectList detectObjects(Timestamp t) { /* read 0x3A5, apply supplier A scaling, convert frame */ }
+    public SensorType type() { return SensorType.RADAR; }
+}
+
+package sensors.supplierc;
+public class SupplierCRadarAdapter implements ObjectSensor { /* Ethernet / SOME/IP */ }
+
+package sensors.supplierb;
+public class SupplierBCameraAdapter implements ObjectSensor { /* mm → m, image frame → vehicle frame */ }
+
+package test.sil;
+public class SimulatedSensor implements ObjectSensor { /* replays recorded drives or a simulator */ }
+```
+
+**Step 3: wire everything at one <Term id="composition-root">composition root</Term>.**
+
+```java
+// Production vehicle: supplier C radar + supplier B camera
+SensorFusion fusion = new SensorFusion(List.of(
+    new SupplierCRadarAdapter(new SupplierCRadarDriver("ETH1")),
+    new SupplierBCameraAdapter(new SupplierBCameraDriver("ETH0"))));
+
+// SIL test bench: identical fusion code, no physical hardware
+SensorFusion fusionUnderTest = new SensorFusion(List.of(
+    new SimulatedSensor(Scenario.PEDESTRIAN_CROSSING_NIGHT)));
+```
+
+Passing the sensors in through the constructor, instead of `SensorFusion` creating them with `new`, is <Term id="dependency-injection">Dependency Injection</Term>.
+
+<DiagramTabs
+  title="Dependency direction, before and after"
+  tabs={[
+    {
+      label: "Before: policy → detail",
+      width: 600,
+      height: 210,
+      nodes: [
+        { id: "sf", label: "SensorFusion", stereo: "core policy", x: 110, y: 100, w: 160, h: 50, tone: "orange" },
+        { id: "ra", label: "SupplierA\nRadarDriver", x: 330, y: 45, w: 150, h: 48 },
+        { id: "cb", label: "SupplierB\nCameraDriver", x: 330, y: 160, w: 150, h: 48 },
+        { id: "can", label: "CAN bus", x: 520, y: 45, w: 110 },
+        { id: "eth", label: "Ethernet", x: 520, y: 160, w: 110 },
+      ],
+      edges: [
+        { from: "sf", to: "ra", label: "new" },
+        { from: "sf", to: "cb", label: "new" },
+        { from: "ra", to: "can" },
+        { from: "cb", to: "eth" },
+      ],
+      caption: "The arrows (source-code dependencies) go from the most important code to the most replaceable code.",
+    },
+    {
+      label: "After: both depend on the abstraction",
+      width: 640,
+      height: 250,
+      nodes: [
+        { id: "sf", label: "SensorFusion", stereo: "core policy", x: 140, y: 50, w: 170, h: 50, tone: "sky" },
+        { id: "os", label: "ObjectSensor", stereo: "interface", x: 420, y: 50, w: 170, h: 50, tone: "sky" },
+        { id: "sim", label: "Simulated\nSensor", stereo: "SIL", x: 90, y: 190, w: 120, h: 58 },
+        { id: "ra", label: "SupplierA\nRadarAdapter", x: 245, y: 190, w: 140, h: 48 },
+        { id: "rc", label: "SupplierC\nRadarAdapter", x: 405, y: 190, w: 140, h: 48 },
+        { id: "cb", label: "SupplierB\nCameraAdapter", x: 565, y: 190, w: 140, h: 48 },
+      ],
+      edges: [
+        { from: "sf", to: "os", label: "uses" },
+        { from: "sim", to: "os", head: "triangle", dashed: true },
+        { from: "ra", to: "os", head: "triangle", dashed: true },
+        { from: "rc", to: "os", head: "triangle", dashed: true },
+        { from: "cb", to: "os", head: "triangle", dashed: true },
+      ],
+      caption: "Every adapter points up at the interface that fusion owns. Nothing in fusion mentions a supplier, a bus or a simulator.",
+    },
+  ]}
+/>
+
+<ChangeImpact
+  title="Which code changes when the hardware does?"
+  before={{ label: "Before: drivers inside fusion", classes: ["SensorFusion", "SupplierARadarDriver", "SupplierBCameraDriver"] }}
+  after={{ label: "After: ObjectSensor + adapters", classes: ["SensorFusion", "ObjectSensor", "SupplierARadarAdapter", "SupplierBCameraAdapter", "composition root"] }}
+  scenarios={[
+    { label: "Switch to supplier C radar", before: { changed: ["SensorFusion"], added: ["SupplierCRadarDriver"] }, after: { changed: ["composition root"], added: ["SupplierCRadarAdapter"] }, note: "After: write one adapter and change one line of wiring. SensorFusion is untouched." },
+    { label: "Radar moves CAN → Ethernet", before: { changed: ["SensorFusion", "SupplierARadarDriver"], added: [] }, after: { changed: ["SupplierARadarAdapter"], added: [] }, note: "Only the adapter knows about the bus. The fusion policy never notices." },
+    { label: "Run in SIL test bench", before: { changed: ["SensorFusion"], added: [] }, after: { changed: [], added: ["SimulatedSensor"] }, note: "Before, the hard-coded new makes this impossible without hacks. After, inject SimulatedSensor: the same production code runs on the test bench." },
+    { label: "Add LiDAR (Level 3)", before: { changed: ["SensorFusion"], added: ["LidarDriver"] }, after: { changed: ["composition root"], added: ["LidarAdapter"] }, note: "After: LidarAdapter implements ObjectSensor. The system is extended, not modified (OCP). Re-certification covers just the new adapter." },
+  ]}
+/>
+
+### What we gained
+
+| Change scenario | Architectural impact |
+| --- | --- |
+| Switch to supplier C radar | Write one new adapter. `SensorFusion` is 100% untouched. |
+| Migrate from CAN to Ethernet | Only the adapter changes; the domain policy never notices. |
+| SIL / HIL simulation | Inject `SimulatedSensor`. The identical production code runs on the test bench. |
+| Add LiDAR for Level 3 | Write `LidarAdapter implements ObjectSensor`. Extended, not modified (OCP). |
+| Safety re-certification | Scoped to the new adapter only. The core algorithm is preserved. |
+
+<Callout tone="orange" label="Don't mix them up">
+**Dependency Inversion** is the architectural *principle*: dependencies point toward high-level abstractions. **Dependency Injection** is just the *wiring technique*: passing dependencies in from outside. You can inject dependencies and still violate DIP (for example, injecting a `SupplierARadarDriver` directly).
+</Callout>
+
+## Think and defend: the connected-vehicle god service
+
+*One of the lecture's three \"Think & Defend\" dilemmas. The slides pose the question; the model answer was written for this course.*
+
+A cloud gateway needs the battery's state of charge to show charging progress in the owner's phone app. A developer binds it directly to the internal `BatteryManagementSystem` interface, which has `getStateOfCharge()`, `calibrateCells()`, `overrideThermalLimits()` and `flashFirmware()`. "It's already implemented on CAN; why write extra interfaces and adapters?" Does this violate ISP and DIP? What are the hazards, and what is the inverted design?
+
+<ModelAnswer>
+Yes, both. **ISP:** the gateway needs one method but is given four, including `overrideThermalLimits()` and `flashFirmware()`. **DIP:** an internet-facing, high-level service depends directly on a low-level, safety-critical module's concrete interface.
+
+Hazards: a compromised cloud gateway (the most exposed part of the car) could override thermal limits, risking a battery fire, or flash malicious firmware. That is a huge cybersecurity <Term id="attack-surface">attack surface</Term> under ISO/SAE 21434 and a safety hazard under ISO 26262.
+
+Inverted design: the gateway defines the small abstraction it needs, e.g. `interface ChargeStatusProvider { double stateOfCharge(); }`. A read-only adapter inside the vehicle implements it by calling the BMS. The gateway can now *only* read the state of charge; it can't even name the dangerous methods.
+</ModelAnswer>
+
+## Summary of Lecture 3
+
+| Principle | One line |
+| --- | --- |
+| SRP | one reason to change, mapped to one actor |
+| OCP | open for extension, closed for modification |
+| LSP | subtypes keep the full contract; prefer delegation |
+| ISP | clients never depend on methods they don't use |
+| DIP | high-level policy owns the domain abstractions |
+
+<Callout tone="orange" label="Common mistake">
+Thinking "I use dependency injection, so I follow DIP." Injecting a `SupplierARadarDriver` is DI but still violates DIP. The other trap is putting `ObjectSensor` in the supplier's package: then fusion imports the supplier's code and nothing is inverted. The interface belongs to the high-level package.
+</Callout>
+
+## Readings for this lecture
+
+*Clean Architecture* (Martin), chapters 7–11 · *Head First Object-Oriented Analysis and Design*, chapter 8.
+
+## Key terms
+
+<KeyTerms ids={["dip", "high-level-policy", "low-level-detail", "adapter", "dependency-injection", "composition-root", "sil-hil"]} />

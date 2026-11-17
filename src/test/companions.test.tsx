@@ -65,7 +65,7 @@ describe("companions on the course page", () => {
     fakeApi({ "GET /companions": [200, { companions: [] }], "POST /companions/invites": [200, { token: "tok_123", expiresAt: 0 }] });
     renderPanel();
     fireEvent.click(screen.getByRole("button", { name: "Study this with someone" }));
-    expect(((await screen.findByLabelText("Send this link to one person")) as HTMLInputElement).value).toMatch(/\/invite\/tok_123$/);
+    expect(((await screen.findByLabelText("Send this link to one person")) as HTMLInputElement).value).toBe("https://decoded-go.stack42.tech/invite/tok_123");
 
     vi.unstubAllGlobals();
     fakeApi({ "POST /companions/invites": [403, { error: "needs_profile" }] });

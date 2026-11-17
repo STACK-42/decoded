@@ -1,52 +1,660 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { CacheLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Cache Mapping
 
-The [cache](/courses/computer-organization/memory-hierarchy) is small and memory is large. So thousands of memory locations have to share each spot in the cache. This raises two questions: when the CPU asks for an address, where should it look? And how does it know that what it found is the right thing?
+Main memory holds gigabytes of code and data, but reading from DRAM takes dozens of nanoseconds. High-speed processors depend on the [cache](/courses/computer-organization/memory-hierarchy), a small on-chip memory built from fast SRAM. Because the cache holds only kilobytes or megabytes, thousands of main memory addresses share each slot in the cache.
 
-## Blocks
+To make caching work, hardware must answer two questions on every memory access: where does a given memory address go, and how does the processor verify that the data in that slot is the exact word requested?
 
-Cache doesn't store single bytes. It stores **blocks** (or lines), runs of neighbouring bytes, often 64 bytes in size. When you read one byte, its neighbours come along too. That is how a cache takes advantage of [spatial locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works).
+## The Principle of Locality and Cache Blocks
 
-## Reading an address
+Caches work because running programs visit memory in predictable patterns, known as the principle of locality:
 
-To answer those two questions, the address gets divided into three fields:
+1. **Temporal locality**: A memory location accessed right now is likely to be accessed again soon. Loop counters, call stacks, and running totals show strong temporal locality.
+2. **Spatial locality**: Memory locations near a recently accessed address are likely to be accessed soon. Stepping through an array or executing consecutive instructions shows strong spatial locality.
 
-```
-|     tag     |   index   |  offset  |
-```
+To exploit spatial locality, the cache does not load single bytes. Memory moves between main memory and cache in fixed-size chunks called **blocks** (or **cache lines**), typically 32, 64, or 128 bytes. When a program reads a single 4-byte integer, the cache controller fetches the entire 64-byte block holding it.
 
-Think of a library. **Offset** is the page within a book. **Index** is the shelf that the book must go on. **Tag** is a label written on the book, saying which of the many books for that shelf this one is.
+On every memory reference, the processor checks whether the address is already in the cache:
+- A **cache hit** occurs when the requested word is found in the cache. The data returns in 1 to 4 clock cycles without touching main memory.
+- A **cache miss** occurs when the word is absent. The processor pipeline must stall or switch tasks while the missing block is fetched from slower memory, taking dozens or hundreds of cycles.
 
-- **Offset bits** = $\log_2$ (block size). 4-byte blocks need 2 bits.
-- **Index bits** = $\log_2$ (number of sets). 4 sets need 2 bits.
-- **Tag bits** = whatever is left of the address.
+## Anatomy of an Address: Offset, Index, and Tag
+
+When the processor issues an $m$-bit physical memory address, the cache controller divides the address bits into three distinct fields:
+
+| Field | Tag ($t$ bits) | Set Index ($s$ bits) | Block Offset ($b$ bits) |
+|---|---|---|---|
+| **Bit Position** | $A_{m-1} \dots A_{s+b}$ | $A_{s+b-1} \dots A_b$ | $A_{b-1} \dots A_0$ |
+| **Hardware Function** | Uniquely identifies memory block | Selects set (row) in cache | Selects byte within block |
+
+1. **Block Offset ($b$ bits)**: Selects the specific byte within the cache block. A block size of $B$ bytes requires $b = \log_2(B)$ offset bits.
+2. **Set Index ($s$ bits)**: Selects the specific set or row inside the cache array where the block must reside. If the cache is partitioned into $S$ sets, the index requires $s = \log_2(S)$ bits.
+3. **Tag ($t$ bits)**: Uniquely identifies which memory block currently occupies the cache line. The tag consists of all remaining high-order address bits:
+
+$$
+t = m - s - b
+$$
+
+Think of a library catalog. The **offset** specifies the exact paragraph on a page. The **index** specifies the bookcase shelf where the volume must be placed. The **tag** is the book's registration title printed on its spine: because many different books share the same shelf, the librarian reads the tag to ensure the book on the shelf is the one you requested.
+
+<Callout tone="orange" label="Indexing by byte address instead of block address">
+A common calculation mistake is taking the modulo of the raw byte address by the number of sets: `Address % S`. That incorrectly uses the block offset bits ($A_{b-1} \dots A_0$) as part of the index. The offset bits must always be stripped off first:
+$$
+\text{Set Index} = \left\lfloor \frac{\text{Address}}{\text{Block Size}} \right\rfloor \bmod S = (\text{Block Address}) \bmod S
+$$
+Bits $A_{s+b-1} \dots A_b$ form the index, never bits $A_{s-1} \dots A_0$.
+</Callout>
+
+<Callout tone="violet" label="Why the set index uses middle bits">
+The index bits come from the middle of the address, right above the block offset, rather than the top bits. If the top bits picked the set, consecutive blocks in memory would all map to the same set, filling one line and thrashing during sequential array reads. Using the middle bits ensures that consecutive memory blocks map into consecutive sets ($0, 1, 2, \dots$), spreading references evenly across the cache.
+</Callout>
+
+### Internal Cache Line Structure
+
+Each cache line in the physical hardware stores more than raw data bytes. It includes metadata:
+
+- **Data Block**: The actual $B$ bytes of memory data (e.g. 64 bytes).
+- **Tag Field**: The $t$ bits stored alongside the data block.
+- **Valid Bit ($V$)**: A 1-bit flag indicating whether the line contains valid, initialized program data. On system reset or thread context switch, valid bits are cleared to 0.
+- **Dirty Bit ($D$)**: In write-back caches, a 1-bit flag indicating whether the processor has modified the line since loading it from main memory.
+- **Replacement State**: Bits tracking access recency for eviction policies (such as LRU bits).
 
 ## Three ways to map
 
-**Direct-mapped.** Each block has exactly one possible home. It's simple and fast, with just one place to check. But if a program alternates between two blocks with the same index, they keep kicking each other out, even with the rest of the cache empty.
+High-speed **processor caches** use three placement schemes to map main memory blocks into cache lines: direct-mapped, fully associative, and set-associative. The placement policy determines where an incoming memory block may reside and how hardware verifies cache hits.
 
-**Fully associative.** A block can go anywhere. There are no such conflicts, but the hardware has to compare the tag with every line at once, which is costly.
+### 1. Direct-Mapped Cache
 
-**Set associative.** The compromise. The index picks a small set of lines, say 2 or 4, and the block can go anywhere in that set. Nearly all real caches work this way.
+In a **direct-mapped cache**, each memory block maps to exactly one specific line in the cache. Because each set holds exactly one line ($k = 1$), the total number of sets $S$ equals the total number of cache lines ($S = N$). Thus, the Set Index and Cache Line Index are identical:
 
-Run "Two blocks fighting" with direct mapping and watch the hit rate. Then switch to 2-way.
+$$
+\text{Cache Line Index} = (\text{Block Address}) \bmod S
+$$
+
+Because $S$ is a power of two ($2^s$), this modulo operation corresponds to taking the $s$ index bits of the address directly.
+
+- **Hardware complexity**: Minimal. The cache needs only a single comparator to compare the address tag with the tag stored in the indexed line.
+- **Access latency**: Fastest. The index bits select the line immediately, and data readout can begin in parallel with tag comparison.
+- **Limitation**: **Conflict misses** (also called collision misses or ping-pong thrashing). If a program alternates between two memory blocks that share the same index, they continually evict each other from the cache, even if the rest of the cache is completely empty.
+
+### 2. Fully Associative Cache
+
+In a **fully associative cache**, a memory block can be placed in any cache line anywhere in the cache array.
+
+- **Address fields**: Because a block can reside anywhere, there is no set index ($s = 0$ bits). The entire address above the block offset serves as the tag:
+  $$t = m - b$$
+- **Conflict misses**: Completely eliminated. A block is evicted only when the entire cache is full (capacity miss).
+- **Hardware complexity**: Extreme. To determine whether a memory address hits, the cache controller must compare the incoming tag against the tags of every single cache line in parallel simultaneously. An $N$-line cache requires $N$ separate comparators.
+- **Usage**: Practical only for small structures where conflict misses are unusually costly, such as translation lookaside buffers (TLBs) with 16 to 128 entries.
+
+### 3. Set-Associative Cache
+
+A **$k$-way set-associative cache** balances speed and hit rate. The cache is divided into $S$ sets, where each set contains $k$ parallel cache lines (called ways).
+
+$$
+S = \frac{\text{Total Cache Lines}}{k} = \frac{\text{Cache Capacity}}{k \times \text{Block Size}}
+$$
+
+1. The set index bits ($s = \log_2(S)$) select the set where the block must reside.
+2. Within that selected set of $k$ lines, the block can be placed in any available line.
+3. To determine a hit, $k$ comparators examine the tags of the $k$ lines in the selected set simultaneously. An output multiplexer steers the data from the hitting way to the processor data bus.
+
+Common configurations include 2-way, 4-way, 8-way, and 16-way set-associative caches.
+
+In a set-associative cache, hardware verifies hits in parallel:
+- **Hardware Comparators**: Each way in the selected set connects to its own dedicated comparator circuit (a parallel bank of XNOR gates feeding an AND gate). All $k$ comparators evaluate in parallel, testing whether the stored tag matches the address tag and the valid bit is 1.
+- **Output Multiplexer**: The $k$ comparator match signals control a $k$-to-1 multiplexer that routes data from the hitting way onto the processor data bus. If none of the comparators match, a cache miss signal is asserted.
+
+<Callout tone="orange" label="Assuming higher associativity always improves speed">
+While increasing associativity ($k$) decreases the cache miss rate by eliminating conflict misses, it does not always make the processor faster. Higher associativity requires wider multiplexers and larger comparator fan-in, increasing the hit latency ($t_{\text{hit}}$). If increasing associativity adds an entire clock cycle to the hit path, the extra cycle paid on every memory access often hurts overall performance more than the avoided misses help.
+</Callout>
+
+<Callout tone="orange" label="Confusing cache capacity with total hardware storage">
+When engineers specify a "64 KB cache", that number measures only the usable data capacity. The physical silicon must also store tag bits, valid bits, dirty bits, and replacement state for every line. For a 64 KB 4-way cache with 32-byte blocks and 32-bit addresses, metadata adds over 5.6 KB of additional SRAM storage (nearly a 9% overhead). Forgetting metadata leads to underestimating on-chip die area and power budgets.
+</Callout>
 
 <CacheLab />
 
-## A worked example
-
-A byte-addressed machine has 16-bit addresses and a direct-mapped cache of 128 blocks, each 16 bytes.
-
-- Offset: $\log_2 16 = 4$ bits
-- Index: $\log_2 128 = 7$ bits
-- Tag: $16 - 7 - 4 = 5$ bits
-
-So address `0x1A2B` = `000 1101 0001 0 1011`. Grouping the fields: tag `00011`, index `0100010`, offset `1011`.
-
-If the same cache became 4-way set associative, it would have $128 / 4 = 32$ sets. Index would shrink to 5 bits, and the tag would grow to 7.
-
-<Callout tone="violet" label="How to write faster code">
-Walking a 2D array row by row visits neighbouring addresses, and so nearly every access hits. Walking it column by column jumps across memory and can miss each time. The two loops do the same work, but they can differ a great deal in speed.
+<Callout tone="violet" label="The 2:1 cache rule of thumb">
+Empirical studies by Patterson and Hennessy showed that a direct-mapped cache of capacity $N$ has roughly the same miss rate as a 2-way set-associative cache of capacity $N/2$. Moving from direct mapping to 2-way associativity eliminates the vast majority of conflict misses with only a slight increase in comparator circuitry.
 </Callout>
+
+## Direct-Mapped vs. 2-Way Associative Trace Walkthrough
+
+To understand eviction, hardware tracks access order within each set:
+- **Most Recently Used (MRU)**: The line within the set that was accessed most recently in time.
+- **Least Recently Used (LRU)**: The line within the set that has remained unreferenced for the longest period of time. When a set is full, the LRU line is chosen for replacement.
+
+Consider a toy cache of 4 blocks, each 4 bytes in size, with 8-bit addresses.
+- Block size = 4 bytes $\implies$ Offset $b = \log_2(4) = 2$ bits.
+- Block address = $\lfloor \text{Address} / 4 \rfloor$.
+
+Suppose a loop repeatedly accesses byte addresses `0` and `16`:
+- Address `0` (binary `0000 0000`): Block address = 0.
+- Address `16` (binary `0001 0000`): Block address = 4.
+
+### Under Direct Mapping (4 sets, 1 line per set):
+- Set index bits: $s = \log_2(4) = 2$ bits ($A_3, A_2$).
+- Tag bits: $t = 8 - 2 - 2 = 4$ bits ($A_7 \dots A_4$).
+- Block 0: Index = $0 \bmod 4 = 0$, Tag = 0.
+- Block 4: Index = $4 \bmod 4 = 0$, Tag = 1.
+
+Both blocks map to **Set 0**.
+When the program reads `0`, block 0 loads into Set 0 (Miss).
+When the program reads `16`, block 4 evicts block 0 from Set 0 (Miss).
+When the program reads `0` again, block 0 evicts block 4 from Set 0 (Miss).
+Every read misses because the two blocks kick each other out. This is **cache thrashing**.
+
+### Under 2-Way Set Associativity (2 sets, 2 lines per set):
+- Number of sets: $S = 4 / 2 = 2$ sets.
+- Set index bits: $s = \log_2(2) = 1$ bit ($A_2$).
+- Tag bits: $t = 8 - 1 - 2 = 5$ bits ($A_7 \dots A_3$).
+- Block 0: Index = $0 \bmod 2 = 0$, Tag = 0.
+- Block 4: Index = $4 \bmod 2 = 0$, Tag = 2.
+
+Both blocks map to **Set 0**, but Set 0 contains 2 ways.
+- Access 0: Block 0 is placed in Way 0 of Set 0 (Miss).
+- Access 16: Block 4 is placed in Way 1 of Set 0 (Miss).
+- Next access 0: Hits in Way 0.
+- Next access 16: Hits in Way 1.
+
+Associativity eliminates the conflict miss, converting all subsequent accesses into immediate cache hits.
+
+<Callout tone="orange" label="Matrix loop nesting pitfalls">
+In C and C++, 2D arrays are stored in **row-major order** (row after row sequentially in memory). Iterating through an array `matrix[row][col]` with the inner loop on `col` steps through adjacent memory bytes, maximizing spatial locality and cache hits. Swapping the loops to iterate `col` first causes the access pointer to stride across entire rows, jumping across memory blocks and causing frequent conflict and capacity misses.
+</Callout>
+
+<Callout tone="mint" label="Key takeaway">
+Address decoding maps an address into offset, index, and tag fields. Direct-mapped caches are fast and simple but suffer from conflict misses when competing blocks share the same index. Fully associative caches eliminate conflict misses but require comparators for every line. Set-associative caches balance latency, silicon area, and hit rate, forming the backbone of modern processor hierarchies.
+</Callout>
+
+## Exam-Style Practice
+
+### Part 1: Written Exam & Lab Problems
+
+<ModelAnswer title="Problem 1: Cache address breakdown and hardware overhead calculation">
+A 32-bit byte-addressable processor features a 64 KB cache with 32-byte cache lines.
+
+Calculate the number of Offset bits, Index bits, and Tag bits under each of the following organizations:
+1. Direct-mapped cache.
+2. 4-way set-associative cache.
+3. Fully associative cache.
+4. For the 4-way set-associative cache, assuming each line requires 1 Valid bit, 1 Dirty bit, and 2 LRU bits for replacement, calculate the total hardware storage capacity (in bits) required to implement the entire cache, including both data and metadata arrays.
+
+---
+
+**Solution:**
+
+**Common parameters:**
+- Address length: $m = 32$ bits.
+- Cache data capacity: $C = 64\text{ KB} = 64 \times 1024\text{ bytes} = 65{,}536\text{ bytes}$.
+- Block size: $B = 32\text{ bytes}$.
+- Offset bits: $b = \log_2(B) = \log_2(32) = 5$ bits.
+- Total cache lines: $N = C / B = 65{,}536 / 32 = 2{,}048$ lines.
+
+**Part 1: Direct-Mapped Cache ($k = 1$):**
+- Number of sets: $S = N / 1 = 2{,}048$ sets.
+- Index bits: $s = \log_2(S) = \log_2(2048) = 11$ bits.
+- Tag bits: $t = m - s - b = 32 - 11 - 5 = 16$ bits.
+- Address breakdown: **16-bit Tag, 11-bit Index, 5-bit Offset**.
+
+**Part 2: 4-Way Set-Associative Cache ($k = 4$):**
+- Number of sets: $S = N / k = 2{,}048 / 4 = 512$ sets.
+- Index bits: $s = \log_2(S) = \log_2(512) = 9$ bits.
+- Tag bits: $t = m - s - b = 32 - 9 - 5 = 18$ bits.
+- Address breakdown: **18-bit Tag, 9-bit Index, 5-bit Offset**.
+
+**Part 3: Fully Associative Cache ($S = 1$):**
+- Number of sets: $S = 1$.
+- Index bits: $s = \log_2(1) = 0$ bits.
+- Tag bits: $t = m - b = 32 - 5 = 27$ bits.
+- Address breakdown: **27-bit Tag, 0-bit Index, 5-bit Offset**.
+
+**Part 4: Total Hardware Storage for the 4-Way Cache:**
+- Total lines in the cache: $N = 2{,}048$ lines.
+- For each cache line:
+  - Data bits: $32\text{ bytes} \times 8\text{ bits/byte} = 256$ bits.
+  - Tag bits: 18 bits.
+  - Valid bit: 1 bit.
+  - Dirty bit: 1 bit.
+  - Replacement bits: 2 bits (4-way pseudo-LRU or counter).
+  - Total bits per line: $256 + 18 + 1 + 1 + 2 = 278$ bits.
+- Total hardware storage:
+  $$
+  \text{Total bits} = 2{,}048\text{ lines} \times 278\text{ bits/line} = 569{,}344\text{ bits}
+  $$
+- Expressed in bytes:
+  $$
+  \text{Total bytes} = \frac{569{,}344}{8} = 71{,}168\text{ bytes} \approx 69.5\text{ KB}
+  $$
+Notice that the metadata (tag, valid, dirty, LRU) adds $71{,}168 - 65{,}536 = 5{,}632$ bytes (over 8.6%) of overhead beyond raw data storage.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Cache reference trace and hit-rate determination">
+A computer has a 16-bit byte-addressed architecture and a small cache containing 4 sets, with 2 lines per set (2-way set associative) and a block size of 8 bytes. The cache uses the Least Recently Used (LRU) replacement policy and begins completely empty (all valid bits 0).
+
+1. Determine the number of Offset, Index, and Tag bits for this cache.
+2. Given the following sequence of hexadecimal byte address accesses:
+   `0x0014`, `0x0018`, `0x0034`, `0x0054`, `0x0016`, `0x0036`
+   Determine for each access:
+   - The Block Address
+   - The Set Index
+   - The Tag
+   - Whether the access is a Cache Hit or Cache Miss
+   - The contents of the accessed set after the reference completes
+3. Calculate the overall hit rate for this reference sequence.
+
+---
+
+**Solution:**
+
+**Part 1: Address field breakdown:**
+- Block size $B = 8$ bytes $\implies$ Offset bits $b = \log_2(8) = 3$ bits.
+- Number of sets $S = 4 \implies$ Index bits $s = \log_2(4) = 2$ bits.
+- Address width $m = 16$ bits $\implies$ Tag bits $t = 16 - 2 - 3 = 11$ bits.
+
+For any address:
+- Offset = Address $\bmod 8$ (lower 3 bits, $A_2 \dots A_0$)
+- Block Address = $\lfloor \text{Address} / 8 \rfloor$
+- Set Index = (Block Address) $\bmod 4$ (bits $A_4, A_3$)
+- Tag = $\lfloor \text{Address} / 32 \rfloor$ (upper 11 bits, $A_{15} \dots A_5$)
+
+**Part 2: Step-by-step trace:**
+
+1. Access `0x0014` (`0000 0000 0001 0100`):
+   - Block address: $\lfloor 20 / 8 \rfloor = 2$ (`0000 0000 0010`)
+   - Set index: $2 \bmod 4 = 2$
+   - Tag: $\lfloor 20 / 32 \rfloor = 0$
+   - Cache state: Set 2 is empty $\implies$ **MISS (Compulsory)**.
+   - Result: Tag 0 loaded into Way 0 of Set 2. [Set 2: Way 0 = Tag 0 (MRU), Way 1 = Empty].
+
+2. Access `0x0018` (`0000 0000 0001 1000`):
+   - Block address: $\lfloor 24 / 8 \rfloor = 3$ (`0000 0000 0011`)
+   - Set index: $3 \bmod 4 = 3$
+   - Tag: $\lfloor 24 / 32 \rfloor = 0$
+   - Cache state: Set 3 is empty $\implies$ **MISS (Compulsory)**.
+   - Result: Tag 0 loaded into Way 0 of Set 3. [Set 3: Way 0 = Tag 0 (MRU), Way 1 = Empty].
+
+3. Access `0x0034` (`0000 0000 0011 0100`):
+   - Block address: $\lfloor 52 / 8 \rfloor = 6$ (`0000 0000 0110`)
+   - Set index: $6 \bmod 4 = 2$
+   - Tag: $\lfloor 52 / 32 \rfloor = 1$
+   - Cache state: Set 2 contains Tag 0 in Way 0. Tag 1 does not match $\implies$ **MISS (Compulsory)**.
+   - Result: Tag 1 loaded into Way 1 of Set 2. [Set 2: Way 1 = Tag 1 (MRU), Way 0 = Tag 0 (LRU)].
+
+4. Access `0x0054` (`0000 0000 0101 0100`):
+   - Block address: $\lfloor 84 / 8 \rfloor = 10$ (`0000 0000 1010`)
+   - Set index: $10 \bmod 4 = 2$
+   - Tag: $\lfloor 84 / 32 \rfloor = 2$
+   - Cache state: Set 2 contains Tag 0 (LRU) and Tag 1 (MRU). Tag 2 matches neither $\implies$ **MISS (Conflict)**.
+   - Result: Evicts the LRU line (Tag 0 in Way 0). Tag 2 placed in Way 0. [Set 2: Way 0 = Tag 2 (MRU), Way 1 = Tag 1 (LRU)].
+
+5. Access `0x0016` (`0000 0000 0001 0110`):
+   - Block address: $\lfloor 22 / 8 \rfloor = 2$
+   - Set index: $2 \bmod 4 = 2$
+   - Tag: $\lfloor 22 / 32 \rfloor = 0$
+   - Cache state: Set 2 contains Tag 2 and Tag 1. Tag 0 was previously evicted in step 4 $\implies$ **MISS (Conflict)**.
+   - Result: Evicts the LRU line (Tag 1 in Way 1). Tag 0 placed in Way 1. [Set 2: Way 1 = Tag 0 (MRU), Way 0 = Tag 2 (LRU)].
+
+6. Access `0x0036` (`0000 0000 0011 0110`):
+   - Block address: $\lfloor 54 / 8 \rfloor = 6$
+   - Set index: $6 \bmod 4 = 2$
+   - Tag: $\lfloor 54 / 32 \rfloor = 1$
+   - Cache state: Set 2 contains Tag 0 and Tag 2. Tag 1 was evicted in step 5 $\implies$ **MISS (Conflict)**.
+   - Result: Evicts LRU line (Tag 2 in Way 0). Tag 1 placed in Way 0. [Set 2: Way 0 = Tag 1 (MRU), Way 1 = Tag 0 (LRU)].
+
+**Part 3: Hit rate:**
+Total accesses = 6. Total hits = 0. Total misses = 6.
+Hit rate is $0 / 6 = 0$ (0%).
+Notice that addresses `0x0014`, `0x0034`, and `0x0054` are three distinct blocks all competing for Set 2. Because Set 2 holds only 2 blocks ($k = 2$), the three blocks continuously thrash Set 2 under LRU replacement.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 3: Hardware comparison: Tag comparators and multiplexers across associativity">
+A 32-bit byte-addressed processor features a 32 KB data cache with 64-byte blocks.
+Evaluate three alternative cache organizations:
+- Organization A: Direct-mapped ($k = 1$).
+- Organization B: 8-way set-associative ($k = 8$).
+- Organization C: Fully associative ($S = 1$).
+
+1. For each organization, determine the number of sets ($S$), the bit width of the Offset ($b$), Index ($s$), and Tag ($t$) fields.
+2. Determine the exact number of hardware tag comparators required, and calculate the total number of bit-comparisons performed on each cache access.
+3. Determine the size of the data output multiplexer required to select the hit block and send it to the CPU pipeline.
+4. Explain how high associativity influences clock cycle time and dynamic power consumption compared to direct mapping.
+
+---
+
+**Solution:**
+
+**Part 1: Address breakdown:**
+- Cache capacity $C = 32\text{ KB} = 32{,}768\text{ bytes}$.
+- Block size $B = 64\text{ bytes} \implies b = \log_2(64) = 6$ offset bits.
+- Total lines $N = 32{,}768 / 64 = 512$ lines.
+
+Address breakdown calculations:
+- **Organization A (Direct-mapped, $k = 1$)**:
+  - Sets $S = 512 / 1 = 512 \implies s = \log_2(512) = 9$ bits.
+  - Tag $t = 32 - 9 - 6 = 17$ bits.
+  - Format: **17-bit Tag, 9-bit Index, 6-bit Offset**.
+- **Organization B (8-way set-associative, $k = 8$)**:
+  - Sets $S = 512 / 8 = 64 \implies s = \log_2(64) = 6$ bits.
+  - Tag $t = 32 - 6 - 6 = 20$ bits.
+  - Format: **20-bit Tag, 6-bit Index, 6-bit Offset**.
+- **Organization C (Fully associative, $S = 1$)**:
+  - Sets $S = 1 \implies s = \log_2(1) = 0$ bits.
+  - Tag $t = 32 - 0 - 6 = 26$ bits.
+  - Format: **26-bit Tag, 0-bit Index, 6-bit Offset**.
+
+**Part 2: Comparators and bit-comparison workload:**
+- **Organization A**: Requires **1 comparator** of 17 bits.
+  $$\text{Bit-comparisons} = 1 \times 17 = 17\text{ bits}$$
+- **Organization B**: Requires **8 parallel comparators** of 20 bits each.
+  $$\text{Bit-comparisons} = 8 \times 20 = 160\text{ bits}$$
+- **Organization C**: Requires **512 parallel comparators** of 26 bits each (using content-addressable memory, CAM).
+  $$\text{Bit-comparisons} = 512 \times 26 = 13{,}312\text{ bits}$$
+
+**Part 3: Data output multiplexer requirements:**
+- **Organization A**: No multiplexer required between ways. The 9-bit index decodes directly to 1 line, which feeds directly to the word select multiplexer.
+- **Organization B**: An **8-to-1 multiplexer** per data word, controlled by the 8 hit signals from the tag comparators.
+- **Organization C**: A **512-to-1 multiplexer** or wired-OR match bus driven by 512 match lines.
+
+**Part 4: Cycle time and dynamic power trade-offs:**
+- **Cycle Time**: In a direct-mapped cache, the data RAM access and tag comparison happen in parallel, and data can be speculatively routed to the ALU before tag verification finishes. In an 8-way associative cache, data cannot be routed until all 8 comparators finish and the 8-to-1 multiplexer selects the winning way, lengthening the hit critical path.
+- **Dynamic Energy**: An 8-way cache activates all 8 tag and data arrays on every access, consuming up to $8\times$ more dynamic energy per read than a direct-mapped cache.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: Array stride and cache thrashing analysis">
+A system has a 16 KB direct-mapped data cache with 32-byte blocks and 32-bit addresses.
+Consider the following C program summing vector products:
+```c
+int a[1024]; // 4-byte integers, total 4,096 bytes
+int b[1024]; // 4-byte integers, total 4,096 bytes
+int sum = 0;
+for (int i = 0; i < 1024; i += 8) {
+    sum += a[i] * b[i];
+}
+```
+Suppose the compiler places array `a` starting at physical address `0x00010000` and array `b` starting at address `0x00014000` (which is $0x00010000 + 16{,}384\text{ bytes}$, exactly 16 KB apart).
+
+1. Determine the Offset, Index, and Tag bit widths for this 16 KB direct-mapped cache.
+2. Calculate the cache index for `a[0]` and `b[0]`. Show that for every iteration $i$, `&a[i]` and `&b[i]` map to the exact same cache set.
+3. Calculate the hit rate of the direct-mapped cache across the entire loop execution.
+4. If the cache is redesigned as a 2-way set-associative cache of the same 16 KB capacity (with 32-byte blocks and LRU replacement), calculate the new hit rate for the loop.
+
+---
+
+**Solution:**
+
+**Part 1: Cache bit fields:**
+- Cache size $C = 16\text{ KB} = 16{,}384\text{ bytes}$.
+- Block size $B = 32\text{ bytes} \implies b = \log_2(32) = 5$ bits ($A_4 \dots A_0$).
+- Lines = Sets = $16{,}384 / 32 = 512$ sets $\implies s = \log_2(512) = 9$ bits ($A_{13} \dots A_5$).
+- Tag bits $t = 32 - 9 - 5 = 18$ bits ($A_{31} \dots A_{14}$).
+
+**Part 2: Set index collision proof:**
+- Base of `a`: `0x00010000` = $0000\ 0000\ 0000\ 0001\ 00\mathbf{00\ 0000\ 000}0\ 0000_2$.
+  Bits $A_{13} \dots A_5 = 000000000_2 = \text{Set } 0$.
+- Base of `b`: `0x00014000` = $0000\ 0000\ 0000\ 0001\ 01\mathbf{00\ 0000\ 000}0\ 0000_2$.
+  Bits $A_{13} \dots A_5 = 000000000_2 = \text{Set } 0$.
+
+Because array `b` is placed exactly $16{,}384\text{ bytes} = 2^{14}\text{ bytes}$ after array `a`:
+$$
+\text{Address}(b[i]) = \text{Address}(a[i]) + 2^{14}
+$$
+Because $2^{14}$ has zeros in bits $A_{13} \dots A_0$, adding $2^{14}$ leaves index bits $A_{13} \dots A_5$ unchanged. Therefore, for every iteration $i$, `&a[i]` and `&b[i]` produce identical index bits and map to the exact same cache set.
+
+**Part 3: Hit rate in direct-mapped cache:**
+The loop executes $1024 / 8 = 128$ iterations:
+- In iteration 0:
+  - Access `a[0]`: Compulsory miss. Block for `a[0]` loaded into Set 0 (Tag `0x00004`).
+  - Access `b[0]`: Compulsory miss. Maps to Set 0. Evicts `a[0]` and loads Tag `0x00005`.
+- In iteration 1 ($i = 8$, byte offset $= 8 \times 4 = 32$ bytes):
+  - Access `a[8]`: Maps to Set 1. Compulsory miss. Tag `0x00004` loaded into Set 1.
+  - Access `b[8]`: Maps to Set 1. Compulsory miss. Evicts `a[8]` and loads Tag `0x00005`.
+Across all 128 iterations (256 memory reads), every single read misses.
+Total hits = 0. Total misses = 256.
+Hit rate = **0%**.
+
+**Part 4: Redesign as 2-way set-associative cache:**
+In a 16 KB 2-way cache with 32-byte blocks:
+- Number of sets $S = 512 / 2 = 256 \implies s = 8$ bits ($A_{12} \dots A_5$).
+- Tag $t = 32 - 8 - 5 = 19$ bits.
+- Because each set contains 2 lines (Way 0 and Way 1), Way 0 stores `a[i]` while Way 1 stores `b[i]`. Neither array evicts the other!
+However, because this specific loop advances by $i += 8$ integers ($32$ bytes per iteration), each access references a brand new 32-byte memory block that has never been loaded before. Therefore, every single access is a compulsory miss, yielding a 0% hit rate for this specific stride under both cache designs.
+
+The power of associativity becomes visible when the stride is sequential ($i += 1$):
+- Each 32-byte line holds 8 integers ($8 \times 4\text{ bytes} = 32\text{ bytes}$).
+- In the direct-mapped cache: `a[0]` loads Set 0, then `b[0]` evicts `a[0]` from Set 0. In iteration 1, `a[1]` maps to Set 0 and misses because `b[0]` evicted it; then `b[1]` evicts `a[1]` again. Hit rate remains 0% due to ping-pong thrashing.
+- In the 2-way cache: Set 0 holds both `a` in Way 0 and `b` in Way 1. `a[0]` misses (compulsory), but `a[1 \dots 7]` all hit (7 hits). Similarly, `b[0]` misses, but `b[1 \dots 7]` hit (7 hits). The 2-way cache achieves a $14 / 16 = 87.5\text{\%}$ hit rate, completely eliminating the conflict misses that ruined the direct-mapped cache.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Sub-block (sector) cache design and trade-offs">
+To minimize silicon area spent on tag storage without paying the high bus latency penalty of transferring large blocks, an architectural team evaluates a **sector cache** (sub-block cache) for a 64 KB L1 data cache on a 32-bit machine.
+
+The sector cache organizes storage into 64-byte sectors. Each sector contains four 16-byte sub-blocks. A single address tag is allocated per 64-byte sector, but each 16-byte sub-block possesses its own Valid bit and Dirty bit. On a cache miss, only the referenced 16-byte sub-block is fetched across the bus, rather than the entire 64-byte sector.
+
+1. Partition the 32-bit address for a direct-mapped sector cache with 64-byte sectors and 16-byte sub-blocks.
+2. Calculate the total metadata storage overhead (in bits and kilobytes) for:
+   - The sector cache (16-bit tag, 4 valid bits, 4 dirty bits per sector).
+   - A conventional cache with 16-byte blocks (1 tag, 1 valid bit, 1 dirty bit per 16-byte block).
+3. Determine the percentage reduction in metadata storage achieved by the sector cache.
+4. Explain the primary performance drawback of a sector cache when running workloads with poor spatial locality.
+
+---
+
+**Solution:**
+
+**Part 1: Address breakdown:**
+- Cache capacity $C = 64\text{ KB} = 65{,}536\text{ bytes}$.
+- Sector size = 64 bytes $\implies$ Total sectors $N_{\text{sector}} = 65{,}536 / 64 = 1{,}024$ sectors.
+- Sector offset: $\log_2(64) = 6$ bits ($A_5 \dots A_0$).
+  - Within sector offset: Bits $A_3 \dots A_0$ (4 bits) select the byte within the 16-byte sub-block.
+  - Bits $A_5 \dots A_4$ (2 bits) select which of the 4 sub-blocks ($2^2 = 4$) is accessed.
+- Index bits: $\log_2(1{,}024) = 10$ bits ($A_{15} \dots A_6$).
+- Tag bits: $32 - 10 - 6 = 16$ bits ($A_{31} \dots A_{16}$).
+Format: **16-bit Tag, 10-bit Sector Index, 2-bit Sub-block Select, 4-bit Byte Offset**.
+
+**Part 2: Metadata overhead comparison:**
+- **Sector Cache**:
+  Total sectors = 1,024.
+  Metadata per sector = 16 tag bits + 4 valid bits + 4 dirty bits = 24 bits.
+  $$
+  \text{Total bits} = 1{,}024 \times 24\text{ bits} = 24{,}576\text{ bits} = 3{,}072\text{ bytes} = 3.0\text{ KB}
+  $$
+- **Conventional Cache with 16-byte blocks**:
+  Total blocks = $65{,}536 / 16 = 4{,}096$ blocks.
+  Index bits = $\log_2(4{,}096) = 12$ bits.
+  Tag bits = $32 - 12 - 4 = 16$ bits.
+  Metadata per block = 16 tag bits + 1 valid bit + 1 dirty bit = 18 bits.
+  $$
+  \text{Total bits} = 4{,}096 \times 18\text{ bits} = 73{,}728\text{ bits} = 9{,}216\text{ bytes} = 9.0\text{ KB}
+  $$
+
+**Part 3: Metadata savings:**
+$$
+\text{Reduction} = \frac{9.0\text{ KB} - 3.0\text{ KB}}{9.0\text{ KB}} \times 100\text{\%} = 66.7\text{\%}
+$$
+The sector cache reduces tag RAM silicon footprint by two-thirds.
+
+**Part 4: Performance drawback under poor spatial locality:**
+When a sector is allocated, its tag matches a 64-byte aligned region of memory. If a program exhibits low spatial locality (such as traversing a linked list or sparse graph where only one 16-byte object is touched per 64-byte region), only 1 of the 4 sub-blocks is valid. The remaining 3 sub-blocks (48 bytes) sit empty and unusable by any other address in memory, reducing effective cache capacity and increasing conflict misses.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: Split Harvard L1 cache vs. unified L1 cache performance and pipeline hazards">
+A 5-stage RISC processor (IF, ID, EX, MEM, WB) operates at a clock frequency of 2.5 GHz (clock cycle time $\tau = 0.4\text{ ns}$).
+The instruction workload exhibits the following characteristics:
+- 30% of instructions are data memory operations (20% loads, 10% stores).
+- 70% of instructions are ALU operations or branches that do not access data memory.
+- Every instruction requires an instruction fetch (IF) access.
+
+Compare two L1 cache designs:
+- **Design A (Split Harvard Architecture)**: 32 KB instruction cache (I-cache) and 32 KB data cache (D-cache).
+  - I-cache miss rate = 1.5%, D-cache miss rate = 4.0%.
+  - Both caches deliver 1-cycle hit latency with independent ports.
+  - L2 cache miss penalty = 15 clock cycles.
+- **Design B (Unified Architecture)**: 64 KB unified cache serving both instructions and data.
+  - Unified miss rate = 2.5% for both instruction and data accesses.
+  - Miss penalty to L2 = 15 clock cycles.
+  - Because the cache has only 1 read/write port, a simultaneous instruction fetch (IF) and data access (MEM) causes a **structural hazard**, stalling the pipeline for 1 clock cycle.
+
+1. Calculate the average memory stall cycles per instruction for Design A.
+2. Calculate the average memory stall cycles per instruction for Design B, including both cache misses and structural hazard stalls.
+3. If the base pipeline CPI without stalls is 1.0, calculate the effective CPI and performance comparison between Design A and Design B.
+
+---
+
+**Solution:**
+
+**Part 1: Memory stall cycles for Design A (Split Harvard):**
+Because I-cache and D-cache operate independently in parallel, no structural hazards occur between IF and MEM stages.
+- I-cache stall cycles per instruction:
+  $$
+  \text{Stall}_{\text{inst}} = \text{Miss Rate}_I \times \text{Penalty} = 0.015 \times 15 = 0.225\text{ cycles}
+  $$
+- D-cache stall cycles per instruction:
+  Data accesses occur on 30% of instructions:
+  $$
+  \text{Stall}_{\text{data}} = 0.30 \times (\text{Miss Rate}_D \times \text{Penalty}) = 0.30 \times (0.04 \times 15) = 0.30 \times 0.60 = 0.180\text{ cycles}
+  $$
+- Total stall cycles per instruction:
+  $$
+  \text{Stall}_A = 0.225 + 0.180 = 0.405\text{ cycles}
+  $$
+
+**Part 2: Memory stall cycles for Design B (Unified Cache):**
+- Cache miss stalls:
+  Total memory references per instruction = 1 (instruction fetch) + 0.30 (data access) = 1.30 references per instruction.
+  $$
+  \text{Stall}_{\text{miss}} = 1.30 \times (\text{Miss Rate}_U \times \text{Penalty}) = 1.30 \times (0.025 \times 15) = 1.30 \times 0.375 = 0.4875\text{ cycles}
+  $$
+- Structural hazard stalls:
+  A load or store instruction requires memory access during MEM stage while the pipeline attempts to fetch the next instruction in IF. This conflict forces 1 stall cycle on every load/store:
+  $$
+  \text{Stall}_{\text{structural}} = 0.30 \times 1\text{ cycle} = 0.300\text{ cycles}
+  $$
+- Total stall cycles per instruction:
+  $$
+  \text{Stall}_B = \text{Stall}_{\text{miss}} + \text{Stall}_{\text{structural}} = 0.4875 + 0.300 = 0.7875\text{ cycles}
+  $$
+
+**Part 3: Effective CPI and performance comparison:**
+- Effective CPI for Design A:
+  $$
+  \text{CPI}_A = \text{CPI}_{\text{base}} + \text{Stall}_A = 1.0 + 0.405 = 1.405
+  $$
+- Effective CPI for Design B:
+  $$
+  \text{CPI}_B = \text{CPI}_{\text{base}} + \text{Stall}_B = 1.0 + 0.7875 = 1.7875
+  $$
+- Performance speedup of Split Harvard over Unified:
+  $$
+  \text{Speedup} = \frac{\text{CPI}_B}{\text{CPI}_A} = \frac{1.7875}{1.405} \approx 1.272\text{ (27.2\% faster)}
+  $$
+Despite the unified cache having a larger overall pool and lower data miss rate, structural port conflicts severely bottleneck pipeline throughput. This is why all modern processors employ split Harvard L1 caches.
+</ModelAnswer>
+
+### Part 2: Multiple-Choice Practice
+
+<Quiz
+  practice
+  questions={[
+    {
+      id: "map-p1",
+      prompt: "Why do processor architectures divide physical memory addresses into Tag, Index, and Block Offset fields?",
+      options: [
+        { id: "a", text: "Offset selects the byte inside the block, Index selects the cache set, and Tag identifies the specific block residing in that set" },
+        { id: "b", text: "Offset specifies the RAM bank, Index sets the clock multiplier, and Tag controls the bus voltage" },
+        { id: "c", text: "All three fields represent distinct encryption keys for hardware page isolation" },
+        { id: "d", text: "The fields allow the CPU to execute three instructions per memory read cycle" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The low-order bits (Offset) select the byte within the multi-byte cache line. The middle bits (Index) choose which set in the cache will be searched. The high-order bits (Tag) are compared against the stored tag to verify whether the cached line matches the requested memory block. Option (b), Option (c), and Option (d) mischaracterize the function of cache address decoding.",
+    },
+    {
+      id: "map-p2",
+      prompt: "In a 32-bit byte-addressed architecture with 64-byte cache blocks, how many bits are required for the Block Offset field?",
+      options: [
+        { id: "a", text: "6 bits" },
+        { id: "b", text: "8 bits" },
+        { id: "c", text: "4 bits" },
+        { id: "d", text: "5 bits" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: With a block size of 64 bytes, selecting an individual byte requires log₂(64) = 6 bits. 8 bits (b) would address 256 bytes. 4 bits (c) addresses 16 bytes, and 5 bits (d) addresses 32 bytes.",
+    },
+    {
+      id: "map-p3",
+      prompt: "A 32-bit system features a 64 KB 8-way set-associative cache with 64-byte blocks. What is the exact bit width of the Tag, Index, and Offset fields?",
+      options: [
+        { id: "a", text: "19 bits Tag, 7 bits Index, 6 bits Offset" },
+        { id: "b", text: "16 bits Tag, 10 bits Index, 6 bits Offset" },
+        { id: "c", text: "18 bits Tag, 8 bits Index, 6 bits Offset" },
+        { id: "d", text: "20 bits Tag, 6 bits Index, 6 bits Offset" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Block offset is log₂(64) = 6 bits. Total cache lines = 64 KB / 64 B = 1,024 lines. Total sets = 1,024 / 8 ways = 128 sets. Index bits = log₂(128) = 7 bits. Tag bits = 32 - 7 - 6 = 19 bits. Option (b) calculates a direct-mapped cache (1,024 sets). Option (c) assumes 4-way associativity (256 sets). Option (d) assumes 16-way associativity (64 sets).",
+    },
+    {
+      id: "map-p4",
+      prompt: "What is the primary cause of conflict misses in a direct-mapped cache?",
+      options: [
+        { id: "a", text: "Multiple frequently referenced blocks share the same Index bits, repeatedly evicting each other from the single slot available" },
+        { id: "b", text: "The total size of the program's working set exceeds total cache data capacity" },
+        { id: "c", text: "The CPU attempts to read data while the ALU is executing division" },
+        { id: "d", text: "The memory controller reverses the order of address bits on the system bus" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a direct-mapped cache, each set has only 1 way. When multiple active blocks share the same index bits, they collide in that single set, evicting each other even if other cache sets are completely empty (conflict miss / thrashing). Option (b) describes a capacity miss. Option (c) and Option (d) describe unrelated hardware operations.",
+    },
+    {
+      id: "map-p5",
+      prompt: "Why are fully associative cache organizations impractical for large L2 or L3 caches?",
+      options: [
+        { id: "a", text: "Every line requires an independent hardware comparator, resulting in prohibitive silicon area, wiring complexity, and power dissipation" },
+        { id: "b", text: "Fully associative caches cannot implement the Least Recently Used replacement policy" },
+        { id: "c", text: "Fully associative caches are incompatible with byte-level memory addressing" },
+        { id: "d", text: "Fully associative caches cannot store dirty bits" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A fully associative cache has no index field; every line must be checked in parallel. A 1 MB cache with 64-byte lines contains 16,384 lines, which would require 16,384 simultaneous tag comparators and a massive 16,384-to-1 multiplexer, causing massive area, power, and latency penalties. Option (b), Option (c), and Option (d) are false claims.",
+    },
+    {
+      id: "map-p6",
+      prompt: "In an N-way set-associative cache, how many tag comparators evaluate the address simultaneously?",
+      options: [
+        { id: "a", text: "Exactly N comparators, one for each way within the selected set" },
+        { id: "b", text: "1 comparator that sequentially cycles through all N ways" },
+        { id: "c", text: "N squared comparators" },
+        { id: "d", text: "As many comparators as total lines in the cache" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In an N-way set-associative cache, the index field selects 1 specific set. Within that set, all N lines are read in parallel and checked by N separate tag comparators simultaneously. Option (b) describes sequential polling, which is too slow for processor caches. Option (c) is an incorrect formula. Option (d) describes a fully associative cache.",
+    },
+    {
+      id: "map-p7",
+      prompt: "Why do modern high-performance processors employ separate L1 instruction and data caches (Harvard architecture) rather than a unified L1 cache?",
+      options: [
+        { id: "a", text: "To eliminate structural pipeline hazards by allowing simultaneous instruction fetch (IF) and data memory access (MEM)" },
+        { id: "b", text: "Because instructions and data use different electrical voltages" },
+        { id: "c", text: "Because instructions cannot be stored in SRAM" },
+        { id: "d", text: "To prevent instructions from executing conditional branches" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a standard 5-stage pipeline, the IF stage fetches the next instruction while the MEM stage reads or writes data for an earlier instruction. A unified single-port cache would create a structural hazard, stalling the pipeline on every load and store. Separate I-cache and D-cache allow concurrent single-cycle accesses. Option (b), Option (c), and Option (d) are completely false.",
+    },
+    {
+      id: "map-p8",
+      prompt: "If a processor cache's total capacity is doubled while maintaining the same block size and associativity, how do the address bit fields change?",
+      options: [
+        { id: "a", text: "The Index field increases by 1 bit, and the Tag field decreases by 1 bit" },
+        { id: "b", text: "The Offset field doubles, and the Index field is halved" },
+        { id: "c", text: "The Tag field increases by 2 bits, and the Index field decreases by 2 bits" },
+        { id: "d", text: "All fields remain completely unchanged" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Doubling cache capacity while keeping block size and associativity constant doubles the number of sets (S_new = 2 × S_old). Because index bits = log₂(S), the Index field grows by log₂(2) = 1 bit. Since total address bits and block offset bits are unchanged, the Tag field must decrease by exactly 1 bit. Option (b), Option (c), and Option (d) violate address bit budgeting.",
+    },
+  ]}
+/>
+

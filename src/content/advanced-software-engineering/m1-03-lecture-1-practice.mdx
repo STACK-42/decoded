@@ -1,0 +1,171 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 1 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 1 material, to check understanding, not memory. Each answer explains why it's right and why the others aren't.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-1-practice"
+  questions={questionsForQuiz(questions, "lecture-1-practice")}
+/>
+
+## System and diagram questions
+
+These ask you to read a diagram or reason about a system.
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-1-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Sequence understanding: the error delta has been added and silently truncated. Which message comes next?",
+      figure: (
+        <SequenceDiagram
+          participants={["Sensor", "AI PID", "Accumulator (F32)", "Actuator"]}
+          steps={[
+            { from: 0, to: 1, label: "error delta = 0.0000001" },
+            { from: 1, to: 2, label: "sum = 100000.0 + 0.0000001" },
+            { note: "silent truncation", at: 2 },
+            { from: 2, to: 1, label: "", hidden: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Accumulator → AI PID: return 100000.0000001" },
+        { id: "b", text: "Accumulator → AI PID: return 100000.0" },
+        { id: "c", text: "Accumulator → Sensor: overflow error" },
+        { id: "d", text: "AI PID → Actuator: full correction" },
+      ],
+      correctOptionId: "b",
+      explanation: "The truncated sum, unchanged at 100000.0, is returned to the PID. No error is raised, which is why it's silent. The PID then sends a command with 0.0 correction.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: this is the harness from the case study. What belongs in the box marked ?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={170}
+          nodes={[
+            { id: "w", label: "Worker agent", x: 100, y: 85, w: 140, tone: "violet" },
+            { id: "m", label: "?", x: 290, y: 85, w: 130, kind: "missing" },
+            { id: "done", label: "Task marked\ncomplete", x: 470, y: 85, w: 140, h: 48 },
+          ]}
+          edges={[
+            { from: "w", to: "m", label: "submits work" },
+            { from: "m", to: "done", label: "only if it passes" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The initializer agent" },
+        { id: "b", text: "A verification gate: automated test suite with strict exit codes" },
+        { id: "c", text: "The model's context window" },
+        { id: "d", text: "A human product manager" },
+      ],
+      correctOptionId: "b",
+      explanation: "Between 'submits work' and 'complete' sits the verification gate. The initializer runs before the workers, not after them; the context window is inside the model.",
+    },
+    {
+      id: "d3",
+      prompt: "Error detection: what is wrong with this review process for AI-generated code?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={120}
+          nodes={[
+            { id: "llm", label: "LLM writes code", x: 90, y: 60, w: 150 },
+            { id: "t", label: "LLM writes tests", x: 265, y: 60, w: 150 },
+            { id: "r", label: "Human checks maths\nagainst textbook", x: 450, y: 60, w: 170, h: 48 },
+          ]}
+          edges={[
+            { from: "llm", to: "t" },
+            { from: "t", to: "r" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing; the maths was correct, so the code is correct" },
+        { id: "b", text: "The tests aren't independent of the code, and nobody checks implementation details such as numeric types" },
+        { id: "c", text: "The human should write the code instead of the LLM" },
+        { id: "d", text: "The tests should run before the code is written" },
+      ],
+      correctOptionId: "b",
+      explanation: "Code and tests share the same author and blind spots, and checking the formula misses how it's implemented (float32). Correct maths, wrong engineering. Banning the LLM isn't the lecture's lesson; adding engineering around it is.",
+    },
+    {
+      id: "d4",
+      prompt: "System interpretation: in this harness, which element holds the project's state between one worker and the next?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={150}
+          nodes={[
+            { id: "i", label: "A: Initializer", x: 90, y: 75, w: 140, tone: "sky" },
+            { id: "w1", label: "B: Worker 1", x: 250, y: 75, w: 130, tone: "violet" },
+            { id: "g", label: "C: git + NOTES.md", x: 420, y: 75, w: 160, kind: "store" },
+            { id: "w2", label: "D: Worker 2", x: 540, y: 140, w: 110, h: 34, tone: "violet" },
+          ]}
+          edges={[
+            { from: "i", to: "w1" },
+            { from: "w1", to: "g", label: "commit" },
+            { from: "g", to: "w2", label: "read" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A, the initializer, which remembers everything" },
+        { id: "b", text: "B, Worker 1's context window" },
+        { id: "c", text: "C, git commits and the progress file" },
+        { id: "d", text: "D, Worker 2, which re-reads the whole repository each time" },
+      ],
+      correctOptionId: "c",
+      explanation: "Workers start with fresh, empty context windows, so state must live outside the model: in commits and progress notes. Keeping it in a context window is exactly what caused context rot.",
+    },
+    {
+      id: "d5",
+      prompt: "Design decision: an agent keeps running out of context because 40 tool descriptions are loaded at the start. Which harness change fixes this?",
+      options: [
+        { id: "a", text: "Use a model with a larger context window" },
+        { id: "b", text: "Progressive tooling: load each tool's schema only when it is about to be used" },
+        { id: "c", text: "Add more worker agents that share one context" },
+        { id: "d", text: "Remove the verification gate" },
+      ],
+      correctOptionId: "b",
+      explanation: "This is 'overwhelmed execution'. Loading tool schemas on demand (with context compaction) frees the window for the actual problem. A larger window only delays the problem; removing the gate brings back premature victory.",
+    },
+    {
+      id: "d6",
+      prompt: "Diagram construction: you draw a sequence diagram of the fixed controller, where the integral sum is a 64-bit float. What is the last message to the actuator?",
+      figure: (
+        <SequenceDiagram
+          participants={["Sensor", "AI PID", "Accumulator (F64)", "Actuator"]}
+          steps={[
+            { from: 0, to: 1, label: "error delta = 0.0000001" },
+            { from: 1, to: 2, label: "sum = 100000.0 + 0.0000001" },
+            { from: 2, to: 1, label: "return 100000.0000001", dashed: true },
+            { from: 1, to: 3, label: "", hidden: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "command (0.0 correction)" },
+        { id: "b", text: "command with a small, non-zero integral correction" },
+        { id: "c", text: "overflow error" },
+        { id: "d", text: "no message; the actuator polls the sensor directly" },
+      ],
+      correctOptionId: "b",
+      explanation: "With 64 bits the tiny error survives the addition, so the integral term contributes a small correction. The 0.0 correction was the float32 failure.",
+    },
+  ]}
+/>

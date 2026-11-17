@@ -1,38 +1,655 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { InterleaveLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Main Memory Performance
 
-You've seen [what a memory is built from](/courses/logic-design/memory-unit) and [where it sits in the hierarchy](/courses/computer-organization/memory-hierarchy). Now we'll put numbers on its speed. Three measurements matter:
+Every computer architecture faces the **memory wall**: the widening speed gap between the processor and main memory. Processor pipelines have grown hundreds of times faster over recent decades, while dynamic RAM access times have improved far more slowly. A modern CPU core can finish hundreds of operations in the time it takes one request to reach main memory and return. Preventing the CPU from sitting idle takes careful work across memory organization, cell design, bus timing, and bank interleaving.
 
-- **Access time**: from asking for a word until it arrives.
-- **Cycle time**: from the start of one access until the memory can start another. It's longer than access time, because the chip needs to recover.
-- **Bandwidth**: how many bytes per second can move in total.
+You have seen [what a memory unit is built from](/courses/logic-design/memory-unit) and [where it sits in the memory hierarchy](/courses/computer-organization/memory-hierarchy). This lesson looks at what makes memory fast or slow: how SRAM and DRAM store bits, how chips combine into wider arrays, and how interleaving keeps data moving on every bus cycle.
+
+## Memory Technologies: SRAM and DRAM
+
+Semiconductor memory comes in two main types, separated by whether the storage cells need constant electrical refreshing.
+
+### Static RAM (SRAM)
+
+A **static random-access memory** (SRAM) cell stores each bit in a two-state latch made from two cross-coupled inverters. The standard design uses six CMOS transistors (a 6T cell).
+
+The two inverters connect in a loop: the output of each inverter drives the input of the other. This feedback locks the internal storage nodes into one of two stable states: high ($V_{DD}$) or low (Ground). Two nMOS access transistors connect these nodes to a pair of complementary data wires called the **Bit Line** ($BL$) and **Bit Line Bar** ($\overline{BL}$). When the row select wire, called the **Word Line**, goes high, both access transistors turn on and connect the cell to the bit lines for reading or writing.
+
+1. **High speed**: An access takes between 0.5 and 2.5 nanoseconds because reads and writes only need to charge or discharge gate capacitance.
+2. **Persistence**: The cell retains its stored bit as long as power is connected. It needs no refresh circuitry.
+3. **Low density and high cost**: Six transistors per bit take up substantial silicon area. SRAM chips hold far fewer bits per square millimeter than DRAM chips and cost more per gigabyte.
+
+Because SRAM is fast but space-hungry, processors reserve it for on-chip caches: L1, L2, and L3.
+
+### Dynamic RAM (DRAM)
+
+A **dynamic random-access memory** (DRAM) cell stores a bit as charge on a tiny capacitor, accessed through a single transistor (a 1T-1C cell).
+
+The transistor gate connects to the **Word Line** (row select), one terminal connects to the **Bit Line** (column data), and the other connects to the storage capacitor (often only 20 to 30 femtofarads).
+
+1. **High density**: With only one transistor and one capacitor per bit, billions of cells fit on a single chip. This makes DRAM economical for main memory.
+2. **Capacitor leakage and refresh**: Charge leaks through the silicon substrate within milliseconds. To prevent data loss, the memory controller issues periodic **refresh** commands (reading and rewriting each row about every 64 milliseconds). The memory is called dynamic because its stored state decays over time.
+3. **Destructive read**: Reading a cell drains it. The tiny capacitor charge ($Q = C V$) shares itself with the larger capacitance of the long bit line wire, shifting the wire voltage by only a few tens of millivolts. A sensitive **sense amplifier** detects this small shift, pulls the line to full voltage ($V_{DD}$ or Ground), and writes the value back to the capacitor to restore the original charge before closing the row.
+4. **The row buffer**: When a word line activates a row of cells, the sense amplifiers copy an entire row of data (thousands of bits, often called a DRAM page) into an on-chip latch array called the **row buffer**. Later reads from that same row come straight from the row buffer, skipping the row activation delay.
+
+Non-volatile semiconductor storage includes **read-only memory** (ROM), electrically erasable programmable ROM (EEPROM), and **flash memory**. Flash memory stores charge on floating gates or charge traps that hold data without power. NAND flash provides high density for solid-state drives (SSDs), while NOR flash allows random byte-level reads for bootloaders.
+
+## Key Performance Metrics: Latency and Bandwidth
+
+Three metrics define memory subsystem performance:
+
+1. **Access time ($t_{AC}$)**: The delay between the processor placing an address and read command on the bus and valid data appearing on the data pins.
+2. **Cycle time ($t_{CYC}$)**: The minimum time needed between starting one access and starting the next. For SRAM, cycle time matches access time closely. For DRAM, cycle time is much longer than access time because the array has to precharge its bit lines and recharge the capacitors after every read.
+3. **Bandwidth**: The rate at which data moves across the bus, measured in megabytes or gigabytes per second:
 
 $$
-\text{bandwidth} = \frac{\text{bytes per transfer}}{\text{cycle time}}
+\text{Bandwidth} = \frac{\text{Bytes per transfer}}{\text{Cycle time}} = \text{Bus Width (bytes)} \times \text{Bus Frequency} \times \text{Transfers per cycle}
 $$
 
-For example, a 64-bit bus (8 bytes) and a 10 ns cycle give $8 / (10 \times 10^{-9}) = 800$ MB per second.
+<Callout tone="orange" label="Confusing access time with cycle time">
+It is easy to assume that once memory returns data ($t_{AC}$), it can accept the next command immediately. In DRAM, cycle time $t_{CYC}$ is much longer than access time because the bank must precharge bit lines and restore capacitor charge before opening another row. Sending another request before $t_{CYC}$ completes leads to corrupt data.
+</Callout>
 
-## Interleaving
+For example, a system with a 64-bit wide data bus (8 bytes) operating with a memory cycle time of 10 nanoseconds yields:
 
-Think of a supermarket. One checkout can serve one customer at a time, and however fast the customer pays, the next one has to wait. Open four checkouts and four people can pay at once, even though each cashier is no faster.
+$$
+\text{Bandwidth} = \frac{8\text{ bytes}}{10 \times 10^{-9}\text{ s}} = 800\text{ MB/s}
+$$
 
-**Memory interleaving** does this with memory. It splits memory into several independent **banks** and spreads consecutive addresses across them:
+### DRAM Timing Parameters
+
+Modern DRAM controllers coordinate transfers with timing parameters measured in memory clock cycles:
+
+- **Row Address to Column Address Delay ($t_{RCD}$)**: The cycles needed to activate a row in the array and latch it into the row buffer before issuing a column command.
+- **Column Address Strobe Latency ($t_{CL}$ or CAS Latency)**: The delay in clock cycles between sending a column address and the first data word appearing on the data pins.
+- **Row Precharge Time ($t_{RP}$)**: The time needed to precharge the bit lines and close an active row so another row in the same bank can open.
+- **Row Active Time ($t_{RAS}$)**: The minimum time a row must stay open so the sense amplifiers can fully recharge the capacitors.
+
+This creates two access paths:
+- **Row buffer hit (Page hit)**: The requested data is already in the open row buffer. The access needs only CAS latency: $t_{\text{access}} = t_{CL}$.
+- **Row buffer conflict (Page miss)**: The address is in a different row of the same bank. The controller must precharge the old row, activate the new one, and read the column: $t_{\text{access}} = t_{RP} + t_{RCD} + t_{CL}$.
+
+When memory is sold as **DDR4-3200 16-18-18-38**, those four numbers represent $t_{CL}$, $t_{RCD}$, $t_{RP}$, and $t_{RAS}$ in clock cycles at a 1600 MHz bus clock. With a bus clock cycle of $t_{CK} = 1 / (1600 \times 10^6) = 0.625\text{ ns}$, CAS latency $t_{CL} = 16\text{ cycles}$ translates to $16 \times 0.625 = 10.0\text{ ns}$, while row activation $t_{RCD} = 18\text{ cycles}$ takes $18 \times 0.625 = 11.25\text{ ns}$.
+
+## Memory Organization: Sizing and Chip Arrays
+
+Individual memory chips have fixed word lengths and capacities. To build a larger system, designers connect multiple chips into an array.
+
+To build a memory of size $M \times N$ ($M$ words of $N$ bits each) using smaller chips of size $K \times W$ ($K$ words of $W$ bits each):
+
+1. **Expanding word length**: When the word width $N$ is wider than the chip width $W$, place $N / W$ chips side by side. Their address lines and control wires connect in parallel to the bus. Each chip provides $W$ bits toward the total $N$-bit data word.
+2. **Expanding word capacity**: When the total words $M$ exceed the chip capacity $K$, create $M / K$ separate banks. A decoder reads the higher address bits to drive the active-low chip select ($\overline{CS}$) pin of the target bank. The lower address bits connect in parallel to every chip.
+
+<Callout tone="orange" label="Address pin confusion in memory expansion">
+When wiring chips into an array, it is easy to wonder whether high or low address bits go to the chip pins. The chip pins must receive the continuous lower address bits ($A_{k-1} \dots A_0$) so each chip holds a contiguous block of addresses. The higher address bits ($A_{A-1} \dots A_k$) feed the bank select decoder to choose which bank is active. Swapping them scatters adjacent bytes across physical chips.
+</Callout>
+
+<Callout tone="sky" label="Address bus splitting">
+For an address bus of $A$ bits accessing a byte-organized memory:
+- If each chip contains $2^k$ locations, $k$ address pins connect directly to all chips ($A_{k-1} \dots A_0$).
+- The remaining $A - k$ high-order address bits ($A_{A-1} \dots A_k$) feed a $1\text{-of-}2^{A-k}$ binary decoder. Each decoder output connects to the chip select input ($\overline{CS}$) of one memory bank.
+</Callout>
+
+## Memory Interleaving
+
+When a single memory bank takes a read, the entire bank stays busy for the full cycle time $t_{CYC}$. If the cycle time is 40 ns and the bus transfer time $t_B$ is only 10 ns, the bus sits idle for 30 ns while the bank precharges and recovers.
+
+**Memory interleaving** divides memory into $M$ independent banks. Each bank has its own address buffer, row and column decoders, and sense amplifiers. Distributing addresses across multiple banks allows consecutive requests to start in different banks before earlier banks finish recovering.
+
+### Low-Order Interleaving
+
+In **low-order interleaving** (consecutive interleaving), the least significant bits of the memory address select the bank:
+
+$$
+\text{Bank Index} = \text{Address} \bmod M
+$$
+
+The higher-order address bits select the memory word within the chosen bank:
 
 | Address | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 |---|---|---|---|---|---|---|---|---|
 | Bank | 0 | 1 | 2 | 3 | 0 | 1 | 2 | 3 |
 
-To read a run of addresses, the CPU starts bank 0, then bank 1 before bank 0 has finished, and so on. Choose the number of banks and look at how the bars overlap.
+When the CPU reads a sequence of consecutive addresses (such as fetching instructions or filling a cache line), it sends Address 0 to Bank 0. On the next bus clock cycle, it sends Address 1 to Bank 1, followed by Address 2 to Bank 2, and Address 3 to Bank 3.
 
 <InterleaveLab />
 
-The low bits of the address choose the bank: with 4 banks, that's address mod 4.
+If the degree of interleaving $M$ satisfies $M \ge t_{CYC} / t_B$, memory throughput achieves the theoretical limit of the memory bus: one data word delivered every bus transfer cycle.
 
-Interleaving does best with sequential access. If a program keeps hitting the same bank, it waits a full cycle each time and gets no benefit. Fortunately, programs [tend to access nearby addresses](/courses/computer-organization/memory-hierarchy), and caches read a whole block at a time, which is exactly the sequential pattern interleaving suits.
-
-<Callout tone="violet" label="You've seen the idea before">
-DDR memory has banks inside each chip, and your motherboard's "dual channel" mode spreads data across two memory sticks. Both use this same idea.
+<Callout tone="orange" label="The stride conflict trap">
+Low-order interleaving speeds up sequential reads. But if a program reads an array with a stride that is a multiple of $M$ (such as reading down a column of a matrix stored by rows), every access lands in the same bank. For example, in a 4-bank system ($M = 4$) with a stride of 4, indices $0, 4, 8, 12, \dots$ all calculate:
+$$
+0 \bmod 4 = 0, \quad 4 \bmod 4 = 0, \quad 8 \bmod 4 = 0, \quad 12 \bmod 4 = 0
+$$
+Every read routes to Bank 0, leaving Banks 1, 2, and 3 idle. The accesses queue up, forcing the CPU to wait a full recovery cycle $t_{CYC}$ between transfers.
 </Callout>
+
+### High-Order Interleaving
+
+In **high-order interleaving** (modular interleaving), the most significant address bits select the bank:
+
+$$
+\text{Bank Index} = \lfloor \text{Address} / K \rfloor
+$$
+
+All consecutive addresses up to bank capacity $K$ reside within Bank 0, the next block of $K$ addresses resides in Bank 1, and so on. High-order interleaving provides no speedup for sequential burst transfers by a single processor. However, in multiprocessor or multi-channel systems, high-order interleaving allows multiple processors or direct memory access (DMA) channels to operate on separate programs or memory buffers simultaneously without bank contention.
+
+## Modern High-Performance DRAM Innovations
+
+Modern memory standards increase bandwidth with several design changes:
+
+1. **Synchronous DRAM (SDRAM)**: Older DRAM waited on control signal changes. SDRAM latches addresses and commands on the rising edge of the system bus clock, keeping memory in lockstep with the processor.
+2. **Burst Mode**: After sending an initial row and column address, the memory controller leaves the row open in the row buffer and streams a burst of 4, 8, or 16 consecutive words on consecutive clock cycles without sending new addresses.
+3. **Double Data Rate (DDR)**: DDR SDRAM transfers data on both the rising and falling edges of the clock signal, doubling data throughput without raising clock frequency. Later generations (DDR2 through DDR5) increase prefetch buffer depths (from 2n to 16n) and raise bus frequencies.
+4. **Dual In-line Memory Modules (DIMMs)**: Main memory is mounted on circuit boards called **DIMMs**, with memory chips on both sides and separate electrical contacts on each side, giving a standard 64-bit wide data bus to the motherboard.
+5. **Multi-Channel Architecture**: Motherboards provide independent 64-bit memory channels. Dual-channel memory controllers talk to two distinct DIMM slots at once across a combined 128-bit interface, doubling peak bandwidth.
+
+<Callout tone="orange" label="Confusing transfer rate (MT/s) with clock frequency">
+A DDR4-3200 memory module does not run at an internal clock frequency of 3200 MHz. Because DDR transfers data on both the rising and falling edges of the clock signal, the memory I/O bus clock runs at 1600 MHz to achieve 3200 MegaTransfers per second (3200 MT/s). The internal DRAM core runs slower still (typically 200 to 400 MHz), using an 8n prefetch buffer to feed the faster bus.
+</Callout>
+
+<Callout tone="violet" label="Why dual-channel memory matters">
+A CPU with integrated graphics relies on system RAM to hold video frames. A single 64-bit DDR4 channel at 3200 MT/s gives 25.6 GB/s of bandwidth. Running two DIMMs in dual-channel mode widens the bus to 128 bits, providing 51.2 GB/s and keeping the graphics pipeline from stalling on memory.
+</Callout>
+
+<Callout tone="mint" label="Key takeaway">
+Main memory performance balances access latency against burst bandwidth. SRAM offers sub-nanosecond access speeds for caches, while DRAM delivers dense, low-cost capacity for main memory. Low-order interleaving hides DRAM cycle recovery time by pipelining transfers across independent banks, matching bus capacity for sequential workloads.
+</Callout>
+
+## Exam-Style Practice
+
+### Part 1: Written Exam & Lab Problems
+
+<ModelAnswer title="Problem 1: Memory chip sizing and address decoding">
+A digital computer requires a main memory capacity of $512\text{ KB}$ with a word size of 32 bits (4 bytes per word). The system is built using semiconductor SRAM chips of size $128\text{K} \times 8$ bits.
+
+1. How many total $128\text{K} \times 8$ memory chips are required?
+2. How many chips are placed in parallel to form a single 32-bit word?
+3. How many distinct banks (rows of chips) are formed?
+4. Assuming the memory is byte-addressable with a 19-bit address bus ($A_{18} \dots A_0$ where $2^{19}\text{ bytes} = 512\text{ KB}$), determine how the address bits are partitioned between the chip address inputs and the bank decoder.
+
+---
+
+**Solution:**
+
+**Part 1: Total chips required:**
+- Total required memory capacity: $512\text{ KB} = 512 \times 1024\text{ bytes} = 524{,}288\text{ bytes}$.
+- Word length: 32 bits = 4 bytes per word.
+- Number of words required: $524{,}288\text{ bytes} / 4\text{ bytes/word} = 131{,}072\text{ words} = 128\text{K words}$.
+- Storage capacity of one chip: $128\text{K} \times 8\text{ bits} = 128\text{ KB}$.
+- Total chips required:
+  $$
+  \text{Total chips} = \frac{\text{Total Capacity}}{\text{Chip Capacity}} = \frac{512\text{ KB}}{128\text{ KB}} = 4\text{ chips}
+  $$
+
+**Part 2: Chips in parallel per word:**
+Each memory word is 32 bits (4 bytes) wide, while each chip outputs 8 bits (1 byte):
+$$
+\text{Chips in parallel per word} = \frac{32\text{ bits}}{8\text{ bits per chip}} = 4\text{ chips}
+$$
+The 4 chips connect in parallel across data bus lines $D_{31} \dots D_0$: Chip 0 drives bits $D_7 \dots D_0$, Chip 1 drives $D_{15} \dots D_8$, Chip 2 drives $D_{23} \dots D_{16}$, and Chip 3 drives $D_{31} \dots D_{24}$.
+
+**Part 3: Number of banks:**
+$$
+\text{Number of banks} = \frac{\text{Total chips}}{\text{Chips per word}} = \frac{4}{4} = 1\text{ bank}
+$$
+All 4 chips operate in parallel as a single bank providing $128\text{K}$ 32-bit words ($512\text{ KB}$).
+
+**Part 4: Address bus partitioning:**
+Total addressable space is $512\text{ KB} = 2^{19}\text{ bytes}$, requiring 19 address lines ($A_{18} \dots A_0$):
+- **Byte Offset within Word (2 bits, $A_1 \dots A_0$)**: Because each word consists of 4 bytes, $\log_2(4) = 2$ bits select the individual byte within the 32-bit word during byte-level memory operations.
+- **Chip Address Inputs (17 bits, $A_{18} \dots A_2$)**: Each chip contains $128\text{K} = 2^{17}$ addressable locations. Therefore, the 17 address bits $A_{18} \dots A_2$ connect directly to the 17 address pins of all 4 chips in parallel.
+- **Bank Select**: Because one bank covers the entire $512\text{ KB}$ space, the system needs no external bank decoder. The active-low chip select pins ($\overline{CS}$) of all 4 chips are asserted simultaneously whenever a valid memory request occurs.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Interleaved memory bandwidth and timing analysis">
+A processor requests a burst of 8 consecutive 64-bit words from main memory.
+The memory subsystem has the following timing parameters:
+- Memory bank access time ($t_{AC}$): 30 ns
+- Memory bank cycle time ($t_{CYC}$): 50 ns
+- Memory bus transfer time ($t_B$): 10 ns (the time required to transmit one 64-bit word across the bus)
+
+Calculate the total time required to service the 8-word transfer under two designs:
+1. Design A: A conventional single-bank memory system.
+2. Design B: A 4-bank low-order interleaved memory system.
+3. Determine the effective memory bandwidth (in megabytes per second) achieved by each design for this 8-word burst.
+
+---
+
+**Solution:**
+
+**Part 1: Design A (Single-Bank Memory):**
+In a single-bank system, all memory accesses must route through the same memory bank. After initiating a read, the bank is busy for its full cycle time ($t_{CYC} = 50\text{ ns}$) before it can accept the next address:
+- Access 1 starts at $t = 0\text{ ns}$. Data is ready at $t = 30\text{ ns}$ and transfers on the bus until $t = 40\text{ ns}$. The bank finishes recovery at $t = 50\text{ ns}$.
+- Access 2 starts at $t = 50\text{ ns}$, transfers data from $t = 80\text{ ns}$ to $t = 90\text{ ns}$, and finishes recovery at $t = 100\text{ ns}$.
+- Accesses 1 through 7 each require a full cycle time $t_{CYC} = 50\text{ ns}$. Access 8 initiates at $t = 7 \times 50\text{ ns} = 350\text{ ns}$, outputs data at $350 + 30 = 380\text{ ns}$, and finishes bus transfer at $380 + 10 = 390\text{ ns}$.
+
+Total time for 8 words:
+$$
+T_{\text{single}} = 7 \times t_{CYC} + t_{AC} + t_B = 7 \times 50\text{ ns} + 30\text{ ns} + 10\text{ ns} = 350 + 40 = 390\text{ ns}
+$$
+
+**Part 2: Design B (4-Bank Low-Order Interleaved Memory):**
+In a 4-bank low-order interleaved system:
+- Words 0, 1, 2, 3 map to Banks 0, 1, 2, 3 respectively. Words 4, 5, 6, 7 map to Banks 0, 1, 2, 3 in round-robin order.
+- The memory controller issues consecutive requests across the bus every $t_B = 10\text{ ns}$:
+  - $t = 0\text{ ns}$: Word 0 requested from Bank 0.
+  - $t = 10\text{ ns}$: Word 1 requested from Bank 1.
+  - $t = 20\text{ ns}$: Word 2 requested from Bank 2.
+  - $t = 30\text{ ns}$: Word 3 requested from Bank 3.
+- Data returns from the banks and streams continuously on the bus:
+  - Bank 0 outputs Word 0 at $t = 30\text{ ns}$, bus transfer completes at $t = 40\text{ ns}$. Bank 0 finishes recovery at $t = 0 + 50 = 50\text{ ns}$.
+  - Bank 1 outputs Word 1 at $t = 40\text{ ns}$, bus transfer completes at $t = 50\text{ ns}$.
+  - Bank 2 outputs Word 2 at $t = 50\text{ ns}$, bus transfer completes at $t = 60\text{ ns}$.
+  - Bank 3 outputs Word 3 at $t = 60\text{ ns}$, bus transfer completes at $t = 70\text{ ns}$.
+- At $t = 40\text{ ns}$, the controller is ready to request Word 4 from Bank 0. However, Bank 0 requires a 50 ns recovery cycle ($t = 0$ to $t = 50\text{ ns}$). Thus, Bank 0 initiates the request for Word 4 exactly at $t = 50\text{ ns}$.
+- Data delivery for the second wave of words:
+  - Bank 0 outputs Word 4 at $50 + 30 = 80\text{ ns}$, bus transfer completes at $t = 90\text{ ns}$.
+  - Bank 1 outputs Word 5 at $60 + 30 = 90\text{ ns}$, bus transfer completes at $t = 100\text{ ns}$.
+  - Bank 2 outputs Word 6 at $70 + 30 = 100\text{ ns}$, bus transfer completes at $t = 110\text{ ns}$.
+  - Bank 3 outputs Word 7 at $80 + 30 = 110\text{ ns}$, bus transfer completes at $t = 120\text{ ns}$.
+
+Total time to complete the 8-word transfer:
+$$
+T_{\text{interleaved}} = 120\text{ ns}
+$$
+Interleaving achieves a $390 / 120 = 3.25\times$ speedup over the single-bank system.
+
+**Part 3: Effective Memory Bandwidth:**
+Total data transferred = 8 words $\times 8\text{ bytes per word} = 64\text{ bytes}$.
+
+- For Design A:
+  $$
+  \text{Bandwidth}_{\text{single}} = \frac{64\text{ bytes}}{390 \times 10^{-9}\text{ s}} \approx 164.1\text{ MB/s}
+  $$
+- For Design B:
+  $$
+  \text{Bandwidth}_{\text{interleaved}} = \frac{64\text{ bytes}}{120 \times 10^{-9}\text{ s}} \approx 533.3\text{ MB/s}
+  $$
+</ModelAnswer>
+
+<ModelAnswer title="Problem 3: DRAM refresh overhead and memory controller availability">
+A computer uses dynamic RAM (DRAM) chips containing 8,192 rows ($2^{13}$ rows). The memory specification dictates that all 8,192 rows must be refreshed every 64 ms (retention period $t_{\text{REF}} = 64\text{ ms}$) to prevent cell charge leakage and data loss. Each row refresh operation takes a row cycle time $t_{RC} = 50\text{ ns}$.
+
+1. Calculate the average interval between consecutive refresh operations (refresh interval $t_{\text{REFI}}$) under distributed refresh scheduling.
+2. Calculate the total time (in milliseconds) spent refreshing memory across each 64 ms retention window, and determine the percentage of memory controller time lost to refresh operations.
+3. If the memory operates in an industrial environment with elevated temperatures ($85^\circ\text{C}$ to $105^\circ\text{C}$), capacitor leakage accelerates exponentially, requiring the refresh period to be halved to 32 ms. If thermal delays also increase the row cycle time $t_{RC}$ to 60 ns, calculate the new refresh overhead percentage.
+4. Compare burst refresh mode with distributed refresh mode. Explain why burst refresh is unacceptable for real-time systems and audio/video streaming.
+
+---
+
+**Solution:**
+
+**Part 1: Distributed refresh interval:**
+Under distributed refresh scheduling, the memory controller spaces the 8,192 refresh cycles evenly across the 64 ms retention interval:
+$$
+t_{\text{REFI}} = \frac{64\text{ ms}}{8{,}192\text{ rows}} = \frac{64 \times 10^6\text{ ns}}{8{,}192} = 7{,}812.5\text{ ns} = 7.8125\ \mu\text{s}
+$$
+The controller must issue one auto-refresh command every $7.8125\ \mu\text{s}$.
+
+**Part 2: Baseline refresh overhead:**
+Total time consumed by refresh operations in each 64 ms window:
+$$
+T_{\text{refresh}} = 8{,}192\text{ rows} \times 50\text{ ns/row} = 409{,}600\text{ ns} = 0.4096\text{ ms}
+$$
+The percentage of memory controller time lost to refresh is:
+$$
+\text{Overhead} = \frac{0.4096\text{ ms}}{64\text{ ms}} \times 100\text{\%} = \frac{50\text{ ns}}{7{,}812.5\text{ ns}} \times 100\text{\%} = 0.64\text{\%}
+$$
+The controller remains available for processor reads and writes 100% - 0.64% = 99.36% of the time.
+
+**Part 3: High-temperature environment:**
+With $t_{\text{REF}} = 32\text{ ms}$ and $t_{RC} = 60\text{ ns}$:
+$$
+T_{\text{refresh, high}} = 8{,}192 \times 60\text{ ns} = 491{,}520\text{ ns} = 0.49152\text{ ms}
+$$
+New overhead percentage:
+$$
+\text{Overhead}_{\text{high}} = \frac{0.49152\text{ ms}}{32\text{ ms}} \times 100\text{\%} = 1.536\text{\%}
+$$
+Halving the retention interval and slowing the row cycle time increases memory controller overhead by $1.536 / 0.64 = 2.4\times$.
+
+**Part 4: Burst vs. distributed refresh trade-offs:**
+- **Burst refresh mode**: The controller performs all 8,192 refresh cycles consecutively at the beginning or end of each window. During this time, the memory chips are completely blocked for $0.4096\text{ ms}$ ($409.6\ \mu\text{s}$). If a CPU core or DMA controller attempts to read or write data during this blackout, it must wait hundreds of thousands of cycles. For real-time controllers, audio DAC buffers, and packet processing, this delay causes buffer underruns and dropped packets.
+- **Distributed refresh mode**: The controller distributes refresh commands so that each row is refreshed once every $7.8125\ \mu\text{s}$. Each individual refresh takes only 50 ns, allowing the memory controller to interleave normal user requests between refreshes with negligible latency jitter.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: High-order vs. low-order interleaving and stride conflict analysis">
+Consider a computer memory subsystem equipped with 4 memory banks ($M = 4$). Each memory bank has a bank access time $t_{AC} = 30\text{ ns}$, a bank cycle recovery time $t_{CYC} = 40\text{ ns}$, and a memory bus transfer time $t_B = 10\text{ ns}$ per 32-bit word.
+
+A program performs computations on an $8 \times 8$ matrix of 32-bit integer words ($A[0 \dots 7][0 \dots 7]$). The matrix is stored in contiguous memory in row-major order, starting at base address 0:
+$$\text{Word Address of } A[i][j] = i \times 8 + j$$
+
+1. Calculate the total time required to read Row 0 ($A[0][0], A[0][1], \dots, A[0][7]$) under:
+   - Low-order interleaving ($\text{Bank} = \text{Word Address} \bmod 4$).
+   - High-order interleaving ($\text{Bank} = \lfloor \text{Word Address} / 16 \rfloor$).
+2. Calculate the total time required to read Column 0 ($A[0][0], A[1][0], A[2][0], \dots, A[7][0]$) under:
+   - Low-order interleaving.
+   - High-order interleaving.
+3. Analyze the stride conflict pathology in low-order interleaving, calculate the performance penalty, and explain two techniques that eliminate it.
+
+---
+
+**Solution:**
+
+**Part 1: Reading Row 0 (Word Addresses 0, 1, 2, 3, 4, 5, 6, 7):**
+- **Low-order interleaving**:
+  Words 0, 1, 2, 3 map to Banks 0, 1, 2, 3 respectively. Words 4, 5, 6, 7 cycle back to Banks 0, 1, 2, 3.
+  Requests dispatch on the bus every $t_B = 10\text{ ns}$:
+  - $t = 0$: Word 0 issued to Bank 0. Bank 0 outputs data at $t = 30\text{ ns}$, bus busy $30\text{ ns} \dots 40\text{ ns}$. Bank 0 ready for new cycle at $t = 40\text{ ns}$.
+  - $t = 10$: Word 1 issued to Bank 1. Data on bus $40\text{ ns} \dots 50\text{ ns}$.
+  - $t = 20$: Word 2 issued to Bank 2. Data on bus $50\text{ ns} \dots 60\text{ ns}$.
+  - $t = 30$: Word 3 issued to Bank 3. Data on bus $60\text{ ns} \dots 70\text{ ns}$.
+  - $t = 40$: Word 4 issued to Bank 0 (Bank 0 is free at $t = 40\text{ ns}$). Data on bus $70\text{ ns} \dots 80\text{ ns}$.
+  - $t = 50$: Word 5 issued to Bank 1. Data on bus $80\text{ ns} \dots 90\text{ ns}$.
+  - $t = 60$: Word 6 issued to Bank 2. Data on bus $90\text{ ns} \dots 100\text{ ns}$.
+  - $t = 70$: Word 7 issued to Bank 3. Data on bus $100\text{ ns} \dots 110\text{ ns}$.
+  Total time: **110 ns**.
+- **High-order interleaving**:
+  All 8 words of Row 0 have word addresses $< 16$, so $\lfloor \text{Word} / 16 \rfloor = 0$. All 8 words reside in Bank 0.
+  Because all accesses hit the same bank, each request must wait for Bank 0 to complete its full cycle recovery time ($t_{CYC} = 40\text{ ns}$) before the next access can begin:
+  $$
+  T = 7 \times t_{CYC} + t_{AC} + t_B = 7 \times 40\text{ ns} + 30\text{ ns} + 10\text{ ns} = 280 + 40 = 320\text{ ns}
+  $$
+  Low-order interleaving achieves a $320 / 110 \approx 2.91\times$ speedup on sequential row accesses.
+
+**Part 2: Reading Column 0 (Word Addresses 0, 8, 16, 24, 32, 40, 48, 56):**
+- **Low-order interleaving**:
+  The memory stride between consecutive column elements is 8 words.
+  Compute bank assignments:
+  $$
+  0 \bmod 4 = 0, \quad 8 \bmod 4 = 0, \quad 16 \bmod 4 = 0, \quad \dots, \quad 56 \bmod 4 = 0
+  $$
+  All 8 column elements map to Bank 0. Banks 1, 2, and 3 remain completely idle.
+  Every access queues behind Bank 0's cycle recovery time:
+  $$
+  T = 7 \times t_{CYC} + t_{AC} + t_B = 7 \times 40\text{ ns} + 30\text{ ns} + 10\text{ ns} = 320\text{ ns}
+  $$
+- **High-order interleaving**:
+  Words 0, 8 map to Bank 0 ($\lfloor 0/16 \rfloor = 0, \lfloor 8/16 \rfloor = 0$).
+  Words 16, 24 map to Bank 1 ($\lfloor 16/16 \rfloor = 1, \lfloor 24/16 \rfloor = 1$).
+  Words 32, 40 map to Bank 2 ($\lfloor 32/16 \rfloor = 2, \lfloor 40/16 \rfloor = 2$).
+  Words 48, 56 map to Bank 3 ($\lfloor 48/16 \rfloor = 3, \lfloor 56/16 \rfloor = 3$).
+  Accesses distribute across all 4 banks in pairs of two. Because requests are issued in sequence:
+  - $t = 0\text{ ns}$: Word 0 issued to Bank 0. Data is on the bus from $30 \dots 40\text{ ns}$. Bank 0 completes its recovery cycle at $t = 40\text{ ns}$.
+  - $t = 40\text{ ns}$: Word 8 issued to Bank 0 as soon as Bank 0 recovers. Data on bus $70 \dots 80\text{ ns}$.
+  - $t = 50\text{ ns}$: Word 16 issued to Bank 1 (Bank 1 is completely idle). Data on bus $80 \dots 90\text{ ns}$. Bank 1 busy until $50 + 40 = 90\text{ ns}$.
+  - $t = 90\text{ ns}$: Word 24 issued to Bank 1. Data on bus $120 \dots 130\text{ ns}$.
+  - $t = 100\text{ ns}$: Word 32 issued to Bank 2 (Bank 2 is idle). Data on bus $130 \dots 140\text{ ns}$. Bank 2 busy until $140\text{ ns}$.
+  - $t = 140\text{ ns}$: Word 40 issued to Bank 2. Data on bus $170 \dots 180\text{ ns}$.
+  - $t = 150\text{ ns}$: Word 48 issued to Bank 3 (Bank 3 is idle). Data on bus $180 \dots 190\text{ ns}$. Bank 3 busy until $190\text{ ns}$.
+  - $t = 190\text{ ns}$: Word 56 issued to Bank 3. Bank access completes at $190 + 30 = 220\text{ ns}$, and bus transfer finishes at $220 + 10 = \mathbf{230\text{ ns}}$.
+  Total time: **230 ns**. High-order interleaving outperforms low-order interleaving by $320 / 230 \approx 1.39\times$ for this specific column stride because accesses split across 4 banks instead of stalling entirely on Bank 0.
+
+**Part 3: Stride conflict pathology and remedies:**
+In an $M$-bank low-order interleaved system, when memory is traversed with stride $S$, the number of distinct banks engaged is:
+$$
+\text{Banks engaged} = \frac{M}{\gcd(S, M)}
+$$
+When stride $S$ is a multiple of $M$ (here $\gcd(8, 4) = 4$), only $4 / 4 = 1$ single bank is used. The remaining $M - 1$ banks sit idle, collapsing interleaved throughput by $M\times$ down to that of an un-interleaved memory.
+
+Two methods eliminate this pathology:
+1. **Array padding / Stride alteration**: The compiler adds a 1-word dummy padding column to the matrix declaration (allocating $8 \times 9$ words). The column stride becomes 9 words: $\gcd(9, 4) = 1$. Successive column elements map to Banks 0, 1, 2, 3 in round-robin order, restoring maximum interleaved parallelism.
+2. **Prime-degree interleaving**: Implementing memory controllers with a prime number of banks (such as $M = 5$ or $M = 7$) guarantees that $\gcd(S, M) = 1$ for any power-of-two stride.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: DDR SDRAM timing, page mode hits vs. row buffer conflicts">
+A memory subsystem employs DDR4-2400 SDRAM with timing parameters 16-16-16-36 ($t_{CL} = 16$, $t_{RCD} = 16$, $t_{RP} = 16$, $t_{RAS} = 36$ memory clock cycles).
+The memory bus clock frequency is 1,200 MHz, with a clock cycle time:
+$$
+t_{CK} = \frac{1}{1{,}200 \times 10^6\text{ Hz}} \approx 0.8333\text{ ns}
+$$
+Because the bus uses Double Data Rate (DDR), data transfers on both the rising and falling clock edges (2 transfers per clock cycle).
+The processor reads a 64-byte cache line over a 64-bit (8-byte) wide memory data bus.
+The transfer requires a burst of 8 beats ($64\text{ bytes} / 8\text{ bytes/beat} = 8\text{ beats}$), taking:
+$$
+t_{\text{burst}} = \frac{8\text{ beats}}{2\text{ beats/cycle}} = 4\text{ clock cycles} \quad (3.333\text{ ns})
+$$
+
+1. Calculate the total latency (in clock cycles and nanoseconds) from command issuance to final byte arrival under a **Row Buffer Hit (Page Hit)**, where the target row is already open in the row buffer.
+2. Calculate the total latency (in clock cycles and nanoseconds) under a **Row Buffer Conflict (Page Miss / Closed Page with Conflict)**, where a different row in the same bank is currently open.
+3. Calculate the Effective Memory Access Time if 80% of cache misses achieve a row buffer hit and 20% experience a row buffer conflict.
+4. Explain the difference between an **Open-Page** policy and a **Closed-Page** policy, and identify the workload characteristics that favor each policy.
+
+---
+
+**Solution:**
+
+**Part 1: Row buffer hit latency:**
+When the requested memory block resides within the currently open row in the row buffer, the controller only needs to issue a column address read command (`READ`):
+- Column address strobe latency ($t_{CL}$): 16 cycles.
+- Burst transmission time ($t_{\text{burst}}$): 4 cycles.
+Total latency in clock cycles:
+$$
+T_{\text{hit, cycles}} = t_{CL} + t_{\text{burst}} = 16 + 4 = 20\text{ clock cycles}
+$$
+Total latency in nanoseconds:
+$$
+T_{\text{hit}} = 20 \times 0.8333\text{ ns} \approx 16.67\text{ ns}
+$$
+
+**Part 2: Row buffer conflict latency:**
+When a different row is currently open in the accessed bank, the controller must close the old row and activate the new row before issuing the column read command:
+1. Precharge the active row (`PRECHARGE`): $t_{RP} = 16$ cycles.
+2. Activate the target row (`ACTIVATE`): $t_{RCD} = 16$ cycles.
+3. Column read command latency (`READ`): $t_{CL} = 16$ cycles.
+4. Burst transmission time: $t_{\text{burst}} = 4$ cycles.
+Total latency in clock cycles:
+$$
+T_{\text{conflict, cycles}} = t_{RP} + t_{RCD} + t_{CL} + t_{\text{burst}} = 16 + 16 + 16 + 4 = 52\text{ clock cycles}
+$$
+Total latency in nanoseconds:
+$$
+T_{\text{conflict}} = 52 \times 0.8333\text{ ns} \approx 43.33\text{ ns}
+$$
+A row buffer conflict increases access latency by $52 / 20 = 2.6\times$ (adding a 26.66 ns penalty).
+
+**Part 3: Effective Memory Access Time (EMAT):**
+With an 80% row buffer hit rate:
+$$
+\text{EMAT}_{\text{cycles}} = 0.80 \times 20\text{ cycles} + 0.20 \times 52\text{ cycles} = 16 + 10.4 = 26.4\text{ clock cycles}
+$$
+In nanoseconds:
+$$
+\text{EMAT} = 0.80 \times 16.67\text{ ns} + 0.20 \times 43.33\text{ ns} = 13.336 + 8.666 = 22.00\text{ ns}
+$$
+
+**Part 4: Open-Page vs. Closed-Page policy:**
+- **Open-Page Policy**: Keeps the row buffer active after each memory access, betting that subsequent memory requests will exhibit spatial locality and access the same row. This policy delivers minimal latency (16.67 ns) for workloads with high spatial locality, such as sequential instruction streams or linear array traversals. However, if a row conflict occurs, the controller pays the full precharge penalty ($t_{RP}$).
+- **Closed-Page Policy**: Issues an automatic precharge command immediately after every read or write, closing the row buffer and returning the bank to the precharged state. When a subsequent access arrives, it never suffers a conflict precharge ($t_{RP}$), but always pays the row activation delay ($t_{RCD} + t_{CL} + t_{\text{burst}} = 36\text{ cycles} = 30.0\text{ ns}$). This policy is preferred in multi-core servers running random database lookups or virtualization workloads where interleaved threads frequently thrash the row buffers.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: SECDED Hamming code check-bit overhead and single-bit error correction">
+To protect main memory against cosmic ray bit flips and alpha particle soft errors, server architectures use Error-Correcting Code (ECC) DRAM with Single Error Correction, Double Error Detection (SECDED) based on extended Hamming codes.
+
+1. Using the Hamming inequality $2^k \ge d + k + 1$ (where $d$ is data bit width and $k$ is the number of check bits), determine the minimum number of check bits $k$ required to provide Single Error Correction (SEC) for:
+   - A 16-bit word ($d = 16$)
+   - A 32-bit word ($d = 32$)
+   - A 64-bit word ($d = 64$)
+2. For the 64-bit word, adding an extra overall parity bit $P_{\text{overall}}$ upgrades the code from SEC to SECDED. What is the total word width stored in DRAM, and what is the percentage storage overhead? Explain why standard ECC DIMMs contain 9 memory chips rather than 8.
+3. For an 8-bit data word $D = \text{0b10110010}$ (where data bits are $d_8 \dots d_1 = 1, 0, 1, 1, 0, 0, 1, 0$), derive the 4 parity bits ($p_1, p_2, p_4, p_8$) using even parity.
+4. Suppose bit position 7 experiences a bit flip during a memory read. Show the syndrome calculation $S = s_4 s_3 s_2 s_1$ and explain how the memory controller locates and corrects the error.
+
+---
+
+**Solution:**
+
+**Part 1: Minimum check bits for SEC:**
+- **For $d = 16$**:
+  - $k = 4 \implies 2^4 = 16 < 16 + 4 + 1 = 21$ (insufficient).
+  - $k = 5 \implies 2^5 = 32 \ge 16 + 5 + 1 = 22$ (satisfied).
+  - Minimum check bits: **$k = 5$**.
+- **For $d = 32$**:
+  - $k = 5 \implies 2^5 = 32 < 32 + 5 + 1 = 38$ (insufficient).
+  - $k = 6 \implies 2^6 = 64 \ge 32 + 6 + 1 = 39$ (satisfied).
+  - Minimum check bits: **$k = 6$**.
+- **For $d = 64$**:
+  - $k = 6 \implies 2^6 = 64 < 64 + 6 + 1 = 71$ (insufficient).
+  - $k = 7 \implies 2^7 = 128 \ge 64 + 7 + 1 = 72$ (satisfied).
+  - Minimum check bits: **$k = 7$**.
+
+**Part 2: SECDED Word Width and Memory Packaging:**
+For $d = 64$ bits, SEC requires $k = 7$ check bits. Adding 1 overall parity bit ($P_{\text{overall}}$) enables double error detection:
+$$
+\text{Total word width} = 64\text{ data bits} + 7\text{ SEC bits} + 1\text{ overall parity bit} = 72\text{ bits}
+$$
+Storage overhead:
+$$
+\text{Storage Overhead} = \frac{8\text{ check bits}}{64\text{ data bits}} \times 100\text{\%} = 12.5\text{\%}
+$$
+Standard non-ECC DIMMs provide a 64-bit wide data bus using 8 chips of 8 bits each ($8 \times 8 = 64$ bits). Server ECC DIMMs add a 9th memory chip ($9 \times 8 = 72$ bits). The 8 bits provided by the 9th chip store the 8 SECDED check bits for each 64-bit transfer.
+
+**Part 3: 8-bit Data Word Parity Generation:**
+Total bit positions = 8 data bits + 4 parity bits = 12 bits ($b_{12} \dots b_1$).
+Parity bits occupy powers of 2: $b_1 = p_1, b_2 = p_2, b_4 = p_4, b_8 = p_8$.
+Data bits occupy the remaining positions:
+- $b_3 = d_1 = 0$
+- $b_5 = d_2 = 1$
+- $b_6 = d_3 = 0$
+- $b_7 = d_4 = 0$
+- $b_9 = d_5 = 1$
+- $b_{10} = d_6 = 1$
+- $b_{11} = d_7 = 0$
+- $b_{12} = d_8 = 1$
+
+Calculate check bits using even parity ($\text{XOR}$ sum of bits whose position index in binary contains a 1 in that bit position):
+- $p_1$ (positions with bit 0 set: 1, 3, 5, 7, 9, 11):
+  $$p_1 = b_3 \oplus b_5 \oplus b_7 \oplus b_9 \oplus b_{11} = 0 \oplus 1 \oplus 0 \oplus 1 \oplus 0 = 0$$
+- $p_2$ (positions with bit 1 set: 2, 3, 6, 7, 10, 11):
+  $$p_2 = b_3 \oplus b_6 \oplus b_7 \oplus b_{10} \oplus b_{11} = 0 \oplus 0 \oplus 0 \oplus 1 \oplus 0 = 1$$
+- $p_4$ (positions with bit 2 set: 4, 5, 6, 7, 12):
+  $$p_4 = b_5 \oplus b_6 \oplus b_7 \oplus b_{12} = 1 \oplus 0 \oplus 0 \oplus 1 = 0$$
+- $p_8$ (positions with bit 3 set: 8, 9, 10, 11, 12):
+  $$p_8 = b_9 \oplus b_{10} \oplus b_{11} \oplus b_{12} = 1 \oplus 1 \oplus 0 \oplus 1 = 1$$
+
+Place the data bits and bolded parity bits into positions $b_{12} \dots b_1$:
+
+| Bit | $b_{12}$ | $b_{11}$ | $b_{10}$ | $b_9$ | $b_8$ | $b_7$ | $b_6$ | $b_5$ | $b_4$ | $b_3$ | $b_2$ | $b_1$ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Role** | $d_8$ | $d_7$ | $d_6$ | $d_5$ | $\mathbf{p_8}$ | $d_4$ | $d_3$ | $d_2$ | $\mathbf{p_4}$ | $d_1$ | $\mathbf{p_2}$ | $\mathbf{p_1}$ |
+| **Value** | 1 | 0 | 1 | 1 | $\mathbf{1}$ | 0 | 0 | 1 | $\mathbf{0}$ | 0 | $\mathbf{1}$ | $\mathbf{0}$ |
+
+The generated 12-bit codeword is:
+$$b_{12} \dots b_1 = 1\ 0\ 1\ 1\ \mathbf{1}\ 0\ 0\ 1\ \mathbf{0}\ 0\ \mathbf{1}\ \mathbf{0}_2$$
+
+**Part 4: Syndrome calculation on single-bit error:**
+Suppose bit position 7 ($b_7 = d_4$) flips from 0 to 1 during storage or transmission.
+Upon reading the codeword, the memory controller calculates the syndrome bits $S = s_4 s_3 s_2 s_1$:
+- $s_1 = b_1 \oplus b_3 \oplus b_5 \oplus b_7 \oplus b_9 \oplus b_{11} = 0 \oplus 0 \oplus 1 \oplus 1 \oplus 1 \oplus 0 = 1$
+- $s_2 = b_2 \oplus b_3 \oplus b_6 \oplus b_7 \oplus b_{10} \oplus b_{11} = 1 \oplus 0 \oplus 0 \oplus 1 \oplus 1 \oplus 0 = 1$
+- $s_3 = b_4 \oplus b_5 \oplus b_6 \oplus b_7 \oplus b_{12} = 0 \oplus 1 \oplus 0 \oplus 1 \oplus 1 = 1$
+- $s_4 = b_8 \oplus b_9 \oplus b_{10} \oplus b_{11} \oplus b_{12} = 1 \oplus 1 \oplus 1 \oplus 0 \oplus 1 = 0$
+
+The syndrome value is:
+$$
+S = s_4 s_3 s_2 s_1 = 0111_2 = 7\text{ in decimal}
+$$
+Because the syndrome is non-zero, an error occurred. The binary value $0111_2 = 7$ points directly to bit position 7. The memory controller automatically inverts bit 7 ($1 \to 0$), restoring the original valid data without operating system interruption.
+</ModelAnswer>
+
+### Part 2: Multiple-Choice Practice
+
+<Quiz
+  practice
+  questions={[
+    {
+      id: "mem-p1",
+      prompt: "Why must Dynamic RAM (DRAM) cells be refreshed periodically while Static RAM (SRAM) cells do not require refreshing?",
+      options: [
+        { id: "a", text: "DRAM stores data as electrical charge on a capacitor that naturally leaks away through silicon substrate resistance" },
+        { id: "b", text: "DRAM chips lose their internal power connection after each read operation" },
+        { id: "c", text: "SRAM utilizes permanent magnetic domains that never decay" },
+        { id: "d", text: "DRAM transistors lack ground connections, creating floating state voltages" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A DRAM cell stores its bit as charge on a microscopic capacitor (20-30 fF) that gradually leaks away within milliseconds, requiring periodic refresh cycles to restore the charge. SRAM uses a bistable latch of cross-coupled CMOS inverters that continuously holds state as long as power is applied. Option (b) is false because power is uninterrupted. Option (c) describes magnetic storage, not semiconductor SRAM. Option (d) is factually incorrect regarding silicon transistor biasing.",
+    },
+    {
+      id: "mem-p2",
+      prompt: "What happens during a destructive DRAM read operation?",
+      options: [
+        { id: "a", text: "The storage capacitor shares its charge with the bit line, requiring sense amplifiers to restore the voltage before closing the row" },
+        { id: "b", text: "The silicon dielectric breaks down, permanently destroying the accessed bit location" },
+        { id: "c", text: "The memory controller clears all other banks to prevent electromagnetic cross-talk" },
+        { id: "d", text: "The access transistor is electrically fused and must be re-biased by the power supply" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: During a read, opening the access transistor connects the tiny capacitor to the bit line capacitance, altering its charge state and shifting line voltage by only millivolts. The sense amplifier detects this difference, amplifies it to full rail voltage, and immediately rewrites the value back to the capacitor. Option (b) and Option (d) describe permanent physical hardware damage, which does not happen. Option (c) is an invented controller action.",
+    },
+    {
+      id: "mem-p3",
+      prompt: "In a 4-bank low-order interleaved memory system, why does traversing an array with a stride of 4 cause severe memory stalls?",
+      options: [
+        { id: "a", text: "Every access calculates Address mod 4 = 0, routing every request to Bank 0 and forcing accesses to wait for full bank recovery cycles" },
+        { id: "b", text: "A stride of 4 exceeds the address bus line count, generating bus parity faults" },
+        { id: "c", text: "Banks 1, 2, and 3 enter thermal shutdown when skipped by the memory controller" },
+        { id: "d", text: "Low-order interleaving only supports odd numerical strides" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In low-order interleaving with 4 banks, the bank index is Address mod 4. Accesses with a stride of 4 (e.g., indices 0, 4, 8, 12) all produce a remainder of 0, hitting Bank 0 consecutively. The other 3 banks sit idle while Bank 0 stalls on consecutive cycle recovery times ($t_{CYC}$). Option (b) confuses numerical stride with bus width. Option (c) and Option (d) are fabricated claims.",
+    },
+    {
+      id: "mem-p4",
+      prompt: "How does Double Data Rate (DDR) SDRAM double data transfer bandwidth compared to Single Data Rate (SDR) SDRAM at the same bus clock frequency?",
+      options: [
+        { id: "a", text: "It transfers data words on both the rising and falling edges of each clock cycle" },
+        { id: "b", text: "It duplicates all physical data bus pins on the motherboard" },
+        { id: "c", text: "It increases memory operating voltage to double electron velocity" },
+        { id: "d", text: "It executes two independent CPU instructions simultaneously inside the RAM chips" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: DDR interfaces latch and transmit data on both the rising edge and falling edge of the clock signal, achieving 2 data transfers per clock cycle without increasing clock frequency. Option (b) describes widening the bus (like dual-channel), not DDR signaling. Option (c) is false because DDR generations actually lower voltages to reduce thermal dissipation. Option (d) mistakenly attributes instruction execution to storage memory.",
+    },
+    {
+      id: "mem-p5",
+      prompt: "Why is DRAM cycle time (tCYC) significantly longer than DRAM access time (tAC)?",
+      options: [
+        { id: "a", text: "The memory bank must precharge its bit lines and restore capacitor charge before another row can be activated" },
+        { id: "b", text: "The CPU cache must flush all dirty blocks before the memory chip can reset" },
+        { id: "c", text: "The motherboard system bus must reverse its electrical transmission direction" },
+        { id: "d", text: "DRAM chips must cycle through an internal sleep state between accesses" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Access time ($t_{AC}$) is the delay until valid data appears on the pins. But because reading drains capacitor charge and leaves bit lines biased, the bank must remain active through precharge time ($t_{RP}$) and restore time to recharge the capacitors before accepting a new address. This makes $t_{CYC} > t_{AC}$. Option (b), Option (c), and Option (d) describe unrelated or fabricated system behaviors.",
+    },
+    {
+      id: "mem-p6",
+      prompt: "What constitutes a 'Row Buffer Hit' (Page Hit) in modern SDRAM?",
+      options: [
+        { id: "a", text: "The requested column data resides in the row currently latched inside the bank's sense amplifier array" },
+        { id: "b", text: "The requested data was found inside the CPU L1 instruction cache" },
+        { id: "c", text: "The operating system found the target page table in physical RAM without a page fault" },
+        { id: "d", text: "The memory controller detected that all rows in the bank contain identical data" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: When an entire row (thousands of bits) is activated into the row buffer, subsequent accesses to that same row need only issue column read commands ($t_{CL}$), bypassing row precharge ($t_{RP}$) and activation ($t_{RCD}$). Option (b) describes a cache hit. Option (c) describes a virtual memory TLB or page table lookup. Option (d) is nonsensical.",
+    },
+    {
+      id: "mem-p7",
+      prompt: "Why do enterprise server memory modules (ECC DIMMs) have a 72-bit data interface instead of the consumer 64-bit interface?",
+      options: [
+        { id: "a", text: "The 8 extra bits store SECDED Hamming parity codes to detect and correct single-bit memory errors" },
+        { id: "b", text: "The 8 extra bits provide encryption keys for hardware disk security" },
+        { id: "c", text: "The extra bits allow 72-bit floating-point numbers to be stored natively" },
+        { id: "d", text: "The 8 extra bits are reserved for future 128-bit processor upgrades" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: For a 64-bit data word, 7 check bits provide Single Error Correction (SEC) and 1 overall parity bit provides Double Error Detection (SECDED). Standard 72-bit ECC DIMMs use a 9th chip to store these 8 check bits, preventing silent data corruption. Option (b), Option (c), and Option (d) mischaracterize the purpose of ECC DRAM.",
+    },
+    {
+      id: "mem-p8",
+      prompt: "How many 256K × 4 memory chips are required to build a 1 MB × 16 memory system, and how are they organized?",
+      options: [
+        { id: "a", text: "16 chips total, arranged in 4 banks of 4 chips each" },
+        { id: "b", text: "8 chips total, arranged in 2 banks of 4 chips each" },
+        { id: "c", text: "4 chips total, arranged in 1 bank of 4 chips" },
+        { id: "d", text: "32 chips total, arranged in 8 banks of 4 chips each" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Word length expansion requires $16\text{ bits} / 4\text{ bits/chip} = 4\text{ chips}$ in parallel per bank. Capacity expansion requires $1\text{ MB} / 256\text{ KB} = 4\text{ banks}$. Total chips = $4\text{ banks} \times 4\text{ chips/bank} = 16\text{ chips}$. Option (b) provides only 512 KB capacity. Option (c) provides only 256 KB capacity. Option (d) yields 2 MB capacity.",
+    },
+  ]}
+/>
+

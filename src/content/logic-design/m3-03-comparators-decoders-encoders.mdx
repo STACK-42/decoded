@@ -50,7 +50,7 @@ This priority ordering arises from positional binary weights: bit position $k$ c
 $$
 2^k > \sum_{j=0}^{k-1} 2^j = 2^k - 1
 $$
-if bit $A_k > B_k$ ($A_k = 1, B_k = 0$), then number $A$ is guaranteed to be strictly greater than $B$, regardless of the states of all lower-order bits $k-1 \dots 0$. Lower bits can influence the comparison only if all higher-order bits are identical.
+if bit $A_k > B_k$ ($A_k = 1, B_k = 0$), number $A$ is guaranteed to be strictly greater than $B$, regardless of the states of all lower-order bits $k-1 \dots 0$. Symmetrically, if $A_k < B_k$ ($A_k = 0, B_k = 1$), number $A$ is strictly less than $B$. Lower bits can influence the comparison only if all higher-order bits are identical.
 
 First, define the bitwise equivalence function $x_i$ for each bit position $i \in \{0, 1, 2, 3\}$:
 $$
@@ -155,19 +155,12 @@ $$
 \text{Enable} = G_1 \cdot \overline{G_{2A}}' \cdot \overline{G_{2B}}'
 $$
 
-```
-            ┌────────────────────────┐
-   A ───────┤ A                      │
-   B ───────┤ B                      ├─── Y0' = (A' B' C')'
-   C ───────┤ C                      ├─── Y1' = (A  B' C')'
-            │                        ├─── Y2' = (A' B  C')'
-  G1 ───────┤ G1       74LS138       ├─── Y3' = (A  B  C')'
-G2A' ───────┤ G2A'                   ├─── Y4' = (A' B' C )'
-G2B' ───────┤ G2B'                   ├─── Y5' = (A  B' C )'
-            │                        ├─── Y6' = (A' B  C )'
-            │                        ├─── Y7' = (A  B  C )'
-            └────────────────────────┘
-```
+| Pin / Signal | Direction | Logic Level | Function |
+| :--- | :---: | :---: | :--- |
+| **$A, B, C$** | Input | Active-HIGH | Select inputs ($A = \text{LSB}, C = \text{MSB}$) |
+| **$G_1$** | Input | Active-HIGH | Chip enable 1 |
+| **$\overline{G_{2A}}, \overline{G_{2B}}$** | Input | Active-LOW | Chip enables 2A and 2B |
+| **$\overline{Y_0}\dots\overline{Y_7}$** | Output | Active-LOW | Decoded minterm outputs ($\overline{Y_i} = m_i'$) |
 
 ### Decoder expansion: Building a 4-to-16 decoder
 
@@ -200,23 +193,15 @@ Connecting the active-LOW outputs of a 74LS138 directly to a NAND gate synthesiz
 
 A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47** or **74LS48**).
 
-It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a, b, c, d, e, f, g$) arranged in a figure-eight:
-
-```
-        a
-      ┌───┐
-    f │   │ b
-      ├───┤ ◄── g
-    e │   │ c
-      └───┘
-        d
-```
+It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a$ top, $b$ top-right, $c$ bottom-right, $d$ bottom, $e$ bottom-left, $f$ top-left, and $g$ middle) arranged in a figure-eight:
 
 For example, to display decimal digit `0`, segments $a, b, c, d, e, f$ are illuminated, while segment $g$ remains dark.
 
 7-segment displays exist in two physical wiring configurations:
 - **Common Anode:** All LED anodes are tied together to $+V_{CC}$. To illuminate an individual segment, its cathode pin must be pulled to ground (logic 0). Common-anode displays require an active-LOW driver, such as the open-collector **74LS47**.
 - **Common Cathode:** All LED cathodes are tied together to ground (GND). To illuminate a segment, its anode pin must be driven high (logic 1). Common-cathode displays require an active-HIGH driver, such as the **74LS48**.
+
+In both configurations, individual current-limiting resistors (typically $220\,\Omega$ to $330\,\Omega$) must be placed in series with each segment to prevent excessive forward current that would damage the LEDs or driver transistors.
 
 Input combinations outside the BCD range ($1010_2$ through $1111_2$) are illegal decimal digits and are treated as don't-cares during simplification, or mapped to blank/special indicator patterns.
 
@@ -279,6 +264,8 @@ Deriving the minimal expressions using Karnaugh maps:
   $$
   A_0 = D_3 + D_2' D_1
   $$
+
+Notice that input $D_0$ does not appear in the equations for $A_1$ or $A_0$. When only $D_0$ is active ($D_3 D_2 D_1 D_0 = 0001_2$), the encoder produces binary code $00_2$ ($A_1 = 0, A_0 = 0$). Input $D_0$ only needs to assert the Valid output ($V = 1$) so downstream logic can distinguish "input 0 active" from "no inputs active."
 
 <PriorityEncoder />
 
@@ -387,7 +374,7 @@ Using 4-variable Karnaugh maps, derive the minimal Sum of Products expressions f
    - $A_0 = 1$ when $D_3 = 0, D_2 = 0, D_1 = 1$ (2 minterms: $m_2, m_3$).
    - The cell $m_0$ is don't-care ($\text{X}$).
    - Grouping the 8 cells with $D_3 = 1$ yields prime implicant $D_3$.
-   - Grouping minterms $m_2, m_3$ ($D_3' D_2' D_1$) with the adjacent cells in the don't-care region or with $D_3=1$: since $D_3=1$ is already covered, we combine $m_2, m_3$ with $m_6, m_7, m_{10}, m_{11}, m_{14}, m_{15}$? No, $D_2$ must be 0 for $m_2, m_3$. We combine $m_2, m_3$ ($0010, 0011$) with $m_{10}, m_{11}$ ($1010, 1011$), which gives a 4-cell group: $D_2' D_1$.
+   - Grouping minterms $m_2, m_3$ ($D_3' D_2' D_1$) with the adjacent cells $m_{10}, m_{11}$ ($D_3 D_2' D_1$) forms a 4-cell prime implicant that eliminates $D_3$ and $D_0$, giving $D_2' D_1$.
    - Minimal SOP:
      $$A_0 = D_3 + D_2' D_1$$
 
@@ -484,7 +471,7 @@ A microprocessor system has a 16-bit address bus ($A_{15}\dots A_0$) addressing 
 Each 8 KB memory IC has 13 address pins ($A_{12}\dots A_0$) and an active-LOW chip enable pin $\overline{CE}$.
 A 74LS138 3-to-8 decoder is used to generate chip enables. The decoder inputs are:
 - Select inputs $C, B, A$ connected to address bus lines $A_{15}, A_{14}, A_{13}$
-- Enable inputs: $G_1$ tied to active-HIGH control signal $\text{VMA}$ (Valid Memory Address), $\overline{G_{2A}}$ tied to $\text{RESET}'$ (active-LOW), and $\overline{G_{2B}}$ grounded to GND (0V).
+- Enable inputs: $G_1$ tied to active-HIGH control signal $\text{VMA}$ (Valid Memory Address), $\overline{G_{2A}}$ tied to active-HIGH $\text{RESET}$ (holding $\overline{G_{2A}} = 0$ during normal execution and disabling memory during reset), and $\overline{G_{2B}}$ grounded to GND (0V).
 
 1. Determine the memory map (starting and ending hexadecimal address ranges) selected by each of the decoder outputs $\overline{Y_0}$ through $\overline{Y_3}$. Assign ROM 0 to $\overline{Y_0}$, ROM 1 to $\overline{Y_1}$, RAM 0 to $\overline{Y_2}$, and RAM 1 to $\overline{Y_3}$.
 2. What are the hexadecimal address ranges of the unmapped decoder outputs $\overline{Y_4}$ through $\overline{Y_7}$?

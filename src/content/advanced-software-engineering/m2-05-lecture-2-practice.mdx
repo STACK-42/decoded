@@ -1,0 +1,150 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram, FeatureCostChart } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 2 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 2 material. They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-2-practice"
+  questions={questionsForQuiz(questions, "lecture-2-practice")}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-2-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Relationship identification: in the knowledge pyramid, which way should architectural thinking push the boundary?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={200}
+          nodes={[
+            { id: "a", label: "A: stuff you know", x: 260, y: 40, w: 200, tone: "mint" },
+            { id: "b", label: "B: stuff you know you don't know", x: 260, y: 105, w: 300, tone: "sky" },
+            { id: "c", label: "C: stuff you don't know you don't know", x: 260, y: 170, w: 400, tone: "orange" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Move B upward into A: become an expert in everything" },
+        { id: "b", text: "Move B downward into C: turn unknown unknowns into known unknowns" },
+        { id: "c", text: "Shrink A to make room for C" },
+        { id: "d", text: "Ignore C; it can't be changed" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture's goal: keep pushing the middle tier (breadth) down into the bottom tier. You can't choose a pattern you don't know exists. Becoming expert in everything (depth) isn't possible or the goal.",
+    },
+    {
+      id: "d2",
+      prompt: "Design decision: a fraud team needs to flag transactions. Fraud patterns change weekly, there are years of labelled data, and an occasional wrong flag is reviewed by a person. Rules or ML?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={120}
+          nodes={[
+            { id: "x", label: "transactions\n(millions/day)", x: 90, y: 60, w: 150, h: 48 },
+            { id: "m", label: "?", x: 280, y: 60, w: 120, kind: "missing" },
+            { id: "r", label: "human review\nof flags", x: 470, y: 60, w: 150, h: 48 },
+          ]}
+          edges={[
+            { from: "x", to: "m" },
+            { from: "m", to: "r", label: "flags" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Rules: always the default, no exceptions" },
+        { id: "b", text: "ML: rules change fast, data exists, scale is massive, and errors are tolerable thanks to review" },
+        { id: "c", text: "ML, because ML is always more accurate" },
+        { id: "d", text: "Neither; fraud can't be detected" },
+      ],
+      correctOptionId: "b",
+      explanation: "It passes the lecture's checks: dynamic rules, massive scale, data available, errors tolerable. 'Default to rules' means until evidence shows rules can't keep up, which is the case here. ML isn't always more accurate.",
+    },
+    {
+      id: "d3",
+      prompt: "Error detection: this team claims its process keeps the architecture decoupled. What's wrong with the claim?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={130}
+          nodes={[
+            { id: "s", label: "Two-week sprints", x: 100, y: 65, w: 150 },
+            { id: "d", label: "Daily stand-ups", x: 300, y: 65, w: 150 },
+            { id: "r", label: "Retrospectives", x: 500, y: 65, w: 150 },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing; Scrum guarantees good architecture" },
+        { id: "b", text: "These are process, not engineering practices; only practices like fitness functions, CI and linters protect structure" },
+        { id: "c", text: "Sprints should be one week" },
+        { id: "d", text: "They need a project manager" },
+      ],
+      correctOptionId: "b",
+      explanation: "The architectural axiom: process frameworks track who does what and when; they can't repair or preserve a decoupled architecture. Only disciplined engineering practices can.",
+    },
+    {
+      id: "d4",
+      prompt: "Diagram interpretation: a team plots the cost of each new feature over two years, and its curve looks like the orange 'bad design' line. What does it tell them?",
+      figure: <FeatureCostChart />,
+      options: [
+        { id: "a", text: "The team is getting faster at coding" },
+        { id: "b", text: "Structure is decaying: each feature costs more because of earlier messes" },
+        { id: "c", text: "Features are getting smaller" },
+        { id: "d", text: "Rising cost is normal and can't be avoided" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture's goal: the 100th feature should cost what the 1st did. A rising curve means the cost of change depends on shape, which is architecture decaying. It can be avoided by keeping the structure clean.",
+    },
+    {
+      id: "d5",
+      prompt: "Missing component: which quadrant label belongs in the box marked ?",
+      figure: (
+        <BoxDiagram
+          width={480}
+          height={190}
+          nodes={[
+            { id: "q1", label: "Q1: critical\nproduction bugs", x: 130, y: 50, w: 200, h: 56 },
+            { id: "q2", label: "?", x: 350, y: 50, w: 200, h: 56, kind: "missing" },
+            { id: "q3", label: "Q3: urgent but\ntrivial features", x: 130, y: 140, w: 200, h: 56 },
+            { id: "q4", label: "Q4: nice-to-haves", x: 350, y: 140, w: 200, h: 56 },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Customer complaints" },
+        { id: "b", text: "Architecture and structural integrity (important, not urgent)" },
+        { id: "c", text: "Marketing campaigns" },
+        { id: "d", text: "Sprint retrospectives" },
+      ],
+      correctOptionId: "b",
+      explanation: "Quadrant 2 is important but not urgent: architecture. Because it is never urgent, it is the one that gets pushed aside by Quadrant 3.",
+    },
+    {
+      id: "d6",
+      prompt: "Diagram construction: you're drawing the lecture's architect/developer figure. Which three items go on the architect's side?",
+      options: [
+        { id: "a", text: "Class design, user interface, source code" },
+        { id: "b", text: "Architecture characteristics, style, component structure" },
+        { id: "c", text: "Sprint plan, backlog, retrospective" },
+        { id: "d", text: "Database schema, CSS, unit tests" },
+      ],
+      correctOptionId: "b",
+      explanation: "In the figure the architect decides characteristics, style and component structure; the developer decides class design, UI and source code. The lecture's point is that these form one continuum, not a wall.",
+    },
+  ]}
+/>

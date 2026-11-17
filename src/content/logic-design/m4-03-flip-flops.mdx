@@ -15,15 +15,10 @@ Below, compare how a level-sensitive latch and an edge-triggered flip-flop respo
 
 In logic diagrams, a small dynamic indicator triangle ($\vartriangle$) on an input pin denotes **edge triggering**:
 
-```
-      Positive-Edge (Rising)           Negative-Edge (Falling)
-           +---------+                      +---------+
-       D --| D     Q |-- Q              D --| D     Q |-- Q
-           |         |                      |         |
-     CLK --|>        |                CLK --|o>       |
-           |       Q'|-- Q'                 |       Q'|-- Q'
-           +---------+                      +---------+
-```
+| Flip-Flop Type | Dynamic Clock Symbol | Active Triggering Event |
+| :--- | :---: | :--- |
+| **Positive-Edge Triggered** | Dynamic triangle ($\vartriangle$) | Rising edge ($0 \to 1$) |
+| **Negative-Edge Triggered** | Inversion bubble + dynamic triangle ($\circ\vartriangle$) | Falling edge ($1 \to 0$) |
 
 1. **Positive-Edge Triggered (Rising Edge $\uparrow$):** State transitions occur precisely as the clock voltage switches from logic 0 to logic 1 ($0 \to 1$). Represented by a bare triangle.
 2. **Negative-Edge Triggered (Falling Edge $\downarrow$):** State transitions occur precisely as the clock voltage switches from logic 1 to logic 0 ($1 \to 0$). Represented by an inversion bubble placed in front of the dynamic indicator triangle.
@@ -34,28 +29,7 @@ In logic diagrams, a small dynamic indicator triangle ($\vartriangle$) on an inp
 
 Physical semiconductor gates cannot measure an infinitesimal mathematical instant. Instead, edge triggering is achieved by cascading two distinct latches in series under complementary clock control. This structure is known as a **master-slave flip-flop**, which forms the basis for [edge-triggered flip-flops](/courses/computer-architecture/sequential-logic-and-latches#edge-triggered-flip-flops) in processor control.
 
-The circuit acts as an electronic **airlock**: there are two sequential doors, and because the clock driving the second door is inverted, the two doors can never be open at the same time.
-
-```
-                  +---------------- Master ---------------+   +----------------- Slave ---------------+
-                  |                                       |   |                                       |
-             D ---+---\                                   |   |---\                                   |
-                       \___ [ NAND 1 ]----+-- /S          |        \___ [ NAND 5 ]----+-- /S          |
-           CLK ---+---/                   |     \         |   +---/                   |     \         |
-                  |                       |      [NAND 3]-+---+                       |      [NAND 7]-+---+--- Q
-                  |                       |     /         |   |                       |     /         |   |
-                  |                       +-- Q_M         |   |                       +-- Q           |   |
-                  |                       |               |   |                       |               |   |
-                  |                       |               |   |                       |               |   |
-                  |                       |               |   |                       |               |   |
-                  |                       |               |   |                       |               |   |
-                  |                       +-- Q'_M        |   |                       +-- Q'          |   |
-                  |                       |     \         |   |                       |     \         |   |
-                  |                       |      [NAND 4]-+   |                       |      [NAND 8]-+---+--- Q'
-                  |   +---\               |     /             |   +---\               |     /
-                  |        \___ [ NAND 2 ]+-- /R              |        \___ [ NAND 6 ]+-- /R
-                  +---[NOT]-/                                 +---[NOT]-/ (Inverted Clock)
-```
+The circuit acts as an electronic **airlock**: there are two sequential doors, and because the clock driving the second door is inverted, the two doors can never be open at the same time:
 
 <MasterSlave />
 
@@ -78,7 +52,7 @@ The circuit acts as an electronic **airlock**: there are two sequential doors, a
    - The slave latch disables first, locking output $Q$ in place.
    - The master latch then re-enables, opening its window to begin tracking the next data bit on $D$ in preparation for the next cycle.
 
-Because data never has an open path from primary input $D$ to primary output $Q$, **race-around feedback oscillations cannot occur**.
+In summary: **the master samples while $CLK = 0$ and locks on the rising edge ($0 \to 1$); the slave samples while $CLK = 1$ and locks on the falling edge ($1 \to 0$)**. Because data never has an open path from primary input $D$ to primary output $Q$, **race-around feedback oscillations cannot occur**.
 
 ---
 
@@ -184,7 +158,7 @@ $$
 Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
 $$
 
-The condition $S = K = 1$ remains forbidden.
+The condition $S = R = 1$ remains forbidden.
 
 ---
 
@@ -237,18 +211,13 @@ In addition to synchronous inputs ($D, J, K, T$) that are sampled strictly on cl
 - **Preset (PRE, active-LOW):** Asynchronously forces $Q \to 1$ immediately.
 - **Clear (CLR, active-LOW):** Asynchronously forces $Q \to 0$ immediately.
 
-```
-                  +--------\ PRE (Active-LOW)
-                  |        |
-              +---|--------|---+
-          D --| D |        | Q |-- Q
-              |   +--------+   |
-        CLK --|>               |
-              |   +--------+   |
-              +---|--------|---+
-                  |        |
-                  +--------/ CLR (Active-LOW)
-```
+| $\overline{\text{PRE}}$ | $\overline{\text{CLR}}$ | $\text{CLK}$ | $D$ | $Q(t+1)$ | Mode |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| 0 | 1 | $\times$ | $\times$ | 1 | Asynchronous Preset |
+| 1 | 0 | $\times$ | $\times$ | 0 | Asynchronous Clear |
+| 0 | 0 | $\times$ | $\times$ | Undefined | Forbidden / Invalid |
+| 1 | 1 | $\uparrow$ | $D$ | $D$ | Normal Clocked Synchronous Operation |
+| 1 | 1 | 0 / 1 / $\downarrow$ | $\times$ | $Q(t)$ | Hold State |
 
 Because they are active-LOW, normal clocked operation requires holding both PRE = 1 and CLR = 1.
 - If CLR drops to 0, output $Q$ falls to 0 within nanoseconds, completely overriding the clock and data lines.
@@ -259,19 +228,7 @@ Because they are active-LOW, normal clocked operation requires holding both PRE 
 
 ## Dynamic Timing Constraints and Maximum Clock Frequency
 
-In synchronous digital systems, all flip-flops are clocked simultaneously. For data to transfer reliably from one flip-flop to the next through combinational logic, signals must satisfy strict physical timing budgets:
-
-```
-    FF 1                                                 FF 2
-  +------+                                             +------+
-  |    Q |----+                                  +---->| D    |
-  |      |    |      +--------------------+      |     |      |
-  |> CLK |    +----->| Combinational Logic|------+     |> CLK |
-  +------+           | Delay: t_comb      |            +------+
-     ^               +--------------------+               ^
-     |                                                    |
-  ---+------------------ Common Clock --------------------+
-```
+In synchronous digital systems, all flip-flops are clocked simultaneously. For data to transfer reliably from launching flip-flop FF 1 to capturing flip-flop FF 2 through intermediate combinational logic, signals must satisfy strict physical timing budgets:
 
 ### 1. Setup Time Constraint and $f_{max}$
 
@@ -447,7 +404,7 @@ Trace output $Q$ across the following sequential events:
 Synthesize a positive-edge-triggered **JK flip-flop** using an available **D flip-flop** and minimal external combinational logic.
 1. Formulate the state transition and conversion table mapping current state $Q(t)$ and desired inputs $(J, K)$ to the required data input $D$.
 2. Derive the minimal Boolean sum-of-products equation for $D$ using a 3-variable Karnaugh map.
-3. Show that input $D$ can be implemented directly using a single 2-to-1 multiplexer without any external logic gates.
+3. Show that input $D$ can be implemented directly using a single 2-to-1 multiplexer (with inverted input $K'$ or a single inverter).
 
 <ModelAnswer>
 1. **Conversion Table:**
@@ -481,10 +438,10 @@ Synthesize a positive-edge-triggered **JK flip-flop** using an available **D fli
    Comparing with the JK equation $D = Q' \cdot J + Q \cdot K'$:
    - Connect state $Q$ to select input $S$ ($S = Q$).
    - Connect input $J$ to multiplexer input $I_0$ ($I_0 = J$).
-   - Connect inverted input $K'$ to multiplexer input $I_1$ ($I_1 = K'$).
+   - Connect inverted input $K'$ (or $K$ through an inverter) to multiplexer input $I_1$ ($I_1 = K'$).
    The 2-to-1 multiplexer computes:
    $$D = Q' \cdot J + Q \cdot K'$$
-   A single 2-to-1 multiplexer driven by $Q$ completely synthesizes the JK flip-flop steering logic.
+   A single 2-to-1 multiplexer driven by $Q$ synthesizes the complete JK flip-flop steering logic. If the complementary signal $\bar{K}$ is provided directly from the input bus, zero external gates are needed; otherwise, only one inverter on $K$ is required.
 </ModelAnswer>
 
 ### Problem 5: Clock Skew and Pipeline Timing Budget Analysis
@@ -527,7 +484,7 @@ The datasheet specifications are:
      Maximum frequency drops significantly from $172.41\text{ MHz}$ to $138.89\text{ MHz}$.
    - Hold time check:
      $$\text{Slack}_{hold} = 1.0\text{ ns} - (0.7\text{ ns} - 0.8\text{ ns}) = 1.0 - (-0.1) = +1.1\text{ ns}$$
-     Hold margin is exceptionally robust ($+1.1\text{ ns}$). Negative skew hurts performance but protects hold time.
+     Hold margin is exceptionally robust ($+1.1\text{ ns}$). Negative skew means the clock reaches $R_2$ before $R_1$, so $R_2$ has already closed its capture window before new data from $R_1$ can arrive. Negative skew hurts maximum operating frequency but eliminates hold hazards.
 </ModelAnswer>
 
 ### Problem 6: CMOS Master-Slave Transmission Gate D Flip-Flop Architecture

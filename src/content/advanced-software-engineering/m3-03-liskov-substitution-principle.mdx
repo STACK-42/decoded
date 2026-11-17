@@ -1,0 +1,235 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, DiagramTabs, OccupancyGridLsp } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Liskov Substitution Principle
+
+> **Subtypes must be substitutable for their base types.**
+
+Barbara Liskov's 1987 version is more precise:
+
+> If S is a subtype of T, then objects of type T may be replaced with objects of type S without breaking the correctness of the program.
+
+In plain words: any code written for the base type must keep working, correctly, when you hand it a subtype. That's the <Term id="lsp">Liskov Substitution Principle</Term>.
+
+## Contracts
+
+| Well-designed inheritance | Misused inheritance |
+| --- | --- |
+| Code written against the base type keeps working with any subtype. | Callers have to check the concrete type, or get surprised. |
+| The subtype keeps every promise the base type makes. | The subtype overrides, disables or reinterprets inherited behavior. |
+
+The "promises" form the type's <Term id="behavioral-contract">behavioral contract</Term>. In cars, sensor fusion, path planning and safety monitors are all written against base abstractions like `Sensor`, `OccupancyGrid` or `ObjectList`. A subtype that quietly breaks the contract (different units, a different coordinate frame, a different value range) is a safety hazard under ISO 26262.
+
+**The contract rule:** <Term id="precondition">preconditions</Term> cannot be strengthened in a subtype, and <Term id="postcondition">postconditions</Term> cannot be weakened.
+
+- *Stronger precondition* = the subtype demands more from callers than the base did (e.g. "z must also be given").
+- *Weaker postcondition* = the subtype guarantees less than the base did (e.g. "`isFree` might mean anything now").
+
+## The violation: OccupancyGrid → OccupancyGrid3D
+
+**Scenario:** a 2D bird's-eye occupancy grid (which cells of the road are occupied) is extended to 3D for LiDAR point clouds.
+
+```java
+public class OccupancyGrid {
+    public Cell getCell(int x, int y) { /* ... */ }
+    public void markOccupied(Obstacle o, int x, int y) { /* ... */ }
+    public void clearCell(int x, int y) { /* ... */ }
+    public List<Obstacle> getObstacles(int x, int y) { /* ... */ }
+    public boolean isFree(int x, int y) { /* ... */ }
+}
+
+public class OccupancyGrid3D extends OccupancyGrid {   // "a 3D grid IS-A grid"… right?
+    public Cell getCell(int x, int y, int z) { /* ... */ }
+    public void markOccupied(Obstacle o, int x, int y, int z) { /* ... */ }
+    public void clearCell(int x, int y, int z) { /* ... */ }
+    public List<Obstacle> getObstacles(int x, int y, int z) { /* ... */ }
+    public boolean isFree(int x, int y, int z) { /* ... */ }
+    // The inherited 2D methods are still present. What do they mean now?
+}
+```
+
+### The path planner breaks
+
+```java
+public class PathPlanner {
+    public boolean isCorridorFree(OccupancyGrid grid, List<GridPoint> path) {
+        for (GridPoint p : path) {
+            if (!grid.isFree(p.x(), p.y())) return false;   // which height layer does this check?
+        }
+        return true;
+    }
+}
+
+OccupancyGrid grid = new OccupancyGrid3D(lidarPointCloud);   // compiles without errors
+planner.isCorridorFree(grid, plannedPath);                    // is the result correct?
+```
+
+**The core hazard:** the code compiles cleanly, yet the safety contract is broken at runtime. Does `isFree(x, y)` check only the road surface, check every layer, or throw? Try each answer:
+
+<OccupancyGridLsp />
+
+### What went wrong: three problems
+
+**1. The inherited 2D methods have no clear meaning in 3D.**
+
+| Inherited method | Possible meaning in 3D | Result for `PathPlanner` |
+| --- | --- | --- |
+| `isFree(x, y)` checks the ground layer (z = 0) | a barrier at roof height is reported free | collision hazard (false negative) |
+| `isFree(x, y)` checks all height layers | an overhead bridge or sign marks the lane blocked | phantom braking (false positive) |
+| `isFree(x, y)` throws an exception | breaks the base contract outright | runtime crash in the motion planner |
+| `markOccupied(o, x, y)` writes to… which layer? | ambiguous destination | inconsistent map state |
+
+**2. The subtype weakens the base type's guarantees.**
+
+| Base type (`OccupancyGrid`) guarantees | Subtype (`OccupancyGrid3D`) reality |
+| --- | --- |
+| `isFree(x, y)` answers "can the vehicle drive through (x, y)?" | the meaning becomes ambiguous or invalid |
+| every cell is fully addressed by (x, y) | a cell needs (x, y, z); (x, y) is incomplete |
+| callers need no knowledge of the concrete class | callers must check `if (grid instanceof OccupancyGrid3D)` |
+
+**3. The compiler can't protect you.** The signatures match, the code compiles with no warnings, and isolated unit tests may pass. The failure only shows up when the subtype is substituted into the real workflow: during live autonomous driving.
+
+<Callout tone="orange" label="The axiom">
+"IS-A" in everyday language is not "IS-SUBSTITUTABLE-FOR" in software. A 3D grid is a kind of map, but it does not *behave* like a 2D occupancy grid.
+</Callout>
+
+## The fix, in two steps
+
+**Step 1: delegation instead of inheritance.** `OccupancyGrid3D` *uses* 2D grids instead of *extending* one.
+
+```java
+public class OccupancyGrid3D {                     // no longer "extends OccupancyGrid"
+    private final List<OccupancyGrid> layers;      // one 2D grid per height band
+    private final double layerHeightM;             // e.g. 0.25 m per layer
+
+    public boolean isFree(int x, int y, int z) {
+        return layers.get(z).isFree(x, y);          // delegate to the 2D layer
+    }
+    public void markOccupied(Obstacle o, int x, int y, int z) {
+        layers.get(z).markOccupied(o, x, y);        // delegate
+    }
+    public OccupancyGrid getLayer(int z) { return layers.get(z); }
+}
+```
+
+No meaningless inherited `isFree(x, y)` remains. Every method has a clear contract, and the 2D logic is reused through <Term id="delegation">delegation</Term>.
+
+**Step 2: an <Term id="abstraction">abstraction</Term> that states the exact question.**
+
+```java
+public interface DrivableSpaceMap {
+    // Contract: true ONLY if the cell is free up to vehicleHeightM + clearance
+    boolean isDrivable(int x, int y, double vehicleHeightM);
+}
+
+public class Grid2DDrivableSpace implements DrivableSpaceMap {     // camera/radar cars
+    private final OccupancyGrid grid;                              // 2D: conservative
+    public boolean isDrivable(int x, int y, double h) { return grid.isFree(x, y); }
+}
+
+public class Grid3DDrivableSpace implements DrivableSpaceMap {     // LiDAR cars
+    private final OccupancyGrid3D grid;
+    public boolean isDrivable(int x, int y, double h) {
+        int topLayer = grid.layerIndexFor(h + SAFETY_CLEARANCE_M);
+        for (int z = 0; z <= topLayer; z++) {
+            if (!grid.isFree(x, y, z)) return false;   // barrier at roof height → blocked
+        }
+        return true;                                    // gantry above the car → free
+    }
+}
+
+public class PathPlanner {                              // works with ANY implementation
+    public boolean isCorridorFree(DrivableSpaceMap map, List<GridPoint> path, double vehicleHeightM) {
+        return path.stream().allMatch(p -> map.isDrivable(p.x(), p.y(), vehicleHeightM));
+    }
+}
+```
+
+<DiagramTabs
+  title="The grid hierarchy before and after"
+  tabs={[
+    {
+      label: "Before: inheritance",
+      width: 520,
+      height: 200,
+      nodes: [
+        { id: "pp", label: "PathPlanner", x: 110, y: 45, w: 140 },
+        { id: "g", label: "OccupancyGrid", x: 360, y: 45, w: 160 },
+        { id: "g3", label: "OccupancyGrid3D", x: 360, y: 160, w: 160, tone: "orange" },
+      ],
+      edges: [
+        { from: "pp", to: "g", label: "isFree(x, y)" },
+        { from: "g3", to: "g", head: "triangle" },
+      ],
+      caption: "The planner calls isFree(x, y) on what might be a 3D grid. The inheritance arrow (solid line, hollow triangle) promises a substitution the subtype can't honor.",
+    },
+    {
+      label: "After: contract + delegation",
+      width: 600,
+      height: 240,
+      nodes: [
+        { id: "pp", label: "PathPlanner", x: 100, y: 45, w: 140 },
+        { id: "ds", label: "DrivableSpaceMap", stereo: "interface", x: 350, y: 45, w: 180, h: 50 },
+        { id: "d2", label: "Grid2DDrivableSpace", x: 220, y: 140, w: 180 },
+        { id: "d3", label: "Grid3DDrivableSpace", x: 470, y: 140, w: 180 },
+        { id: "g", label: "OccupancyGrid", x: 220, y: 215, w: 150 },
+        { id: "g3", label: "OccupancyGrid3D", x: 470, y: 215, w: 160 },
+      ],
+      edges: [
+        { from: "pp", to: "ds", label: "isDrivable" },
+        { from: "d2", to: "ds", head: "triangle", dashed: true },
+        { from: "d3", to: "ds", head: "triangle", dashed: true },
+        { from: "d2", to: "g" },
+        { from: "d3", to: "g3" },
+        { from: "g3", to: "g", label: "layers", dashed: true },
+      ],
+      caption: "Both implementations honor one explicit contract. The 3D grid holds 2D layers instead of pretending to be one.",
+    },
+  ]}
+/>
+
+**What we gained:**
+
+| Problem before | Now |
+| --- | --- |
+| missed barrier / phantom braking | the contract states drivability *including* vehicle clearance |
+| `instanceof` checks in the planner | none: any `DrivableSpaceMap` substitutes cleanly |
+| a 3D grid forced into a 2D hierarchy | honest APIs for each dimension, one shared contract |
+
+**Conservative default:** the 2D version is deliberately cautious. With no height data, every obstacle blocks, so it can't miss a collision.
+
+## Inheritance or delegation?
+
+Three relationships to tell apart:
+
+- **Delegation:** an object hands a task to a helper. It uses the behavior without becoming that type.
+- **<Term id="composition">Composition</Term>:** an object owns its parts; the parts have no life of their own (`OccupancyGrid3D` owns its height layers).
+- **<Term id="aggregation">Aggregation</Term>:** an object uses independent parts (`SensorFusion` uses a `RadarSensor` and a `FrontCamera` that exist on their own).
+
+| Use inheritance when… | Use delegation / composition when… |
+| --- | --- |
+| the subtype keeps the base type's *entire* contract (LSP) | you only need part of another class's behavior |
+| the relationship is fixed and never changes at runtime | behavior must be swapped at runtime |
+| e.g. `EmergencyBraking implements AdasFunction` | e.g. `OccupancyGrid3D` contains `OccupancyGrid` layers |
+
+**Golden rule: prefer delegation to inheritance.** Before typing `extends`, ask: *"Can every caller of the base type safely use my subtype without knowing it?"* If not, delegate.
+
+## Think and defend: the actuator slew-rate trap
+
+*One of the lecture's three \"Think & Defend\" dilemmas. The slides pose the question; the model answer was written for this course.*
+
+A supplier delivers a braking actuator implementing `BrakeActuator` with `void applyBrakingForce(double kilonewtons)`. Physically, fluid pressure can only rise at 50 kN/s. During emergency braking (AEB), the planner demands a step to 100 kN in 10 ms. The driver silently limits the rise rate and reports no error. The supplier says: "We implemented the interface cleanly and never threw an exception." Why is this a serious LSP violation even though the code compiled and ran? How should the contract be redesigned?
+
+<ModelAnswer>
+The base contract, as callers understand it, is "after `applyBrakingForce(f)`, the force is f" (a postcondition). The subtype silently weakens that postcondition: it reaches 100 kN only after 2 seconds (100 ÷ 50), not 10 ms, and tells nobody. The planner keeps calculating stopping distances with a force that doesn't exist yet, so the car stops far later than planned. Not throwing an exception isn't the same as keeping the contract: LSP is about *behavior*, not about type signatures.
+
+Redesign: make the physical limit part of the contract. For example, the actuator publishes its capabilities (`maxSlewRateKnPerS()`), and `applyBrakingForce` returns or reports the force actually achieved, or a status when the request can't be met. Then the planner can plan with the real limit, and a request that can't be met is visible instead of silent.
+</ModelAnswer>
+
+<Callout tone="orange" label="Common mistake">
+"It compiles and never throws, so LSP holds." LSP is about behavior, not signatures. OccupancyGrid3D compiles, and the brake actuator in the dilemma never throws, yet both break their contract. And "is-a" in English is not proof you should use `extends`.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["lsp", "behavioral-contract", "precondition", "postcondition", "delegation", "composition", "aggregation"]} />

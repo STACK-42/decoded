@@ -7,6 +7,9 @@ export const questions: Question[] = [
   {
     id: "computer-graphics/images-quiz/q1",
     quiz: "images-quiz",
+    lesson: "pixels-and-the-image-grid",
+    section: "why-the-file-must-store-its-dimensions",
+    difficulty: 1,
     prompt: "A program reads an image with the wrong row width. What do you see?",
     options: [
       { id: "a", text: "A blank image" },
@@ -15,11 +18,15 @@ export const questions: Question[] = [
       { id: "d", text: "A smaller copy of the image" },
     ],
     correctOptionId: "b",
-    explanation: "The pixel values are all there, but each row starts in the wrong place, so the picture shears sideways.",
+    explanation:
+      "Because images are stored in row-major order, every pixel value is read, but each line starts at the wrong horizontal offset, shearing the image diagonally. The image is not blank because the data is read, colors remain unchanged, and the overall pixel count does not shrink into a miniature copy.",
   },
   {
     id: "computer-graphics/images-quiz/q2",
     quiz: "images-quiz",
+    lesson: "bit-depth",
+    section: "the-rule-n-bits-give-2ⁿ-values",
+    difficulty: 1,
     prompt: "How many colors can a 4-bit pixel show?",
     options: [
       { id: "a", text: "4" },
@@ -28,11 +35,15 @@ export const questions: Question[] = [
       { id: "d", text: "256" },
     ],
     correctOptionId: "c",
-    explanation: "2⁴ = 16.",
+    explanation:
+      "A bit depth of n bits per pixel represents 2ⁿ distinct states. For 4 bits, 2⁴ = 16 colors. 4 is the bit count itself, 8 is 2³, and 256 requires 8 bits (2⁸).",
   },
   {
     id: "computer-graphics/images-quiz/q3",
     quiz: "images-quiz",
+    lesson: "bit-depth",
+    section: "8-bit-images-grayscale",
+    difficulty: 1,
     prompt: "In an 8-bit grayscale image, what does the pixel value 0 mean?",
     options: [
       { id: "a", text: "White" },
@@ -41,11 +52,15 @@ export const questions: Question[] = [
       { id: "d", text: "The first color in the palette" },
     ],
     correctOptionId: "b",
-    explanation: "0 is no brightness, so black. 255 is white. (In an indexed image, 0 would be the first palette entry.)",
+    explanation:
+      "In grayscale, 0 represents minimum light intensity (black) and 255 represents maximum intensity (white). Transparency requires a dedicated alpha channel, and palette lookup applies to indexed color rather than grayscale.",
   },
   {
     id: "computer-graphics/images-quiz/q4",
     quiz: "images-quiz",
+    lesson: "color-pixels",
+    section: "16-bit-high-color-5-6-and-5-bits",
+    difficulty: 1,
     prompt: "Why does 16-bit high color give green 6 bits and red and blue 5?",
     options: [
       { id: "a", text: "Green needs more memory" },
@@ -54,11 +69,15 @@ export const questions: Question[] = [
       { id: "d", text: "It's a mistake kept for compatibility" },
     ],
     correctOptionId: "b",
-    explanation: "5 + 6 + 5 = 16, and the spare bit goes where it's most visible.",
+    explanation:
+      "16 bits cannot divide equally into three color channels. The 5-6-5 layout gives the extra bit to green because human eyes are most sensitive to green light, making steps in green brightness easiest to notice. Memory needs and LED brightness do not dictate channel bit counts.",
   },
   {
     id: "computer-graphics/images-quiz/q5",
     quiz: "images-quiz",
+    lesson: "color-pixels",
+    section: "32-bit-color-adding-alpha",
+    difficulty: 1,
     prompt: "A pixel has alpha 255. How does it look when drawn over a background?",
     options: [
       { id: "a", text: "Invisible" },
@@ -67,11 +86,15 @@ export const questions: Question[] = [
       { id: "d", text: "It depends on the red channel" },
     ],
     correctOptionId: "c",
-    explanation: "255 is fully opaque and 0 is fully transparent.",
+    explanation:
+      "Alpha measures opacity from 0 (completely transparent) to 255 (completely opaque). At alpha 255, the foreground pixel completely replaces the background. Invisible corresponds to alpha 0, half see-through to alpha 128, and alpha is independent of the red channel.",
   },
   {
     id: "computer-graphics/images-quiz/q6",
     quiz: "images-quiz",
+    lesson: "image-size",
+    section: "the-method",
+    difficulty: 2,
     prompt: "How big is an uncompressed 800 × 600 true color (24-bit) image?",
     options: [
       { id: "a", text: "468.75 KB" },
@@ -80,11 +103,15 @@ export const questions: Question[] = [
       { id: "d", text: "480,000 KB" },
     ],
     correctOptionId: "b",
-    explanation: "800 × 600 = 480,000 pixels × 3 bytes = 1,440,000 bytes ÷ 1024 = 1406.25 KB.",
+    explanation:
+      "800 × 600 = 480,000 pixels. At 24 bits (3 bytes) per pixel, total bytes = 480,000 × 3 = 1,440,000 bytes. Dividing by 1024 yields 1406.25 KB. 468.75 KB forgets to multiply by 3 bytes per pixel, 1875 KB multiplies by 4 bytes (32-bit), and 480,000 KB confuses pixels with kilobytes.",
   },
   {
     id: "computer-graphics/images-quiz/q7",
     quiz: "images-quiz",
+    lesson: "image-size",
+    section: "worked-example-one-image-five-depths",
+    difficulty: 2,
     prompt: "The same image is stored at 8 bits per pixel and at 1 bit per pixel. How do the sizes compare?",
     options: [
       { id: "a", text: "The 8-bit file is 8 times bigger" },
@@ -93,11 +120,15 @@ export const questions: Question[] = [
       { id: "d", text: "The 8-bit file is 2 times bigger" },
     ],
     correctOptionId: "a",
-    explanation: "Size is proportional to bits per pixel, not to the number of colors. 8 bits is 8 times 1 bit.",
+    explanation:
+      "Image storage scales in direct proportion to bits per pixel, not color count. An 8-bit image uses 8 bits per pixel, which is exactly 8 times the 1 bit per pixel used by binary images. 256 is the number of possible colors (2⁸), not the memory ratio.",
   },
   {
     id: "computer-graphics/images-quiz/q8",
     quiz: "images-quiz",
+    lesson: "bit-depth",
+    section: "indexed-color-256-colors-from-a-bigger-palette",
+    difficulty: 2,
     prompt: "An 8-bit indexed image and an 8-bit grayscale image both have a pixel with value 200. What's true?",
     options: [
       { id: "a", text: "Both pixels are the same gray" },
@@ -106,11 +137,248 @@ export const questions: Question[] = [
       { id: "d", text: "Indexed images can't store 200" },
     ],
     correctOptionId: "b",
-    explanation: "In indexed color the value is a position in the palette, which can hold any color.",
+    explanation:
+      "In indexed color, the byte value 200 is an index into a 256-entry palette that can store any 24-bit RGB color. In grayscale, 200 directly specifies a bright gray intensity. The pixels will differ unless palette slot 200 happens to store gray, and 8-bit indexed formats support indices from 0 to 255.",
+  },
+  {
+    id: "computer-graphics/what-is-computer-graphics/interactive-vs-passive",
+    quiz: "images-quiz",
+    lesson: "what-is-computer-graphics",
+    section: "interactive-and-passive-graphics",
+    difficulty: 1,
+    prompt: "A recorded animated film plays smoothly at 60 frames per second, and the viewer cannot control or change what happens on screen. How is it classified in practice?",
+    options: [
+      { id: "a", text: "Interactive graphics, because the picture is moving" },
+      { id: "b", text: "Passive graphics, because there is no two-way response to user input" },
+      { id: "c", text: "Interactive graphics, because it uses 3D models" },
+      { id: "d", text: "Image processing, because it displays frames in sequence" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Interactive graphics requires two-way control where user input alters what the program draws. A recorded film moves over time, so it looks active, but the viewer cannot steer it, making it passive graphics in practice. Using 3D models does not make playback interactive, and image processing transforms existing images rather than defining the user-control split.",
+  },
+  {
+    id: "computer-graphics/what-is-computer-graphics/four-terms",
+    quiz: "images-quiz",
+    lesson: "what-is-computer-graphics",
+    section: "four-terms-people-mix-up",
+    difficulty: 1,
+    prompt: "A spreadsheet plots quarterly sales as a bar chart and exports it as a PNG file. Which terms accurately describe the exported file?",
+    options: [
+      { id: "a", text: "A photo and a picture, because it shows real sales figures" },
+      { id: "b", text: "An image and a graph, because it is stored digitally as pixels and displays data relationships" },
+      { id: "c", text: "Only a photo, because PNG is a digital image format" },
+      { id: "d", text: "Only a picture, because images only come from cameras" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Any visual content stored digitally as a grid of pixels is an image, and a chart showing relationships in numbers is a graph. It is not a photo because no camera lens and sensor recorded a real-world scene, and images include charts, drawings, and screenshots as well as photos.",
+  },
+  {
+    id: "computer-graphics/what-is-computer-graphics/applications-cad-processing",
+    quiz: "images-quiz",
+    lesson: "what-is-computer-graphics",
+    section: "where-its-used",
+    difficulty: 1,
+    prompt: "Medical software removes sensor noise and sharpens a blurry MRI scan so a radiologist can see a fracture clearly. Which application of computer graphics is this?",
+    options: [
+      { id: "a", text: "Image processing" },
+      { id: "b", text: "Computer-aided design (CAD)" },
+      { id: "c", text: "A graphical user interface (GUI)" },
+      { id: "d", text: "Vector illustration" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Image processing manipulates an existing digital image to improve quality or extract information, such as denoising and sharpening medical scans. CAD creates blueprints and 3D engineering models before manufacturing, a GUI provides clickable windows and buttons, and vector illustration creates artwork from mathematical curves.",
+  },
+  {
+    id: "computer-graphics/what-is-computer-graphics/pixel-discretization",
+    lesson: "what-is-computer-graphics",
+    section: "a-screen-is-a-grid-of-dots",
+    difficulty: 1,
+    prompt: "Why does zooming closely into a smooth curved letter on a screen reveal a staircase of squares?",
+    options: [
+      { id: "a", text: "The display can only light discrete square pixels, each showing one color at a time" },
+      { id: "b", text: "Text fonts are stored as photographs" },
+      { id: "c", text: "Pixels grow physically larger when you zoom in on a monitor" },
+      { id: "d", text: "The graphics card drops every second pixel at high zoom" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "A mathematical curve is continuous, whereas a screen is a grid of discrete pixels that each hold one color at a time, so the program must approximate the curve using whole square cells. Fonts are normally defined by mathematical outlines rather than photos, physical pixels on the monitor do not change size, and zooming magnifies the same grid cells rather than dropping pixels.",
+  },
+  {
+    id: "computer-graphics/pixels-and-the-image-grid/row-major-position",
+    quiz: "images-quiz",
+    lesson: "pixels-and-the-image-grid",
+    section: "a-bitmap",
+    difficulty: 2,
+    prompt: "An image is 640 pixels wide and 480 pixels tall, stored in row-major order with 0-based coordinates from the top-left. What is the array index of pixel $(15, 4)$?",
+    options: [
+      { id: "a", text: "2575" },
+      { id: "b", text: "7204" },
+      { id: "c", text: "1935" },
+      { id: "d", text: "3216" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "In row-major order, position = y × width + x = 4 × 640 + 15 = 2560 + 15 = 2575. 7204 swaps x and y and multiplies by height (15 × 480 + 4), 1935 multiplies y by height instead of width (4 × 480 + 15), and 3216 uses 1-based counting (5 × 640 + 16).",
+  },
+  {
+    id: "computer-graphics/pixels-and-the-image-grid/megapixels-and-dimensions",
+    quiz: "images-quiz",
+    lesson: "pixels-and-the-image-grid",
+    section: "dimensions-width--height",
+    difficulty: 2,
+    prompt: "A camera captures a 4000 × 3000 image. How wide is it in pixels, and how many megapixels is it?",
+    options: [
+      { id: "a", text: "3000 pixels wide; 12 megapixels" },
+      { id: "b", text: "4000 pixels wide; 12 megapixels" },
+      { id: "c", text: "4000 pixels wide; 11.44 megapixels" },
+      { id: "d", text: "4000 pixels wide; 36 megapixels" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Dimension pairs always list width (columns) before height (rows), so the image is 4000 pixels wide. Total pixels = 4000 × 3000 = 12,000,000, and megapixels use ordinary decimal millions (÷ 1,000,000 = 12 MP). 3000 swaps width and height, 11.44 divides by $2^{20}$ instead of 1,000,000, and 36 multiplies by 3 color channels.",
+  },
+  {
+    id: "computer-graphics/pixels-and-the-image-grid/bmp-row-padding",
+    lesson: "pixels-and-the-image-grid",
+    section: "why-the-file-must-store-its-dimensions",
+    difficulty: 3,
+    prompt: "A 24-bit Windows BMP image is 5 pixels wide, and each row must be padded to a multiple of 4 bytes. How many padding bytes are added to the end of each row?",
+    options: [
+      { id: "a", text: "0 bytes" },
+      { id: "b", text: "1 byte" },
+      { id: "c", text: "3 bytes" },
+      { id: "d", text: "4 bytes" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "At 24 bits (3 bytes) per pixel, 5 pixels take 5 × 3 = 15 bytes of pixel data per row. The next multiple of 4 bytes is 16, so 16 - 15 = 1 padding byte is added. 0 leaves the row unaligned at 15 bytes, 3 pads 5 pixels as if each pixel were 1 byte, and 4 adds a full extra 4-byte block.",
+  },
+  {
+    id: "computer-graphics/bit-depth/bits-for-palette-size",
+    quiz: "images-quiz",
+    lesson: "bit-depth",
+    section: "the-rule-n-bits-give-2ⁿ-values",
+    difficulty: 2,
+    prompt: "A sprite sheet needs 90 distinct colors. What is the smallest bit depth per pixel that can represent all 90 colors?",
+    options: [
+      { id: "a", text: "6 bits" },
+      { id: "b", text: "7 bits" },
+      { id: "c", text: "8 bits" },
+      { id: "d", text: "90 bits" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "With n bits you get $2^n$ values. 6 bits give only $2^6 = 64$ colors (too few), while 7 bits give $2^7 = 128$ colors (enough for 90). 8 bits ($2^8 = 256$) can hold 90 colors but is not the smallest depth needed, and 90 bits confuses the color count with the bit count.",
+  },
+  {
+    id: "computer-graphics/bit-depth/quantization-banding",
+    lesson: "bit-depth",
+    section: "see-it-fewer-bits-fewer-shades",
+    difficulty: 3,
+    prompt: "A 2-bit grayscale format places its four brightness levels evenly across 0 to 255 (at 0, 85, 170, and 255). What brightness value does an input pixel of 160 snap to?",
+    options: [
+      { id: "a", text: "85" },
+      { id: "b", text: "160" },
+      { id: "c", text: "170" },
+      { id: "d", text: "255" },
+    ],
+    correctOptionId: "c",
+    explanation:
+      "With step size 255 ÷ 3 = 85, 160 ÷ 85 ≈ 1.88, which rounds to level 2 and displays as 2 × 85 = 170. 85 truncates down instead of rounding to the nearest level, 160 is only available at higher depths like 8-bit, and 255 is level 3.",
+  },
+  {
+    id: "computer-graphics/bit-depth/thirty-two-bit-combinations",
+    quiz: "images-quiz",
+    lesson: "bit-depth",
+    section: "the-rule-n-bits-give-2ⁿ-values",
+    difficulty: 2,
+    prompt: "What does a 32-bit RGBA pixel store?",
+    options: [
+      { id: "a", text: "4,294,967,296 distinct RGB hues with no transparency" },
+      { id: "b", text: "16,777,216 RGB colors combined with 256 alpha transparency levels ($2^{32} = 4{,}294{,}967{,}296$ combinations)" },
+      { id: "c", text: "65,536 RGB colors combined with 256 alpha levels" },
+      { id: "d", text: "10 bits each for red, green, blue, and alpha" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "32-bit color uses 24 bits (3 bytes) for RGB, giving the exact same 16,777,216 colors as 24-bit true color, plus 8 bits (1 byte) for 256 alpha levels, totaling $2^{32} = 4{,}294{,}967{,}296$ RGBA combinations. It does not add more RGB hues beyond 16.7 million, 65,536 is 16-bit high color, and 10 bits per channel would total 40 bits rather than 32.",
+  },
+  {
+    id: "computer-graphics/color-pixels/hex-and-high-color",
+    quiz: "images-quiz",
+    lesson: "color-pixels",
+    section: "24-bit-true-color",
+    difficulty: 2,
+    prompt: "What are the decimal `(R, G, B)` channel values for the hexadecimal web color `#40FF80`?",
+    options: [
+      { id: "a", text: "(40, 255, 80)" },
+      { id: "b", text: "(64, 255, 128)" },
+      { id: "c", text: "(64, 256, 128)" },
+      { id: "d", text: "(16, 255, 32)" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Each two-digit hex pair converts as 16 × first digit + second digit: `40` is 4 × 16 + 0 = 64, `FF` is 15 × 16 + 15 = 255, and `80` is 8 × 16 + 0 = 128. (40, 255, 80) misreads hex digits as base-10, 256 is outside the 0–255 byte range, and (16, 255, 32) multiplies by 4 instead of 16.",
+  },
+  {
+    id: "computer-graphics/color-pixels/alpha-blend-calculation",
+    lesson: "color-pixels",
+    section: "32-bit-color-adding-alpha",
+    difficulty: 2,
+    prompt: "Pure white `(255, 255, 255)` with CSS alpha `0.2` (51 out of 255) is drawn over black `(0, 0, 0)`. What is the resulting blended RGB color?",
+    options: [
+      { id: "a", text: "(51, 51, 51)" },
+      { id: "b", text: "(204, 204, 204)" },
+      { id: "c", text: "(255, 255, 255)" },
+      { id: "d", text: "(0, 0, 0)" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Alpha measures opacity, so the blend is 0.2 × 255 + (1 - 0.2) × 0 = 51 for each channel, giving dark gray (51, 51, 51). (204, 204, 204) flips alpha to mean transparency (0.8 × 255), while (255, 255, 255) and (0, 0, 0) ignore the partial opacity.",
+  },
+  {
+    id: "computer-graphics/image-size/four-bit-memory-size",
+    quiz: "images-quiz",
+    lesson: "image-size",
+    section: "the-method",
+    difficulty: 2,
+    prompt: "How much uncompressed memory does a 1024 × 512 image take at 4 bits per pixel?",
+    options: [
+      { id: "a", text: "256 KB" },
+      { id: "b", text: "512 KB" },
+      { id: "c", text: "1024 KB" },
+      { id: "d", text: "2048 KB" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Total pixels = 1024 × 512 = 524,288. At 4 bits per pixel, total bits = 524,288 × 4 = 2,097,152 bits. Divide by 8 to get 262,144 bytes, then divide by 1024 to get 256 KB. 512 KB treats 4-bit as 1 byte per pixel, 1024 KB multiplies by 16 colors instead of 4 bits, and 2048 KB forgets to divide bits by 8.",
+  },
+  {
+    id: "computer-graphics/image-size/ram-vs-disk-compression",
+    lesson: "image-size",
+    section: "uncompressed-memory-versus-file-compression",
+    difficulty: 2,
+    prompt: "A 1920 × 1080 true-color (24-bit) photo is 400 KB as a JPEG on disk. About how much memory does it occupy once decoded into an uncompressed display buffer?",
+    options: [
+      { id: "a", text: "400 KB" },
+      { id: "b", text: "1.98 MB" },
+      { id: "c", text: "5.93 MB" },
+      { id: "d", text: "47.46 MB" },
+    ],
+    correctOptionId: "c",
+    explanation:
+      "Display hardware reads uncompressed pixel grids: 1920 × 1080 = 2,073,600 pixels × 3 bytes = 6,220,800 bytes ÷ 1024 ÷ 1024 ≈ 5.93 MB. 400 KB is only the compressed JPEG size on disk, 1.98 MB forgets to multiply by 3 bytes per pixel, and 47.46 MB forgets to divide bits by 8.",
   },
   {
     id: "computer-graphics/resolution-quiz/q1",
     quiz: "resolution-quiz",
+    lesson: "ppi-and-dpi",
+    section: "ppi-pixels-per-inch",
+    difficulty: 1,
     prompt: "A 1500 × 900 image is printed at 300 PPI. How big is the print?",
     options: [
       { id: "a", text: "5 × 3 inches" },
@@ -119,11 +387,15 @@ export const questions: Question[] = [
       { id: "d", text: "3 × 5 inches" },
     ],
     correctOptionId: "a",
-    explanation: "1500 ÷ 300 = 5 inches wide and 900 ÷ 300 = 3 inches tall.",
+    explanation:
+      "Divide pixel dimensions by PPI: 1500 ÷ 300 = 5 inches wide and 900 ÷ 300 = 3 inches tall. 15 × 9 divides by 100 PPI instead of 300, 4500 × 2700 mistakenly multiplies by 300 instead of dividing, and 3 × 5 reverses width and height.",
   },
   {
     id: "computer-graphics/resolution-quiz/q2",
     quiz: "resolution-quiz",
+    lesson: "ppi-and-dpi",
+    section: "working-backwards-how-many-pixels-do-i-need",
+    difficulty: 1,
     prompt: "You want an 8 × 10 inch print at 300 PPI. How many pixels does the image need?",
     options: [
       { id: "a", text: "800 × 1000" },
@@ -132,11 +404,15 @@ export const questions: Question[] = [
       { id: "d", text: "24 × 30" },
     ],
     correctOptionId: "b",
-    explanation: "Multiply inches by PPI: 8 × 300 = 2400 and 10 × 300 = 3000.",
+    explanation:
+      "Multiply target physical dimensions by PPI: 8 × 300 = 2400 pixels wide and 10 × 300 = 3000 pixels tall. 800 × 1000 assumes 100 PPI, 300 × 300 confuses the PPI figure with resolution dimensions, and 24 × 30 uses a factor of 3 rather than 300.",
   },
   {
     id: "computer-graphics/resolution-quiz/q3",
     quiz: "resolution-quiz",
+    lesson: "ppi-and-dpi",
+    section: "dpi-dots-per-inch",
+    difficulty: 1,
     prompt: "What does DPI measure?",
     options: [
       { id: "a", text: "Pixels in a digital image" },
@@ -145,11 +421,15 @@ export const questions: Question[] = [
       { id: "d", text: "Colors per pixel" },
     ],
     correctOptionId: "b",
-    explanation: "DPI is a printer's measure. Images and screens are described in PPI.",
+    explanation:
+      "DPI (dots per inch) specifically measures how many physical dots of ink a printer deposits per linear inch. Pixels in a digital file and screen densities are measured in PPI, screen diagonals are measured in inches, and colors per pixel are governed by bit depth.",
   },
   {
     id: "computer-graphics/resolution-quiz/q4",
     quiz: "resolution-quiz",
+    lesson: "screen-resolution",
+    section: "reading-a-resolution",
+    difficulty: 1,
     prompt: "How many pixels does a 1280 × 720 screen have?",
     options: [
       { id: "a", text: "2,000" },
@@ -158,11 +438,15 @@ export const questions: Question[] = [
       { id: "d", text: "2,073,600" },
     ],
     correctOptionId: "c",
-    explanation: "1280 × 720 = 921,600.",
+    explanation:
+      "Multiply columns by rows: 1280 × 720 = 921,600 pixels (standard 720p HD). 2,000 approximates 1280 + 720, 92,160 is off by a factor of 10, and 2,073,600 corresponds to 1080p Full HD (1920 × 1080).",
   },
   {
     id: "computer-graphics/resolution-quiz/q5",
     quiz: "resolution-quiz",
+    lesson: "screen-resolution",
+    section: "aspect-ratio",
+    difficulty: 2,
     prompt: "What is the aspect ratio of a 1280 × 1024 screen?",
     options: [
       { id: "a", text: "16:9" },
@@ -171,11 +455,15 @@ export const questions: Question[] = [
       { id: "d", text: "16:10" },
     ],
     correctOptionId: "c",
-    explanation: "The greatest common divisor is 256: 1280 ÷ 256 = 5 and 1024 ÷ 256 = 4.",
+    explanation:
+      "Divide both dimensions by their greatest common divisor (256): 1280 ÷ 256 = 5 and 1024 ÷ 256 = 4, yielding 5:4. 16:9 and 16:10 are widescreen ratios, while 4:3 would require 1280 × 960 or 1024 × 768.",
   },
   {
     id: "computer-graphics/resolution-quiz/q6",
     quiz: "resolution-quiz",
+    lesson: "screen-resolution",
+    section: "pixel-density",
+    difficulty: 2,
     prompt: "Two screens are both 1920 × 1080. One is 24 inches, the other 15.6 inches. Which is true?",
     options: [
       { id: "a", text: "They have the same pixel density" },
@@ -184,11 +472,114 @@ export const questions: Question[] = [
       { id: "d", text: "The 24-inch screen is sharper" },
     ],
     correctOptionId: "b",
-    explanation: "Same pixels in a smaller space means more pixels per inch: about 141 PPI against 92.",
+    explanation:
+      "Both displays have the identical total pixel count (1920 × 1080 = 2,073,600 pixels). Distributing the same pixel count across a smaller physical diagonal (15.6 inches) packs more pixels per inch (~141 PPI versus ~92 PPI on 24 inches), giving the 15.6-inch screen higher pixel density. They do not have the same density because physical sizes differ, pixel counts are identical rather than larger on the 24-inch monitor, and lower pixel density yields larger, less sharp pixels.",
+  },
+  {
+    id: "computer-graphics/ppi-and-dpi/image-resolution-vs-dimensions",
+    quiz: "resolution-quiz",
+    lesson: "ppi-and-dpi",
+    section: "the-third-question-what-ppi-will-i-get",
+    difficulty: 2,
+    prompt: "You change a 1200 × 800 photo's PPI metadata from 72 PPI to 300 PPI without resampling (no pixels added or removed). What changes?",
+    options: [
+      { id: "a", text: "The file gains real detail and becomes sharper on screen" },
+      { id: "b", text: "The pixel dimensions change to 5000 × 3333" },
+      { id: "c", text: "Its printed size shrinks to 4 × 2.67 inches, while pixel dimensions and detail stay unchanged" },
+      { id: "d", text: "The printer's physical ink DPI changes automatically" },
+    ],
+    correctOptionId: "c",
+    explanation:
+      "Image dimensions (1200 × 800 pixels) are fixed unless you resample the file. Changing image resolution (PPI) only tells software how tightly to pack those existing pixels on paper: 1200 ÷ 300 = 4 inches wide and 800 ÷ 300 ≈ 2.67 inches tall. Raising PPI alone creates no new detail, does not alter pixel dimensions, and does not change a printer's hardware DPI.",
+  },
+  {
+    id: "computer-graphics/ppi-and-dpi/find-ppi-and-cm",
+    quiz: "resolution-quiz",
+    lesson: "ppi-and-dpi",
+    section: "the-third-question-what-ppi-will-i-get",
+    difficulty: 2,
+    prompt: "A poster image is 2400 pixels wide and will be printed 16 inches wide. What print resolution (PPI) does it give?",
+    options: [
+      { id: "a", text: "150 PPI" },
+      { id: "b", text: "300 PPI" },
+      { id: "c", text: "160 PPI" },
+      { id: "d", text: "38,400 PPI" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Divide pixel width by physical print width: 2400 ÷ 16 = 150 PPI. 300 PPI would only allow an 8-inch-wide print (2400 ÷ 300), 160 PPI miscalculates the division, and 38,400 multiplies 2400 × 16 instead of dividing.",
+  },
+  {
+    id: "computer-graphics/ppi-and-dpi/resampling-upscale-blur",
+    lesson: "ppi-and-dpi",
+    section: "working-backwards-how-many-pixels-do-i-need",
+    difficulty: 2,
+    prompt: "To print a 6 × 4 inch photo at 300 PPI, an editor stretches a 600 × 400 image up to 1800 × 1200. Why does the result look blurry?",
+    options: [
+      { id: "a", text: "Resampling must invent the missing pixels by averaging neighboring pixels, which softens sharp edges" },
+      { id: "b", text: "Printers cannot print at 300 PPI" },
+      { id: "c", text: "Multiplying dimensions by 3 reduces bit depth" },
+      { id: "d", text: "The aspect ratio changed from 3:2 to 4:3" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "A 600 × 400 file simply lacks the pixels required for a sharp 1800 × 1200 print; upscaling interpolates new pixels by averaging neighbors, producing soft transitions instead of real fine detail. Printers routinely exceed 300 DPI, resizing does not lower bit depth, and both 600 × 400 and 1800 × 1200 have the same 3:2 aspect ratio.",
+  },
+  {
+    id: "computer-graphics/screen-resolution/native-resolution",
+    quiz: "resolution-quiz",
+    lesson: "screen-resolution",
+    difficulty: 1,
+    prompt: "What happens when a 2560 × 1440 monitor is fed a 1280 × 720 signal instead of its native resolution?",
+    options: [
+      { id: "a", text: "The screen shuts off half its pixels and shows a tiny 1280 × 720 box with no scaling" },
+      { id: "b", text: "Each incoming pixel is stretched across multiple physical cells (here 2 × 2), making text and edges look softer" },
+      { id: "c", text: "The monitor switches from progressive to interlaced scanning" },
+      { id: "d", text: "The physical diagonal of the monitor shrinks by half" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "A monitor's native resolution is its fixed physical grid of cells. Sending a lower resolution forces the display or graphics driver to stretch each logical pixel across multiple physical cells, softening sharp text and edges. It does not change physical screen size or force interlaced scanning, and displays typically scale to fill the panel rather than leaving the picture unscaled unless configured otherwise.",
+  },
+  {
+    id: "computer-graphics/screen-resolution/diagonal-ppi-direction-trap",
+    quiz: "resolution-quiz",
+    lesson: "screen-resolution",
+    section: "pixel-density",
+    difficulty: 3,
+    prompt: "A 15-inch monitor has a 640 × 480 grid. What is its pixel density in PPI (nearest whole number), and why is $640 \\div 15 \\approx 43$ PPI wrong?",
+    options: [
+      { id: "a", text: "53 PPI; 640 ÷ 15 mixes horizontal pixel count with diagonal inches instead of dividing 800 diagonal pixels by 15 inches" },
+      { id: "b", text: "43 PPI; diagonal screen size equals horizontal screen width" },
+      { id: "c", text: "75 PPI; you must add 640 + 480 before dividing by 15" },
+      { id: "d", text: "32 PPI; you must divide vertical rows (480) by 15 inches" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "By the Pythagorean theorem, the diagonal spans $\\sqrt{640^2 + 480^2} = \\sqrt{640{,}000} = 800$ pixels, so density is 800 ÷ 15 ≈ 53 PPI (which matches 640 pixels across a 12-inch horizontal width in a 3-4-5 triangle). Dividing 640 or 480 by 15 mixes a single axis with the diagonal length, and adding 640 + 480 is not how diagonal length is computed.",
+  },
+  {
+    id: "computer-graphics/screen-resolution/four-k-and-progressive",
+    lesson: "screen-resolution",
+    section: "reading-a-resolution",
+    difficulty: 2,
+    prompt: "How many times as many pixels does a 4K UHD (3840 × 2160) screen have compared to 1080p (1920 × 1080), and what does `p` mean in `1080p`?",
+    options: [
+      { id: "a", text: "2 times as many pixels; `p` stands for pixels" },
+      { id: "b", text: "4 times as many pixels; `p` stands for progressive scanning (every row drawn each frame)" },
+      { id: "c", text: "4 times as many pixels; `p` stands for interlaced passes" },
+      { id: "d", text: "8 times as many pixels; `p` stands for portrait orientation" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "3840 × 2160 doubles both width (2×) and height (2×) relative to 1920 × 1080, giving 2 × 2 = 4 times as many pixels (8,294,400 vs 2,073,600). The `p` in `1080p` stands for progressive scanning, drawing every row on each frame (unlike `1080i` interlaced scanning, which alternates odd and even rows).",
   },
   {
     id: "computer-graphics/displays-quiz/q1",
     quiz: "displays-quiz",
+    lesson: "crt-and-raster-scan",
+    section: "persistence-and-refresh",
+    difficulty: 1,
     prompt: "Why must a CRT keep redrawing the same picture?",
     options: [
       { id: "a", text: "The frame buffer forgets its contents" },
@@ -197,11 +588,15 @@ export const questions: Question[] = [
       { id: "d", text: "To change the resolution" },
     ],
     correctOptionId: "b",
-    explanation: "Phosphor persistence is short, so the picture fades unless it's refreshed many times a second.",
+    explanation:
+      "Phosphor persistence is very brief, so the emitted light fades within milliseconds unless the electron beam redraws the frame repeatedly. The frame buffer retains its data in memory, the electron gun does not overheat from periodic scanning, and refreshing maintains visibility rather than altering resolution.",
   },
   {
     id: "computer-graphics/displays-quiz/q2",
     quiz: "displays-quiz",
+    lesson: "crt-and-raster-scan",
+    section: "the-raster-scan",
+    difficulty: 1,
     prompt: "What is the horizontal retrace?",
     options: [
       { id: "a", text: "The beam drawing a horizontal line" },
@@ -210,11 +605,15 @@ export const questions: Question[] = [
       { id: "d", text: "Copying a row into the frame buffer" },
     ],
     correctOptionId: "c",
-    explanation: "Returning to the top-left after the whole frame is the vertical retrace.",
+    explanation:
+      "Horizontal retrace occurs when the electron beam turns off and returns to the left edge of the display to begin the next scan line. Drawing a line is the active sweep, returning to the top-left corner after completing the entire frame is the vertical retrace, and memory transfers to the frame buffer are handled by the graphics hardware rather than the beam.",
   },
   {
     id: "computer-graphics/displays-quiz/q3",
     quiz: "displays-quiz",
+    lesson: "crt-and-raster-scan",
+    section: "the-frame-buffer",
+    difficulty: 1,
     prompt: "What does the frame buffer hold?",
     options: [
       { id: "a", text: "A list of line commands" },
@@ -223,11 +622,15 @@ export const questions: Question[] = [
       { id: "d", text: "The refresh rate" },
     ],
     correctOptionId: "b",
-    explanation: "A list of line commands is a random-scan display file.",
+    explanation:
+      "The frame buffer is a dedicated block of memory that holds the color or intensity value of every addressable pixel on the display. A list of geometric line commands is a display file used by vector displays, while refresh rate and frame history are managed separately.",
   },
   {
     id: "computer-graphics/displays-quiz/q4",
     quiz: "displays-quiz",
+    lesson: "random-scan",
+    section: "raster-against-random",
+    difficulty: 1,
     prompt: "Which is a disadvantage of random-scan displays?",
     options: [
       { id: "a", text: "Diagonal lines look jagged" },
@@ -236,11 +639,15 @@ export const questions: Question[] = [
       { id: "d", text: "The beam visits every pixel" },
     ],
     correctOptionId: "b",
-    explanation: "They only trace lines, so they can't fill areas with shading. Their lines are smooth, not jagged.",
+    explanation:
+      "Random-scan (vector) displays direct their beam only along line paths, making them incapable of filling solid areas or rendering realistic photographic scenes with continuous shading. Their lines are smooth rather than jagged, they do not require a massive frame buffer, and the beam visits only coordinates where lines exist.",
   },
   {
     id: "computer-graphics/displays-quiz/q5",
     quiz: "displays-quiz",
+    lesson: "flat-panels",
+    section: "led-screens-are-lcds",
+    difficulty: 1,
     prompt: "Why do blacks on an edge-lit LCD look gray?",
     options: [
       { id: "a", text: "The liquid crystals glow" },
@@ -249,11 +656,15 @@ export const questions: Question[] = [
       { id: "d", text: "The refresh rate is too low" },
     ],
     correctOptionId: "b",
-    explanation: "An LCD only blocks light. Direct LED backlights can dim zones behind dark areas to fix this.",
+    explanation:
+      "An LCD panel relies on a continuous backlight. Because liquid crystal molecules cannot completely block light transmission, some backlight bleeds through even when pixels are set to black. The crystals themselves do not emit light, color filters do not cause light leakage, and refresh rate does not determine black levels.",
   },
   {
     id: "computer-graphics/displays-quiz/q6",
     quiz: "displays-quiz",
+    lesson: "flat-panels",
+    section: "plasma",
+    difficulty: 1,
     prompt: "Which of these makes its own light at each pixel?",
     options: [
       { id: "a", text: "LCD" },
@@ -262,11 +673,15 @@ export const questions: Question[] = [
       { id: "d", text: "Direct-lit LED TV" },
     ],
     correctOptionId: "c",
-    explanation: "Plasma cells glow on their own. All the others are LCDs that need a backlight.",
+    explanation:
+      "Plasma displays are emissive: electrical current excites gas within each cell, creating ultraviolet light that excites phosphors to emit visible light directly at each subpixel. Standard LCDs, edge-lit LED displays, and direct-lit LED displays are transmissive, requiring a separate backlight behind the liquid crystal layer.",
   },
   {
     id: "computer-graphics/displays-quiz/q7",
     quiz: "displays-quiz",
+    lesson: "raster-and-vector-images",
+    section: "vector-images",
+    difficulty: 1,
     prompt: "A company logo has to print on both a pen and a billboard. Which format suits it?",
     options: [
       { id: "a", text: "A large JPEG" },
@@ -275,11 +690,15 @@ export const questions: Question[] = [
       { id: "d", text: "A GIF with 256 colors" },
     ],
     correctOptionId: "b",
-    explanation: "Vectors are redrawn from their math at any size, so edges stay sharp on the billboard.",
+    explanation:
+      "Vector formats store geometric formulas (points, lines, and curves) rather than fixed pixel grids, allowing the logo to be rendered sharply at any physical size without loss of quality. Raster formats like JPEG, BMP, or GIF have fixed pixel dimensions and become blurry or pixelated when enlarged to billboard dimensions.",
   },
   {
     id: "computer-graphics/displays-quiz/q8",
     quiz: "displays-quiz",
+    lesson: "raster-and-vector-images",
+    section: "converting-between-them",
+    difficulty: 2,
     prompt: "Which conversion is hard to do well?",
     options: [
       { id: "a", text: "Vector to raster" },
@@ -288,11 +707,180 @@ export const questions: Question[] = [
       { id: "d", text: "Neither is possible" },
     ],
     correctOptionId: "b",
-    explanation: "Rasterizing happens every time a vector is shown. Tracing a raster into shapes means guessing where the shapes are.",
+    explanation:
+      "Vector-to-raster conversion (rasterization) is mathematically straightforward and runs constantly in hardware. Raster-to-vector conversion (tracing) requires image analysis software to guess boundary contours from discrete pixel grids, which often produces inaccurate or distorted shapes on complex images.",
+  },
+  {
+    id: "computer-graphics/crt-and-raster-scan/refresh-rate-and-frame-time",
+    quiz: "displays-quiz",
+    lesson: "crt-and-raster-scan",
+    section: "persistence-and-refresh",
+    difficulty: 2,
+    prompt: "A CRT monitor with 480 visible rows refreshes at 60 Hz. About how long does one full frame take, and how many visible rows per second does that vertical rate require?",
+    options: [
+      { id: "a", text: "60 ms per frame; 480 rows per second" },
+      { id: "b", text: "16.7 ms per frame; 28,800 rows per second" },
+      { id: "c", text: "16.7 ms per frame; 60 rows per second" },
+      { id: "d", text: "8.3 ms per frame; 57,600 rows per second" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "At 60 frames per second, each frame gets 1 ÷ 60 ≈ 0.0167 seconds (16.7 ms). Because each frame draws 480 rows, the horizontal rate must draw at least 480 × 60 = 28,800 rows per second (plus extra time for retrace, totaling ~31.5 kHz). 60 ms confuses frequency with period, 60 rows/s ignores the 480 rows per frame, and 8.3 ms / 57,600 corresponds to 120 Hz.",
+  },
+  {
+    id: "computer-graphics/crt-and-raster-scan/vdu-and-deflection",
+    quiz: "displays-quiz",
+    lesson: "crt-and-raster-scan",
+    section: "inside-the-tube",
+    difficulty: 1,
+    prompt: "In a standard CRT computer monitor (video display unit, or VDU), what steers the electron beam horizontally and vertically across the phosphor screen?",
+    options: [
+      { id: "a", text: "A rotating mirror inside the vacuum tube" },
+      { id: "b", text: "Magnetic deflection coils mounted around the neck of the tube" },
+      { id: "c", text: "Liquid crystal shutters in front of the electron gun" },
+      { id: "d", text: "Pressurized neon and xenon gas" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "CRT monitors and televisions steer the electron beam using magnetic fields generated by deflection coils wrapped around the neck of the tube (whereas some laboratory CRTs use electrostatic plates). CRTs do not use mirrors or liquid crystal shutters, and neon/xenon gas is used in plasma panels.",
+  },
+  {
+    id: "computer-graphics/crt-and-raster-scan/frame-buffer-and-scan-conversion",
+    lesson: "crt-and-raster-scan",
+    section: "the-frame-buffer",
+    difficulty: 2,
+    prompt: "A 1280 × 720 display uses a 32-bit (4-byte) frame buffer. Roughly how much memory does one frame require, and what is the process of turning geometric line commands into those pixels called?",
+    options: [
+      { id: "a", text: "3.52 MB; scan conversion (rasterization)" },
+      { id: "b", text: "0.88 MB; horizontal retrace" },
+      { id: "c", text: "28.13 MB; vertical refresh" },
+      { id: "d", text: "3.52 MB; image tracing" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "1280 × 720 = 921,600 pixels × 4 bytes = 3,686,400 bytes ÷ 1024 ÷ 1024 ≈ 3.52 MB. Turning geometric commands (lines, polygons) into frame-buffer pixel values is scan conversion (rasterization). 0.88 MB uses 1 byte per pixel instead of 4, 28.13 MB forgets to divide bits by 8, and image tracing converts raster pixels back to vectors.",
+  },
+  {
+    id: "computer-graphics/random-scan/why-random-and-flicker",
+    quiz: "displays-quiz",
+    lesson: "random-scan",
+    difficulty: 2,
+    prompt: "Why is a vector CRT called a 'random-scan' display, and what happens if its display file grows from 200 lines to 50,000 lines?",
+    options: [
+      { id: "a", text: "The beam picks coordinates in a random, unpredictable order; extra lines make the colors brighter" },
+      { id: "b", text: "The beam can jump directly to any coordinate rather than sweeping every row; with too many lines, it cannot finish before phosphor fades, causing flicker" },
+      { id: "c", text: "It uses a random number generator to antialias diagonals; extra lines fill solid shading" },
+      { id: "d", text: "It sweeps rows from bottom to top at random speeds; extra lines shrink the screen" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "'Random' means random-access: the beam jumps directly to the start of any line segment instead of visiting every screen row in order. Because refresh time scales with line count, 50,000 lines take too long to redraw before the phosphor dims, causing flicker. It is deterministic rather than unpredictable, cannot fill solid shading, and does not sweep rows top-to-bottom or shrink the screen.",
+  },
+  {
+    id: "computer-graphics/random-scan/display-file-and-cost",
+    quiz: "displays-quiz",
+    lesson: "random-scan",
+    section: "raster-against-random",
+    difficulty: 2,
+    prompt: "Why did older textbooks list raster-scan displays as more expensive than random-scan displays, even though raster monitors later became far cheaper?",
+    options: [
+      { id: "a", text: "Raster CRTs needed three electron guns while random-scan used none" },
+      { id: "b", text: "Raster displays required a full frame buffer in memory when RAM was expensive, whereas random-scan only stored a short display file" },
+      { id: "c", text: "Raster displays could not use television parts" },
+      { id: "d", text: "Random-scan displays worked without phosphor" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "When RAM was very expensive, holding a color value for every screen pixel in a frame buffer cost far more than storing a compact list of line commands in a display file. Once RAM prices dropped, raster won because it reused inexpensive mass-produced television tubes and did not need complex high-speed vector deflection circuits. Both CRT types use phosphor and electron guns.",
+  },
+  {
+    id: "computer-graphics/random-scan/scan-method-comparison",
+    lesson: "random-scan",
+    section: "raster-against-random",
+    difficulty: 1,
+    prompt: "Which display architecture survives in laboratory oscilloscopes to plot continuous electrical waveforms without stair-stepping?",
+    options: [
+      { id: "a", text: "Random-scan (vector) display" },
+      { id: "b", text: "Edge-lit LCD" },
+      { id: "c", text: "Raster-scan CRT" },
+      { id: "d", text: "Plasma panel" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "An oscilloscope deflects an electron beam continuously along the waveform's path, which is the random-scan (vector) principle and avoids discrete pixel stair-stepping. LCDs, raster-scan CRTs, and plasma panels all map images onto discrete pixel grids.",
+  },
+  {
+    id: "computer-graphics/flat-panels/subpixels-and-polarizers",
+    quiz: "displays-quiz",
+    lesson: "flat-panels",
+    section: "lcd-liquid-crystal-display",
+    difficulty: 2,
+    prompt: "How many individual RGB subpixels are on a 1920 × 1080 LCD panel, and how does each cell vary its brightness?",
+    options: [
+      { id: "a", text: "2,073,600 subpixels; each liquid crystal emits its own colored light" },
+      { id: "b", text: "6,220,800 subpixels; voltage twists liquid crystal molecules to control how much polarized backlight passes through the front filter" },
+      { id: "c", text: "6,220,800 subpixels; gas inside each cell emits ultraviolet light onto phosphors" },
+      { id: "d", text: "3,110,400 subpixels; an electron gun sweeps across the liquid crystals" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Each of the 1920 × 1080 = 2,073,600 pixels contains 3 subpixels (red, green, blue), totaling 2,073,600 × 3 = 6,220,800 subpixels. Liquid crystals do not emit light; applied voltage rotates the crystals to twist polarized backlight between two crossed polarizers before a color filter tints the light. Gas + UV phosphors describe plasma, and electron guns belong to CRTs.",
+  },
+  {
+    id: "computer-graphics/flat-panels/edge-vs-direct-led-oled",
+    lesson: "flat-panels",
+    section: "led-screens-are-lcds",
+    difficulty: 2,
+    prompt: "How does a Direct LED LCD improve dark scenes compared to an Edge LED LCD, and how does OLED go even further?",
+    options: [
+      { id: "a", text: "Direct LED dims zones behind dark areas (local dimming), while Edge LED lights the whole panel from the edges; OLED turns off individual self-emitting pixels" },
+      { id: "b", text: "Direct LED replaces liquid crystals with plasma cells; OLED uses stronger edge backlights" },
+      { id: "c", text: "Edge LED has local dimming at each pixel, while Direct LED glows evenly everywhere" },
+      { id: "d", text: "LED TVs consume far more power than CRTs because every pixel has a fluorescent tube" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Direct LED arrays sit behind the panel and can dim or turn off regions behind dark scenes (local dimming), whereas Edge LED lights spread across the whole panel from the perimeter. Both are still LCDs whose crystals cannot block 100% of backlight, whereas OLED pixels emit their own light and shut off individually for true black. LED-backlit LCDs use less power than older fluorescent CCFL backlights.",
+  },
+  {
+    id: "computer-graphics/raster-and-vector-images/embedded-raster-in-svg",
+    quiz: "displays-quiz",
+    lesson: "raster-and-vector-images",
+    section: "converting-between-them",
+    difficulty: 2,
+    prompt: "Someone places a 400 × 300 JPEG photograph inside an `.svg` file and exports it. What happens when you zoom into the photo at 800%?",
+    options: [
+      { id: "a", text: "It stays crisp forever because SVG is a vector format" },
+      { id: "b", text: "It still looks blocky or blurry because the SVG wrapper still holds a fixed raster pixel grid" },
+      { id: "c", text: "The SVG automatically traces every hair and shadow into smooth curves" },
+      { id: "d", text: "The JPEG gains a native resolution of 3200 × 2400" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Saving or embedding a raster photograph inside an SVG or PDF container does not convert its pixels into geometric equations. The underlying 400 × 300 pixel grid stays fixed and blurs or pixelates when magnified. Automatic tracing requires separate image analysis (and works poorly on photos), and wrapping an image never increases its native pixel count.",
+  },
+  {
+    id: "computer-graphics/raster-and-vector-images/raster-vs-vector-size-scaling",
+    lesson: "raster-and-vector-images",
+    section: "vector-images",
+    difficulty: 2,
+    prompt: "A solid green circle is stored as an uncompressed 24-bit raster at 1600 × 1600 pixels, and as a vector file (center, radius, fill). About how big is the raster grid, and what happens to the vector file size if the circle is scaled up 10×?",
+    options: [
+      { id: "a", text: "About 7.3 MB for the raster; the vector file grows 100× larger" },
+      { id: "b", text: "About 7.3 MB for the raster; the vector file stays the same tiny set of numbers" },
+      { id: "c", text: "About 2.4 MB for the raster; the vector file shrinks 10×" },
+      { id: "d", text: "About 7.3 KB for the raster; both scale linearly with pixel area" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "A 1600 × 1600 × 3-byte raster takes 7,680,000 bytes (about 7.32 MB), and scaling it 10× in each dimension multiplies pixel count by 100. A vector file stores only the circle's mathematical formula (center, radius, fill color), so changing the radius number leaves the file size practically unchanged. 2.4 MB forgets the 3 bytes per pixel, and 7.3 KB misses a factor of 1024.",
   },
   {
     id: "computer-graphics/lines-quiz/q1",
     quiz: "lines-quiz",
+    lesson: "pixel-coordinates",
+    section: "two-conventions-for-y",
+    difficulty: 2,
     prompt: "In a system with (0, 0) at the top-left, an image is 100 rows tall. A pixel is at y = 30. What is its y if the origin moves to the bottom-left?",
     options: [
       { id: "a", text: "30" },
@@ -301,11 +889,15 @@ export const questions: Question[] = [
       { id: "d", text: "-30" },
     ],
     correctOptionId: "c",
-    explanation: "(H − 1) − y = 99 − 30 = 69. Rows run from 0 to 99.",
+    explanation:
+      "Converting vertical coordinates from top-left to bottom-left follows y_up = (H - 1) - y_down. In an image 100 rows tall, row indices range from 0 to 99, giving (100 - 1) - 30 = 99 - 30 = 69. 70 mistakenly computes 100 - 30 without accounting for 0-based indexing, 30 assumes the vertical index does not change, and -30 merely negates the coordinate.",
   },
   {
     id: "computer-graphics/lines-quiz/q2",
     quiz: "lines-quiz",
+    lesson: "aliasing",
+    section: "aliasing-all-or-nothing",
+    difficulty: 1,
     prompt: "What causes jaggies?",
     options: [
       { id: "a", text: "A refresh rate that's too low" },
@@ -314,11 +906,15 @@ export const questions: Question[] = [
       { id: "d", text: "Vector images" },
     ],
     correctOptionId: "b",
-    explanation: "That's aliasing. Antialiasing shades partly covered pixels to hide the steps.",
+    explanation:
+      "Jaggies (aliasing) result from discrete binary sampling: evaluating pixels on an all-or-nothing basis forces non-horizontal edges to jump by whole row or column steps. Refresh rate affects flicker rather than geometric edges, color depth does not cause edge stepping, and vector files contain continuous mathematical formulas that produce jaggies only when rasterized.",
   },
   {
     id: "computer-graphics/lines-quiz/q3",
     quiz: "lines-quiz",
+    lesson: "aliasing",
+    section: "antialiasing-partial-coverage-partial-color",
+    difficulty: 2,
     prompt: "With antialiasing, a black line on a white background covers a quarter of a pixel. What color does the pixel get?",
     options: [
       { id: "a", text: "White" },
@@ -327,11 +923,15 @@ export const questions: Question[] = [
       { id: "d", text: "A dark gray, 75% of the way to black" },
     ],
     correctOptionId: "c",
-    explanation: "The pixel's color mixes the two in proportion to coverage: 25% black, 75% white.",
+    explanation:
+      "Antialiasing blends foreground and background shades in proportion to coverage. With 25% coverage of a black stroke on a white background, the pixel receives 25% black and 75% white, creating a light gray (brightness 255 × 0.75 ≈ 191). Solid white or black ignores partial coverage, while dark gray corresponds to 75% coverage rather than 25%.",
   },
   {
     id: "computer-graphics/lines-quiz/q4",
     quiz: "lines-quiz",
+    lesson: "slope-and-the-line-equation",
+    section: "slope",
+    difficulty: 1,
     prompt: "What is the slope of the line from (2, 3) to (6, 11)?",
     options: [
       { id: "a", text: "0.5" },
@@ -340,11 +940,15 @@ export const questions: Question[] = [
       { id: "d", text: "8" },
     ],
     correctOptionId: "b",
-    explanation: "m = (11 − 3) / (6 − 2) = 8 / 4 = 2.",
+    explanation:
+      "Slope is vertical change divided by horizontal change: m = (y2 - y1) / (x2 - x1) = (11 - 3) / (6 - 2) = 8 / 4 = 2. 0.5 inverts the ratio by computing run over rise (4 / 8), while 4 and 8 are the individual displacements Δx and Δy rather than their quotient.",
   },
   {
     id: "computer-graphics/lines-quiz/q5",
     quiz: "lines-quiz",
+    lesson: "slope-and-the-line-equation",
+    section: "where-the-naive-algorithm-breaks",
+    difficulty: 2,
     prompt: "Why does the naive y = mx + c algorithm leave gaps in steep lines?",
     options: [
       { id: "a", text: "It rounds the slope" },
@@ -353,11 +957,15 @@ export const questions: Question[] = [
       { id: "d", text: "It uses whole numbers only" },
     ],
     correctOptionId: "b",
-    explanation: "For |m| > 1 you must step along y instead, which is what DDA does automatically.",
+    explanation:
+      "Stepping sequentially along x lights exactly one pixel per column. When a line is steep (|m| > 1), the path rises multiple rows per column, leaving empty vertical rows between successive plotted points. Gaps stem from stepping along the wrong axis rather than rounding slope, negative coordinates, or integer arithmetic.",
   },
   {
     id: "computer-graphics/lines-quiz/q6",
     quiz: "lines-quiz",
+    lesson: "dda",
+    section: "idea-2-step-along-the-dominant-axis",
+    difficulty: 2,
     prompt: "DDA draws a line from (1, 1) to (5, 11). How many steps does it take, and what is x's increment?",
     options: [
       { id: "a", text: "4 steps, x increment 1" },
@@ -366,11 +974,15 @@ export const questions: Question[] = [
       { id: "d", text: "14 steps, x increment 0.4" },
     ],
     correctOptionId: "b",
-    explanation: "Δx = 4, Δy = 10, so steps = max(4, 10) = 10 and x increment = 4/10 = 0.4. y goes up by 1 each step.",
+    explanation:
+      "Coordinate differences are Δx = 5 - 1 = 4 and Δy = 11 - 1 = 10. The number of steps is max(|Δx|, |Δy|) = max(4, 10) = 10. Because y is the dominant axis, y steps by 1 while x advances by Δx / steps = 4 / 10 = 0.4. 4 steps traverses only Δx, 2.5 inverts the increment by computing Δy / Δx, and 14 sums the coordinate spans instead of taking the maximum.",
   },
   {
     id: "computer-graphics/lines-quiz/q7",
     quiz: "lines-quiz",
+    lesson: "dda",
+    section: "example-1-a-gentle-line-5-4-to-12-7",
+    difficulty: 2,
     prompt: "In DDA, why is it a mistake to round m = 3/7 to 0.4 before starting?",
     options: [
       { id: "a", text: "It's slower" },
@@ -379,11 +991,15 @@ export const questions: Question[] = [
       { id: "d", text: "It isn't a mistake; the pixels come out the same" },
     ],
     correctOptionId: "b",
-    explanation: "With 0.4 the line ends at 6.8 instead of 7, and the pixel at x = 11 comes out as 6 instead of 7.",
+    explanation:
+      "DDA is an incremental algorithm where the increment is added repeatedly on every step. Truncating 3/7 ≈ 0.4286 to 0.4 introduces a truncation error of nearly 0.029 per step that compounds across iterations, causing computed positions to drift away from the true line and miss terminating coordinates. Pre-rounding does not improve speed, DDA supports fractional numbers, and cumulative drift produces incorrect pixel selections.",
   },
   {
     id: "computer-graphics/lines-quiz/q8",
     quiz: "lines-quiz",
+    lesson: "bresenham",
+    section: "the-decision-parameter",
+    difficulty: 2,
     prompt: "Bresenham draws from (0, 0) to (8, 3). What is p₀?",
     options: [
       { id: "a", text: "-2" },
@@ -392,11 +1008,15 @@ export const questions: Question[] = [
       { id: "d", text: "6" },
     ],
     correctOptionId: "a",
-    explanation: "p₀ = 2Δy − Δx = 2 × 3 − 8 = −2.",
+    explanation:
+      "With Δx = 8 - 0 = 8 and Δy = 3 - 0 = 3, the initial decision parameter is p₀ = 2Δy - Δx = 2(3) - 8 = 6 - 8 = -2. 2 reverses the subtraction (8 - 6), -5 calculates Δy - Δx, and 6 computes 2Δy without subtracting Δx.",
   },
   {
     id: "computer-graphics/lines-quiz/q9",
     quiz: "lines-quiz",
+    lesson: "bresenham",
+    section: "the-decision-parameter",
+    difficulty: 2,
     prompt: "In Bresenham's algorithm for a gentle line, p is 5. What happens next?",
     options: [
       { id: "a", text: "y stays the same, and p becomes p + 2Δy" },
@@ -405,11 +1025,15 @@ export const questions: Question[] = [
       { id: "d", text: "The algorithm stops" },
     ],
     correctOptionId: "b",
-    explanation: "p ≥ 0 means the line has passed the midpoint, so the next pixel is one row up.",
+    explanation:
+      "When p ≥ 0, the true line has reached or crossed the midpoint between the candidate pixels, indicating the upper pixel is closer. The algorithm moves up to row y + 1 and updates the decision parameter as p + 2Δy - 2Δx. Staying on the current row and adding 2Δy applies only when p < 0, x always advances by 1 on gentle lines, and the algorithm continues until the endpoint is reached.",
   },
   {
     id: "computer-graphics/lines-quiz/q10",
     quiz: "lines-quiz",
+    lesson: "bresenham",
+    section: "dda-compared-with-bresenham",
+    difficulty: 1,
     prompt: "What is Bresenham's main advantage over DDA?",
     options: [
       { id: "a", text: "It draws thicker lines" },
@@ -418,6 +1042,206 @@ export const questions: Question[] = [
       { id: "d", text: "It can draw curves directly" },
     ],
     correctOptionId: "c",
-    explanation: "Each step is one comparison and one addition on integers.",
+    explanation:
+      "Bresenham's algorithm operates entirely in integer arithmetic, using only additions, subtractions, and bit shifts. This eliminates floating-point calculation costs and avoids cumulative fractional rounding drift. It does not alter line stroke width, base Bresenham does not antialias, and it is tailored specifically for rasterizing straight line segments.",
+  },
+  {
+    id: "computer-graphics/pixel-coordinates/canvas-half-pixel-offset",
+    quiz: "lines-quiz",
+    lesson: "pixel-coordinates",
+    section: "is-a-pixel-a-point-or-a-square",
+    difficulty: 2,
+    prompt: "On an HTML canvas where integer coordinates lie on grid lines between pixels, why does drawing a 1-pixel horizontal line at `y = 100` look blurry and 2 pixels tall unless shifted to `y = 100.5`?",
+    options: [
+      { id: "a", text: "At `y = 100`, the stroke sits on the boundary between row 99 and row 100, covering 50% of each row so antialiasing paints both rows gray" },
+      { id: "b", text: "HTML canvas rounds `100` down to `99` and draws two copies" },
+      { id: "c", text: "Integer coordinates are ignored unless you switch to bottom-left coordinates" },
+      { id: "d", text: "Canvas strokes always default to 2 pixels wide until a decimal is added" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Because integer coordinates mark grid borders in HTML canvas, a 1-pixel stroke centered at `y = 100` extends half a pixel into row 99 and half a pixel into row 100, causing antialiasing to shade both rows 50% gray. Shifting to `100.5` centers the stroke inside row 100 for a crisp 1-pixel black line. The canvas does not draw two copies, switch origin conventions, or double the stroke width.",
+  },
+  {
+    id: "computer-graphics/pixel-coordinates/points-vs-squares",
+    quiz: "lines-quiz",
+    lesson: "pixel-coordinates",
+    section: "naming-a-pixel",
+    difficulty: 1,
+    prompt: "In a 10 × 10 grid with `(0, 0)` at the top-left, what are the coordinates of the bottom-right pixel?",
+    options: [
+      { id: "a", text: "(10, 10)" },
+      { id: "b", text: "(9, 9)" },
+      { id: "c", text: "(0, 9)" },
+      { id: "d", text: "(10, 0)" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Columns and rows are counted from 0, so a 10 × 10 grid indexes columns 0 through 9 (left to right) and rows 0 through 9 (top to bottom), placing the bottom-right pixel at (9, 9). (10, 10) is out of bounds from 1-based counting, (0, 9) is the bottom-left pixel, and (10, 0) is past the top-right edge.",
+  },
+  {
+    id: "computer-graphics/pixel-coordinates/column-first-and-origin",
+    lesson: "pixel-coordinates",
+    section: "two-conventions-for-y",
+    difficulty: 2,
+    prompt: "Why does loading a PNG file's pixel rows directly into an OpenGL texture without flipping draw the image upside down?",
+    options: [
+      { id: "a", text: "OpenGL stores coordinates as `(row, column)` instead of `(column, row)`" },
+      { id: "b", text: "PNG rows start at the top (`y = 0` at top-left), whereas OpenGL counts `y` upwards from the bottom-left" },
+      { id: "c", text: "PNG compresses pixel rows backwards" },
+      { id: "d", text: "OpenGL uses 1-based indexing for `y` and 0-based for `x`" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Image formats like PNG use screen coordinates with row 0 at the top, whereas OpenGL uses Cartesian coordinates with row 0 at the bottom. Without reversing row order via $(H - 1) - y$, the top row of the PNG maps to the bottom of the screen. Both use `(x, y)` column-first order and 0-based indexing, and PNG compression does not reverse image orientation.",
+  },
+  {
+    id: "computer-graphics/aliasing/supersampling-and-16-samples",
+    quiz: "lines-quiz",
+    lesson: "aliasing",
+    section: "antialiasing-partial-coverage-partial-color",
+    difficulty: 2,
+    prompt: "A supersampling renderer tests a 4 × 4 grid (16 sub-points) inside a pixel. If 6 sub-points fall inside a black line on a white (255) background, what 8-bit grayscale value does `255 × (1 - coverage)` assign (to the nearest integer)?",
+    options: [
+      { id: "a", text: "96" },
+      { id: "b", text: "128" },
+      { id: "c", text: "159" },
+      { id: "d", text: "0" },
+    ],
+    correctOptionId: "c",
+    explanation:
+      "Coverage is 6 ÷ 16 = 0.375 (37.5%), so the pixel stays 62.5% white: 255 × (1 - 0.375) = 255 × 0.625 = 159.375, which rounds to 159. 96 computes 255 × 0.375 (inverting black and white), 128 corresponds to 50% coverage (8/16), and 0 treats the pixel as solid black without antialiasing.",
+  },
+  {
+    id: "computer-graphics/aliasing/three-ways-and-msaa",
+    quiz: "lines-quiz",
+    lesson: "aliasing",
+    section: "three-ways-to-fight-jaggies",
+    difficulty: 2,
+    prompt: "How does MSAA (Multisample Antialiasing) save GPU work compared to running a full pixel shader at 4× resolution?",
+    options: [
+      { id: "a", text: "It runs a Gaussian blur over the whole image instead of sampling edges" },
+      { id: "b", text: "It tests multiple depth and coverage samples per pixel along polygon edges while running the pixel color shader only once per pixel" },
+      { id: "c", text: "It skips antialiasing on diagonal lines" },
+      { id: "d", text: "It doubles the physical PPI of the monitor" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "MSAA checks several sub-pixel locations for geometric coverage and depth along triangle edges, but evaluates the expensive lighting/color shader only once per pixel. Full-screen blurring describes post-processing filters like FXAA or Gaussian blur, MSAA specifically targets diagonal polygon edges, and software rendering cannot change a monitor's physical PPI.",
+  },
+  {
+    id: "computer-graphics/aliasing/antialiasing-no-extra-detail",
+    lesson: "aliasing",
+    section: "antialiasing-partial-coverage-partial-color",
+    difficulty: 1,
+    prompt: "What happens to the actual pixel count and fine geometric detail of an image when you turn on antialiasing?",
+    options: [
+      { id: "a", text: "Pixel count doubles and hidden detail is recovered" },
+      { id: "b", text: "Pixel count stays the same; border pixels are blended to look smoother without adding true resolution" },
+      { id: "c", text: "The image converts from raster to vector" },
+      { id: "d", text: "Diagonal lines become strictly horizontal" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Antialiasing leaves the image grid dimensions untouched and adds no new geometric detail; it simply shades partially covered edge pixels with intermediate colors so stair steps are less noticeable at normal viewing distance. It does not double pixel counts, convert rasters to vectors, or change line angles.",
+  },
+  {
+    id: "computer-graphics/slope-and-the-line-equation/truncation-vs-rounding",
+    quiz: "lines-quiz",
+    lesson: "slope-and-the-line-equation",
+    section: "the-naive-algorithm-just-use-the-equation",
+    difficulty: 2,
+    prompt: "Evaluating $y = 0.667x + 6.667$ at $x = 6$ gives $y = 10.667$. What pixel does C++ integer truncation `(int)y` plot versus nearest-integer rounding `round(y)`?",
+    options: [
+      { id: "a", text: "Truncation plots `(6, 11)`; rounding plots `(6, 10)`" },
+      { id: "b", text: "Truncation plots `(6, 10)`; rounding plots `(6, 11)`" },
+      { id: "c", text: "Both plot `(6, 11)`" },
+      { id: "d", text: "Both plot `(6, 10)`" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Casting a positive float to an integer truncates by dropping the fractional `.667`, yielding `(6, 10)`, nearly two-thirds of a pixel below the line. Nearest-integer rounding (`round(y)` or `(int)(y + 0.5)`) picks `(6, 11)`, staying within half a pixel of the true line.",
+  },
+  {
+    id: "computer-graphics/slope-and-the-line-equation/intercept-and-order-trap",
+    lesson: "slope-and-the-line-equation",
+    section: "slope",
+    difficulty: 2,
+    prompt: "To find the line from $P_1(5, 10)$ to $P_2(11, 14)$, someone computes $m = (14 - 10) / (5 - 11) = -2/3$, and later rounds the y-intercept $c = 6.667$ to $7$. What are the two mistakes?",
+    options: [
+      { id: "a", text: "They subtracted $y$ and $x$ in opposite orders (flipping the sign of $m$), and rounding $c$ shifts the whole line upward off its starting endpoint" },
+      { id: "b", text: "They put $\\Delta y$ over $\\Delta x$ instead of $\\Delta x$ over $\\Delta y$, and $c$ should be rounded down to $6$" },
+      { id: "c", text: "Both steps are valid approximations with identical pixels" },
+      { id: "d", text: "The line is vertical, so slope is undefined" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Both numerator and denominator must subtract endpoints in the same order: $(14 - 10) / (11 - 5) = +2/3$, whereas flipping only $x$ gives $-2/3$. Rounding $c = 6.667$ to $7$ shifts every $y$ value up by a third of a pixel, causing the plotted path to miss $(5, 10)$ and land on wrong rows. Slope is always $\\Delta y / \\Delta x$, and the line is not vertical since $\\Delta x \\ne 0$.",
+  },
+  {
+    id: "computer-graphics/dda/dda-trace-step",
+    quiz: "lines-quiz",
+    lesson: "dda",
+    section: "example-2-a-steep-line-5-7-to-10-15",
+    difficulty: 3,
+    prompt: "DDA draws a steep line from `(5, 7)` to `(10, 15)`. At iteration $k = 4$, what are the exact `(x, y)` coordinates and the plotted pixel (rounding half values upward)?",
+    options: [
+      { id: "a", text: "Exact `(7.5, 11)`, plotted `(7, 11)`" },
+      { id: "b", text: "Exact `(7.5, 11)`, plotted `(8, 11)`" },
+      { id: "c", text: "Exact `(8.75, 13)`, plotted `(9, 13)`" },
+      { id: "d", text: "Exact `(6.875, 10)`, plotted `(7, 10)`" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "Here $\\Delta x = 5$ and $\\Delta y = 8$, so steps = 8, $x_{\\text{inc}} = 5/8 = 0.625$, and $y_{\\text{inc}} = 1$. At $k = 4$, $x = 5 + 4(0.625) = 7.5$ and $y = 7 + 4(1) = 11$. Rounding half values upward maps `7.5` to `8`, plotting `(8, 11)`. `(7, 11)` truncates instead of rounding up, `(9, 13)` is step $k = 6$, and `(7, 10)` is step $k = 3$.",
+  },
+  {
+    id: "computer-graphics/dda/dda-reverse-direction",
+    lesson: "dda",
+    section: "example-3-diagonals-3-5-to-8-10-and-back",
+    difficulty: 2,
+    prompt: "DDA draws a diagonal line backwards from `(8, 10)` to `(3, 5)`. What are `steps`, `x_inc`, and `y_inc`, and how should the loop update `(x, y)`?",
+    options: [
+      { id: "a", text: "`steps = 5`, `x_inc = -1`, `y_inc = -1`, and add them (`x += x_inc`, `y += y_inc`)" },
+      { id: "b", text: "`steps = 5`, `x_inc = -1`, `y_inc = -1`, and subtract them (`x -= x_inc`, `y -= y_inc`)" },
+      { id: "c", text: "`steps = -5`, `x_inc = 1`, `y_inc = 1`, and add them" },
+      { id: "d", text: "`steps = 5`, `x_inc = 1`, `y_inc = 1`, and add them" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Because $\\Delta x = 3 - 8 = -5$ and $\\Delta y = 5 - 10 = -5$, taking the absolute maximum gives `steps = max(|-5|, |-5|) = 5`, and dividing signed differences by `steps` gives `x_inc = -1` and `y_inc = -1`. The loop must add these signed increments (`x += x_inc`); subtracting negative increments moves away from `(3, 5)` toward `(13, 15)`, `steps` is never negative, and positive increments move in the wrong direction.",
+  },
+  {
+    id: "computer-graphics/bresenham/gupta-sproull",
+    quiz: "lines-quiz",
+    lesson: "bresenham",
+    section: "dda-compared-with-bresenham",
+    difficulty: 2,
+    prompt: "How does the Gupta-Sproull algorithm extend Bresenham's line algorithm?",
+    options: [
+      { id: "a", text: "It switches Bresenham back to floating-point multiplication per pixel" },
+      { id: "b", text: "It adds antialiasing by computing perpendicular distances from the line to neighboring pixels and shading them proportionally" },
+      { id: "c", text: "It replaces integer decision parameters with a random-scan display file" },
+      { id: "d", text: "It only draws horizontal and vertical lines" },
+    ],
+    correctOptionId: "b",
+    explanation:
+      "The Gupta-Sproull algorithm builds on Bresenham's integer stepping while tracking perpendicular distance from the continuous line to nearby pixels so it can shade partially covered border pixels (antialiasing). It does not revert to the naive multiplication loop, is not a vector display file, and handles general diagonal slopes.",
+  },
+  {
+    id: "computer-graphics/bresenham/trace-first-two-steps",
+    lesson: "bresenham",
+    section: "worked-example-20-10-to-30-18",
+    difficulty: 3,
+    prompt: "Bresenham draws from `(5, 4)` to `(12, 7)` ($\\Delta x = 7$, $\\Delta y = 3$, starting at `(5, 4)` with $p_0 = -1$). What are the next two plotted pixels ($k = 1$ and $k = 2$) and the resulting parameters $p_1$ and $p_2$?",
+    options: [
+      { id: "a", text: "`(6, 4)` with $p_1 = 5$, then `(7, 5)` with $p_2 = -3$" },
+      { id: "b", text: "`(6, 5)` with $p_1 = -9$, then `(7, 5)` with $p_2 = -3$" },
+      { id: "c", text: "`(6, 4)` with $p_1 = 5$, then `(7, 4)` with $p_2 = 11$" },
+      { id: "d", text: "`(6, 4)` with $p_1 = -9$, then `(7, 5)` with $p_2 = -3$" },
+    ],
+    correctOptionId: "a",
+    explanation:
+      "Precalculate $2\\Delta y = 6$ and $2\\Delta y - 2\\Delta x = 6 - 14 = -8$. At $k = 0$, $p_0 = -1 < 0$: stay on $y = 4$ to plot `(6, 4)` and update $p_1 = -1 + 6 = 5$. At $k = 1$, $p_1 = 5 \\ge 0$: move up to $y = 5$ to plot `(7, 5)` and update $p_2 = 5 - 8 = -3$. Option b moves up when $p_0 < 0$, option c stays on $y = 4$ when $p_1 \\ge 0$, and option d applies $-8$ instead of $+6$ when $p_0 < 0$.",
   },
 ];

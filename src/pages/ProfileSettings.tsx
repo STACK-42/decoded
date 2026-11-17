@@ -5,6 +5,7 @@ import { SignInDialog } from "@/components/AccountButton";
 import { Switch } from "@/components/ui/switch";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { fetchOwnProfile, handleHint, saveOwnProfile, type OwnProfile, type SaveError } from "@/lib/profiles";
+import { copyLink, profileShareUrl } from "@/lib/shareLinks";
 
 const ERRORS: Record<SaveError, string> = {
   invalid: "That handle isn't valid. Use 3 to 20 lowercase letters, digits or _.",
@@ -154,9 +155,18 @@ export default function ProfileSettings() {
                 </button>
                 {justSaved && <span role="status" className="font-mono text-xs text-mint">Saved.</span>}
                 {saved?.public && !saved.hidden && (
-                  <Link to={`/u/${saved.handle}`} className="font-mono text-xs underline underline-offset-4 hover:text-neon">
-                    View your public page
-                  </Link>
+                  <>
+                    <Link to={`/u/${saved.handle}`} className="font-mono text-xs underline underline-offset-4 hover:text-neon">
+                      View your public page
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => copyLink(profileShareUrl(saved.handle))}
+                      className="font-mono text-xs underline underline-offset-4 hover:text-neon"
+                    >
+                      Copy link to share
+                    </button>
+                  </>
                 )}
                 <Link to="/people" className="font-mono text-xs underline underline-offset-4 hover:text-neon">
                   Find people

@@ -1,0 +1,128 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, Topologies } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { Diagram } from "@/components/mdx/Diagram";
+
+# The Architecture Process and Architectural Styles
+
+Lecture 5 moves from *describing* an architecture to *building* one. It starts with vocabulary, then walks through the steps an architect follows.
+
+## Terminology review: views and styles
+
+**What is an architectural view?** Views reflect three broad ways an architect looks at a system (from [Lecture 4](/courses/advanced-software-engineering/views-and-structures#three-kinds-of-structures)):
+
+- units of implementation → **module views**,
+- runtime units → **C&C views**,
+- relation to non-software structures → **allocation views**.
+
+**Architectural styles vs. architectural views.** Choosing a view still leaves many choices open:
+
+- what kinds of **relationships** are allowed?
+- what kinds of **constraints** are enforced?
+
+**Different choices lead to different <Term id="architectural-style">architectural styles</Term>.** So a style can describe modules, runtime units, or software and non-software elements, depending on the kind of view it lives in. A style is a reusable, named package of such choices.
+
+## Basic properties of a style
+
+Every style defines three things:
+
+1. **A vocabulary of design elements:** the <Term id="component">component</Term> and connector types and data elements it uses. *E.g. pipes, filters, objects, servers.*
+2. **A set of configuration rules:** <Term id="topology">topological</Term> constraints that decide which compositions of elements are allowed. *E.g. a component may be connected to at most two other components.*
+3. **A semantic interpretation:** compositions of design elements have well-defined meanings. *E.g. in pipe-and-filter, an arrow always means "this data stream flows here."*
+
+### Topologies
+
+Topology is the *shape* of the connections. The lecture shows seven:
+
+<Topologies />
+
+## The role of the software architect
+
+The architect's job is to:
+
+- **work with the requirements team**: the explicit requirements;
+- **work with the application's stakeholders**: to find out *why* (the qualities that matter to them, which are often unstated);
+- **lead the technical design team**;
+- **work with the project team** (planning, schedule, staffing).
+
+## The architecture process
+
+The process has three steps, and it's **iterative**: validation sends you back to revise the requirements or the design.
+
+<Diagram
+  direction="LR"
+  nodes={[
+    { id: "req", label: "1. Determine architectural requirements" },
+    { id: "des", label: "2. Architecture design" },
+    { id: "val", label: "3. Validation" },
+  ]}
+  edges={[
+    { from: "req", to: "des" },
+    { from: "des", to: "val" },
+    { from: "val", to: "des", label: "revise", back: true, side: "left" },
+    { from: "val", to: "req", label: "iterate", back: true, offset: 90 },
+  ]}
+/>
+
+### Step 1: determine architectural requirements
+
+Architecture requirements, also called **<Term id="architecturally-significant-requirements">architecturally significant requirements</Term>** or **architecture use cases**, are essentially the quality and <Term id="non-functional-requirement">non-functional requirements</Term> of the application. They come from two sources: the **functional requirements** and the **stakeholder requirements**.
+
+*Example:* "show the account balance" is a functional requirement. "Show it within 1 second for 10,000 simultaneous users" is architecturally significant: it decides caching, replication and the choice of style.
+
+### Step 2: architecture design
+
+Its **input** is the architecture requirements; its **outputs** are the **architecture views** and the **architecture document**. In between are two sub-steps:
+
+- **Step 2a, choose the architecture framework:** choose an overall strategy, based on proven **architecture patterns** (a.k.a. **architectural styles**).
+- **Step 2b, allocate components:** specify the individual components that make up the application, show how they fit into the overall framework, and assign them responsibilities.
+
+<BoxDiagram
+  title="Step 2 inputs and outputs"
+  width={520}
+  height={300}
+  nodes={[
+    { id: "in", label: "Architecture\nrequirements", x: 260, y: 35, w: 160, h: 48, kind: "note" },
+    { id: "a", label: "2a. Choose architecture\nframework (styles)", x: 260, y: 115, w: 220, h: 48, tone: "sky" },
+    { id: "b", label: "2b. Allocate\ncomponents", x: 260, y: 190, w: 180, h: 48, tone: "sky" },
+    { id: "v", label: "Architecture\nviews", x: 150, y: 270, w: 140, h: 44, kind: "note" },
+    { id: "d", label: "Architecture\ndocument", x: 370, y: 270, w: 140, h: 44, kind: "note" },
+  ]}
+  edges={[
+    { from: "in", to: "a", label: "input" },
+    { from: "a", to: "b" },
+    { from: "b", to: "v", label: "output" },
+    { from: "b", to: "d", label: "output" },
+  ]}
+/>
+
+### Step 2a in practice
+
+- **Reusing known solutions lowers risk:** an established style reduces the chance that the application fails because of an unsuitable architecture.
+- **Patterns have clear pros and cons** with respect to specific <Term id="quality-attribute">quality attributes</Term>. That's what makes them useful: you pick a style *because of* the qualities you need.
+- **Small applications:** one pattern, like n-tier client-server, may be enough.
+- **Complex applications:** the design combines several known patterns, and the architect specifies how they fit together into the whole.
+
+The styles the lecture covers:
+
+- **Layered architecture (n-tier)**, including client-server
+- **Peer-to-peer**
+- **Pipe-and-filter**
+- **Messaging**
+- **Implicit invocation**, including publish-subscribe (e.g. Spotify) and event-based (e.g. the Eclipse IDE)
+- **Web services**
+- **Microservices**
+- also: traditional language-influenced styles (main program and subroutines; object-oriented/abstract data types) and **shared data**
+
+The next lessons cover [n-tier, client-server and peer-to-peer](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer), [pipe-and-filter and messaging](/courses/advanced-software-engineering/pipe-and-filter-and-messaging), and [all ten styles at a glance](/courses/advanced-software-engineering/ten-styles-at-a-glance).
+
+<Callout tone="mint" label="Connection">
+Choosing a style is applying the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): each style buys some qualities by giving up others. Recording why you chose it is the Second Law.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Confusing a style with a view. A view is a kind of picture (module, C&C, allocation); a style is a reusable set of choices made *within* a view. Another mistake: driving the architecture from features alone. Quality requirements are what make a requirement architecturally significant.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["architectural-style", "topology", "architecturally-significant-requirements", "non-functional-requirement"]} />

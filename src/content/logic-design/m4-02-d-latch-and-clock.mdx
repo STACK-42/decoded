@@ -1,6 +1,6 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { GatedSrLatch, DLatch } from "@/components/mdx/CircuitVisualizers";
-import { ClockExplorer, RaceAroundLab } from "@/components/mdx/LogicVisualizers";
+import { ClockExplorer, RaceAroundLab, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # Control Inputs and the D Latch
 
@@ -11,18 +11,6 @@ To build predictable computing machines, state updates must be synchronized. Mem
 ## Adding Control: The Gated SR Latch
 
 We can place a control "gatekeeper" in front of the basic cross-coupled NAND latch by adding two front-end [NAND gates](/courses/logic-design/logic-gates#nand-and-nor-gates) steered by a common control input $C$:
-
-```
-             S -------\
-                       \___ [ NAND 1 ]----+----- /S (NAND Latch)
-             C ---+---/                   |
-                  |                       |
-                  +---+                   |
-                      |                   |
-             C -------+---\               |
-                           \___ [ NAND 2 ]+----- /R (NAND Latch)
-             R -----------/
-```
 
 <GatedSrLatch />
 
@@ -57,19 +45,7 @@ $$
 S = D \qquad R = D'
 $$
 
-```
-             D ---+-------------------\
-                  |                    \___ [ NAND 1 ]----+----- /S
-                  |     C -------+----/                   |
-                  |              |                        |
-                  |              +----+                   |
-                  |                   |                   |
-                  |     C ------------+---\               |
-                  |                        \___ [ NAND 2 ]+----- /R
-                  +----[ NOT ]------------/
-```
-
-With this design, $S$ and $R$ can never be 1 at the same time. This removes the forbidden state from the circuit.
+With this design, $S$ and $R$ can never be 1 at the same time. This removes the forbidden state from the circuit:
 
 <DLatch />
 
@@ -127,15 +103,12 @@ In synchronous systems, the control signal $C$ is driven by a periodic square wa
 
 A periodic clock waveform is characterized by several fundamental timing parameters:
 
-```
-        |<---------------- Period T ---------------->|
-        +-----------------------+                    +-----------
-        |   High Time (t_H)     |   Low Time (t_L)   |
-  0V ---+                       +--------------------+
-        ^                       ^
-   Rising Edge             Falling Edge
-   (0 -> 1)                (1 -> 0)
-```
+<TimingDiagram
+  signals={[
+    { name: "Clock", bits: [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1], tone: "stroke-mint" },
+  ]}
+  marks={[2, 6, 10]}
+/>
 
 1. **Clock Period ($T$):** The total time required to complete one full cycle (seconds). In modern processors, the clock period dictates the [execution time per instruction](/courses/computer-architecture/measuring-performance).
 2. **Clock Frequency ($f$):** The number of cycles completed per second:
@@ -152,23 +125,8 @@ A periodic clock waveform is characterized by several fundamental timing paramet
 
 While transparency makes the D latch simple and fast, it creates a fatal problem when sequential circuits use feedback.
 
-Consider building a simple digital accumulator or counter where a stored bit must toggle on each clock cycle:
+Consider building a simple digital accumulator or counter where a stored bit must toggle on each clock cycle by connecting the inverted output $Q'$ back to the data input $D$.
 
-```
-        +-----------------------------------+
-        |                                   |
-        |      +-----------+                |
-        +----->|  Inverter |----+           |
-               +-----------+    |           |
-                                v           |
-                             +----+         |
-                     D ----->|    |         |
-                             | DL |----+----+----> Q (Output)
-                   CLK ----->|    |    |
-                             +----+    +---------> Q'
-```
-
-We connect the inverted output $Q'$ back to the data input $D$.
 Suppose the clock rises to $C = 1$:
 1. At the rising edge, $Q = 0$ and $Q' = 1$, so $D = 1$.
 2. Because $C = 1$, the latch is transparent. After propagation delay $t_{pd}$, $Q$ switches from $0 \to 1$.
@@ -179,7 +137,7 @@ Suppose the clock rises to $C = 1$:
 
 $$0 \longrightarrow 1 \longrightarrow 0 \longrightarrow 1 \longrightarrow 0 \dots$$
 
-The circuit oscillates at a frequency set by its own gate delays. When the clock pulse falls back to 0 ($C \to 0$), the value stored in the latch is unpredictable, depending on the exact instant the clock edge fell.
+The circuit oscillates at a frequency set by its own gate delays. Notice that this oscillation only occurs while $C = 1$. When the clock pulse falls back to 0 ($C \to 0$), the front-end gates close, freezing whatever value happened to be on $D$ at that exact instant. Because gate delays vary with temperature and manufacturing tolerances, the final stored bit is completely unpredictable.
 
 This timing problem is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
 
@@ -193,16 +151,14 @@ To count or execute instructions reliably, a circuit needs a memory element that
 
 To guarantee that a latch captures data reliably without entering an indeterminate or metastable state, input signals must obey strict dynamic timing specifications:
 
-```
-              |<- t_su ->|<- t_h ->|
-  D  ---------+----------+---------+------------------
-              |          |         |
-              |          v         |
-  C  ---------+          +----------------------------
-              |          |         |
-                         |<-- t_c-q -->|
-  Q  --------------------+-------------+--------------
-```
+<TimingDiagram
+  signals={[
+    { name: "D", bits: [0, 0, 1, 1, 1, 1, 1, 1, 0, 0], tone: "stroke-mint" },
+    { name: "C", bits: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0], tone: "stroke-foreground" },
+    { name: "Q", bits: [0, 0, 0, 1, 1, 1, 1, 1, 1, 1], tone: "stroke-orange" },
+  ]}
+  marks={[2, 4, 6]}
+/>
 
 1. **Setup Time ($t_{su}$):** The minimum time interval that data input $D$ must remain stable and unchanged *before* the falling edge of the enable signal $C$.
 2. **Hold Time ($t_h$):** The minimum time interval that data input $D$ must remain stable and unchanged *after* the falling edge of the enable signal $C$.
@@ -312,7 +268,7 @@ This matches the standard characteristic equation.
 
 ### Problem 3: Calculating Safe Feedback Conditions
 
-An engineer attempts to build a frequency divider using a transparent gated D latch with $Q'$ wired back to $D$ through an inverter. The latch has propagation delay $t_{pd} = 1.2\text{ ns}$, and the external inverter has delay $t_{inv} = 0.8\text{ ns}$.
+An engineer attempts to build a frequency divider using a transparent gated D latch with primary output $Q$ wired back to data input $D$ through an inverter (setting $D = Q'$). The latch has propagation delay $t_{pd} = 1.2\text{ ns}$, and the external inverter has delay $t_{inv} = 0.8\text{ ns}$.
 1. What is the total loop feedback delay $t_{loop}$?
 2. What is the maximum clock high pulse width $t_H$ that can be permitted before the race-around oscillation occurs?
 3. Explain why this constraint makes transparent latches impractical for edge-synchronized counters.
@@ -347,7 +303,7 @@ Analyze the behavior of a 4-NAND gated SR latch under invalid input conditions:
    - Recall that any 0 input into a NAND gate unconditionally forces its output to 1:
      $$Q = (\bar{S} \cdot Q')' = (0 \cdot Q')' = 1$$
      $$Q' = (\bar{R} \cdot Q)' = (0 \cdot Q)' = 1$$
-   - Both outputs are driven to logic 1 simultaneously ($Q = 1, Q' = 1$), destroying their complementary relationship.
+   - Both outputs are driven to logic 1 simultaneously ($Q = 1, Q' = 1$), destroying their complementary relationship. In CMOS circuits this does not cause a short circuit (both pull-up PMOS networks connect to $V_{DD}$), but the stored state is invalid.
 
 2. **Race Condition Trace upon Clock Falling Edge ($C \to 0$):**
    - As $C$ falls to 0, both front-end NAND gates attempt to pull their outputs up to 1 ($\bar{S} \to 1$ and $\bar{R} \to 1$).

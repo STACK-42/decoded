@@ -55,7 +55,7 @@ export async function createInvite(request: Request, env: Env): Promise<Response
 type Invite = { inviterId: string; course: string; expiresAt: number; handle: string; avatarUrl: string | null };
 
 /** An unused, unexpired invite whose sender still has a visible profile. */
-async function findInvite(env: Env, token: string): Promise<Invite | null> {
+export async function findInvite(env: Env, token: string): Promise<Invite | null> {
   if (!TOKEN.test(token)) return null;
   return env.DB.prepare(
     `SELECT i.inviter_id AS inviterId, i.course, i.expires_at AS expiresAt, p.handle, u.avatar_url AS avatarUrl

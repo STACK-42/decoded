@@ -1,0 +1,118 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Architect's Role and the Laws of Architecture
+
+What is an architecture made of, what does an architect actually do, and what rules hold for every architecture?
+
+## The 4D model of architecture
+
+Architecture is more than boxes and lines. The lecture describes it in four dimensions:
+
+| Dimension | What it is | Example |
+| --- | --- | --- |
+| 1. **Structure** | the architectural style | microservices, event-driven, microkernel |
+| 2. **<Term id="architecture-characteristics">Architecture characteristics</Term>** | the "-ilities" the system must have | scalability, availability, security |
+| 3. **Architecture decisions** | hard rules the system must follow | "The UI cannot query the database directly." |
+| 4. **Design principles** | guidelines that point a direction, not hard rules | "Prefer asynchronous messaging." |
+
+The difference between 3 and 4: a decision is a constraint you must not break; a principle is advice you follow unless there's a good reason not to.
+
+## The eight expectations of an architect
+
+**Technical expectations**
+
+1. **Make architecture decisions.** Set the structural boundaries and rules, rather than micromanaging which specific tools each team uses.
+2. **Continually analyze.** Keep checking whether the architecture is still healthy, to stop structural decay early.
+3. **Keep current with trends.** Watch for technical shifts and prepare for them.
+4. **Ensure compliance.** Set up automated governance that checks the rules are followed, using <Term id="fitness-function">fitness functions</Term>.
+
+**Leadership, breadth and politics**
+
+5. **Diverse exposure.** Build wide, varied technical breadth rather than deep expertise in one area.
+6. **Business domain knowledge.** Understand the domain's concepts, goals, vocabulary and market.
+7. **Interpersonal skills.** Lead, run discussions, coach and mentor. Work as a peer, not a boss.
+8. **Navigate politics.** Defend trade-offs objectively when stakeholders push back.
+
+<Callout tone="orange" label="The compliance imperative">
+A whiteboard drawing that nobody follows is not architecture; it's modern art. Making sure the architecture is actually followed is the architect's first job, and fitness functions are how you automate that.
+</Callout>
+
+## Two case studies: architecture depends on context
+
+**Pets.com: the failure of elastic scale.** The company launched a huge national marketing campaign, which caused a surge of simultaneous orders. It had put business behavior (marketing, checkout features) ahead of operational architecture. Without <Term id="elastic-scale">elastic scale</Term>, the databases locked, transactions were corrupted, order fulfilment choked, and the business was liquidated.
+
+*Takeaway:* scale is not a feature you add later. It is a basic characteristic that has to be designed into the structure.
+
+**A data center in 2002: the economics of styles.** In 2002, running 50 isolated services meant paying millions for commercial server and database licenses and hardware racks. Today, containers (Docker, Kubernetes) make starting another isolated service almost free.
+
+*Takeaway:* architectural styles are products of their historical and economic context. What was reckless in 2002 is industry standard today.
+
+## Technical depth versus technical breadth
+
+As a developer you spent years building <Term id="technical-depth">technical depth</Term>: expertise in one stack. An architect must give up some depth to widen <Term id="technical-breadth">technical breadth</Term>.
+
+<BoxDiagram
+  title="The knowledge pyramid"
+  width={560}
+  height={230}
+  nodes={[
+    { id: "know", label: "Stuff you know\n(technical depth)", x: 280, y: 45, w: 200, h: 48, tone: "mint" },
+    { id: "knowdont", label: "Stuff you know you don't know\n(technical breadth)", x: 280, y: 115, w: 320, h: 48, tone: "sky" },
+    { id: "dontdont", label: "Stuff you don't know you don't know\n(unknown unknowns)", x: 280, y: 185, w: 440, h: 48, tone: "orange" },
+  ]}
+  caption="The goal of architectural thinking is to keep pushing the middle tier down into the bottom tier: turn unknown unknowns into things you know exist."
+/>
+
+You can't choose the best trade-off if you don't know a pattern exists. That is why breadth, knowing that an option is there and roughly what it's good for, matters more for an architect than expert depth. The bottom tier, <Term id="unknown-unknowns">unknown unknowns</Term>, is the danger zone.
+
+## Process versus engineering practices
+
+Students and organizations often mix these up:
+
+| | Software development process | Software engineering practices |
+| --- | --- | --- |
+| What it governs | who does the work and when | how the code is built |
+| Examples | Scrum, Kanban: meetings, cards, sprint retrospectives | continuous integration, TDD, automated linters |
+| Nature | human-centric workflow | technical, objective, works with any process |
+
+**The architectural axiom:** a process framework like Scrum can't repair or protect a decoupled architecture. Only disciplined engineering practices, such as fitness functions, can.
+
+## The laws of software architecture
+
+**First Law: "Everything in software architecture is a <Term id="trade-off">trade-off</Term>."**
+
+*Corollary:* if you think you've found an architectural pattern without a big trade-off, you just haven't found the trade-off yet.
+
+*Example:* <Term id="microservices">microservices</Term> give independent scaling, but bring network <Term id="latency">latency</Term>, failures in transactions that span services, and much harder deployment.
+
+**Second Law: "Why is more important than how."**
+
+*Corollary:* if you only document *how* a system is built and not *why*, future teams will question the design, misunderstand its trade-offs, and risk taking apart its strengths.
+
+*Example:* any architect can read an unfamiliar system's diagrams and work out how its services talk. Without <Term id="adr">Architecture Decision Records (ADRs)</Term> or other recorded context, they can't tell why a particular database, boundary or integration was chosen over the alternatives.
+
+## The "circle of life": architects and developers together
+
+The traditional model, where an architect hands a finished blueprint to developers, is called a catastrophic anti-pattern: a common habit that does serious harm. Instead, architecture and design form a synchronized **circle of life**:
+
+- architects stay hands-on, writing code and building proofs of concept;
+- developers understand the architectural constraints, so their class designs fit them;
+- and architects avoid the **bottleneck trap**: they don't take ownership of framework code on the <Term id="critical-path">critical path</Term>, because then the whole team waits for them.
+
+### Staying hands-on without becoming the bottleneck
+
+An architect who stops coding becomes an "ivory tower" architect. The lecture gives four ways to stay hands-on, all off the critical path:
+
+1. **Targeted feature delivery.** Build non-critical business features planned one to three iterations ahead. Never touch critical-path framework code.
+2. **High-quality proofs of concept.** Write production-quality <Term id="poc">POCs</Term> to compare competing tools. Even throwaway code should be good enough to serve as a reference.
+3. **Technical debt stories.** Take low-priority <Term id="technical-debt">technical-debt</Term> or infrastructure tasks that won't stall the team if they slip.
+4. **Developer tooling and automation.** Build command-line utilities, custom linters, code generators and automated fitness functions that help the team.
+
+<Callout tone="orange" label="Common mistake">
+Mixing up an architecture decision with a design principle. "The UI cannot query the database" is a decision: breaking it is a violation. "Prefer asynchronous messaging" is a principle: you may deviate with a good reason. And documenting *how* without *why* breaks the Second Law.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["architecture-characteristics", "fitness-function", "elastic-scale", "technical-depth", "technical-breadth", "unknown-unknowns", "trade-off", "adr", "poc", "critical-path"]} />

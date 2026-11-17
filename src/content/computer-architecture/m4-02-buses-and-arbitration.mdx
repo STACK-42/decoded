@@ -1,39 +1,685 @@
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { BusArbiter } from "@/components/mdx/ArchitectureVisualizers";
 
 # Buses and Arbitration
 
-You've met the [address, data and control buses](/courses/computer-organization/buses). Here we look at the rules for using them. A bus is a shared road, so it needs traffic laws.
+Inside a computer, many hardware components must exchange data. Connecting every component to every other component with dedicated point-to-point wires would require millions of individual copper traces, consuming excessive board space and motherboard layers. Instead, components share common communication pathways called **buses**. Because a bus is a shared medium, devices require clear electrical conventions and arbitration protocols so signals do not collide.
 
-## Bus types
+## What is a bus?
 
-Early computers had one bus for everything, and everything slowed down to the speed of the slowest device. Modern computers use a hierarchy, connected by bridges:
+A **bus** is a shared communication pathway consisting of parallel conductors that connect two or more hardware devices. A single conductive wire within a bus is a **bus line**, carrying binary voltage signals representing $0$ or $1$.
 
-- **Processor-memory buses** are short and very fast, and they're tuned for one job.
-- **I/O buses** are longer and slower, and they support many kinds of device, such as PCIe and USB.
-- **Backplane buses** connect the two.
+A complete system bus comprises three distinct functional signal groups:
 
-## Bus protocols
+| Signal Group | Representative Lines | Functional Purpose | Direction |
+|---|---|---|---|
+| **Data Lines** | $D_0 \dots D_{63}$ | Carries instructions, operands, and I/O data words | Bidirectional |
+| **Address Lines** | $A_0 \dots A_{31}$ or $A_{47}$ | Selects the target memory address or I/O device port | Driven by Master |
+| **Control Lines** | $\overline{\text{MEMR}}$, $\overline{\text{MEMW}}$, $\overline{\text{IOR}}$, $\overline{\text{IOW}}$, `CLK`, `READY` | Coordinates timing, commands, bus requests, and interrupts | Unidirectional or Shared |
 
-A **protocol** is the agreed way of carrying out a transfer. There are two main kinds:
+The number of data lines is the **bus width**, which determines how many bytes move in a single transfer cycle. An $n$-line address bus selects among $2^n$ distinct memory bytes or I/O ports. A 32-bit address bus addresses $4\text{ GB}$ ($2^{32}$ bytes) of space, while a 48-bit bus addresses $256\text{ TB}$ ($2^{48}$ bytes).
 
-- **Synchronous**: everything happens on a shared clock. It's simple and fast, and the [read cycle](/courses/microprocessors/bus-cycles) you stepped through is an example. All devices have to keep up with the clock, and long wires suffer from clock skew.
-- **Asynchronous**: no shared clock. A [handshake](/courses/computer-architecture/io-methods) coordinates each step, so devices of any speed can share the bus, at the cost of extra overhead.
+A single complete sequence of bus operations required to read or write a data item is a **bus transaction**.
+
+In any bus transaction, the participating devices take on one of two roles:
+
+- A **bus master**: An active hardware device (such as the CPU, a DMA controller, or a high-speed network controller) that initiates transfers by driving address lines and issuing control strobes.
+- A **bus slave**: A passive hardware component (such as a DRAM module or a basic peripheral status port) that monitors the bus, decodes its address, and only responds to commands asserted by a master.
+
+### The electrical problem of shared lines
+
+When multiple semiconductor chips connect to the same metal wire, two chips driving conflicting voltages at the same time (one driving $3.3\text{ V}$ and another driving $0\text{ V}$) create a low-resistance short circuit. This causes **bus contention**, drawing high electrical currents and corrupting data.
+
+To prevent this, every device connects to shared bus lines through a [tri-state buffer](/courses/logic-design/memory-unit#tri-state-logic-and-shared-system-buses). A tri-state buffer provides three distinct electrical output states: logic 1 (high voltage), logic 0 (ground), and **high impedance** (**Hi-Z**).
+
+In the Hi-Z state, the device's output pins act as an electrical open circuit, completely disconnecting the chip from the copper wire. Only the single currently granted bus master is permitted to drive voltages onto the wires; all other devices keep their bus drivers in the Hi-Z state.
+
+## The physical limits of wide parallel buses
+
+Early computers routed all components through a single, wide parallel backplane bus (such as ISA, VME, or early PCI). As microprocessors accelerated from megahertz to gigahertz frequencies, shared parallel buses ran into physical barriers:
+
+1. **Capacitive Loading**: Every device pin and solder pad attached to a multi-drop bus adds parasitic capacitance. This capacitance increases the $RC$ time constant of the trace, rounding off sharp digital voltage transitions and capping maximum clock frequencies.
+2. **Clock Skew**: In a 64-bit parallel bus, minute variations in copper trace lengths, board dielectric thickness, and solder joints mean that 64 bits transmitted simultaneously arrive at the receiver at slightly different times. When clock periods drop below a few nanoseconds, this **clock skew** exceeds the timing window, corrupting the received word.
+3. **Electromagnetic Crosstalk**: As clock frequencies rise into hundreds of megahertz, rapid current transitions on one parallel wire radiate electromagnetic fields that induce noise voltages on adjacent wires.
+4. **Trace Routing Density**: Routing 64 or 128 matched-length parallel copper traces across multiple motherboard layers consumes board area and creates manufacturing bottlenecks.
+
+| Physical Characteristic | Wide Parallel Bus (e.g., PCI) | Switched Serial Interconnect (e.g., PCIe) |
+|---|---|---|
+| **Physical Topology** | Shared multi-drop copper bus | Point-to-point dedicated links |
+| **Clock Distribution** | Separate clock line; high clock skew | Clock embedded in data stream (zero skew) |
+| **Signaling Method** | Single-ended voltage relative to ground | Differential signaling pair ($\text{Tx}^+/\text{Tx}^-$) |
+| **Bandwidth Scaling** | Add more parallel wires (worsens skew) | Add more lanes ($\times 1, \times 4, \times 8, \times 16$) |
+| **Maximum Frequency** | Capped at $33\text{ MHz}$ to $66\text{ MHz}$ | Operates at $2.5\text{ GHz}$ to $32\text{ GHz}$ per lane |
+
+<Callout tone="orange" label="Trap: Wider parallel buses cannot always run faster">
+Doubling bus width from 32 bits to 64 bits does not double data throughput in practice. Widening a parallel bus increases capacitive load and worsens clock skew between the outermost and innermost traces. Designers often have to reduce the bus clock frequency, cutting into the throughput gain.
+</Callout>
+
+### The shift to switched serial fabrics (PCIe)
+
+Modern computer architectures resolved these physical limits by replacing shared parallel buses with high-speed, point-to-point **switched serial fabrics**, exemplified by PCI Express (PCIe):
+
+- **Differential Signaling**: Instead of measuring a single voltage relative to a noisy motherboard ground, PCIe transmits each signal across a pair of complementary wires ($\text{Tx}^+$ and $\text{Tx}^-$). The receiver measures the voltage difference $(V^+ - V^-)$. External electromagnetic interference affects both wires identically, so the difference remains unaffected, canceling noise.
+- **Embedded Clocking and Line Coding**: PCIe eliminates the separate clock wire entirely. The transmitter uses **line coding** (such as 8b/10b in PCIe 1.0/2.0 or 128b/130b in PCIe 3.0+) to guarantee frequent voltage transitions in the data stream. The receiver uses an internal Phase-Locked Loop (PLL) to extract the clock directly from the data bitstream, eliminating clock skew between clock and data within each serial lane. Across multi-lane links ($\times 4, \times 8, \times 16$), receiver elastic FIFO buffers deskew arrival variations between lanes automatically during link training.
+- **Lanes and Aggregation**: A single PCIe **lane** consists of two differential pairs (four wires total: transmit $\text{Tx}^+/\text{Tx}^-$ and receive $\text{Rx}^+/\text{Rx}^-$). Bandwidth scales linearly by aggregating lanes into links: $\times 1, \times 4, \times 8$, or $\times 16$.
+- **Packetized Switching**: Devices do not share physical wires. A central PCIe switch routes packetized messages directly between source and destination endpoints, enabling multiple devices to communicate simultaneously without bus contention.
+
+### The modern interconnect hierarchy
+
+Today's computers organize communication in a hierarchy of specialized links connected by bridges:
+
+- **Processor-Memory Interconnect**: Short, point-to-point coherent interconnects (such as Intel UPI/QPI or AMD Infinity Fabric) operating at gigahertz frequencies directly between CPU sockets and memory controllers.
+- **System Expansion Fabric**: PCIe links connecting graphics processors, NVMe SSDs, and high-speed network interfaces to the CPU Root Complex (the silicon bridge built into the processor die that joins the CPU cores and memory to the PCIe fabric).
+- **Peripheral Buses**: Slower serial buses (USB, SATA, SPI, I2C, UART) managed through a chipset (Platform Controller Hub, or PCH).
+
+## Bus protocols and timing: synchronous vs. asynchronous
+
+The rules governing when an address is valid, when data is sampled, and how devices coordinate transfers form the **bus protocol**.
+
+### Synchronous bus timing
+
+In a **synchronous bus**, every bus event is coordinated by the edges of a shared system clock. All devices on the bus must run at the same clock frequency or an integer divisor of it.
+
+| Clock Cycle | Transaction Phase | Master Actions | Slave Actions |
+|---|---|---|---|
+| **Cycle T1** | **Address Phase** | Drives target address onto address lines; asserts Read strobe | Decodes address lines; checks chip-select logic |
+| **Cycle T2** | **Access / Wait Phase** | Holds address and command lines steady; checks `READY` line | Accesses memory cell or internal register; holds `WAIT` low if slow |
+| **Cycle T3** | **Data Phase** | Samples data bus on rising clock edge; latches data; releases bus | Drives requested data onto data bus; asserts `READY` high |
+
+If a slave device (such as slow DRAM) cannot retrieve data within a single clock cycle, it asserts a `WAIT` signal (or pulls `READY` low). The CPU senses this signal and inserts one or more **wait states** (idle clock cycles where the bus master holds all address and control signals constant), waiting for the slave to catch up.
+
+Synchronous buses require minimal control logic and achieve high throughput over short physical distances. However, they suffer from clock skew over long wires, and every transaction must run at the speed of the slowest participating device unless wait states are inserted.
+
+### Asynchronous bus timing
+
+In an **asynchronous bus**, there is no shared bus clock. Timing is controlled entirely by interlocking control signals using a four-phase [handshake](/courses/computer-architecture/io-methods#asynchronous-handshaking-protocols):
+
+1. The bus master asserts the memory address and read control lines.
+2. The master asserts `Master Sync` (`MSYN`, or Address Strobe), signaling that the address lines are valid and settled.
+3. The slave device decodes the address, accesses the requested data, drives the data bus, and asserts `Slave Sync` (`SSYN`, or Data Acknowledge).
+4. The master detects `SSYN`, captures the data into its internal registers, and deasserts `MSYN`.
+5. The slave detects the release of `MSYN`, clears its data lines to Hi-Z, and deasserts `SSYN`.
+
+Asynchronous buses accommodate devices of wildly different speeds without wasting cycles, and they are immune to clock skew over long cables. However, the round-trip signal propagation delay and handshake edge detection add protocol overhead to every single transfer.
+
+<Callout tone="orange" label="Trap: Bus clock rate does not equal payload throughput">
+A synchronous bus operating at a high clock rate (such as $100\text{ MHz}$) does not necessarily deliver high payload data throughput. If a memory transfer requires 1 cycle for addressing, 3 wait states for DRAM access, and 1 cycle for data transfer (5 cycles total for one 4-byte word), the bus is actively transferring payload data during only $1/5 = 20\%$ of its operational cycles.
+</Callout>
 
 ## Arbitration: whose turn is it?
 
-If two devices drive the same wire at once, the signals collide. So only one device, the **bus master**, may start a transfer at a time. **Arbitration** decides who that is. Click devices to change who's asking.
+In any multi-device computer, multiple components act as a **bus master**: an active unit capable of initiating data transfers. The CPU, multiple DMA controllers, graphics processors, and network cards can all demand bus access simultaneously.
+
+If two bus masters drive the address or data lines at the same time, the signals collide, producing corrupt data and electrical faults. **Bus arbitration** is the hardware mechanism that decides which bus master gains control of the bus when multiple requests collide.
 
 <BusArbiter />
 
-A good scheme has to balance two things: **priority** (urgent things go first) and **fairness** (nothing waits forever).
+An arbitration scheme balances three primary design goals:
 
-| Scheme | How it works | Trade-off |
+1. **Priority**: Time-critical devices (like high-speed network interfaces or real-time video capture controllers with small buffers) must receive immediate bus access to prevent buffer overflow.
+2. **Fairness**: Low-priority devices (such as background CPU processing) must not be starved of bus access indefinitely. **Starvation** is the condition where a master never receives bus access because higher-priority devices monopolize the bus.
+3. **Hardware Overhead**: The arbitration protocol should require minimal dedicated wires and simple silicon logic.
+
+### 1. Daisy chaining (serial grant)
+
+In a **daisy chain** arbitration protocol, all bus masters share a single Bus Request (`BR`) line and a single Bus Busy (`BBUSY`) line. A single Bus Grant (`BG`) line leaves the central arbiter and loops serially through each device in physical order.
+
+| Signal Line | Topology | Functional Role |
 |---|---|---|
-| Daisy chain | The grant signal passes from device to device, and the first that wants it takes it | Simple, but priority is fixed, and distant devices can starve |
-| Centralized, parallel | Each device has its own request and grant lines to an arbiter | Flexible, but it takes more wires |
-| Distributed | Devices settle it among themselves | No single point of failure, but more logic in each device |
-| Round robin | Devices take turns | Fair, but with no way to rush urgent work |
+| **Bus Request (`BR`)** | Common shared line (wired-OR) | Pulled active by any master that needs bus access |
+| **Bus Busy (`BBUSY`)** | Common shared line (wired-OR) | Held active by the current bus master while executing a transfer |
+| **Bus Grant (`BG`)** | Serial daisy-chained wire | Leaves arbiter, passes from Master $i$ output to Master $i+1$ input |
 
-Who usually has the highest priority? Often the device with the least room for delay, like a DMA controller moving data from a disk that can't wait. The CPU often comes last, because it can always wait a little.
+- When one or more devices need the bus, they pull the common `BR` line active.
+- The arbiter senses `BR` and asserts the `BG` signal.
+- The `BG` signal enters Master 0 (the device physically closest to the arbiter).
+- If Master 0 requested the bus, it intercepts the grant, refuses to pass `BG` down the chain, asserts `BBUSY`, and takes control of the bus.
+- If Master 0 did not request the bus, it passes `BG` out to Master 1.
+- The grant signal continues snaking through devices until it reaches the first requesting master.
 
-An arbiter is often built around a [priority encoder](/courses/logic-design/comparators-decoders-encoders): the same circuit as a keypad that reports the highest key held down.
+**Trade-offs:** Daisy chaining uses only three control wires regardless of how many devices are attached, and the central arbiter is simple. However, priority is fixed by physical slot position: Master 0 always wins. If Master 0 generates continuous requests, all downstream devices suffer from starvation. In addition, grant propagation delay increases linearly with the number of devices ($O(N)$), and if any device in the chain fails or is removed, the grant signal breaks for all downstream masters.
+
+<Callout tone="orange" label="Trap: Daisy chaining is not fair">
+All devices share the same grant wire, but they do not receive equal turns. Physical position completely dictates priority. The master closest to the arbiter intercepts the grant first. If Master 0 has a continuous stream of transfers, downstream masters and the CPU receive zero bus time, causing starvation.
+</Callout>
+
+### 2. Centralized parallel arbitration
+
+In **centralized parallel arbitration**, each individual bus master has dedicated, independent Bus Request ($\text{REQ}_i$) and Bus Grant ($\text{GNT}_i$) lines connected directly to a central arbiter chip.
+
+| Master | Request Line | Grant Line | Connection to Central Arbiter |
+|---|---|---|---|
+| **Master 0 (e.g., GPU)** | $\text{REQ}_0$ | $\text{GNT}_0$ | Dedicated point-to-point trace pair |
+| **Master 1 (e.g., NVMe SSD)** | $\text{REQ}_1$ | $\text{GNT}_1$ | Dedicated point-to-point trace pair |
+| **Master 2 (e.g., Network)** | $\text{REQ}_2$ | $\text{GNT}_2$ | Dedicated point-to-point trace pair |
+| **Master 3 (e.g., CPU)** | $\text{REQ}_3$ | $\text{GNT}_3$ | Dedicated point-to-point trace pair |
+
+Because the arbiter sees every active request simultaneously, it can execute sophisticated prioritization algorithms:
+
+- **Fixed Priority**: Requests pass through an internal [priority encoder](/courses/logic-design/comparators-decoders-encoders#priority-encoders) (e.g., Master 0 > Master 1 > Master 2). Real-time devices are guaranteed minimal latency, but low-priority masters can still starve under heavy loads.
+- **Round-Robin (Rotating Priority)**: The arbiter maintains an internal pointer to the most recently served master, $k$. In the next arbitration cycle, priority begins at $(k + 1) \bmod N$. This guarantees fairness: no device can be starved, and maximum waiting time is bounded to $(N - 1)$ transactions.
+- **Dynamic Priority**: The operating system or hardware controller dynamically changes master priority levels by writing to configuration registers inside the arbiter.
+
+Parallel arbitration completes decisions in a single clock cycle and isolates device failures. Its drawback is line overhead: connecting $N$ masters requires $2N$ dedicated control lines.
+
+### 3. Distributed arbitration
+
+**Distributed arbitration** eliminates the central arbiter chip entirely. All bus masters participate in the arbitration decision using shared control and priority identification lines.
+
+A classic implementation is **distributed self-selection** (used in parallel SCSI and CAN bus architectures):
+
+- Each bus master is assigned a unique $k$-bit binary priority ID.
+- The arbitration lines use a wired-logic configuration with pull-up or pull-down resistors where one binary level is **dominant** (actively driven) and the other is **recessive** (passively pulled):
+  - In **active-high wired-OR** (used in parallel SCSI and described below in Problem 4), lines float to logic 0 (recessive) through pull-down resistors. Any device driving a logic 1 pulls the line high (dominant), so logic 1 overrides logic 0.
+  - In **open-collector / open-drain wired-AND** (used in CAN bus and I2C), pull-up resistors pull lines to logic 1 (recessive). Any device driving ground (logic 0) pulls the line low (dominant), so logic 0 overrides logic 1.
+- When arbitration begins, each requesting master asserts its priority ID on the shared arbitration lines, evaluating bit by bit from most significant bit down to least significant bit.
+- Under active-high wired-OR, if Master A has a 0 at bit $j$ (recessive) but senses that line $j$ is held at 1 by a competitor (dominant), Master A realizes that a higher-priority master is competing. Master A immediately withdraws its remaining priority bits and concedes the bus.
+- The master with the highest numerical priority sees its complete ID intact across all bit stages and wins ownership of the bus.
+
+Distributed arbitration provides high reliability with zero single point of failure, but it requires arbitration logic in every device interface.
+
+## Split-transaction protocols
+
+In a traditional synchronous or asynchronous bus transaction, a memory read holds the bus locked for the entire duration of the transfer:
+
+$$\text{Total Bus Lock Time} = T_{\text{address}} + T_{\text{memory\_access\_latency}} + T_{\text{data}}$$
+
+If main DRAM takes $50\text{ ns}$ to retrieve a cache block, the shared bus sits completely idle for dozens of clock cycles while the memory chips precharge and strobe row addresses. No other device can use the bus during this dead time.
+
+A **split-transaction bus** (also called a **pipelined bus** or **disconnected bus protocol**) divides a single logical read into two distinct, independent bus transactions:
+
+| Bus Timeline | Traditional Locked Bus | Split-Transaction Bus |
+|---|---|---|
+| **Step 1** | Master A drives Address and Read Command | Master A drives Request + Address + **Transaction Tag A**; **releases bus** |
+| **Step 2** | Bus sits idle; DRAM accesses row internally (locked) | Master B drives Request + Address + **Transaction Tag B**; **releases bus** |
+| **Step 3** | Bus sits idle; DRAM accesses row internally (locked) | Master C transfers a fast I/O word to Master D |
+| **Step 4** | DRAM finishes; drives Data to Master A; bus freed | Memory arbitrates bus; drives Reply Data + **Tag A**; Master A latches |
+| **Step 5** | Next master can finally begin arbitration | Memory arbitrates bus; drives Reply Data + **Tag B**; Master B latches |
+
+1. **Request Phase**: The master arbitrates for the bus, transmits the memory read command, the memory address, and a unique **Transaction Tag** (identifying the requesting master and buffer), and then **immediately releases the bus**.
+2. **Idle Latency**: While DRAM accesses the rows internally, the bus is completely free for other processors, DMA controllers, and graphics units to transfer data.
+3. **Reply Phase**: When DRAM finishes fetching the data, the memory controller arbitrates for the bus as a master. Once granted, it places the data word onto the data bus along with the matching Transaction Tag. The original requesting master recognizes its tag, captures the data, and completes the read.
+
+<Callout tone="orange" label="Trap: Split-transaction buses do not reduce single-read latency">
+A split-transaction bus does not make an individual memory read complete faster. An individual read takes slightly longer because the system must arbitrate twice and decode transaction tags. The gain is aggregate throughput: while memory works on a read request internally, other devices use the bus for their own transfers.
+</Callout>
+
+## Comparison of bus arbitration protocols
+
+| Arbitration Scheme | Number of Control Lines | Decision Latency | Fairness | Fault Tolerance |
+|---|---|---|---|---|
+| **Daisy Chain** | 3 lines total | $O(N)$ propagation delay | Poor (distant devices starve) | Low (single broken pin breaks chain) |
+| **Centralized Parallel (Fixed)** | $2N$ lines | 1 clock cycle | Poor (low priority starves) | High (isolated device failures) |
+| **Centralized Parallel (Round-Robin)** | $2N$ lines | 1 clock cycle | Perfect (bounded wait time) | High (isolated device failures) |
+| **Distributed (Self-Selection)** | $\log_2 N$ arbitration lines | Bitwise settling time | Flexible (ID dependent) | Maximum (no central point of failure) |
+
+## Exam-style practice
+
+### Part 1: Written exam and lab problems
+
+#### Problem 1: Synchronous vs. asynchronous bus bandwidth analysis
+
+<ModelAnswer>
+**Problem:** A computer architecture supports both a synchronous bus and an asynchronous bus. The bus data path is $32\text{ bits}$ wide ($4\text{ bytes}$).
+
+1. **Part A (Synchronous Single Word):** The synchronous bus operates at $66\text{ MHz}$ (clock period $T_{\text{cyc}} = 15.15\text{ ns}$). A single 4-byte read requires $1\text{ clock cycle}$ to transmit the address, $2\text{ clock cycles}$ of memory access latency (wait states), and $1\text{ clock cycle}$ for the slave to transfer the 4-byte data word. Calculate the total time required for a 4-byte read, the effective bandwidth in megabytes per second (decimal MB/s), and the bus transfer efficiency (data cycles divided by total cycles).
+2. **Part B (Synchronous Burst Mode):** The memory controller is upgraded to support a 4-word burst read ($16\text{ bytes}$). The burst requires $1\text{ address cycle}$, $2\text{ wait cycles}$ for the initial memory access, followed by $4\text{ consecutive data cycles}$ ($1\text{ cycle per 4-byte word}$). Calculate the new effective bandwidth and the percentage speedup compared to single-word reads.
+3. **Part C (Asynchronous Read):** On the asynchronous bus, the master takes $15\text{ ns}$ to set up the address lines. Memory access latency is $30\text{ ns}$. The four-phase handshake requires $4\text{ propagation and logic steps}$, each taking $8\text{ ns}$ (total handshake time $32\text{ ns}$). Latched data capture takes $10\text{ ns}$. Calculate the total time to complete a single 4-byte read and its effective bandwidth in decimal MB/s.
+
+---
+
+**Solution:**
+
+**Part A: Synchronous Single-Word Read**
+
+Total clock cycles required:
+
+$$C_{\text{total}} = C_{\text{address}} + C_{\text{wait}} + C_{\text{data}} = 1 + 2 + 1 = 4\text{ clock cycles}$$
+
+Total read duration at $66\text{ MHz}$ ($T_{\text{cyc}} = 15.15\text{ ns}$):
+
+$$T_{\text{read}} = 4 \times 15.15\text{ ns} = 60.60\text{ ns}$$
+
+Effective bus bandwidth:
+
+$$\text{Bandwidth} = \frac{4\text{ bytes}}{60.60 \times 10^{-9}\text{ s}} \approx 66.0\text{ MB/s (decimal)}$$
+
+Bus transfer efficiency:
+
+$$\text{Efficiency} = \frac{C_{\text{data}}}{C_{\text{total}}} = \frac{1}{4} = 25\text{\%}$$
+
+The bus is actively moving payload data during only $25\%$ of its operating time; $75\%$ of the time is consumed by addressing and waiting.
+
+**Part B: Synchronous Burst Mode Read**
+
+In burst mode, 4 words ($16\text{ bytes}$) are transferred. Total clock cycles:
+
+$$C_{\text{burst}} = C_{\text{address}} + C_{\text{wait}} + (4 \times C_{\text{data}}) = 1 + 2 + 4 = 7\text{ clock cycles}$$
+
+Total burst duration:
+
+$$T_{\text{burst}} = 7 \times 15.15\text{ ns} = 106.05\text{ ns}$$
+
+Effective bandwidth:
+
+$$\text{Bandwidth}_{\text{burst}} = \frac{16\text{ bytes}}{106.05 \times 10^{-9}\text{ s}} \approx 150.87\text{ MB/s (decimal)}$$
+
+Speedup:
+
+$$\text{Speedup} = \frac{\text{Bandwidth}_{\text{burst}}}{\text{Bandwidth}_{\text{single}}} = \frac{150.87}{66.0} \approx 2.29\times\text{ (a 128.6\% improvement)}$$
+
+By amortizing the address and wait cycles over four consecutive data transfers, the bus efficiency rises to $4/7 \approx 57.1\%$.
+
+**Part C: Asynchronous Read**
+
+Total time for the asynchronous transfer is the direct sum of its non-overlapping physical delays:
+
+$$T_{\text{async}} = T_{\text{address\_setup}} + T_{\text{access}} + T_{\text{handshake}} + T_{\text{latch}}$$
+$$T_{\text{async}} = 15\text{ ns} + 30\text{ ns} + 32\text{ ns} + 10\text{ ns} = 87\text{ ns}$$
+
+Effective asynchronous bandwidth:
+
+$$\text{Bandwidth}_{\text{async}} = \frac{4\text{ bytes}}{87 \times 10^{-9}\text{ s}} \approx 45.98\text{ MB/s (decimal)}$$
+
+Comparing the two: The synchronous bus ($60.60\text{ ns}$, $66.0\text{ MB/s}$) is faster than the asynchronous bus ($87\text{ ns}$, $45.98\text{ MB/s}$) for single-word transfers, because the asynchronous bus must pay $32\text{ ns}$ of four-phase handshaking delays.
+</ModelAnswer>
+
+#### Problem 2: Bus arbitration analysis: daisy chain vs. round-robin fairness
+
+<ModelAnswer>
+**Problem:** A computer system has 4 bus masters: Master 0 (GPU), Master 1 (NVMe SSD), Master 2 (Gigabit Network), and Master 3 (CPU). Each bus transaction takes exactly $100\text{ ns}$ of bus transmission time.
+
+1. **Part A (Daisy Chain Starvation):** The four devices are connected in a physical daisy chain in the order Master 0 $\to$ Master 1 $\to$ Master 2 $\to$ Master 3. Master 0 requires bus access $70\%$ of the total available time, and Master 1 requires bus access $25\%$ of the total time. If bus requests arrive independently, what percentage of the total bus bandwidth is left available for Master 2 and Master 3? What happens to the CPU (Master 3) if Master 0 increases its bus demand to $80\%$ and Master 1 to $25\%$?
+2. **Part B (Round-Robin Bounded Waiting Time):** The system replaces daisy chaining with a centralized round-robin arbiter. Each master is granted at most one $100\text{ ns}$ transaction per turn before the arbiter advances to the next requesting master. If Master 3 asserts a bus request, what is the guaranteed worst-case waiting time until Master 3's transaction begins, assuming all other three masters are also demanding the bus?
+3. **Part C (Bandwidth Allocation):** Under continuous maximum load where all four masters request the bus constantly, what fraction and percentage of total bus bandwidth does each master receive under round-robin arbitration?
+
+---
+
+**Solution:**
+
+**Part A: Daisy Chain Allocation and Starvation**
+
+In a daisy chain, upstream masters hold absolute priority over downstream masters.
+
+- Master 0 receives first choice and consumes $70\%$ of bus bandwidth.
+- The remaining bandwidth available to downstream devices is $100\% - 70\% = 30\%$.
+- Master 1 consumes $25\%$ out of this remaining capacity.
+- The remaining bandwidth available for Master 2 and Master 3 combined is:
+
+$$\text{Bandwidth}_{\text{remaining}} = 30\text{\%} - 25\text{\%} = 5\text{\%}$$
+
+Master 2 and Master 3 must share the remaining $5\%$.
+
+If Master 0 increases its demand to $80\%$ and Master 1 requires $25\%$:
+
+$$\text{Demand}_{\text{M0}} + \text{Demand}_{\text{M1}} = 80\text{\%} + 25\text{\%} = 105\text{\%} > 100\text{\%}$$
+
+Master 0 takes $80\%$, Master 1 takes the remaining $20\%$ (leaving Master 1 partially starved), and zero bandwidth ($0\%$) reaches Master 2 and Master 3. The CPU (Master 3) is completely starved of memory access, freezing all foreground user computation.
+
+**Part B: Round-Robin Bounded Waiting Time**
+
+In a 4-master round-robin arbiter, after serving Master 3, the arbiter services Master 0, Master 1, and Master 2 in rotation.
+
+The worst-case scenario occurs when Master 3 asserts its request right after the arbiter grant has already passed Master 3 and started serving Master 0.
+
+Before Master 3 can receive another grant, each of the other three masters can execute at most one $100\text{ ns}$ transaction:
+
+$$T_{\text{wait\_max}} = (N - 1) \times T_{\text{transaction}} = (4 - 1) \times 100\text{ ns} = 3 \times 100\text{ ns} = 300\text{ ns}$$
+
+Master 3 is guaranteed to begin its transaction within at most $300\text{ ns}$. Starvation cannot occur.
+
+**Part C: Round-Robin Bandwidth Allocation**
+
+When all four masters continuously request the bus, the round-robin arbiter cycles through them in strict sequence:
+
+$$\text{Sequence}: \text{M0} \to \text{M1} \to \text{M2} \to \text{M3} \to \text{M0} \to \dots$$
+
+Each master receives exactly one transaction per 4-transaction cycle.
+
+$$\text{Bandwidth Share} = \frac{1}{4} = 25\text{\%}$$
+
+Each master receives exactly $25\%$ of total bus bandwidth, providing complete fairness regardless of device priority or physical slot position.
+</ModelAnswer>
+
+#### Problem 3: Synchronous bus clock skew and maximum bus length
+
+<ModelAnswer>
+**Problem:** A synchronous backplane bus operates at a clock frequency of $66\text{ MHz}$ (clock period $T_{\text{clk}} = 15.15\text{ ns}$).
+
+The bus hardware specifications are:
+- Bus driver clock-to-output propagation delay ($t_{\text{co}}$): $4.0\text{ ns}$
+- Bus receiver setup time ($t_{\text{setup}}$): $3.5\text{ ns}$
+- Maximum clock skew between the clock generator and any peripheral slot ($t_{\text{skew}}$): $1.8\text{ ns}$
+- Signal propagation speed on printed circuit board (PCB) copper traces ($v$): $15\text{ cm/ns}$ ($0.15\text{ m/ns}$, roughly $50\%$ the speed of light)
+
+1. Formulate the fundamental timing inequality for reliable data transfer on a synchronous bus. Calculate the maximum allowable signal propagation delay ($t_{\text{prop}}$) along the bus conductors.
+2. Calculate the maximum allowable physical trace length ($L_{\text{max}}$) of the bus in centimeters.
+3. If an engineer attempts to increase the bus clock frequency to $133\text{ MHz}$ ($T_{\text{clk}} = 7.52\text{ ns}$) while keeping the same physical dimensions and transceiver chips, determine whether the bus can operate reliably. What physical phenomenon sets the upper frequency limit on wide parallel buses?
+
+---
+
+**Solution:**
+
+**Part 1: Maximum allowable signal propagation delay:**
+
+On a synchronous bus, data launched by a transmitter on one clock edge must arrive and stabilize at the receiver before the receiver's next clock edge.
+
+Accounting for clock-to-output delay, setup time, and clock skew:
+
+$$T_{\text{clk}} \ge t_{\text{co}} + t_{\text{prop}} + t_{\text{setup}} + t_{\text{skew}}$$
+
+Rearranging for the maximum allowable propagation delay:
+
+$$t_{\text{prop}} \le T_{\text{clk}} - t_{\text{co}} - t_{\text{setup}} - t_{\text{skew}}$$
+
+Substituting the given parameters:
+
+$$t_{\text{prop}} \le 15.15\text{ ns} - 4.0\text{ ns} - 3.5\text{ ns} - 1.8\text{ ns} = 5.85\text{ ns}$$
+
+Electrical signals have at most $5.85\text{ ns}$ to travel from the transmitting master to the farthest receiver slot.
+
+**Part 2: Maximum allowable physical bus length:**
+
+Using the propagation velocity on PCB traces ($v = 15\text{ cm/ns}$):
+
+$$L_{\text{max}} = t_{\text{prop}} \times v = 5.85\text{ ns} \times 15\text{ cm/ns} = 87.75\text{ cm}$$
+
+The physical bus length cannot exceed $87.75\text{ cm}$.
+
+**Part 3: Feasibility at $133\text{ MHz}$:**
+
+At $133\text{ MHz}$, the clock period is:
+
+$$T_{\text{clk}} = \frac{1}{133 \times 10^6\text{ s}^{-1}} \approx 7.5188\text{ ns} \approx 7.52\text{ ns}$$
+
+Calculating the required propagation margin:
+
+$$t_{\text{prop}} \le 7.52\text{ ns} - 4.0\text{ ns} - 3.5\text{ ns} - 1.8\text{ ns} = -1.78\text{ ns}$$
+
+Because $t_{\text{prop}} < 0$, the fixed transceiver and clock skew overheads ($4.0 + 3.5 + 1.8 = 9.30\text{ ns}$) exceed the entire clock period ($7.52\text{ ns}$) before signals even leave the driver pin.
+
+Reliable operation at $133\text{ MHz}$ is physically impossible on this topology without reducing trace lengths, eliminating clock skew, or transitioning to point-to-point links.
+
+**The physical limit:** Clock skew and capacitive line loading set the hard physical limit on parallel buses. When the clock period approaches the magnitude of trace propagation delay and clock skew, parallel synchronous buses cannot scale further.
+</ModelAnswer>
+
+#### Problem 4: Distributed arbitration using self-selection
+
+<ModelAnswer>
+**Problem:** A modular computing backplane uses distributed self-selection arbitration across a 4-bit shared arbitration bus ($ARB_3, ARB_2, ARB_1, ARB_0$).
+
+The arbitration lines use open-collector (wired-OR) logic:
+- If one or more devices assert logic 1, the bus line is pulled to logic 1.
+- If no device asserts logic 1, the line floats to logic 0.
+- Each device is assigned a unique 4-bit static priority identification number.
+
+Three devices compete for bus ownership at the same arbitration cycle:
+- Device A: Priority $10_{10} = 1010_2$
+- Device B: Priority $12_{10} = 1100_2$
+- Device C: Priority $9_{10} = 1001_2$
+
+1. Trace the arbitration resolution step by step from the most significant bit ($ARB_3$) down to the least significant bit ($ARB_0$). For each bit stage, state what each device asserts, what value appears on the shared bus, and which devices withdraw from competition.
+2. Which device wins ownership of the bus?
+3. If each bit resolution step requires $3\text{ ns}$ for driver activation, $4\text{ ns}$ for PCB trace propagation, and $3\text{ ns}$ for comparator settling, calculate the total arbitration delay for this 4-bit protocol.
+4. Compare distributed self-selection with centralized daisy chaining regarding single-point-of-failure vulnerabilities and control wiring requirements.
+
+---
+
+**Solution:**
+
+**Part 1: Step-by-step bit resolution trace:**
+
+- **Bit 3 ($ARB_3$):**
+  - Device A asserts 1. Device B asserts 1. Device C asserts 1.
+  - Bus line $ARB_3$ resolves to $1 \lor 1 \lor 1 = 1$.
+  - Each device compares its asserted bit (1) against the bus (1). Because they match, all three devices (A, B, and C) remain in competition.
+
+- **Bit 2 ($ARB_2$):**
+  - Device A asserts 0. Device B asserts 1. Device C asserts 0.
+  - Bus line $ARB_2$ resolves to $0 \lor 1 \lor 0 = 1$ (driven by Device B).
+  - Device A reads bus value 1 while its own priority bit is 0 ($0 \ne 1$). Device A detects that a higher-priority competitor is asserting $ARB_2$ and immediately withdraws from all remaining stages ($ARB_1$ and $ARB_0$).
+  - Device C reads bus value 1 while its own priority bit is 0 ($0 \ne 1$). Device C also withdraws.
+  - Device B reads bus value 1, matching its asserted bit, and remains in competition.
+
+- **Bit 1 ($ARB_1$):**
+  - Device A is inactive. Device C is inactive. Device B asserts 0.
+  - Bus line $ARB_1$ resolves to 0.
+  - Device B matches the bus and remains active.
+
+- **Bit 0 ($ARB_0$):**
+  - Only Device B participates, asserting 0.
+  - Bus line $ARB_0$ resolves to 0.
+
+**Part 2: Winning master:**
+
+Device B (priority $1100_2 = 12$) wins ownership of the bus because it possesses the highest numerical priority.
+
+**Part 3: Total arbitration delay:**
+
+Each bit stage requires:
+
+$$T_{\text{bit}} = T_{\text{drive}} + T_{\text{prop}} + T_{\text{settle}} = 3\text{ ns} + 4\text{ ns} + 3\text{ ns} = 10\text{ ns/bit}$$
+
+For a 4-bit arbitration bus:
+
+$$T_{\text{total\_arb}} = 4 \times 10\text{ ns} = 40\text{ ns}$$
+
+The bus arbitration completes in $40\text{ ns}$.
+
+**Part 4: Architectural comparison:**
+
+- **Fault Tolerance:** Distributed self-selection eliminates the centralized arbiter chip as a single point of failure. If an individual device fails or is removed from its chassis slot, the remaining devices continue to arbitrate normally. In contrast, in a daisy chain, any failed or physically unplugged device breaks the serial grant line, disabling all downstream slots.
+- **Wiring Overhead:** Centralized daisy chaining requires only three shared control lines (`BR`, `BG`, `BBUSY`), regardless of device count. Distributed self-selection requires $k = \lceil \log_2 N \rceil$ shared parallel arbitration lines ($ARB_{k-1} \dots ARB_0$), increasing PCB trace routing density.
+</ModelAnswer>
+
+#### Problem 5: Split-transaction bus throughput under memory latency
+
+<ModelAnswer>
+**Problem:** A 64-bit ($8\text{ bytes}$) synchronous system bus operates at $200\text{ MHz}$ (clock cycle time $T = 5\text{ ns}$). A processor reads a 32-byte cache line from a multi-bank main memory subsystem.
+
+The transaction breakdown is:
+- Address and read command transmission across the bus: $2\text{ clock cycles}$
+- Main memory access latency (row activation, column read, and internal transfer): $80\text{ clock cycles}$ ($400\text{ ns}$)
+- 32-byte data burst transfer from memory back across the bus: $4\text{ clock cycles}$ ($4 \times 8\text{ bytes} = 32\text{ bytes}$)
+
+1. **Part A (Circuit-Switched / Non-Split Bus):** In a traditional circuit-switched bus, the master holds the bus locked for the entire duration of the read operation. Calculate the total clock cycles and elapsed time per 32-byte read, the maximum memory read bandwidth in megabytes per second (decimal MB/s), and the bus utilization efficiency (data transfer cycles divided by total bus cycles).
+2. **Part B (Split-Transaction / Pipelined Bus):** In a split-transaction bus, the master releases the bus immediately after transmitting the 2-cycle request. During the 80 memory access cycles, the bus is completely free for other transactions. When the memory controller is ready with the 32-byte data block, it arbitrates for the bus and transmits the 4-cycle response. Assuming memory has sufficient independent banks to keep the bus fully scheduled, calculate the maximum sustained data bandwidth in decimal MB/s, the bus transfer efficiency, and the speedup over the circuit-switched bus.
+3. **Part C (Architectural Overhead):** Identify two hardware mechanisms that must be added to a computer system to support split-transaction bus operations.
+
+---
+
+**Solution:**
+
+**Part 1: Circuit-Switched (Non-Split) Bus:**
+
+Total clock cycles bus is locked:
+
+$$C_{\text{locked}} = C_{\text{request}} + C_{\text{latency}} + C_{\text{data}} = 2 + 80 + 4 = 86\text{ bus cycles}$$
+
+Total elapsed time per transaction at $200\text{ MHz}$ ($5\text{ ns}$ cycle):
+
+$$T_{\text{trans}} = 86 \times 5\text{ ns} = 430\text{ ns}$$
+
+Maximum sustained read throughput:
+
+$$\text{Throughput}_{\text{non-split}} = \frac{32\text{ bytes}}{430 \times 10^{-9}\text{ s}} \approx 74,418,605\text{ B/s} \approx 74.42\text{ MB/s (decimal)}$$
+
+Bus utilization efficiency:
+
+$$\text{Efficiency}_{\text{non-split}} = \frac{C_{\text{data}}}{C_{\text{locked}}} = \frac{4}{86} \approx 4.65\%$$
+
+The bus is actively transferring payload data for only $4.65\%$ of the time; the remaining $95.35\%$ is wasted waiting on memory silicon latency.
+
+**Part 2: Split-Transaction Bus:**
+
+In a split bus, each 32-byte transfer occupies the bus for only the request and response phases:
+
+$$C_{\text{bus\_active}} = C_{\text{request}} + C_{\text{data}} = 2 + 4 = 6\text{ bus cycles}$$
+
+Time the bus is occupied per 32-byte read:
+
+$$T_{\text{bus\_occupied}} = 6 \times 5\text{ ns} = 30\text{ ns}$$
+
+With interleaved memory banks pipelining multiple independent requests:
+
+$$\text{Throughput}_{\text{split}} = \frac{32\text{ bytes}}{30 \times 10^{-9}\text{ s}} \approx 1,066,666,667\text{ B/s} \approx 1,066.67\text{ MB/s (decimal)}$$
+
+Bus utilization efficiency:
+
+$$\text{Efficiency}_{\text{split}} = \frac{C_{\text{data}}}{C_{\text{bus\_active}}} = \frac{4}{6} \approx 66.67\%$$
+
+Speedup:
+
+$$\text{Speedup} = \frac{\text{Throughput}_{\text{split}}}{\text{Throughput}_{\text{non-split}}} = \frac{1,066.67\text{ MB/s}}{74.42\text{ MB/s}} \approx 14.33\times$$
+
+The split-transaction protocol provides a $14.33\times$ improvement in sustained data throughput by unlocking the bus during memory access latency.
+
+**Part 3: Required Architectural Mechanisms:**
+
+1. **Transaction Identifiers (Tags / Request IDs):** Because multiple masters can issue requests while responses return out-of-order, every request packet and corresponding response packet must include a hardware tag ID so the requesting CPU core can match incoming data with its original load instruction.
+2. **Queued Request and Response Buffers:** The memory controller and bus masters must implement FIFO queues to hold pending memory transactions waiting for memory banks or bus arbitration.
+</ModelAnswer>
+
+#### Problem 6: Multiplexed vs. dedicated address and data bus performance
+
+<ModelAnswer>
+**Problem:** A 32-bit microprocessor can be implemented using either a dedicated address/data bus or a time-multiplexed address/data bus. The CPU operates with a bus clock frequency of $50\text{ MHz}$ ($T_{\text{clk}} = 20\text{ ns}$).
+
+The two architectural options are:
+- **Design 1 (Dedicated Bus):** 32 separate physical address lines ($A_{31} \dots A_0$) and 32 separate physical data lines ($D_{31} \dots D_0$), requiring 64 package pins plus control signals.
+- **Design 2 (Multiplexed Bus):** 32 shared lines ($AD_{31} \dots AD_0$) carrying addresses during the first clock cycle and data during subsequent clock cycles, controlled by an Address Latch Enable (`ALE`) signal. Requires 33 package pins plus control signals.
+
+1. Calculate the package pin savings achieved by Design 2 over Design 1.
+2. Compare the timing of a single 4-byte read operation:
+   - On Design 1, the read requires 1 address cycle, 1 wait cycle for memory access, and 1 data cycle (total 3 cycles).
+   - On Design 2, the read requires 1 address cycle with `ALE`, 1 turnaround/wait cycle to float the bus, 1 wait cycle for memory access, and 1 data cycle (total 4 cycles).
+   Calculate the latency in nanoseconds and the effective bandwidth in decimal MB/s for both designs on single-word reads.
+3. Compare the timing of an 8-word burst read ($32\text{ bytes}$):
+   - Design 1 requires 1 address cycle, 1 wait cycle, and 8 consecutive data cycles (10 cycles total).
+   - Design 2 requires 1 address cycle with `ALE`, 2 turnaround/wait cycles, and 8 consecutive data cycles (11 cycles total).
+   Calculate the effective burst bandwidth in decimal MB/s for both designs and the percentage performance penalty of multiplexing in burst mode.
+
+---
+
+**Solution:**
+
+**Part 1: Package pin savings:**
+
+- Dedicated address and data bus pins: $32\text{ address} + 32\text{ data} = 64\text{ pins}$.
+- Multiplexed bus pins: $32\text{ multiplexed lines} + 1\text{ ALE pin} = 33\text{ pins}$.
+- Net pin reduction:
+  $$\Delta \text{Pins} = 64 - 33 = 31\text{ pins}$$
+  $$\text{Percentage reduction} = \frac{31}{64} \times 100\% \approx 48.44\%$$
+
+The multiplexed architecture saves 31 silicon package pins, substantially reducing packaging cost, socket footprint, and PCB routing complexity.
+
+**Part 2: Single-word read comparison:**
+
+- **Design 1 (Dedicated):**
+  $$C_{\text{single1}} = 3\text{ cycles}$$
+  $$T_{\text{single1}} = 3 \times 20\text{ ns} = 60\text{ ns}$$
+  $$\text{Bandwidth}_{\text{single1}} = \frac{4\text{ bytes}}{60 \times 10^{-9}\text{ s}} \approx 66.67\text{ MB/s}$$
+
+- **Design 2 (Multiplexed):**
+  $$C_{\text{single2}} = 4\text{ cycles}$$
+  $$T_{\text{single2}} = 4 \times 20\text{ ns} = 80\text{ ns}$$
+  $$\text{Bandwidth}_{\text{single2}} = \frac{4\text{ bytes}}{80 \times 10^{-9}\text{ s}} = 50.00\text{ MB/s}$$
+
+Latency penalty:
+
+$$\text{Penalty} = \frac{80\text{ ns} - 60\text{ ns}}{60\text{ ns}} \times 100\% = \frac{20}{60} \times 100\% \approx 33.33\%$$
+
+Design 2 incurs a $33.33\%$ latency penalty on isolated single-word accesses because the address must be latched before the bus lines can be turned around for data.
+
+**Part 3: 8-word burst read comparison:**
+
+- **Design 1 (Dedicated):**
+  $$C_{\text{burst1}} = 1 + 1 + 8 = 10\text{ cycles}$$
+  $$T_{\text{burst1}} = 10 \times 20\text{ ns} = 200\text{ ns}$$
+  $$\text{Bandwidth}_{\text{burst1}} = \frac{32\text{ bytes}}{200 \times 10^{-9}\text{ s}} = 160.00\text{ MB/s}$$
+
+- **Design 2 (Multiplexed):**
+  $$C_{\text{burst2}} = 1 + 2 + 8 = 11\text{ cycles}$$
+  $$T_{\text{burst2}} = 11 \times 20\text{ ns} = 220\text{ ns}$$
+  $$\text{Bandwidth}_{\text{burst2}} = \frac{32\text{ bytes}}{220 \times 10^{-9}\text{ s}} \approx 145.45\text{ MB/s}$$
+
+Burst latency penalty and bandwidth reduction:
+
+$$\text{Latency Penalty} = \frac{220\text{ ns} - 200\text{ ns}}{200\text{ ns}} \times 100\% = \frac{20}{200} \times 100\% = 10.0\%$$
+
+$$\text{Bandwidth Reduction} = \frac{160.00\text{ MB/s} - 145.45\text{ MB/s}}{160.00\text{ MB/s}} \times 100\% \approx 9.09\%$$
+
+In burst mode, the addressing and turnaround overhead is amortized across 8 data cycles, diminishing the latency penalty from $33.33\%$ down to $10.0\%$ (and bandwidth reduction to $9.09\%$).
+</ModelAnswer>
+
+---
+
+### Part 2: Multiple-choice practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="buses-and-arbitration"
+  practice
+  questions={[
+    {
+      id: "bus-p1",
+      prompt: "Why do high-performance motherboard system interconnects utilize synchronous clocking while external peripheral cables frequently employ asynchronous or self-timed protocols?",
+      options: [
+        { id: "a", text: "Synchronous buses eliminate handshaking delay across short traces where clock skew is tightly bounded, whereas variable cable lengths make clock distribution vulnerable to skew" },
+        { id: "b", text: "Asynchronous buses require high-precision quartz crystals inside every connector" },
+        { id: "c", text: "Synchronous buses are physically immune to capacitive trace loading" },
+        { id: "d", text: "Asynchronous protocols cannot transmit binary numbers greater than 255" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: On a motherboard, trace lengths and dielectric properties are fixed and tightly controlled, allowing clock skew to be bounded to sub-nanosecond values and enabling fast synchronous transfers without per-cycle handshaking overhead. Across external cables of arbitrary lengths, signal delays vary unpredictably, making synchronous clock distribution prone to timing skew. Asynchronous protocols exchange explicit Request/Acknowledge edges, guaranteeing reliable communication regardless of transmission distance. Option (b) is false because asynchronous links do not require shared clock crystals. Option (c) is false because trace capacitance affects all electrical lines. Option (d) is a completely fictitious limitation.",
+    },
+    {
+      id: "bus-p2",
+      prompt: "What is the primary structural vulnerability of daisy-chain bus arbitration?",
+      options: [
+        { id: "a", text: "If any intermediate device in the chain fails or is physically removed from its slot, the serial grant line is severed, disabling bus access for all downstream devices" },
+        { id: "b", text: "The central arbiter must provide a separate point-to-point grant wire to every peripheral slot" },
+        { id: "c", text: "Daisy chaining consumes more PCB routing traces than any other arbitration scheme" },
+        { id: "d", text: "It gives the peripheral in the last physical slot the highest priority" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a daisy chain, the Bus Grant signal propagates serially through every device in physical order. If any device is unseated, powered down, or experiences an internal logic failure, the grant signal cannot propagate further, permanently starving every subsequent device in the chain. Option (b) describes independent request (parallel) arbitration, not daisy chaining (which uses a single shared grant line). Option (c) is false because daisy chaining requires the fewest wires of any arbitration method. Option (d) is backwards: the first device closest to the arbiter has the highest priority.",
+    },
+    {
+      id: "bus-p3",
+      prompt: "What is the major architectural advantage of independent request (centralized parallel) arbitration over daisy chaining?",
+      options: [
+        { id: "a", text: "The central arbiter can dynamically implement programmable fairness algorithms (such as round-robin or least-recently-used), preventing device starvation" },
+        { id: "b", text: "It completely eliminates control lines from the backplane" },
+        { id: "c", text: "It requires no arbitration clock or timing logic" },
+        { id: "d", text: "It prevents Direct Memory Access controllers from accessing RAM" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In independent request arbitration, each master connects to the central arbiter via dedicated Request (REQ) and Grant (GNT) lines. Because the arbiter sees all pending requests simultaneously, it can execute sophisticated arbitration policies (fixed priority, round-robin, rotating priority, or fair queuing) to bound waiting time and guarantee that low-priority devices are never starved. Option (b) is false because parallel arbitration requires 2N control wires for N devices. Option (c) is false because central arbiters require clocking and state logic. Option (d) is incorrect because DMA controllers rely on bus arbitration to access memory.",
+    },
+    {
+      id: "bus-p4",
+      prompt: "Why must every packet on a split-transaction (pipelined) bus contain a transaction tag (request ID)?",
+      options: [
+        { id: "a", text: "To enable the system to return memory responses out-of-order and allow the requesting CPU master to match data with the correct pending instruction" },
+        { id: "b", text: "To encrypt the payload against electrical eavesdropping" },
+        { id: "c", text: "To convert parallel byte streams into serial bits" },
+        { id: "d", text: "To power down idle memory banks between transactions" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a split-transaction bus, multiple read requests from different processors or cores are outstanding concurrently. Different memory banks or peripheral devices may complete requests in varying amounts of time, returning response packets out-of-order. The transaction tag identifies which specific request the returning data belongs to, enabling the requesting master to route data into the correct destination register or buffer. Option (b) describes security encryption, not bus packet tagging. Option (c) describes serialization. Option (d) confuses bus protocol tagging with power management.",
+    },
+    {
+      id: "bus-p5",
+      prompt: "Why did modern high-speed system interconnects replace wide parallel buses (such as 32-bit PCI and 80-conductor IDE/ATA) with narrow point-to-point serial links (such as PCIe and SATA)?",
+      options: [
+        { id: "a", text: "Parallel buses suffer from clock skew across multiple copper traces and capacitive crosstalk, limiting their clock frequency, while differential serial links embed the clock and run at tens of gigahertz" },
+        { id: "b", text: "Point-to-point serial links require 64 pins per connection, making them physically larger" },
+        { id: "c", text: "Parallel buses cannot transmit binary floating-point numbers" },
+        { id: "d", text: "Modern processors can only execute instructions sequentially" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: On wide parallel buses, variations in PCB trace length and dielectric properties cause signals on different wires to arrive at slightly different times (clock skew and data skew), while capacitive and inductive coupling between adjacent parallel traces creates electrical noise (crosstalk). These physical limits capped parallel bus speeds at a few hundred megahertz. Serial point-to-point links (like PCIe) use low-voltage differential signaling (LVDS) across a single pair of wires with embedded clock encoding (8b/10b or 128b/130b), eliminating inter-trace skew and enabling signaling rates exceeding 32 GT/s. Option (b) is false because serial links require far fewer pins (4 to 8 per lane) than parallel buses (32 to 64 pins). Option (c) and Option (d) are baseless assertions.",
+    },
+  ]}
+/>

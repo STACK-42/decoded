@@ -1,0 +1,130 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Module Views: Decomposition and Uses
+
+A <Term id="module-view">module view</Term> shows the system as **units of implementation**: subsystems, packages, classes. It's the view developers live in.
+
+## What module structures answer
+
+- What is the main functional responsibility of each module?
+- What other software elements is a module **allowed** to use?
+- What other software does a module actually use or depend on?
+- Which modules are related by generalization or specialization (is-a)?
+
+**How do they help?** Mainly with **modifiability**: if you know how responsibilities are split and who depends on whom, you can predict what a change will touch.
+
+Four useful module styles:
+
+| Style | Relation it shows |
+| --- | --- |
+| <Term id="decomposition-style">Decomposition</Term> | is-part-of |
+| <Term id="uses-style">Uses</Term> | uses (depends on) |
+| <Term id="generalization-style">Generalization</Term> | is-a (inheritance) |
+| <Term id="data-model-style">Data model</Term> | relationships between data entities |
+
+This lesson covers the first two, which the lecture works through in detail.
+
+## The decomposition style
+
+The decomposition style breaks a system into units of implementation. A decomposition view shows **how the code is organized into modules and sub-modules**, and how the system's responsibilities are split among them.
+
+- **Relation:** is-part-of
+- **Elements:** modules (subsystem, package, class, …)
+- **Constraints:**
+  - no loops are allowed in the decomposition graph;
+  - a module can have only one parent.
+
+Those two constraints make every decomposition a **tree**.
+
+<BoxDiagram
+  title="A decomposition in UML package notation"
+  width={460}
+  height={220}
+  nodes={[
+    { id: "A", label: "A", x: 230, y: 115, w: 300, h: 170, kind: "package" },
+    { id: "B", label: "B", x: 160, y: 75, w: 90, h: 44 },
+    { id: "C", label: "C", x: 300, y: 75, w: 90, h: 44 },
+    { id: "D", label: "D", x: 160, y: 155, w: 90, h: 44 },
+    { id: "E", label: "E", x: 300, y: 155, w: 90, h: 44, kind: "package" },
+  ]}
+  caption="Module A is made of B, C, D and E. E is itself a package, so it can be decomposed further. Nesting shows is-part-of."
+/>
+
+The lecture's real example is the **ATIA-M** system. Drawn as a tree:
+
+<BoxDiagram
+  title="ATIA-M decomposition"
+  width={640}
+  height={250}
+  nodes={[
+    { id: "atia", label: "ATIA-M", x: 320, y: 30, w: 120, kind: "package", tone: "sky" },
+    { id: "win", label: "Windows apps", x: 140, y: 115, w: 140, kind: "package" },
+    { id: "web", label: "ATIA server-side\nWeb modules", x: 345, y: 115, w: 160, h: 48, kind: "package" },
+    { id: "java", label: "ATIA server-side\nJava modules", x: 535, y: 115, w: 160, h: 48, kind: "package" },
+    { id: "common", label: "Common code\nfor thick clients", x: 70, y: 210, w: 130, h: 48, kind: "package" },
+    { id: "tddt", label: "TDDT\nWindows app", x: 200, y: 210, w: 110, h: 48, kind: "package" },
+    { id: "utmc", label: "UTMC\nWindows app", x: 320, y: 210, w: 110, h: 48, kind: "package" },
+    { id: "more", label: "controller, business,\nservlet, CCS, …", x: 535, y: 210, w: 170, h: 48, kind: "plain" },
+  ]}
+  edges={[
+    { from: "win", to: "atia", head: "none" },
+    { from: "web", to: "atia", head: "none" },
+    { from: "java", to: "atia", head: "none" },
+    { from: "common", to: "win", head: "none" },
+    { from: "tddt", to: "win", head: "none" },
+    { from: "utmc", to: "win", head: "none" },
+    { from: "more", to: "java", head: "none" },
+  ]}
+  caption="Every module has exactly one parent, and there are no loops. The server-side Java modules break down further into adisc (a subsystem), controller, business, servlet, utils, itc (a subsystem), client, facades, entity, objects, test, tdc (a subsystem), taglibs, and the CCS subsystem (webservice, portal, security, common)."
+/>
+
+## The uses style
+
+> A module **uses** another module if its correctness depends on the correctness of the other.
+
+The uses view makes explicit which modules use which others to do their jobs.
+
+- **Relation:** uses (depends on)
+- **Elements:** modules
+- **What it's for:** planning **incremental development**. If A uses B, B has to work before A can be tested. So the uses graph tells you what to build first, and which parts of the system can be delivered on their own.
+- **Constraints:** what about loops? The notation allows loops in a uses graph, but they are a warning sign. If A uses B and B uses A, neither can be built or tested without the other. They become one big piece of work. Architects try to keep the uses graph loop-free.
+
+"Uses" is stronger than "calls": A can call B without *using* it (e.g. it fires off a notification and doesn't care if it arrives), and A can use B without calling it directly.
+
+<BoxDiagram
+  title="ATIA-M uses view"
+  width={600}
+  height={260}
+  nodes={[
+    { id: "common", label: "Common code\nfor thick clients", x: 300, y: 45, w: 170, h: 48, kind: "package" },
+    { id: "tddc", label: "TDDC\nWindows app", x: 160, y: 130, w: 140, h: 48, kind: "package" },
+    { id: "utmc", label: "UTMC\nWindows app", x: 440, y: 130, w: 140, h: 48, kind: "package" },
+    { id: "web", label: "ATIA server-side\nWeb modules", x: 160, y: 220, w: 170, h: 48, kind: "package" },
+    { id: "java", label: "ATIA server-side\nJava modules", x: 440, y: 220, w: 170, h: 48, kind: "package", tone: "sky" },
+  ]}
+  edges={[
+    { from: "tddc", to: "common", label: "«uses»", dashed: true },
+    { from: "utmc", to: "common", label: "«uses»", dashed: true },
+    { from: "tddc", to: "web", label: "«uses»", dashed: true },
+    { from: "utmc", to: "web", label: "«uses»", dashed: true },
+    { from: "web", to: "java", label: "«uses»", dashed: true },
+  ]}
+  caption="Dashed «uses» arrows, as in the lecture. Both Windows apps use the common code and the Web modules; the Web modules use the Java modules. Reading from the bottom up gives a build order: Java modules, then Web modules and common code, then the apps."
+/>
+
+<Callout tone="orange" label="Decomposition is not uses">
+The same modules appear in both views, but the lines mean different things. In decomposition, a line means *is part of* (and must form a tree). In uses, an arrow means *depends on for correctness* (and can go between any two modules). The lecture's second uses example, an online store, has modules `estore.webapp`, `web::estore`, `web::shared`, `web::accessControl`, `estore.core`, `admin.client`, `admin.core`, `util` and `dao`, joined by «use» arrows. Many of those arrows end at `util` and `dao`, so they have to work before most of the others can be tested.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Drawing "uses" in a decomposition view, which gives a module two parents. Decomposition is a tree of is-part-of; dependencies go in the uses view. Also, "uses" is not "calls": A uses B only if A's correctness depends on B.
+</Callout>
+
+## Readings for this lecture
+
+*Documenting Software Architectures* (Clements et al.): prologue P3 "Architecture Views", chapters 2, 3 and 5, and epilogue E.2 · *Software Architecture: Foundations, Theory, and Practice* (Taylor, Medvidovic, Dashofy).
+
+## Key terms
+
+<KeyTerms ids={["module-view", "decomposition-style", "uses-style", "generalization-style", "data-model-style"]} />

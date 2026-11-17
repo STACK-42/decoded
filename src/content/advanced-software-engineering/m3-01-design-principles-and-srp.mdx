@@ -1,0 +1,266 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, ItselfTest, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Design Principles and the Single Responsibility Principle
+
+Lecture 3 teaches the five SOLID principles, with every example taken from car software: driver-assistance features (<Term id="adas">ADAS</Term>) and infotainment (<Term id="ivi">IVI</Term>). Its core idea:
+
+> **Good design principles keep the impact of each change small and easy to verify.**
+
+## What is a design principle?
+
+> A **<Term id="design-principle">design principle</Term>** is a basic tool or technique that can be applied to designing or writing code to make that code more maintainable, flexible, or extensible.
+
+## Why automotive software makes the point sharply
+
+Car software is a hard test of design:
+
+- **Long lifecycles.** Vehicle software is maintained for 10 to 15+ years after production starts.
+- **Constant change.** <Term id="ota">Over-the-air (OTA) updates</Term>, new ADAS features, new sensor suppliers, new infotainment apps.
+- **Variant explosion.** One codebase serves many models, trims, markets and sensor configurations.
+- **Safety and compliance.** ISO 26262 (the functional-safety standard for car electronics), ISO/SAE 21434 (the car cybersecurity standard), and the UN regulations R155 and R156 (cybersecurity and software updates). Every change must be analyzed, re-verified and traced.
+
+So **poor design means expensive, risky change.** This is Lecture 2's [cost-friction principle](/courses/advanced-software-engineering/the-economics-of-architecture#the-cost-friction-principle) at class level: SOLID is a toolkit for keeping the cost of a change proportional to its scope. If one edit touches ten classes, all ten must be re-verified for safety.
+
+## OO principles you already know
+
+| OO principle | Car example |
+| --- | --- |
+| Encapsulate what varies | Hide each supplier's radar protocol behind one `RadarSensor` abstraction. |
+| Code to an interface, not an implementation | The navigation app depends on `IPositionProvider`, not on one GNSS (satellite positioning) chip's driver. |
+| Each class should have only one reason to change | `LaneDetector` changes when lane-detection algorithms change, not when the logging format changes. |
+| Classes are about behavior and functionality | `AdaptiveCruiseControl` is defined by what it does (keep distance, adjust speed), not by the data it stores. |
+
+<Term id="solid">SOLID</Term> turns these ideas into five concrete principles you can check a design against:
+
+| Letter | Principle | One-line meaning |
+| --- | --- | --- |
+| **S** | Single Responsibility | A class should have only one reason to change. |
+| **O** | Open–Closed | Open for extension, closed for modification. |
+| **L** | Liskov Substitution | Subtypes must be substitutable for their base types. |
+| **I** | Interface Segregation | Clients shouldn't depend on methods they don't use. |
+| **D** | Dependency Inversion | Depend on abstractions, not on concrete implementations. |
+
+## S: the Single Responsibility Principle
+
+> Every object in your system should have a single responsibility, and all the object's services should be focused on carrying out that single responsibility.
+
+This is the <Term id="srp">Single Responsibility Principle</Term> (SRP). In Robert C. Martin's words: **"A class should have only one reason to change."**
+
+### What is a "responsibility"?
+
+An ECU (electronic control unit) is one of the small computers in a car. Picture one "super-ECU" class that captures camera frames, detects lanes, decides on steering torque, logs diagnostics and draws graphics on the HUD (head-up display, the information projected onto the windscreen). Now picture five focused classes: `CameraDriver`, `LaneDetector`, `LaneKeepController`, `DiagnosticLogger`, `HudRenderer`.
+
+In the first design, **a change to the HUD layout can break lane keeping**, because both live in the same class. In the second, each class changes for one reason only. Bundling unrelated jobs into one module creates hidden <Term id="coupling">coupling</Term> and low <Term id="cohesion">cohesion</Term>, which makes simple changes risky and expensive to verify. A class like that is called a <Term id="god-class">god class</Term>.
+
+### Responsibility = actor
+
+A reason to change is a *person or team who asks for changes*, called an <Term id="actor">actor</Term>.
+
+| Actor | Asks for changes to… | Domain |
+| --- | --- | --- |
+| Perception algorithm team | lane and object detection | computer vision, neural-network inference |
+| Functional safety team | plausibility checks, safe states | ISO 26262 <Term id="asil">ASIL</Term> ratings, safe fallback |
+| Diagnostics / service team | fault codes (DTCs, diagnostic trouble codes), logging formats | Diagnostic Event Manager |
+| HMI / UX team | HUD and cluster display | infotainment, head-up display (QM) |
+
+If more than one actor can ask for changes to a class, it has more than one responsibility. The refined definition from *Clean Architecture*: **"A module should be responsible to one, and only one, actor."**
+
+### The "itself" test
+
+A quick way to spot SRP violations. For each method, read this sentence aloud:
+
+> "The **[class]** **[method]**s itself."
+
+If the sentence makes sense, the method probably belongs. If it sounds wrong, move it. Here is the class under test:
+
+```java
+public class FrontCamera {
+    public Frame captureFrame() { /* ... */ }
+    public void adjustExposure() { /* ... */ }
+    public void runSelfTest() { /* ... */ }
+    public List<Lane> detectLanes() { /* ... */ }
+    public void reportFault(int dtc) { /* ... */ }
+    public void renderOnHud(Frame f) { /* ... */ }
+    public void cleanLens() { /* ... */ }
+}
+```
+
+Decide for each method before revealing:
+
+<ItselfTest />
+
+**Context matters.** A "smart camera" that runs perception on its own chip *can* detect lanes itself, so it passes the test in that context. And the camera *detects* its own internal faults (self-test), but *storing and managing* fault codes belongs to diagnostics.
+
+For methods with parameters, put the parameter in the sentence: "The `LaneDetector` detects lanes *in a frame* itself" makes sense; so does "The `HudRenderer` renders *the lanes* itself" and "The `SensorCleaningSystem` cleans *a sensor* itself."
+
+### The refactored design
+
+<DiagramTabs
+  title="FrontCamera before and after SRP"
+  tabs={[
+    {
+      label: "Before: one class",
+      width: 560,
+      height: 190,
+      nodes: [
+        { id: "fc", label: "FrontCamera\ncapture · exposure · self-test\ndetectLanes · reportFault\nrenderOnHud · cleanLens", x: 280, y: 85, w: 280, h: 100, tone: "orange" },
+        { id: "a1", label: "perception team", x: 80, y: 30, kind: "plain" },
+        { id: "a2", label: "diagnostics team", x: 480, y: 30, kind: "plain" },
+        { id: "a3", label: "HMI team", x: 80, y: 160, kind: "plain" },
+        { id: "a4", label: "body control", x: 480, y: 160, kind: "plain" },
+      ],
+      edges: [
+        { from: "a1", to: "fc", dashed: true },
+        { from: "a2", to: "fc", dashed: true },
+        { from: "a3", to: "fc", dashed: true },
+        { from: "a4", to: "fc", dashed: true },
+      ],
+      caption: "Four actors can all demand changes to one class. Any of their changes can break the others' features.",
+    },
+    {
+      label: "After: one class per actor",
+      width: 600,
+      height: 190,
+      nodes: [
+        { id: "fc", label: "FrontCamera\ncapture · exposure · self-test", x: 300, y: 40, w: 240, h: 48, tone: "sky" },
+        { id: "ld", label: "LaneDetector", x: 90, y: 140, w: 130 },
+        { id: "dem", label: "DiagnosticEvent\nManager", x: 235, y: 140, w: 130, h: 48 },
+        { id: "hud", label: "HudRenderer", x: 380, y: 140, w: 120 },
+        { id: "clean", label: "SensorCleaning\nSystem", x: 525, y: 140, w: 130, h: 48 },
+      ],
+      edges: [{ from: "ld", to: "fc", label: "uses frames", dashed: true }],
+      caption: "Each class now answers to one actor and has one reason to change.",
+    },
+  ]}
+/>
+
+```java
+// Sensor hardware abstraction
+public class FrontCamera {
+    public Frame captureFrame() { /* ... */ }
+    public void adjustExposure() { /* ... */ }
+    public SelfTestResult runSelfTest() { /* ... */ }
+}
+
+// Perception algorithm
+public class LaneDetector {
+    public List<Lane> detectLanes(Frame frame) { /* ... */ }
+}
+
+// Diagnostics (e.g. AUTOSAR DEM)
+public class DiagnosticEventManager {
+    public void reportFault(FaultEvent event) { /* ... */ }
+}
+
+// HMI visualization (QM)
+public class HudRenderer {
+    public void render(List<Lane> lanes) { /* ... */ }
+}
+
+// Actuator / body control
+public class SensorCleaningSystem {
+    public void clean(Sensor sensor) { /* ... */ }
+}
+```
+
+**The safety benefit (ISO 26262).** Separate classes make it possible to argue <Term id="ffi">Freedom From Interference (FFI)</Term>: perception (ASIL B) and HUD rendering (QM, not safety-rated) no longer share memory or execution context inside one god class.
+
+## SRP in infotainment: media library search
+
+**Scenario:** the head unit searches music from USB, Bluetooth and streaming sources.
+
+```java
+public class MediaLibrary {
+    private List<Track> tracks;
+
+    public List<Track> search(TrackFilter filter) {
+        List<Track> results = new ArrayList<>();
+        for (Track track : tracks) {
+            TrackMetadata meta = track.getMetadata();
+            String artist = filter.getArtist();
+            if (artist != null && !artist.isEmpty()
+                && !artist.equalsIgnoreCase(meta.getArtist())) continue;
+            if (filter.getGenre() != null && filter.getGenre() != meta.getGenre()) continue;
+            if (filter.getSource() != null && filter.getSource() != meta.getSource()) continue;
+            if (filter.getYear() != 0 && filter.getYear() != meta.getYear()) continue;
+            results.add(track);
+        }
+        return results;
+    }
+}
+```
+
+### What's wrong with it?
+
+- **<Term id="feature-envy">Feature envy</Term>:** `MediaLibrary` reaches into every attribute of `TrackMetadata` and `TrackFilter`. It uses other objects' data more than its own, a classic <Term id="code-smell">code smell</Term>.
+- **Two reasons to change:** (1) managing and indexing the track collection, and (2) changing how tracks are compared and filtered.
+- **Violates <Term id="information-expert">Information Expert (GRASP)</Term>:** the class that owns the criteria, `TrackFilter`, should decide whether a track matches.
+- **Maintenance nightmare:** adding audio-format filters (FLAC, Dolby) or parental controls forces edits to `MediaLibrary`.
+
+### After: delegation
+
+Move the matching logic to the class that owns the criteria. `MediaLibrary` uses <Term id="delegation">delegation</Term>: it hands the decision to the filter.
+
+```java
+// Responsibility: manage the track collection
+public class MediaLibrary {
+    private List<Track> tracks;
+
+    public List<Track> search(TrackFilter filter) {
+        List<Track> results = new ArrayList<>();
+        for (Track track : tracks) {
+            if (filter.matches(track.getMetadata())) {   // delegate the decision
+                results.add(track);
+            }
+        }
+        return results;
+    }
+}
+
+// Responsibility: evaluate search criteria
+public class TrackFilter {
+    private String artist; private Genre genre;
+    private MediaSource source; private int year;
+
+    public boolean matches(TrackMetadata meta) {
+        if (artist != null && !artist.isEmpty()
+            && !artist.equalsIgnoreCase(meta.getArtist())) return false;
+        if (genre != null && genre != meta.getGenre()) return false;
+        if (source != null && source != meta.getSource()) return false;
+        if (year != 0 && year != meta.getYear()) return false;
+        return true;
+    }
+}
+```
+
+**What we gained:**
+
+- new criteria (audio format, bitrate, explicit content) change only `TrackFilter`;
+- `MediaLibrary` stays untouched: its only reason to change is storing and indexing tracks;
+- no more feature envy: the loop just calls `filter.matches()`;
+- behavior is exactly the same (case-insensitive artist match, empty fields mean "any").
+
+That last point is what makes this a <Term id="refactoring">refactoring</Term>: the internal structure improved, but nothing observable from outside changed.
+
+<Callout tone="mint" label="Next">
+Isolating what varies, so new capabilities can be added without editing existing classes, leads straight to the [Open–Closed Principle](/courses/advanced-software-engineering/open-closed-principle).
+</Callout>
+
+## Think and defend: SRP vs. latency
+
+*One of the lecture's three \"Think & Defend\" dilemmas. The slides pose the question; the model answer was written for this course.*
+
+In an ADAS domain controller, the perception pipeline detects obstacles (ASIL B), while telemetry logging writes diagnostic trace buffers to flash memory (QM, not safety-rated). A performance engineer merges both into one `FrontCameraPipeline` class to remove the inter-thread queue and save 3.5 ms. The safety architect objects that this violates SRP and ISO 26262 Freedom From Interference. Why is paying the 3.5 ms (or using a lock-free ring buffer) the right call instead of merging?
+
+<ModelAnswer>
+Once perception and logging share one class, they share memory and an execution context. A slow flash write, a full buffer or a logging bug can now delay or corrupt obstacle detection. So a non-safety (QM) part can interfere with a safety-rated (ASIL B) part. That is exactly what Freedom From Interference (above) forbids. The whole merged class would then have to be developed and certified to ASIL B, logging included, and every logging change would need safety re-verification (two actors, one class: an SRP violation). 3.5 ms is a measurable, bounded cost; interference is an unbounded safety risk. If latency really matters, keep the classes separate and connect them with a lock-free ring buffer, which removes most of the queue cost without sharing state.
+</ModelAnswer>
+
+<Callout tone="orange" label="Common mistake">
+Reading SRP as "a class should do one thing" or "have one method." FrontCamera keeps three methods after the refactoring. SRP is about *reasons to change*: one actor (team or stakeholder) per class.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["design-principle", "solid", "srp", "actor", "god-class", "feature-envy", "information-expert", "delegation", "refactoring", "ffi"]} />

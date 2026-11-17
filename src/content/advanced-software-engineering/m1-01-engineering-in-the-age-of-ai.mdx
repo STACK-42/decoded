@@ -1,0 +1,99 @@
+import { Callout, Epigraph } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Software Engineering in the Age of AI
+
+<Epigraph quote="The only way to go fast, is to go well." by="Robert C. Martin" source="Clean Architecture, 2017" />
+
+This course has one idea running through every lecture:
+
+> **Architecture is the decisions that are hard to change later.**
+
+Choosing a programming language, splitting a system into services, deciding which module may call which: once a team has built on top of these choices, undoing them is slow and expensive. Software engineering is about making those choices well, on purpose.
+
+## What this course is for
+
+The course sets itself three goals.
+
+1. **Drop the toy mental models.** Textbook examples like `Dog extends Animal` teach syntax, not engineering. Real systems have to be reliable, maintainable, scalable and often distributed, and that is the kind of system this course reasons about.
+2. **Master structural <Term id="trade-off">trade-offs</Term>.** Every design decision has a cost. You will learn to name that cost and, where possible, measure it.
+3. **Command the AI-augmented <Term id="sdlc">SDLC</Term>.** <Term id="llm">LLMs</Term> now write code faster than any person. Without rules and checks around them, they also produce <Term id="technical-debt">technical debt</Term> faster than any person.
+
+The motto above, from Robert C. Martin, is the course's prime directive. Speed that comes from cutting corners is borrowed speed, and it gets paid back with interest.
+
+## Three wrong ideas about AI and code
+
+Early in the generative-AI boom, many people made the same three mistakes.
+
+| Wrong idea | What people believed | Why it fails |
+| --- | --- | --- |
+| **The scaling myth** | Bigger models trained on more data will fix every logic and structure problem on their own. | Size doesn't give a model memory, a plan, or a way to check its own work. |
+| **"Wait for GPT-N"** | If a model can't handle a 50,000-line codebase or a bug spread over many files, just wait for the next version. | It's a way of not doing engineering. The problem is the missing structure around the model, not only the model. |
+| **The black-box fallacy** | Treat the LLM as an oracle that "one-shots" production code with no boundaries around it. | That is wishful thinking, not engineering. |
+
+## Case study: an AI agent without a harness
+
+Anthropic tested early versions of its model, Claude, on SWE-bench Verified: a benchmark (a fixed set of test problems used to compare systems) of 500 complex engineering tasks. Left on its own, even a very capable model hit the same failures again and again.
+
+- **Premature victory.** It declared a task finished as soon as the code compiled, leaving logic bugs that produced no error.
+- **<Term id="context-rot">Context rot</Term> and drift.** On long tasks the model's <Term id="context-window">context window</Term> filled up. It started to override the constraints it had been given at the start, or got stuck in loops of repairing its own repairs.
+- **Overwhelmed execution.** Showing it every environment detail and every tool up front made it spend its tokens reading instead of solving. (Tokens are the chunks of text a model reads and writes. They are limited, and they cost money.)
+
+The team summed it up with an analogy: the model was *like a brilliant, world-class engineer with severe short-term memory, locked in a room with no pen, no paper and no processes.* The intelligence was there. Everything that lets an engineer use intelligence over a long task was missing.
+
+## Software engineering strikes back: the harness
+
+The breakthrough came from changing the question. Instead of *"how do we make the model smarter?"*, the team asked *"how do we build a <Term id="deterministic">deterministic</Term> system that keeps the model on track?"* That system is called an <Term id="agent-harness">agent harness</Term>. It used four ideas, all of them classic software engineering.
+
+1. **The initializer/worker pattern.** Separate setting up from doing. An *initializer agent* maps the repository and writes a task list (`feature_list.json`). *Worker agents* then each start in a fresh, clean context window, and they hand over state through git commits and progress notes (`NOTES.md`), not through memory.
+2. **Context compaction and progressive tooling.** Remove context that is no longer needed, and load a tool's description only when the tool is about to be used.
+3. **Hard <Term id="verification-gate">verification gates</Term>.** Automated test suites and strict exit codes decide when work is done. The model can't declare victory; the tests have to pass. (Lecture 2 calls automated checks like this [fitness functions](/courses/advanced-software-engineering/the-architects-role#the-eight-expectations-of-an-architect) when they guard an architecture.)
+4. **Architectural inversion.** The intelligence isn't only in the model's weights. It is also in the harness that constrains, coordinates and checks the model.
+
+<BoxDiagram
+  title="The initializer/worker harness"
+  width={600}
+  height={250}
+  nodes={[
+    { id: "init", label: "Initializer\nagent", x: 90, y: 60, tone: "sky" },
+    { id: "repo", label: "Repository", x: 90, y: 190, kind: "store" },
+    { id: "list", label: "feature_list.json", x: 300, y: 60, kind: "note", w: 150 },
+    { id: "w1", label: "Worker 1\n(fresh context)", x: 300, y: 190, w: 140, tone: "violet" },
+    { id: "w2", label: "Worker 2\n(fresh context)", x: 500, y: 190, w: 140, tone: "violet" },
+    { id: "git", label: "git commits\n+ NOTES.md", x: 500, y: 60, kind: "store", w: 130 },
+  ]}
+  edges={[
+    { from: "init", to: "repo", label: "maps" },
+    { from: "init", to: "list", label: "writes" },
+    { from: "list", to: "w1", label: "next task" },
+    { from: "w1", to: "git", label: "saves state" },
+    { from: "git", to: "w2", label: "reads state" },
+  ]}
+  caption="State lives in files and commits, not in a model's memory. Each worker starts clean and picks up where the last one stopped."
+/>
+
+<Callout tone="mint" label="Notice">
+Every part of the harness is ordinary engineering: splitting responsibilities, keeping state outside the worker, loading things on demand, and automated tests as the definition of done. Lecture 3's [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp) is the same instinct applied to classes.
+</Callout>
+
+## The moral of the harness
+
+The case study's lesson is: **an LLM is just an engine; the harness is the vehicle.**
+
+- **Raw scale is not enough.** Without state management, error-recovery loops and *context garbage collection* (clearing out context that is no longer needed), even a huge model falls apart on messy real-world tasks.
+- **Classical rigor still matters.** Software architecture, *bounded contexts* (clear boundaries around each part of the system and its vocabulary), and automated quality gates have not become obsolete.
+- **The strategic inversion.** Classical system design is now the main tool for turning a stream of non-deterministic tokens into reliable production software.
+
+In the age of AI, traditional software engineering hasn't died. It has become the thing that multiplies what AI can do.
+
+<Callout tone="orange" label="Common mistake">
+Thinking an AI agent's "done" means done. The case study's first failure, premature victory, is exactly that. Done means a deterministic check, such as the test suite, says so. A second trap: treating a bigger context window as memory. It still fills up and rots; the harness keeps state in files instead.
+</Callout>
+
+## Readings for this lecture
+
+*Clean Architecture* (Martin), chapters 1–2 · *Fundamentals of Software Architecture* (Richards & Ford), chapters 1–2 · *Designing Machine Learning Systems* (Huyen), chapter 1.
+
+## Key terms
+
+<KeyTerms ids={["sdlc", "technical-debt", "llm", "context-window", "context-rot", "agent-harness", "deterministic", "verification-gate"]} />

@@ -1,0 +1,183 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Streamify: The Integrated Architecture, ADRs and Evaluation
+
+[Stage 4](/courses/advanced-software-engineering/choosing-styles-per-subsystem) chose five styles, one subsystem at a time. This lesson puts them back together, records the key decisions, and evaluates the result.
+
+## Five styles, one system
+
+<BoxDiagram
+  title="The integrated heterogeneous architecture"
+  width={640}
+  height={330}
+  nodes={[
+    { id: "cl", label: "S1 Client (layered)\npresentation · features · core · platform", x: 320, y: 35, w: 380, h: 52, tone: "sky" },
+    { id: "gw", label: "S2 API gateway / BFF\ndomain services, each layered:\nS3 · S4 · S5 · S6 · S11 · S7 keys", x: 115, y: 160, w: 210, h: 74, tone: "sky" },
+    { id: "cdn", label: "S7 CDN edge", x: 330, y: 140, w: 130, tone: "mint" },
+    { id: "obj", label: "Object store", x: 330, y: 205, w: 130, kind: "store" },
+    { id: "bus", label: "S9 Event gateway → bus\n(pub/sub topics)", x: 535, y: 140, w: 190, h: 50, tone: "orange" },
+    { id: "s12", label: "S12 Royalty\n(P&F batch)", x: 460, y: 245, w: 120, h: 48 },
+    { id: "s11", label: "S11 Ads rep.", x: 580, y: 245, w: 110, h: 34 },
+    { id: "s10", label: "S10 Data platform\n(P&F dataflows)", x: 540, y: 305, w: 170, h: 46 },
+    { id: "s8", label: "S8 Ingestion\n(pipe-and-filter)", x: 330, y: 295, w: 150, h: 48, tone: "violet" },
+  ]}
+  edges={[
+    { from: "cl", to: "gw", label: "client-server (sync)" },
+    { from: "cl", to: "cdn", label: "client-server (CDN)" },
+    { from: "cl", to: "bus", label: "messaging (async)" },
+    { from: "obj", to: "cdn", dashed: true },
+    { from: "s8", to: "obj", label: "publish" },
+    { from: "bus", to: "s12", dashed: true },
+    { from: "bus", to: "s11", dashed: true },
+    { from: "bus", to: "s10", dashed: true, bend: -30 },
+    { from: "gw", to: "bus", label: "domain events", dashed: true, bend: 60 },
+  ]}
+  caption="Read it top-down: one layered client → three connector types (sync API, CDN bytes, async events) → layered services, pipe-and-filter pipelines and a messaging backbone. Recommendations are served back through the client-server path."
+/>
+
+What each style does:
+
+- **Layered** organises the code inside each deployable unit.
+- **Client-server** handles the synchronous, authoritative, interactive paths.
+- **P2P** (historically) took load off the bandwidth-heavy delivery of audio that never changes.
+- **Pipe-and-filter** handles bulk transformation of content and data.
+- **Messaging** is the backbone that decouples the producers of facts from their many consumers, and feeds the pipelines.
+
+### From ASRs to styles
+
+| ASR | Primary style(s) | Supporting tactics |
+| --- | --- | --- |
+| QA1 ≤ 250 ms | client-server (CDN) + layered core; historically P2P | local cache, prefetch, parallel key + chunk, small first chunk |
+| QA3 15 M streams | client-server (stateless, CDN); historically P2P self-scaling | horizontal scaling, edge caching |
+| QA5 no event loss | messaging | durable topics, client retry buffer, idempotent consumers |
+| QA6 independent deploy | messaging + services + layered | owned data, versioned APIs, schema registry |
+| C1 licensing | client-server (central authority) | server-side rights checks, encrypted audio, key service |
+
+**The test of a good architecture:** every ASR traces to at least one style and concrete tactics, and no style is there without an ASR behind it.
+
+## Architecture decision records
+
+ADRs ([Lecture 2's Second Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture) in practice) can be short. What matters is **context → decision → consequences**.
+
+**ADR-001: Hybrid P2P + server audio delivery (2008).** *Status: superseded by ADR-004.*
+- *Context:* the instant-play promise (QA1), high bandwidth cost (C5), mostly desktop users, little capital.
+- *Decision:* desktop clients act as peers serving encrypted cached chunks. Servers provide first chunks, tracking, authority and fallback.
+- *Consequences:* much lower server egress and self-scaling capacity; but a complex client, harder operations, dependence on users' resources, and no help for mobile.
+
+**ADR-004: Retire P2P in favour of server/CDN delivery (~2014).** *Status: accepted.*
+- *Context:* mobile-first usage, lower delivery costs, P2P's operational complexity, the goal of predictable quality.
+- *Decision:* serve all audio through a CDN and own infrastructure (client-server). Keep aggressive client caching and prefetching.
+- *Consequences:* simpler clients, predictable latency, works on every device type; but higher direct bandwidth cost and more dependence on CDN providers.
+
+The <Term id="superseded">superseded</Term> status keeps the history: a future team can see *why* P2P was used and *why* it stopped.
+
+**ADR-002: Asynchronous pub/sub messaging for client and business events.** *Status: accepted.*
+- *Context:* ~700 K events/s at peak, royalty-critical data (QA5), many consumer teams (QA6), playback must not block (QA1).
+- *Decision:* all events go through a durable, partitioned pub/sub bus with at-least-once delivery. Consumers must be idempotent.
+- *Rejected:* synchronous REST ingestion (temporal coupling); clients writing directly to the database (security, coupling); nightly log shipping (latency, fragility).
+- *Consequences:* decoupling, burst absorption, replay; but eventual consistency, duplicates, and a need for schema governance and tracing.
+
+**ADR-003: Ingestion as pipe-and-filter with durable queues.** *Status: accepted.*
+- *Context:* large ingestion volumes, codecs and steps added often, stages with very different resource needs (transcoding is CPU-heavy).
+- *Decision:* each step is an independent, stateless filter; stages are linked by durable queues; shared formats are defined by schemas.
+- *Consequences:* independent scaling, extensibility, restartability; but end-to-end latency of minutes (acceptable for ingestion) and the cost of keeping format contracts in sync.
+
+ADR-002 is the strongest form: it lists three rejected alternatives, each with a reason, so reviewers can see what was considered.
+
+## Evaluating the architecture (ATAM-lite)
+
+A lightweight version of <Term id="atam">ATAM</Term> looks for three things.
+
+**<Term id="sensitivity-point">Sensitivity points</Term>:** one parameter, a big effect on one or more qualities.
+
+- client cache size and prefetch policy → QA1 latency, QA8 cost, device storage;
+- the partitioning key of event topics → ordering guarantees vs. consumer parallelism;
+- the CDN cache-hit ratio → the single largest lever on cost and latency.
+
+**<Term id="trade-off-point">Trade-off points</Term>:** one decision that helps one quality and hurts another.
+
+| Decision | Improves | Degrades |
+| --- | --- | --- |
+| P2P delivery | cost, scalability | predictability, client complexity, mobile support |
+| at-least-once messaging | reliability (no loss) | needs dedupe → complexity |
+| strict layering in the client | modifiability, portability | raw audio-path performance (→ relaxed layering there) |
+| many fine-grained services | team autonomy (QA6) | operational complexity, network latency |
+
+**<Term id="architecture-risk">Risks</Term> and non-risks:**
+
+| Finding | What's at stake | Mitigation |
+| --- | --- | --- |
+| Risk: an event schema changes without coordination and breaks downstream royalty jobs | QA5, royalty correctness (BD3) | schema registry + compatibility checks in CI |
+| Risk: a CDN provider outage | QA1, QA4 (playback availability) | multi-CDN strategy + fallback to origin |
+| Risk: stale geo-rights data in catalog caches leads to licensing violations | C1 | short cache lifetimes (TTLs) on rights data + a server-side check at key issuance |
+| Non-risk: recommendation jobs run for hours | nothing: they are offline | none needed; they don't affect interactive qualities |
+
+Risks come from our own decisions: the CDN dependency came from ADR-004; schema coupling came from ADR-002 and ADR-003. Every decision brings new risks. For C1 the design uses **defence in depth**: caches may be stale, so the key service checks rights again before handing out a key. No key, no playback.
+
+## Seven common mistakes
+
+| # | Mistake | What the lecture showed instead |
+| --- | --- | --- |
+| 1 | "One style for everything." ("Spotify is microservices / client-server") | styles are applied per concern and combined |
+| 2 | Unmeasurable qualities: "fast", "scalable" | six-part scenarios with response measures (≤ 250 ms median) |
+| 3 | Ignoring connectors: boxes with no sync/async, durability or direction | the connector catalog as a first-class element |
+| 4 | Confusing views: "layered or client-server?" | module view and runtime view complement each other |
+| 5 | Justifying with fashion: "we used Kafka because it's popular" | every choice mapped to an ASR or constraint |
+| 6 | Forgetting evolution: never asking "when would this become wrong?" | the P2P → CDN story and the ADR superseded status |
+| 7 | Pure P2P for licensed content | licensing needs a central authority (C1) → hybrid P2P |
+
+**Self-test:** for each style in your design, can you name the ASR it serves, one trade-off, and one rejected alternative? If not, the justification is incomplete.
+
+<Callout tone="orange" label="Common mistake">
+Treating an ADR as a record of *what* was chosen. Its value is the context and the rejected alternatives: without them, a later team can't tell whether the reasons still hold, as the P2P story shows.
+</Callout>
+
+## Discussion questions
+
+The lecture leaves these open; there's no single right answer. A strong answer names the requirement or constraint it depends on, and says when the answer would change. The model answers below were written for this course.
+
+**Q1.** Why is audio delivery considered client-server even when it's served from a CDN? What makes a CDN different from a "classic" server?
+
+<ModelAnswer>
+The roles are the same: the client requests and waits, the edge server responds, and the client knows the server but not the reverse. What differs is *where* the servers are and *what* they hold: many edge servers close to users, caching content that never changes, with the origin behind them. Because audio never changes and is addressed by content (derived constraint 2), any edge can serve any copy, which is what makes the CDN work.
+</ModelAnswer>
+
+**Q2.** Where would a broker or event-sourcing pattern help in the Playlist Service? (Hint: collaborative editing, version history.)
+
+<ModelAnswer>
+Store each playlist change (add, remove, move) as an event instead of overwriting the playlist. The current playlist is the result of replaying its events, so version history comes for free, and several people editing at once becomes merging two event streams. Publishing those events to the bus (`playlist.changes`) also lets notifications and recommendations react without the Playlist Service knowing them.
+</ModelAnswer>
+
+**Q3.** Pipe-and-filter and messaging both use queues. What separates them conceptually?
+
+<ModelAnswer>
+In pipe-and-filter the queue is a *pipe*: it connects one transformation step to the next in a fixed chain, and the data is a stream being transformed. In messaging the queue is a *topic*: it carries facts ("a track was played") to any number of subscribers the producer doesn't know, each doing something different. Pipes are about a sequence of steps; topics are about decoupling producers from consumers.
+</ModelAnswer>
+
+**Q4.** What would have to change in the requirements for a pure P2P design (no central servers) to become acceptable?
+
+<ModelAnswer>
+Constraint C1 (licensing with DRM and per-country rights) and FR8 (counting every play for royalties) would have to go, because both need a trusted central authority. Authentication, payments (FR1) and authoritative playlists (FR4) would need decentralised replacements too. For example, freely licensed content with no royalties and no accounts could be delivered pure P2P.
+</ModelAnswer>
+
+**Q5.** How does Conway's Law (Spotify's squad model) show up in the decomposition from Stage 2?
+
+<ModelAnswer>
+Decomposition criterion 4, rate of change and team ownership: squads own services end to end, so the subsystem boundaries follow team boundaries. Take QA6: a squad deploys a recommendation change in under a day, without coordinating. That's only possible because one team owns S10 and its data. It talks to the others only through the bus and versioned APIs.
+</ModelAnswer>
+
+## In-class activities and assignment
+
+The lecture ends with four activities:
+
+- write two six-part scenarios, for offline playback (FR5) and the Connect handoff (FR10);
+- critique a decomposition that merges Search into Catalog;
+- debate whether a 2024 start-up with expensive bandwidth and mostly desktop and TV users should use hybrid P2P;
+- design a `PlayEvent` schema that supports royalties, de-duplication and recommendations.
+
+The take-home assignment applies the four stages to one of: a ride-hailing platform, a collaborative document editor, video conferencing (P2P vs. server trade-offs), or a vehicle OTA-update platform.
+
+## Key terms
+
+<KeyTerms ids={["sensitivity-point", "trade-off-point", "architecture-risk"]} />

@@ -1,0 +1,191 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Ten Architecture Styles at a Glance
+
+Lecture 5 comes with a one-page summary of all ten styles: a short definition, a real-life example, and the key pro and con of each. This lesson puts them side by side, then covers the five not yet explained in detail: implicit invocation, publish-subscribe, event-based, <Term id="web-services">web services</Term> and <Term id="microservices">microservices</Term>.
+
+## The summary table
+
+| # | Style | In one line | Real-life example | Key pro | Key con |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **Layered (n-tier)** | stacked layers; each uses only the one below | Android OS stack | separation of concerns | overhead and rigid layers |
+| 2 | **Client-server** | clients request; a central server responds | the Web, email | central control and security | single point of failure |
+| 3 | **Peer-to-peer** | equal peers share resources directly | BitTorrent, Bitcoin | scalable, no central failure point | hard to secure and manage |
+| 4 | **Pipe-and-filter** | data flows through chained transform steps | Unix pipes, GCC | reusable, composable filters | poor for interactive apps |
+| 5 | **Messaging** | async messages through broker queues | LinkedIn Kafka, order queues | loose coupling, reliable delivery | broker complexity, hard debugging |
+| 6 | **Implicit invocation** | announced events trigger registered procedures | browser DOM events, DB triggers | easy to extend | unpredictable execution order |
+| 7 | **Publish-subscribe** | publishers post to topics; subscribers receive | Spotify on Cloud Pub/Sub | scales to many consumers | hard to trace message flow |
+| 8 | **Event-based** | plug-ins react to platform events | Eclipse IDE, VS Code | highly extensible | complex control flow |
+| 9 | **Web services** | services exposed over HTTP (SOAP / REST) | Google Maps API, Expedia | interoperable, platform-independent | network latency and payload overhead |
+| 10 | **Microservices** | small independent services, each owning its data | Netflix | independent deploy and scaling | distributed-system complexity |
+
+## Layered architecture
+
+The system is organized into horizontal layers (e.g. presentation, business, data). **Each layer only uses the services of the layer directly below it.** The Android platform is layered: apps → Java API framework → native libraries and Android Runtime → hardware abstraction layer → Linux kernel. The TCP/IP network stack follows the same idea.
+
+- **Pros:** clear separation of concerns; easy to test and maintain per layer; layers are replaceable and reusable.
+- **Cons:** performance overhead crossing layers; changes may ripple through all layers; can become monolithic.
+
+N-tier client-server, from [the previous lesson](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer), is the layered style spread over machines.
+
+## Implicit invocation and its two flavors
+
+<DiagramTabs
+  title="Three event-driven styles"
+  tabs={[
+    {
+      label: "Implicit invocation",
+      width: 600,
+      height: 230,
+      nodes: [
+        { id: "a", label: "Component A", x: 90, y: 115, w: 130, tone: "orange" },
+        { id: "em", label: "Event manager\n(registry of listeners)", x: 300, y: 115, w: 190, h: 52, tone: "sky" },
+        { id: "b", label: "Procedure B", x: 510, y: 40, w: 130 },
+        { id: "c", label: "Procedure C", x: 510, y: 115, w: 130 },
+        { id: "d", label: "Procedure D", x: 510, y: 190, w: 130 },
+      ],
+      edges: [
+        { from: "a", to: "em", label: "announces event" },
+        { from: "em", to: "b", dashed: true },
+        { from: "em", to: "c", label: "invokes", dashed: true },
+        { from: "em", to: "d", dashed: true },
+      ],
+      caption: "A never calls B, C or D. It announces an event; the procedures registered for that event run automatically.",
+    },
+    {
+      label: "Publish-subscribe",
+      width: 640,
+      height: 240,
+      nodes: [
+        { id: "p1", label: "Playback service", stereo: "publisher", x: 100, y: 60, w: 160, h: 50 },
+        { id: "p2", label: "Catalog / upload", stereo: "publisher", x: 100, y: 180, w: 160, h: 50 },
+        { id: "br", label: "Pub/Sub broker\nsong.played · track.added", x: 330, y: 120, w: 200, h: 56, tone: "sky" },
+        { id: "s1", label: "Recommendations", x: 545, y: 45, w: 150 },
+        { id: "s2", label: "Royalties", x: 545, y: 120, w: 150 },
+        { id: "s3", label: "Analytics", x: 545, y: 195, w: 150 },
+      ],
+      edges: [
+        { from: "p1", to: "br", label: "publish" },
+        { from: "p2", to: "br", label: "publish" },
+        { from: "br", to: "s1", label: "subscribe", dashed: true },
+        { from: "br", to: "s2", dashed: true },
+        { from: "br", to: "s3", dashed: true },
+      ],
+      caption: "Spotify-style: every play, skip or search is published to a topic. Recommendation, royalty and analytics systems each subscribe, and none of them knows the publisher.",
+    },
+    {
+      label: "Event-based",
+      width: 620,
+      height: 240,
+      nodes: [
+        { id: "core", label: "Eclipse Platform\nRuntime (OSGi)\nEvent bus + extension registry", x: 310, y: 120, w: 240, h: 70, tone: "sky" },
+        { id: "jdt", label: "JDT (Java tools)", x: 110, y: 40, w: 150 },
+        { id: "dbg", label: "Debugger", x: 510, y: 40, w: 130 },
+        { id: "ws", label: "Workspace", x: 90, y: 120, w: 120 },
+        { id: "ed", label: "Editors / UI", x: 530, y: 120, w: 130 },
+        { id: "git", label: "EGit plug-in", x: 110, y: 205, w: 140 },
+        { id: "yours", label: "Your plug-in", x: 510, y: 205, w: 140, tone: "mint" },
+      ],
+      edges: [
+        { from: "core", to: "jdt", both: true, dashed: true },
+        { from: "core", to: "dbg", both: true, dashed: true },
+        { from: "core", to: "ws", both: true, dashed: true },
+        { from: "core", to: "ed", both: true, dashed: true },
+        { from: "core", to: "git", both: true, dashed: true },
+        { from: "core", to: "yours", both: true, dashed: true },
+      ],
+      caption: "Save a file and Eclipse fires a resource-change event; the Java builder, Git and error markers each react on their own. (OSGi is the Java module system Eclipse's plug-ins run on.) A new plug-in just registers for the events it cares about.",
+    },
+  ]}
+/>
+
+**<Term id="implicit-invocation">Implicit invocation</Term>.** Instead of calling procedures directly, a component announces an event; other components register interest and are invoked automatically when it occurs. *Examples:* JavaScript handlers added with `addEventListener("click", …)` run when you click; database triggers run when a row is inserted or updated.
+
+- **Pros:** strong decoupling; easy to add components; supports reuse and evolution.
+- **Cons:** no control over the order handlers run in; hard to reason about correctness; hard to debug.
+
+**<Term id="publish-subscribe">Publish-subscribe</Term>** (lecture example: Spotify). Publishers send messages to **topics** without knowing who receives them; subscribers receive every message on the topics they follow. Spotify moved this pipeline to Google Cloud Pub/Sub in 2016.
+
+- **Pros:** publishers and subscribers fully decoupled; scales to many consumers; subscribers can be added at any time.
+- **Cons:** delivery and ordering guarantees vary; hard to trace the message flow; managing topics and schemas is overhead.
+
+**<Term id="event-based">Event-based</Term>** (lecture example: the Eclipse IDE). Components produce and react to events. Eclipse plug-ins register listeners and extension points and react to editor, workspace and UI events. VS Code is similar: it loads extensions on "activation events."
+
+- **Pros:** highly extensible (plug-ins); responsive behavior; components developed independently.
+- **Cons:** complex, non-linear control flow; testing event chains is hard; risk of event storms and leaks.
+
+<Callout tone="orange" label="Messaging vs publish-subscribe">
+Both use a broker. In [messaging](/courses/advanced-software-engineering/pipe-and-filter-and-messaging#messaging), each message in a queue is removed by *one* receiver. In publish-subscribe, *every* subscriber to a topic gets its own copy.
+</Callout>
+
+## Web services
+
+Functionality is exposed as services over standard web protocols: HTTP with SOAP/WSDL (XML messages, described by a WSDL file), or REST/JSON (plain HTTP requests carrying JSON). Programs on any platform, in any language, can call them. *Examples:* Expedia and Skyscanner pull flight and hotel data from airline and hotel services; Uber and many others call the Google Maps API.
+
+<BoxDiagram
+  title="The SOA triangle"
+  width={560}
+  height={230}
+  nodes={[
+    { id: "reg", label: "Service registry\nUDDI / API catalog", x: 280, y: 45, w: 190, h: 52, tone: "sky" },
+    { id: "con", label: "Service consumer\nclient app", x: 100, y: 185, w: 170, h: 52 },
+    { id: "pro", label: "Service provider\nWSDL / OpenAPI", x: 460, y: 185, w: 170, h: 52 },
+  ]}
+  edges={[
+    { from: "pro", to: "reg", label: "1. publish" },
+    { from: "con", to: "reg", label: "2. find" },
+    { from: "con", to: "pro", label: "3. bind / invoke" },
+  ]}
+  caption="The provider publishes a description of its service, the consumer finds it in the registry, then binds to and calls the provider over SOAP or REST."
+/>
+
+- **Pros:** platform- and language-independent; standard, interoperable protocols; services reused across apps.
+- **Cons:** network latency; payload overhead (XML/JSON); versioning and security challenges.
+
+## Microservices
+
+The application is a set of small, independently deployable services. **Each owns its data and one business capability** (the [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp#responsibility--actor) at service scale: one service, one reason to change), and they talk through APIs or messaging. *Example:* after a major database outage in 2008, Netflix split its monolith into hundreds of microservices on AWS (streaming, billing, recommendations), each deployed and scaled on its own. Amazon and Uber work the same way.
+
+<BoxDiagram
+  title="Microservices with an API gateway"
+  width={620}
+  height={230}
+  nodes={[
+    { id: "cl", label: "Clients", x: 70, y: 115, w: 100 },
+    { id: "gw", label: "API\ngateway", x: 210, y: 115, w: 100, h: 52, tone: "sky" },
+    { id: "o", label: "Orders svc", x: 380, y: 40, w: 120 },
+    { id: "u", label: "Users svc", x: 380, y: 115, w: 120 },
+    { id: "p", label: "Payment svc", x: 380, y: 190, w: 120 },
+    { id: "odb", label: "Orders DB", x: 545, y: 40, w: 110, kind: "store" },
+    { id: "udb", label: "Users DB", x: 545, y: 115, w: 110, kind: "store" },
+    { id: "pdb", label: "Payment DB", x: 545, y: 190, w: 110, kind: "store" },
+  ]}
+  edges={[
+    { from: "cl", to: "gw" },
+    { from: "gw", to: "o", label: "REST / gRPC" },
+    { from: "gw", to: "u" },
+    { from: "gw", to: "p" },
+    { from: "o", to: "odb" },
+    { from: "u", to: "udb" },
+    { from: "p", to: "pdb" },
+  ]}
+  caption="Database per service: no service reads another's database. gRPC is a fast remote-call protocol, an alternative to REST. The API gateway is the single entry point for clients."
+/>
+
+Clients reach the services through an <Term id="api-gateway">API gateway</Term>, which routes each request to the right service.
+
+- **Pros:** independent deployment and scaling; technology freedom per service; fault isolation.
+- **Cons:** distributed-system complexity; keeping data consistent across services is hard (often only <Term id="eventual-consistency">eventual consistency</Term>); high DevOps and monitoring effort.
+
+<Callout tone="orange" label="Remember the First Law">
+Lecture 2 used microservices as its example of the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): independent scaling, paid for with network latency, distributed transaction failures and deployment complexity. And the [2002 data center case](/courses/advanced-software-engineering/the-architects-role#two-case-studies-architecture-depends-on-context) explains why this style only became common once containers made services cheap.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Mixing up messaging and publish-subscribe. In a queue, each message is taken by one receiver; in pub/sub, every subscriber gets a copy. And drawing "microservices" that share one database: that couples them, so they can't change or deploy independently.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["implicit-invocation", "publish-subscribe", "event-based", "web-services", "microservices", "api-gateway", "eventual-consistency"]} />

@@ -11,6 +11,7 @@ export const tools: Tool[] = [
     lessons: [
       { course: "theory-of-computation", lesson: "nfa", mentions: "regex" },
       { course: "theory-of-computation", lesson: "regular-expressions", mentions: "grep" },
+      { course: "theory-of-computation", lesson: "transition-graphs", mentions: "ripgrep" },
       { course: "theory-of-computation", lesson: "regex-playground", mentions: "regex" },
     ],
   },
@@ -18,8 +19,10 @@ export const tools: Tool[] = [
     name: "Compilers and parsers",
     what: "How a program turns source code or JSON into a structure it can work with.",
     lessons: [
+      { course: "theory-of-computation", lesson: "grammars", mentions: "yacc" },
       { course: "theory-of-computation", lesson: "context-free-grammars", mentions: "parser" },
       { course: "theory-of-computation", lesson: "pushdown-automata", mentions: "JSON" },
+      { course: "theory-of-computation", lesson: "cfg-equals-pda", mentions: "parser" },
       { course: "microprocessors", lesson: "stack-and-procedures", mentions: "compiler" },
     ],
   },
@@ -184,9 +187,44 @@ export const tools: Tool[] = [
     name: "The Linux terminal",
     what: "Typing commands instead of clicking, and what the shell asks the OS to do for you.",
     lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "terminal" },
       { course: "operating-systems", lesson: "lab-linux-commands", mentions: "bash" },
       { course: "operating-systems", lesson: "services-and-system-calls", mentions: "bash" },
       { course: "operating-systems", lesson: "interprocess-communication", mentions: "pipe" },
+    ],
+  },
+  {
+    name: "Kafka, RabbitMQ and message queues",
+    what: "How services hand work to each other without waiting, and why a queue keeps orders from getting lost.",
+    lessons: [
+      { course: "advanced-software-engineering", lesson: "pipe-and-filter-and-messaging", mentions: "Kafka" },
+      { course: "advanced-software-engineering", lesson: "ten-styles-at-a-glance", mentions: "Pub/Sub" },
+      { course: "data-structures", lesson: "queues-and-deques", mentions: "queue" },
+    ],
+  },
+  {
+    name: "Docker, Kubernetes and microservices",
+    what: "Why splitting an app into many small services became cheap, and what it costs you.",
+    lessons: [
+      { course: "advanced-software-engineering", lesson: "the-architects-role", mentions: "Docker" },
+      { course: "advanced-software-engineering", lesson: "ten-styles-at-a-glance", mentions: "Netflix" },
+    ],
+  },
+  {
+    name: "AI coding assistants",
+    what: "How to write clear prompts, why an AI agent needs tests, memory files and limits around it, and two ways AI-written code went wrong.",
+    lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "prompt" },
+      { course: "advanced-software-engineering", lesson: "engineering-in-the-age-of-ai", mentions: "harness" },
+      { course: "advanced-software-engineering", lesson: "case-study-ai-generated-pid", mentions: "pip" },
+    ],
+  },
+  {
+    name: "Search queries and error messages",
+    what: "How search indexes match exact queries, and how to read a traceback from the summary line up.",
+    lessons: [
+      { course: "computer-literacy", lesson: "language-layer", mentions: "index" },
+      { course: "computer-literacy", lesson: "systems-layer", mentions: "traceback" },
     ],
   },
   {

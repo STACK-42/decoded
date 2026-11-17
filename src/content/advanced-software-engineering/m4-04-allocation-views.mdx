@@ -1,0 +1,133 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Allocation Views: Deployment, Install and Work Assignment
+
+Module views show the code; C&C views show the running system. <Term id="allocation-view">Allocation views</Term> connect the software to **things that aren't software**: CPUs, file systems, networks, and the people who build it.
+
+## What allocation views are
+
+Allocation structures embody decisions about how the system relates to non-software structures in its environment. They show the relationship between software elements and elements of one or more external environments where the software is created and runs.
+
+Questions they answer:
+
+- What processor does each software element run on?
+- In which directories is each element stored during development, testing and system building?
+
+The style is defined by:
+
+- **Elements:** a *software element* and an *environmental element*. A software element has properties it **requires** from the environment (e.g. 2 GB of memory); an environmental element has properties it **provides** to the software (e.g. 8 GB of memory).
+- **Relation:** *allocated-to*. A software element is mapped (allocated) to an environmental element.
+
+The software elements can come from either a <Term id="module-view">module view</Term> or a C&C view. There are three common allocation styles:
+
+| Style | Maps | onto |
+| --- | --- | --- |
+| <Term id="deployment-style">Deployment</Term> | runtime components and connectors (C&C) | hardware of the computing platform |
+| <Term id="install-style">Install</Term> | runtime components (C&C) | files and folders in the production environment |
+| <Term id="work-assignment-style">Work assignment</Term> | modules (module view) | teams and people who build them |
+
+## The deployment style
+
+The deployment style maps components and connectors to the hardware they run on.
+
+- **Software elements:** from a C&C view.
+- **Environmental elements:** computers, devices, networks.
+- **Used for:** **performance** (put components that talk a lot on the same machine or a fast link) and **availability** (put replicas on different machines).
+
+<BoxDiagram
+  title="A UML deployment view"
+  width={640}
+  height={300}
+  nodes={[
+    { id: "pc", label: "Internet\nuser PC", x: 80, y: 50, w: 110, h: 48, kind: "node" },
+    { id: "app", label: "Application server\n«execution env»\nWebSphere", stereo: "Win server", x: 320, y: 70, w: 190, h: 86, kind: "node", tone: "sky" },
+    { id: "db", label: "Database server", stereo: "linux server", x: 550, y: 70, w: 150, h: 54, kind: "node" },
+    { id: "admin", label: "Admin user PC", stereo: "Win desktop", x: 90, y: 175, w: 140, h: 54, kind: "node" },
+    { id: "jar", label: "app-client.jar", stereo: "artifact", x: 90, y: 265, w: 140, h: 46, kind: "note" },
+    { id: "ear", label: "EnterpriseWebApp.ear", stereo: "artifact", x: 320, y: 255, w: 190, h: 46, kind: "note" },
+  ]}
+  edges={[
+    { from: "pc", to: "app", label: "«internet»", head: "none" },
+    { from: "app", to: "db", label: "«intranet»", head: "none" },
+    { from: "admin", to: "app", label: "«intranet»", head: "none" },
+    { from: "jar", to: "admin", label: "«deploy»", dashed: true },
+    { from: "ear", to: "app", label: "«deploy»", dashed: true },
+  ]}
+  caption="3-D boxes are nodes (hardware or execution environments). Lines between nodes are communication paths. Dashed «deploy» arrows put artifacts onto nodes."
+/>
+
+An <Term id="artifact">artifact</Term> is a physical file produced by development, such as a `.jar` or `.ear` archive.
+
+UML can also nest nodes, one inside another. The lecture's second example has four levels: a `«device» Sun Fire X4150 Server` → its `«OS» SUSE Linux Enterprise 10` → a `«JSP server» Apache Tomcat Server 5.5` → the deployed `«web archive» shopping.war`.
+
+**Can a deployment view help with memory capacity analysis?** Yes, if you record the right properties: properties of the physical units (how much memory each machine *provides*) and properties of the software elements (how much each component *requires*). Add up what's allocated to each machine and compare.
+
+## The install style
+
+The install style allocates components of a C&C view to a **file management system** in the production environment.
+
+Once the system is built, its files have to be packaged and installed on the target platform (a desktop computer, or a server running an application server). These files include libraries, executables, data files, log files, configuration and version-control files, license files, help files, deployment descriptors, scripts, and static content such as HTML files and images.
+
+Any install-view notation must show:
+
+- the **components**,
+- the **files and folders**,
+- the **mapping** between them,
+- and the **tree structure** of the files and folders.
+
+<BoxDiagram
+  title="Install view of a bank application (simplified)"
+  width={640}
+  height={250}
+  nodes={[
+    { id: "ear", label: "DukesBankApp.ear", stereo: "artifact", x: 320, y: 40, w: 200, h: 50, tone: "sky" },
+    { id: "acc", label: "account-ejb.jar", x: 110, y: 125, w: 150 },
+    { id: "cus", label: "customer-ejb.jar", x: 320, y: 125, w: 160 },
+    { id: "tx", label: "tx-ejb.jar", x: 530, y: 125, w: 130 },
+    { id: "c1", label: "AccountController\nAccountEJB", x: 110, y: 210, w: 160, h: 48, kind: "component" },
+    { id: "c2", label: "CustomerController\nCustomerEJB", x: 320, y: 210, w: 170, h: 48, kind: "component" },
+    { id: "c3", label: "TxController\nTxEJB", x: 530, y: 210, w: 140, h: 48, kind: "component" },
+  ]}
+  edges={[
+    { from: "ear", to: "acc", label: "«manifest»", dashed: true },
+    { from: "ear", to: "cus", dashed: true },
+    { from: "ear", to: "tx", dashed: true },
+    { from: "acc", to: "c1", label: "«manifest»", dashed: true },
+    { from: "cus", to: "c2", dashed: true },
+    { from: "tx", to: "c3", dashed: true },
+  ]}
+  caption="The archive contains .jar files, and each .jar manifests (packages) runtime components. EJBs (Enterprise JavaBeans) are Java server-side components; .ear, .jar and .war are Java archive files for a whole application, a library or component, and a web application. The lecture's full figure also shows web-client.war (servlets, JSPs, static files) and app-client.jar."
+/>
+
+## The work assignment style
+
+The work assignment style allocates **modules** to the **groups and individuals** responsible for building the system. It defines who implements and integrates each module.
+
+- **Software elements:** modules. The lecture asks "modules or components?": the answer is modules, because teams write *code*, and code is organized as modules.
+- **Environmental elements:** organizational units (teams, contractors, people).
+
+The lecture's example is a table for a satellite ground system:
+
+| Segment | Subsystem | Organizational unit |
+| --- | --- | --- |
+| Science Data Processing (SDPS) | Client | Science team |
+| | Interoperability | Prime contractor team 1 |
+| | Ingest | Prime contractor team 2 |
+| | Data Management / Processing / Server | Data team |
+| | Planning | Orbital vehicle team |
+| Flight Operations (FOS) | Planning and Scheduling | Orbital vehicle team |
+| | Data Management | Database team |
+| | User Interface | User interface team |
+
+<Callout tone="violet" label="Why work assignment is architecture">
+Teams build systems that mirror their communication structure. If two modules that must talk constantly are given to two teams that never meet, the interface between them will suffer. The [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp#responsibility--actor) makes the same point at class level: one module, one actor.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Mixing up deployment and install views. Deployment maps running components to *hardware*; install maps them to *files and folders*. And work assignment maps *modules*, not components, to teams, because teams write code.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["allocation-view", "deployment-style", "install-style", "work-assignment-style", "artifact"]} />

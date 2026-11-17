@@ -1,0 +1,175 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, EstimationCalculator } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Streamify, Stage 1: Requirements and Quality Scenarios
+
+Lectures 1 to 5 gave you the pieces: what architecture is, design principles, views and styles. Lecture 6 puts them together on one large system. The system is a Spotify-style music streaming platform, rebuilt here under the name **Streamify**.
+
+The lecture's guiding question is: *which style fits each subsystem, given its most important quality attributes?* It warns from the start that **a single style for the whole system is the wrong answer.**
+
+## The architecting process: four stages
+
+The lecture works through four stages, with a loop back:
+
+<BoxDiagram
+  title="The four-stage architecting process"
+  width={640}
+  height={190}
+  nodes={[
+    { id: "s1", label: "Stage 1\nRequirements", x: 85, y: 70, w: 130, h: 52, tone: "sky" },
+    { id: "s2", label: "Stage 2\nDecomposition", x: 245, y: 70, w: 130, h: 52, tone: "mint" },
+    { id: "s3", label: "Stage 3\nElements", x: 405, y: 70, w: 130, h: 52, tone: "orange" },
+    { id: "s4", label: "Stage 4\nStyles", x: 565, y: 70, w: 130, h: 52, tone: "violet" },
+  ]}
+  edges={[
+    { from: "s1", to: "s2" },
+    { from: "s2", to: "s3" },
+    { from: "s3", to: "s4" },
+    { from: "s4", to: "s1", label: "iterate · evaluate (ATAM-lite)", bend: -70, dashed: true },
+  ]}
+  caption="Requirements → decomposition → elements → style selection. Picking a style in Stage 4 often shows a requirement that was missing in Stage 1."
+/>
+
+This is [the architecture process from Lecture 5](/courses/advanced-software-engineering/architecture-process-and-styles#the-architecture-process), with the design step split into three smaller stages. This lesson covers Stage 1.
+
+## Business context and drivers
+
+The vision behind Streamify:
+
+> "Give users instant access to any song, on any device, anywhere, at the moment they want it, and pay artists fairly for each play."
+
+The vision breaks into five **<Term id="business-driver">business drivers</Term>**:
+
+| ID | Business driver | Why it matters |
+| --- | --- | --- |
+| BD1 | Instant satisfaction | Playback must feel like a local file. This was the main advantage over piracy. |
+| BD2 | Global scale | Hundreds of millions of users in many markets. |
+| BD3 | Licensing compliance | Rights differ per country, and every play must be counted. |
+| BD4 | Personalisation | Recommendations (such as a weekly personal playlist) keep users engaged. |
+| BD5 | Freemium monetisation | A free tier paid for by ads, plus paid subscriptions. |
+
+## Stakeholders and their concerns
+
+| Stakeholder | Main concerns |
+| --- | --- |
+| Listeners (free and premium) | Fast start, no stutter, offline play, good recommendations |
+| Artists and distributors | Correct royalty reports, control of their catalog, analytics |
+| Advertisers | Ad targeting, reports of how often ads were heard |
+| Product and data teams | Experiments (A/B tests), good-quality event data |
+| Operations / Site Reliability Engineers (SRE) | Availability, observability, cost per stream |
+| Legal and licensing | Geo-restriction, <Term id="drm">DRM</Term> |
+| Developers | Deploying their part independently, team autonomy |
+
+These concerns conflict. Listeners want instant play, legal wants DRM checks first, and SRE wants a lower cost per stream. The architecture has to balance them.
+
+## Functional requirements
+
+A core subset, prioritised with <Term id="moscow">MoSCoW</Term> ("shall" = must, "could" = could):
+
+| ID | Requirement |
+| --- | --- |
+| FR1 | Users shall be able to register, log in and manage a subscription (free or premium). |
+| FR2 | Users shall be able to search the catalog by track, artist, album, playlist or podcast. |
+| FR3 | Users shall be able to stream a track on demand, with seek, skip and pause. |
+| FR4 | Users shall be able to create, edit, share and follow playlists. |
+| FR5 | Premium users shall be able to download tracks for offline play (DRM-protected). |
+| FR6 | The system could recommend content (home feed, weekly personal playlists). |
+| FR7 | Distributors shall be able to submit new audio and metadata. |
+| FR8 | The system shall record every play, for royalties and analytics. |
+| FR9 | Free-tier users shall hear targeted audio ads between tracks. |
+| FR10 | Users could continue playback across devices (the "Connect" handoff). |
+
+Watch FR3, FR5, FR7 and FR8. They look like simple features, but each one leads to a different architectural style later: client-server and peer-to-peer for streaming, pipe-and-filter for ingestion, messaging for recording plays.
+
+## Quality-attribute scenarios: six parts
+
+"The system should be fast" can't be tested, and you can't use it to compare two designs. A **<Term id="qa-scenario">quality-attribute scenario</Term>** fixes that by writing every quality requirement in six parts:
+
+| Part | QA1, play latency |
+| --- | --- |
+| Source | a listener |
+| Stimulus | presses play on a track |
+| Artifact | the playback path (client + audio delivery) |
+| Environment | the track is not in the local cache; normal load |
+| Response | playback starts |
+| **<Term id="response-measure">Response measure</Term>** | **≤ 250 ms median, ≤ 1 s <Term id="p99">p99</Term>** |
+
+Written out: *"On a cache miss under normal load, playback starts in ≤ 250 ms (median), ≤ 1 s (p99)."* Now you can measure it, test it, and trade it against other qualities. The median says what a typical play feels like; the p99 says how bad the slow ones get.
+
+Streamify's eight scenarios:
+
+| ID | Quality | Scenario | Response measure |
+| --- | --- | --- | --- |
+| QA1 | Performance (latency) | play a track not in the local cache, normal load | starts in ≤ 250 ms median, ≤ 1 s p99 |
+| QA2 | Performance (continuity) | a track plays over a variable mobile network | stutter (buffer underrun) in < 1 % of plays |
+| QA3 | Scalability | concurrent streams grow from 5 M to 15 M at peak (e.g. New Year's Eve) | QA1 still holds; scales out without a redesign |
+| QA4 | Availability | a whole data-centre region fails | cached and CDN playback continues; core APIs back in ≤ 5 min; playback ≥ 99.95 % per year |
+| QA5 | Reliability (data) | a client sends a play event while offline or during an outage | delivered at least once and de-duplicated; no important event lost |
+| QA6 | Modifiability | a team changes the recommendation algorithm | deployed on its own, without cross-team coordination, in < 1 day |
+| QA7 | Security | an attacker tries to extract raw audio from the client | audio encrypted at rest and in transit; keys bound to the device and user |
+| QA8 | Cost efficiency | bandwidth demand doubles | cost per stream-hour grows less than linearly (caching, CDN, compression) |
+
+Three of them already point at later decisions:
+
+- **QA4** means playback must survive even when the backend APIs are down, so the client and the <Term id="cdn">CDN</Term> must keep working on their own.
+- **QA5** rules out "fire-and-forget" telemetry. Events need durable, buffered, replayable transport, which leads to [messaging](/courses/advanced-software-engineering/pipe-and-filter-and-messaging#messaging).
+- **QA8**, together with constraint C5 below, is why Spotify first used listeners' own computers to deliver music: [peer-to-peer](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#peer-to-peer).
+
+## Constraints
+
+A **<Term id="constraint">constraint</Term>** is a limit the design must stay inside. You don't trade constraints off against other qualities; you design within them.
+
+| ID | Constraint | Architectural consequence |
+| --- | --- | --- |
+| C1 | Licensing: contracts require DRM and per-country availability rules | a key service, encrypted audio, geo-rules in the catalog (QA7) |
+| C2 | Many kinds of client: iOS, Android, desktop, web, speakers, cars, consoles, TVs | a gateway / <Term id="bff">Backend-for-Frontend</Term>, a shared client core (layering) |
+| C3 | Mobile limits: battery, data plans, frequent loss of connection | local cache, buffering, events buffered on the device (QA2, QA5) |
+| C4 | Regulation: GDPR and similar personal-data laws | each service owns its data; controlled access to the data platform |
+| C5 | In 2008: CDN bandwidth was expensive, and the start-up had little money | offload delivery to listeners' devices → hybrid P2P (QA8) |
+
+C5 is tied to its time. When CDN costs fell and phones took over, C5 stopped applying, and the P2P design was retired. [Stage 4](/courses/advanced-software-engineering/choosing-styles-per-subsystem#style-3-peer-to-peer-historic-2008-to-2014) tells that story.
+
+## Back-of-the-envelope estimation
+
+A **<Term id="back-of-the-envelope">back-of-the-envelope estimate</Term>** is a rough calculation, right to about the nearest power of ten. Its job is to show which problems are *unusually big* for this system, because those are what drive the choice of style.
+
+| Quantity | Assumption | Calculation | Result |
+| --- | --- | --- | --- |
+| Daily active users | 100 M (given) | | 100 M DAU |
+| Peak concurrent streams | ~15 % of DAU | 100 M × 0.15 | 15 M streams |
+| Average bitrate | Ogg / AAC (given) | | 160 kbps |
+| Peak <Term id="egress">egress</Term> bandwidth | all peak streams | 15 M × 160 kbps | ≈ 2.4 Tbps |
+| Catalog storage | 100 M tracks × 4 encodings × ~5 MB | 2 × 10⁹ MB | ≈ 2 PB |
+| Event volume | ~200 events per user per day | 100 M × 200 = 20 B/day ÷ 86 400 s | ≈ 230 K/s average, ~700 K/s peak |
+
+Change the assumptions and see what happens:
+
+<EstimationCalculator />
+
+### From numbers to decisions
+
+| Number | What kind of problem? | Architectural response | Style |
+| --- | --- | --- | --- |
+| ≈ 2.4 Tbps peak egress | a bandwidth problem, not a compute problem | local caching, a CDN, and in the early years listeners' devices | client-server + CDN; historically P2P |
+| ≈ 700 K events/s peak | a throughput problem: synchronous request/response would overload the backend | buffer, batch and send events asynchronously | messaging (pub/sub) |
+| ≈ 2 PB, mostly audio that never changes | a storage and distribution problem | blob/object storage, caching by content | supports every delivery style |
+
+## Prioritising: the utility tree
+
+Not every requirement drives the architecture. **[Architecturally significant requirements](/courses/advanced-software-engineering/architecture-process-and-styles#step-1-determine-architectural-requirements)** (ASRs) are the ones that do. Streamify ranks its scenarios with a **<Term id="utility-tree">utility tree</Term>**, a tool from <Term id="atam">ATAM</Term>: each scenario gets a rating for business importance and for technical difficulty, High, Medium or Low.
+
+| Rating (importance, difficulty) | Scenario | What it means |
+| --- | --- | --- |
+| (H, H) | QA1, QA3, QA5, QA6, plus constraint C1 | the hardest and most valuable: design these first. **These are Streamify's ASRs.** |
+| (H, L) | QA7 security | critical, but solved with known techniques |
+| (M, H) | QA8 cost | hard, but negotiable |
+
+Treating everything as top priority means nothing is prioritised.
+
+<Callout tone="orange" label="Common mistake">
+Writing quality requirements like "fast" or "scalable". They can't be tested, so they can't steer a design. Write the six parts, with a number in the response measure. A second trap from the estimates: "add more servers" doesn't solve a 2.4 Tbps egress problem. First ask which resource is the bottleneck.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["business-driver", "moscow", "qa-scenario", "response-measure", "p99", "constraint", "back-of-the-envelope", "egress", "utility-tree", "atam"]} />

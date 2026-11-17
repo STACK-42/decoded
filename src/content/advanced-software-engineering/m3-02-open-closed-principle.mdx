@@ -1,0 +1,199 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, ChangeImpact } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Open–Closed Principle
+
+> Software entities (classes, modules, functions) should be **open for extension**, but **closed for modification**.
+
+| Open for extension | Closed for modification |
+| --- | --- |
+| You can add new behavior to meet new requirements. | You add it without changing existing, tested source code. |
+
+In short: **new behavior = new code**, not edits to old code. The <Term id="ocp">Open–Closed Principle</Term> matters most where re-testing old code is expensive, as it is in safety-certified car software.
+
+## The violation: an ADAS feature manager
+
+**Scenario:** the <Term id="adas">ADAS</Term> domain controller runs the active assistance functions every 50 ms.
+
+```java
+public class AdasFeatureManager {
+    public void runCycle(List<String> activeFeatures, EnvironmentModel env) {
+        for (String feature : activeFeatures) {
+            switch (feature) {
+                case "AEB": // Autonomous Emergency Braking
+                    if (env.timeToCollision() < 1.5) { brakeSystem.requestFullBraking(); }
+                    break;
+                case "LKA": // Lane Keeping Assist
+                    if (env.isDriftingOutOfLane()) { steering.applyCorrectiveTorque(env.laneOffset()); }
+                    break;
+                case "ACC": // Adaptive Cruise Control
+                    powertrain.setTargetSpeed(computeFollowingSpeed(env.leadVehicle()));
+                    break;
+                // TODO: add BSD, TSR, ... for the next model year
+            }
+        }
+    }
+}
+```
+
+### What happens when product management asks for more?
+
+| New requirement | Effect on `AdasFeatureManager` |
+| --- | --- |
+| Add Blind Spot Detection (BSD) | edit the class, add another `case` |
+| Add Traffic Sign Recognition (TSR) via OTA | edit the class again |
+| A market variant without LKA | add `if (variant == …)` branches to the core loop |
+
+**The safety hazard (ISO 26262):** changing a verified class forces full regression testing and throws away earlier safety sign-offs. This class is *open for modification and closed for extension*, the exact opposite of OCP.
+
+## The fix: put what varies behind an abstraction
+
+Each feature's behavior is what varies. Put it behind an <Term id="abstraction">abstraction</Term>, an interface, and give each feature its own class.
+
+```java
+public interface AdasFunction {
+    String id();
+    boolean isAvailable(VehicleConfig config);
+    void execute(EnvironmentModel env, ActuatorRequests out);
+}
+
+public class AdasFeatureManager {
+    private final List<AdasFunction> functions;
+
+    public AdasFeatureManager(List<AdasFunction> installed, VehicleConfig cfg) {
+        this.functions = installed.stream()
+            .filter(f -> f.isAvailable(cfg))
+            .toList();
+    }
+
+    public void runCycle(EnvironmentModel env, ActuatorRequests out) {
+        for (AdasFunction f : functions) {
+            f.execute(env, out);       // polymorphic dispatch
+        }
+    }
+}
+
+// Plug in new features as NEW classes:
+public class EmergencyBraking implements AdasFunction {
+    public String id() { return "AEB"; }
+    public boolean isAvailable(VehicleConfig c) { return c.hasRadar(); }
+    public void execute(EnvironmentModel env, ActuatorRequests out) {
+        if (env.timeToCollision() < 1.5) out.requestBrake();
+    }
+}
+public class LaneKeepAssist implements AdasFunction { /* LKA */ }
+public class AdaptiveCruise implements AdasFunction { /* ACC */ }
+
+// NEW: added without touching the manager
+public class BlindSpotDetection implements AdasFunction { /* BSD */ }
+```
+
+`f.execute(env, out)` is <Term id="polymorphism">polymorphism</Term>: the manager calls one method, and each feature class runs its own version.
+
+<BoxDiagram
+  title="The feature manager after OCP"
+  width={600}
+  height={230}
+  nodes={[
+    { id: "mgr", label: "AdasFeatureManager", x: 140, y: 50, w: 190, tone: "sky" },
+    { id: "if", label: "AdasFunction", stereo: "interface", x: 420, y: 50, w: 160, h: 50 },
+    { id: "aeb", label: "EmergencyBraking", x: 100, y: 180, w: 150 },
+    { id: "lka", label: "LaneKeepAssist", x: 255, y: 180, w: 130 },
+    { id: "acc", label: "AdaptiveCruise", x: 395, y: 180, w: 130 },
+    { id: "bsd", label: "BlindSpot\nDetection (new)", x: 535, y: 180, w: 120, h: 48, tone: "mint" },
+  ]}
+  edges={[
+    { from: "mgr", to: "if", label: "uses" },
+    { from: "aeb", to: "if", head: "triangle", dashed: true },
+    { from: "lka", to: "if", head: "triangle", dashed: true },
+    { from: "acc", to: "if", head: "triangle", dashed: true },
+    { from: "bsd", to: "if", head: "triangle", dashed: true },
+  ]}
+  caption="The manager depends only on the interface. Dashed lines with hollow triangles are UML 'realizes' (implements) arrows."
+/>
+
+Now try each change request against both designs:
+
+<ChangeImpact
+  title="Which classes does each request touch?"
+  before={{ label: "Before: switch statement", classes: ["AdasFeatureManager"] }}
+  after={{ label: "After: AdasFunction interface", classes: ["AdasFeatureManager", "AdasFunction", "EmergencyBraking", "LaneKeepAssist", "AdaptiveCruise", "composition root"] }}
+  scenarios={[
+    { label: "Add BSD", before: { changed: ["AdasFeatureManager"], added: [] }, after: { changed: ["composition root"], added: ["BlindSpotDetection"] }, note: "Before: the verified manager is edited and must be fully re-tested. After: one new class, plus one registration line at the composition root. The manager is untouched." },
+    { label: "Add TSR via OTA", before: { changed: ["AdasFeatureManager"], added: [] }, after: { changed: ["composition root"], added: ["TrafficSignRecognition"] }, note: "Same story: the change is new code, so safety sign-off focuses on the new class only." },
+    { label: "Variant without LKA", before: { changed: ["AdasFeatureManager"], added: [] }, after: { changed: [], added: [] }, note: "After: LaneKeepAssist.isAvailable(config) already returns false for that variant. Zero branching inside the manager, and no code changes at all." },
+  ]}
+/>
+
+### What we gained
+
+| Change | Impact now |
+| --- | --- |
+| Add BSD / TSR (via OTA) | Write one new class and register it. `AdasFeatureManager` is unchanged. |
+| Market variant without LKA | `isAvailable(config)` returns `false`. No branching in the manager. |
+| Typo in a feature name | Caught at compile time: features are typed classes, not strings like `"AEB"`. |
+
+**Verification efficiency:** testing and safety sign-off focus only on the new feature class. The core manager stays closed.
+
+## The pragmatic reality of OCP
+
+**OCP is never 100% absolute.** Registering a new class still edits *something*: a <Term id="composition-root">composition root</Term> (a dependency-injection container, a factory or a config file).
+
+The real goal is **boundary containment**: push the unavoidable edits out to the configuration edges, and keep the verified algorithms untouched.
+
+## OCP through delegation: navigation routing
+
+**Scenario:** the navigation system lets the driver switch routing modes at runtime.
+
+```java
+// Stable abstraction
+public interface RoutingStrategy {
+    Route calculate(Position from, Position to, MapData map, VehicleState state);
+}
+
+// Closed for modification
+public class NavigationService {
+    private RoutingStrategy strategy;
+
+    public NavigationService(RoutingStrategy initial) { this.strategy = initial; }
+
+    public void setStrategy(RoutingStrategy s) { this.strategy = s; }  // swap at runtime
+
+    public Route navigate(Position from, Position to, MapData map, VehicleState state) {
+        return strategy.calculate(from, to, map, state);
+    }
+}
+
+// Concrete strategies
+public class FastestRoute implements RoutingStrategy { /* minimize travel time */ }
+public class EcoRoute implements RoutingStrategy { /* minimize energy / fuel */ }
+public class AvoidTollsRoute implements RoutingStrategy { /* secondary roads only */ }
+
+// NEW: plugs in without changing NavigationService
+public class EvChargingAwareRoute implements RoutingStrategy { /* plan charging stops from battery state of charge (SOC) */ }
+```
+
+This is the <Term id="strategy-pattern">Strategy pattern</Term>: the service *delegates* the routing decision to whichever strategy object it currently holds.
+
+## Two ways to satisfy OCP
+
+| | Inheritance / polymorphism | Delegation (Strategy pattern) |
+| --- | --- | --- |
+| Mechanism | a new subtype plugged into an existing framework | a new strategy object handed to the service |
+| When it's bound | build, compile or configuration time | runtime (the driver toggles the mode) |
+| Coupling | the subtype is tied to the base type's lifecycle | loose: the service only knows `RoutingStrategy` |
+| Pattern | <Term id="template-method">Template Method</Term> / polymorphic plug-in | Strategy pattern |
+
+**Key insight:** in both, new behavior means new code. The existing, production-verified service is never modified.
+
+<Callout tone="mint" label="Related">
+OCP depends on the [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp) (first separate what varies) and works best together with [Dependency Inversion](/courses/advanced-software-engineering/dependency-inversion-principle) (the manager depends on an abstraction, not on concrete features).
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Thinking OCP means you may never edit any file. Registering a new feature still edits the composition root; the goal is to keep the edits at the edges, away from verified code. A related trap is adding abstractions for changes nobody has asked for; the lecture's abstractions all wrap something that actually varies (features, routing modes).
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["ocp", "abstraction", "polymorphism", "composition-root", "strategy-pattern", "template-method"]} />

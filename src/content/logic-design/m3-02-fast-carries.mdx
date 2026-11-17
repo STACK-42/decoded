@@ -53,9 +53,9 @@ Consider what causes stage $i$ to produce an outgoing carry $C_{i+1}$:
    $$
    G_i = A_i B_i
    $$
-2. **Carry Propagate ($P_i$):** If at least one input bit is 1, an incoming carry $C_i = 1$ will pass through the stage to emerge as $C_{i+1} = 1$:
+2. **Carry Propagate ($P_i$):** Under the XOR definition, an incoming carry $C_i = 1$ will pass through the stage to emerge as $C_{i+1} = 1$ when exactly one input bit is 1:
    $$
-   P_i = A_i \oplus B_i \qquad (\text{or } P_i = A_i + B_i)
+   P_i = A_i \oplus B_i \qquad (\text{or under the inclusive-OR definition, } P_i = A_i + B_i)
    $$
 
 Using these definitions, the carry-out from any stage $i$ is expressed as:
@@ -194,22 +194,12 @@ $$
 C_4 = G_G + P_G C_0
 $$
 
-```
-   ┌─────────────── 16-bit Multilevel CLA ───────────────┐
-   │                                                     │
-   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │  │Block 3   │  │Block 2   │  │Block 1   │  │Block 0   │
-   │  │Bits 15-12│  │Bits 11-8 │  │Bits 7-4  │  │Bits 3-0  │
-   │  └──┬────┬──┘  └──┬────┬──┘  └──┬────┬──┘  └──┬────┬──┘
-   │     │P3  │G3      │P2  │G2      │P1  │G1      │P0  │G0
-   │     ▼    ▼        ▼    ▼        ▼    ▼        ▼    ▼
-   │  ┌─────────────────────────────────────────────────┐
-   │  │   Second-Level Lookahead Carry Generator (74182)│
-   │  └──┬──────────────┬──────────────┬────────────────┘
-   │     │ C12          │ C8           │ C4
-   │     └──────────────┼──────────────┘
-   └────────────────────┼────────────────────────────────┘
-```
+| Adder Block | Bit Range | Block Outputs ($P_G, G_G$) | Fast Carry Received from 74182 |
+| :--- | :---: | :---: | :--- |
+| **Block 0** | Bits 3–0 | $P_{G0}, G_{G0}$ | $C_0$ (system carry-in) |
+| **Block 1** | Bits 7–4 | $P_{G1}, G_{G1}$ | $C_4 = G_{G0} + P_{G0} C_0$ |
+| **Block 2** | Bits 11–8 | $P_{G2}, G_{G2}$ | $C_8 = G_{G1} + P_{G1} C_4$ |
+| **Block 3** | Bits 15–12 | $P_{G3}, G_{G3}$ | $C_{12} = G_{G2} + P_{G2} C_8$ |
 
 A second-level lookahead unit, such as the classic **74182 Look-Ahead Carry Generator** IC, takes the $(P_G, G_G)$ pairs from four 4-bit adder blocks (such as 74181 or 74283 adders) and computes the block carries $C_4, C_8, C_{12}, C_{16}$ simultaneously:
 
@@ -246,7 +236,7 @@ A carry-select adder speculatively duplicates hardware:
 ### 3. Parallel Prefix Adders (Tree Adders)
 Modern high-frequency 64-bit processors (such as x86 and ARM Cortex-A) use parallel prefix architectures:
 - **Kogge-Stone Adder:** Minimum logic depth ($O(\log_2 n)$), uniform fan-out, but high wiring congestion.
-- **Brent-Kung Adder:** Minimal wiring and area with slightly higher logic depth ($2\log_2 n - 1$).
+- **Brent-Kung Adder:** Minimal wiring and area with slightly higher logic depth ($2\log_2 n - 2$).
 
 <Callout tone="neon" label="The Cost of Speed">
 Faster adders always consume more silicon area and more dynamic power. Ripple-carry adders require $O(n)$ gates and minimum wiring; Carry-Lookahead adders require $O(n \log n)$ gates; Kogge-Stone adders require substantial interconnect area. In low-power IoT microcontrollers, ripple adders are often chosen specifically to save energy and chip area.
@@ -289,18 +279,19 @@ Assume elementary gates (AND, OR, NAND, NOR) have a propagation delay of $\tau =
      $$P_G = P_3 P_2 P_1 P_0 \implies 1\text{ level of AND} = 1\tau$$
      $$G_G = G_3 + P_3 G_2 + \dots \implies 2\text{ levels (AND-OR)} = 2\tau$$
      Accumulated time: $2\tau + 2\tau = 4\tau$.
-   - **Step 3:** The second-level 74182 lookahead generator receives all $(P_G, G_G)$ and computes block carries ($C_4, C_8, \dots, C_{28}$):
-     $$t_{\text{CLAG2}} = 2\text{ gate levels} = 2\tau$$
-     Accumulated time to block carry $C_{28}$: $4\tau + 2\tau = 6\tau$.
+   - **Step 3:** The lower 74182 generator receives $(P_G, G_G)$ from blocks 0 to 3 and computes block carries $C_4, C_8, C_{12}, C_{16}$ in $2\tau$ ($4\tau + 2\tau = 6\tau$). When cascading the two 74182 ICs, $C_{16}$ enters the carry-in of the upper 74182 (covering blocks 4 to 7). Because the upper $(P_G, G_G)$ terms are already pre-computed and stable at $4\tau$, propagating $C_{16}$ through the upper 74182 to produce $C_{28}$ takes one 2-level gate delay ($2\tau$):
+     $$\text{Accumulated time to block carry } C_{28} = 6\tau + 2\tau = 8\tau = 8\text{ ns}$$
+     *(Note: If a third top-level lookahead generator evaluates $C_{16}$ and $C_{28}$ in parallel, this step completes at $6\tau$)*.
    - **Step 4:** The internal CLAG of the final 4-bit block (bits 28 to 31) generates internal carry $C_{31}$ using $C_{28}$:
      $$t_{\text{CLAG1}} = 2\text{ gate levels} = 2\tau$$
-     Accumulated time to $C_{31}$: $6\tau + 2\tau = 8\tau$.
+     Accumulated time to $C_{31}$: $8\tau + 2\tau = 10\tau$.
    - **Step 5:** Final sum bit $S_{31} = P_{31} \oplus C_{31}$:
      $$t_{\text{sum}} = t_{XOR} = 2\tau$$
-     Total delay:
-     $$t_{\text{H-CLA}} = 8\tau + 2\tau = 10\tau = 10\text{ ns}$$
+     Total critical path delay:
+     $$t_{\text{H-CLA}} = 10\tau + 2\tau = 12\tau = 12\text{ ns}$$
+     *(or $10\tau = 10\text{ ns}$ in a balanced 3-level tree)*.
 
-The hierarchical lookahead adder is **6.4 times faster** than the ripple-carry adder ($10\text{ ns}$ vs $64\text{ ns}$).
+The hierarchical lookahead adder is over **5 times faster** than the ripple-carry adder ($12\text{ ns}$ vs $64\text{ ns}$).
 </ModelAnswer>
 
 ### Problem 2: Numerical trace of a 4-bit Carry-Lookahead Adder
@@ -411,8 +402,9 @@ The circuit specifications are:
      $$t_{\text{skips}} = 2 \times t_{\text{skip}} = 2 \times 1.2\text{ ns} = 2.4\text{ ns}$$
    - Carry arrives at Block 3 at time:
      $$t_{\text{arrive, Block 3}} = 4.0\text{ ns} + 2.4\text{ ns} = 6.4\text{ ns}$$
-   - In Block 3, carry ripples through bits 12, 13, 14, and 15 ($4 \times t_{carry} = 4.0\text{ ns}$), then generates $S_{15}$ via XOR ($t_{XOR} = 1.8\text{ ns}$, or $(m - 1)t_{carry} + t_{XOR} = 3 \times 1.0 + 1.8 = 4.8\text{ ns}$):
-     $$t_{\text{Block 3}} = (4 - 1) \times 1.0\text{ ns} + 1.8\text{ ns} = 4.8\text{ ns}$$
+   - In Block 3, carry ripples through bits 12, 13, and 14 ($3 \times t_{carry} = 3.0\text{ ns}$) to reach stage 15, and the final sum bit $S_{15}$ requires one XOR delay ($t_{XOR} = 1.8\text{ ns}$):
+     $$t_{\text{Block 3}} = (m - 1) \times t_{carry} + t_{XOR} = 3 \times 1.0\text{ ns} + 1.8\text{ ns} = 4.8\text{ ns}$$
+     *(Note: The block carry-out $C_{16}$ settles earlier, at $4 \times t_{carry} = 4.0\text{ ns}$)*.
    - Total worst-case propagation delay:
      $$t_{\text{worst}} = 4.0\text{ ns} + 2.4\text{ ns} + 4.8\text{ ns} = 11.2\text{ ns}$$
 

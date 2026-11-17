@@ -1,0 +1,323 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Streamify, Stage 4: Choosing a Style for Each Subsystem
+
+Stages 1 to 3 produced requirements, subsystems, elements and four [derived constraints](/courses/advanced-software-engineering/elements-and-press-play#derived-constraints-for-stage-4). Stage 4 picks the styles. The lecture's key message: **there is no single style for the whole system.**
+
+- The wrong question: *"Which style does Spotify use?"*
+- The better question: *"Which style fits each subsystem, given its dominant quality attributes?"*
+
+## The method
+
+For each subsystem:
+
+| Step | Action | Input from |
+| --- | --- | --- |
+| 1 | Identify its dominant quality attributes | the Stage 1 and Stage 2 tables |
+| 2 | List candidate styles | the style catalog ([Lecture 5](/courses/advanced-software-engineering/ten-styles-at-a-glance)) |
+| 3 | Evaluate the candidates against the ASRs | QA1, QA3, QA5, QA6, C1 |
+| 4 | Choose, and record the reasons, trade-offs and rejected alternatives | an [ADR](/courses/advanced-software-engineering/integrated-architecture-and-evaluation#architecture-decision-records) |
+
+Large systems are heterogeneous: styles are applied locally, then combined.
+
+## The style fit matrix
+
+●●● strong fit · ●● good · ● possible · ○ supporting role · ✕ poor fit · – not relevant
+
+| Subsystem | Dominant qualities | Client-server | Layered | P2P | Pipe & filter | Messaging | Chosen |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| S1 client app (inside) | modifiability, portability | – | ●●● | – | ○ | ○ | **layered** |
+| S2–S6 interactive APIs | latency, consistency, security | ●●● | ●● | ✕ | ✕ | ○ | **client-server** (+ layered inside services) |
+| S7 audio delivery (2008–2014) | bandwidth cost, latency | ●● | – | ●●● | – | – | **hybrid P2P + client-server** |
+| S7 audio delivery (2014–) | latency, mobile, simplicity | ●●● (CDN) | – | ● | – | – | **client-server via CDN** |
+| S8 content ingestion | throughput, extensibility | ○ | – | – | ●●● | ●● | **pipe-and-filter** (stages linked by queues) |
+| S9 event delivery | reliability, decoupling, scale | ✕ | – | – | ○ | ●●● | **messaging (pub/sub)** |
+| S10 data & recommendations | throughput, composability | – | – | – | ●●● | ●● | **pipe-and-filter** (batch/stream dataflow) |
+| S12 royalties | correctness, auditability | – | – | – | ●● | ●● | **messaging in, pipe-and-filter batch out** |
+
+S7 appears twice: same subsystem, same requirement (QA1), different style in different years.
+
+## Style 1: Client-server
+
+[Client-server](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#client-server): servers provide services; clients send requests and wait for responses. Clients know the servers; servers don't know the clients in advance.
+
+**Where in Streamify:** every interactive feature: login, search, catalog browsing, playlists, ad decisions, key issuance, and (today) audio delivery from CDN edge servers.
+
+| Requirement | How client-server satisfies it |
+| --- | --- |
+| C1 licensing | rights checks happen in one trusted, central place; clients can't be trusted |
+| QA7 security | tokens, key issuance and payment are centrally controlled and auditable |
+| FR4 playlists | one authoritative copy avoids conflicts between devices |
+| QA3 scalability | stateless servers behind load balancers scale horizontally |
+| C2 many platforms | one API contract; a BFF gateway adapts responses per device |
+
+| Weakness | Mitigation |
+| --- | --- |
+| the server is a bottleneck / single point of failure | replication, multiple regions, caching, circuit breakers (stop calling a failing service for a while, so the failure doesn't spread) |
+| round-trip latency | edge points of presence (server sites close to users), gateway aggregation, client caching |
+| bandwidth cost for heavy content | move audio to a CDN, a specialised client-server |
+
+**Rejected: P2P for metadata and playlists.** Authority and consistency can't be enforced on untrusted peers, so licensing (C1) fails.
+
+*Think about it:* a CDN edge is a server too. Why is CDN delivery a specialised form of client-server rather than a separate style? (Because the roles don't change: clients still request, servers still answer. The CDN only moves the servers closer and caches their content.)
+
+## Style 2: Layered
+
+A [layered](/courses/advanced-software-engineering/ten-styles-at-a-glance#layered-architecture) design groups components into layers. Each layer offers services to the layer above and uses only the layer below (**strict**) or any layer below (**relaxed**).
+
+<DiagramTabs
+  title="Layering in Streamify"
+  tabs={[
+    {
+      label: "(a) Inside each client",
+      width: 560,
+      height: 270,
+      nodes: [
+        { id: "p", label: "Presentation layer\nplatform-native UI (iOS, Android, web, car UI)", x: 280, y: 35, w: 440, h: 48, tone: "sky" },
+        { id: "a", label: "Application / feature layer\nsearch, library, player, home feed", x: 280, y: 100, w: 440, h: 48, tone: "sky" },
+        { id: "c", label: "Core services layer (shared C++ core)\nplayback engine, fetcher, DRM, cache, event logger, auth", x: 280, y: 165, w: 440, h: 48, tone: "violet" },
+        { id: "o", label: "Platform abstraction layer\nnetwork, filesystem, audio output, crypto, threads", x: 280, y: 230, w: 440, h: 48, tone: "orange" },
+      ],
+      edges: [{ from: "p", to: "a" }, { from: "a", to: "c" }, { from: "c", to: "o" }],
+      caption: "Only the top (UI, changes per platform) and bottom (hides OS differences) layers change per platform. The core is written once and reused everywhere (C2).",
+    },
+    {
+      label: "(b) Inside a backend service",
+      width: 560,
+      height: 230,
+      nodes: [
+        { id: "api", label: "API layer\nREST / gRPC handlers", x: 280, y: 35, w: 400, h: 48, tone: "sky" },
+        { id: "dom", label: "Domain layer\nplaylist rules, versioning, collaboration", x: 280, y: 115, w: 400, h: 48, tone: "violet" },
+        { id: "inf", label: "Infrastructure layer\nNoSQL driver, cache, event publisher", x: 280, y: 195, w: 400, h: 48, tone: "orange" },
+      ],
+      edges: [{ from: "api", to: "dom" }, { from: "dom", to: "inf" }],
+      caption: "The Playlist Service: domain logic is isolated from transport (API) and storage (infrastructure), so swapping the NoSQL driver doesn't touch the playlist rules.",
+    },
+  ]}
+/>
+
+| Requirement | How layering satisfies it |
+| --- | --- |
+| C2 many platforms | one shared core reused; only the top and bottom layers change per platform |
+| QA6 modifiability | a UI redesign doesn't touch the playback engine; a codec change doesn't touch the UI |
+| QA7 security | DRM and key handling sit in a protected core layer the UI can't bypass |
+| Testability | each layer can be tested with the layer below replaced by a mock |
+
+| Weakness | Mitigation / note |
+| --- | --- |
+| performance overhead from passing through layers | relaxed layering on the audio data path: the playback engine writes straight to the platform's audio output |
+| the <Term id="sinkhole-anti-pattern">"sinkhole" anti-pattern</Term>: requests pass through layers that do nothing with them | watch for it in simple CRUD services (ones that only create, read, update and delete records) |
+| doesn't address distribution: it structures one deployable unit | that's why it is combined with client-server |
+
+**Two kinds of view.** Layered answers a [module-view](/courses/advanced-software-engineering/module-views) question: *how is the code organised?* Client-server, P2P and messaging answer a [C&C-view](/courses/advanced-software-engineering/component-and-connector-views) question: *how do running parts interact?* So "should we use layered or client-server?" is the wrong question: they answer different questions, and are combined, not compared.
+
+## Style 3: Peer-to-peer (historic, 2008 to 2014)
+
+[Peer-to-peer](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#peer-to-peer): every node is both client and server. Peers find each other and exchange resources directly, without a central server in every transfer.
+
+**Context, constraint C5:** in 2008 Spotify was a start-up promising instant play across a huge catalog, and bandwidth was expensive. The ≈ 2.4 Tbps estimate shows why bandwidth dominated the cost. The original desktop client fetched audio chunks from other listeners' clients *and* from Spotify's servers.
+
+**How the hybrid worked** (simplified from Kreitz and Niemelä, IEEE P2P 2010):
+
+1. The first chunk came from a server, for a fast start (protects QA1).
+2. In parallel, the client asked the tracker and its neighbours which peers held the track.
+3. Later chunks came from peers. The server was the fallback if peers were slow (protects QA2).
+4. Audio was encrypted. Peers relayed bytes they couldn't play (C1, QA7).
+5. Reported results: most plays from the local cache, a large share from peers, only about 1/10 from servers; median latency about ¼ second.
+
+| Driver | Why P2P fit |
+| --- | --- |
+| QA8 / C5 cost | users' upload bandwidth carried much of the delivery load |
+| QA3 scalability | capacity grows with users: more listeners, more sources (self-scaling) |
+| Popularity skew | popular tracks are cached by many peers, so they are copied naturally |
+
+It was **hybrid, not pure P2P**. Pure P2P can't enforce licensing, authentication or royalties.
+
+### Why P2P was retired (~2014)
+
+| What changed | Effect on the architecture |
+| --- | --- |
+| mobile became dominant | phones make poor peers (battery, data caps, home routers (NAT) that block incoming connections, limits on background apps); they never took part in P2P anyway |
+| CDN and server bandwidth costs dropped | the cost driver C5 got weaker, so the main reason for P2P weakened |
+| the company grew | it could afford its own and third-party delivery infrastructure |
+| complexity and operational risk | P2P is harder to debug and monitor, and using users' resources worried users |
+| need for more predictable quality | a CDN gives controllable latency and is simpler to reason about for availability |
+
+<DiagramTabs
+  title="Audio delivery: the same requirement, two styles"
+  tabs={[
+    {
+      label: "2008: hybrid P2P",
+      width: 560,
+      height: 230,
+      nodes: [
+        { id: "me", label: "Your desktop client", x: 280, y: 115, w: 180, tone: "sky" },
+        { id: "srv", label: "Spotify servers\n(first chunk, tracker,\nfallback)", x: 90, y: 115, w: 150, h: 62, tone: "orange" },
+        { id: "p1", label: "Peer", x: 460, y: 40, w: 80 },
+        { id: "p2", label: "Peer", x: 490, y: 115, w: 80 },
+        { id: "p3", label: "Peer", x: 460, y: 190, w: 80 },
+      ],
+      edges: [
+        { from: "srv", to: "me", label: "chunk 1" },
+        { from: "p1", to: "me" },
+        { from: "p2", to: "me", label: "later chunks" },
+        { from: "p3", to: "me" },
+      ],
+      caption: "ADR-001: desktop clients serve encrypted cached chunks to each other; servers keep authority and act as fallback.",
+    },
+    {
+      label: "~2014: CDN",
+      width: 560,
+      height: 200,
+      nodes: [
+        { id: "me", label: "Any client\n(phone, desktop, TV)", x: 100, y: 100, w: 170, h: 52, tone: "sky" },
+        { id: "cdn", label: "CDN edge", x: 300, y: 100, w: 130, tone: "mint" },
+        { id: "o", label: "Object store\n(origin)", x: 480, y: 100, w: 140, h: 52, kind: "store" },
+      ],
+      edges: [
+        { from: "me", to: "cdn", label: "HTTP range" },
+        { from: "cdn", to: "o", label: "on miss" },
+      ],
+      caption: "ADR-004: all audio through a CDN and own infrastructure. Aggressive client caching and prefetching were kept.",
+    },
+  ]}
+/>
+
+**Key lesson:** the same requirement (QA1, instant play) was met by different styles at different times, because the constraints and context changed. It was recorded as ADR-001 (hybrid P2P, 2008), <Term id="superseded">superseded</Term> by ADR-004 (CDN delivery, ~2014).
+
+## Style 4: Pipe-and-filter
+
+[Pipe-and-filter](/courses/advanced-software-engineering/pipe-and-filter-and-messaging#pipe-and-filter): independent filters transform data and pass the results through pipes to the next filter. Filters don't share state and don't know their neighbours.
+
+<DiagramTabs
+  title="Pipe-and-filter in Streamify"
+  tabs={[
+    {
+      label: "(a) Content ingestion (S8)",
+      width: 640,
+      height: 230,
+      nodes: [
+        { id: "in", label: "Label delivery\n(audio + XML)", x: 70, y: 50, w: 120, h: 50, kind: "plain" },
+        { id: "f1", label: "Validate &\nparse metadata", x: 200, y: 50, w: 120, h: 50, tone: "violet" },
+        { id: "f2", label: "Decode /\nnormalise", x: 340, y: 50, w: 110, h: 50, tone: "violet" },
+        { id: "f3", label: "Loudness\nnormalise", x: 470, y: 50, w: 110, h: 50, tone: "violet" },
+        { id: "f4", label: "Transcode\n(N bitrates)", x: 585, y: 120, w: 100, h: 50, tone: "violet" },
+        { id: "f5", label: "Fingerprint /\ndedupe", x: 450, y: 190, w: 120, h: 50, tone: "violet" },
+        { id: "f6", label: "Encrypt\n(DRM)", x: 320, y: 190, w: 100, h: 50, tone: "violet" },
+        { id: "f7", label: "Store in\nobject store", x: 190, y: 190, w: 110, h: 50, tone: "violet" },
+        { id: "f8", label: "Publish:\ncatalog, CDN, search", x: 60, y: 190, w: 120, h: 50, tone: "violet" },
+      ],
+      edges: [
+        { from: "in", to: "f1" }, { from: "f1", to: "f2" }, { from: "f2", to: "f3" }, { from: "f3", to: "f4" },
+        { from: "f4", to: "f5" }, { from: "f5", to: "f6" }, { from: "f6", to: "f7" }, { from: "f7", to: "f8" },
+      ],
+      caption: "This is the Ingestion Pipeline element from Stage 3, and FR7. Pipes are durable queues, not in-memory streams: a crashed transcoder resumes from its input, and nothing upstream is redone.",
+    },
+    {
+      label: "(b) Recommendation dataflow (S10)",
+      width: 640,
+      height: 230,
+      nodes: [
+        { id: "e", label: "Play events", x: 70, y: 40, w: 110, kind: "plain" },
+        { id: "a", label: "Audio files", x: 70, y: 100, w: 110, kind: "plain" },
+        { id: "pl", label: "Playlists", x: 70, y: 160, w: 110, kind: "plain" },
+        { id: "c", label: "Clean & dedupe", x: 230, y: 40, w: 130, tone: "violet" },
+        { id: "x", label: "Audio features", x: 230, y: 100, w: 130, tone: "violet" },
+        { id: "co", label: "Co-occurrence /\nembeddings", x: 230, y: 165, w: 130, h: 48, tone: "violet" },
+        { id: "j", label: "Join features", x: 400, y: 100, w: 120, tone: "violet" },
+        { id: "r", label: "Candidates →\nranking", x: 400, y: 190, w: 120, h: 48, tone: "violet" },
+        { id: "f", label: "Rights filter →\nwrite playlist", x: 560, y: 190, w: 130, h: 48, tone: "violet" },
+      ],
+      edges: [
+        { from: "e", to: "c" }, { from: "a", to: "x" }, { from: "pl", to: "co" },
+        { from: "c", to: "j" }, { from: "x", to: "j" }, { from: "co", to: "j" },
+        { from: "j", to: "r" }, { from: "r", to: "f" },
+      ],
+      caption: "Built in practice with frameworks like Apache Beam / Google Dataflow (Spotify open-sourced Scio and Luigi). The 'dedupe' and 'rights filter' steps also appear in ingestion: write a filter once, reuse it.",
+    },
+  ]}
+/>
+
+The same pattern runs S12's royalty batch: events in → de-duplicate → aggregate per rights holder → reports.
+
+| Requirement | How pipe-and-filter satisfies it |
+| --- | --- |
+| throughput (terabytes of content and events) | filters run in parallel and scale independently (add transcoders only) |
+| QA6 extensibility | a new codec or ML feature = insert a filter; the other stages don't change |
+| Reuse | "dedupe" and "rights filter" are reused across pipelines |
+| Testability | each filter is a near-pure transformation, tested on its own |
+| Recoverability | durable pipes: a failed stage re-runs from its input |
+
+| Weakness | Mitigation |
+| --- | --- |
+| latency adds up across stages | never use it for "press play" (interactive) |
+| coupling through the data format | schemas (formats such as Avro or Protobuf) with versioning |
+| errors spread across stages | <Term id="dead-letter-queue">dead-letter queues</Term> and idempotent filters |
+| serialisation overhead | accepted for batch and bulk work |
+
+**Rejected: one monolithic "ingest service".** A new codec would mean redeploying everything, and a slow transcoder would block validation.
+
+## Style 5: Messaging (publish/subscribe)
+
+[Messaging](/courses/advanced-software-engineering/ten-styles-at-a-glance#implicit-invocation-and-its-two-flavors): components communicate by sending messages through a broker. Producers don't know consumers. They are decoupled in **time** (asynchronous), **space** (no addresses) and **synchronisation** (no blocking).
+
+<BoxDiagram
+  title="The event bus (S9)"
+  width={640}
+  height={260}
+  nodes={[
+    { id: "c", label: "Clients\n(via event gateway)", x: 90, y: 40, w: 150, h: 48 },
+    { id: "ad", label: "Ads service", x: 90, y: 105, w: 150 },
+    { id: "in", label: "Ingestion", x: 90, y: 165, w: 150 },
+    { id: "pl", label: "Playlist service", x: 90, y: 225, w: 150 },
+    { id: "t1", label: "playback.events", x: 320, y: 40, w: 160, tone: "orange" },
+    { id: "t2", label: "ads.impressions", x: 320, y: 105, w: 160, tone: "orange" },
+    { id: "t3", label: "catalog.track-published", x: 320, y: 165, w: 180, tone: "orange" },
+    { id: "t4", label: "playlist.changes", x: 320, y: 225, w: 160, tone: "orange" },
+    { id: "r1", label: "Royalty aggregator", x: 550, y: 25, w: 160 },
+    { id: "r2", label: "Recs input", x: 550, y: 70, w: 160 },
+    { id: "r3", label: "Ads reporting", x: 550, y: 115, w: 160 },
+    { id: "r4", label: "Search indexer", x: 550, y: 160, w: 160 },
+    { id: "r5", label: "CDN warm-up", x: 550, y: 200, w: 160 },
+    { id: "r6", label: "Notifications, recs", x: 550, y: 240, w: 160 },
+  ]}
+  edges={[
+    { from: "c", to: "t1", label: "play" }, { from: "ad", to: "t2" }, { from: "in", to: "t3" }, { from: "pl", to: "t4" },
+    { from: "t1", to: "r1" }, { from: "t1", to: "r2" }, { from: "t2", to: "r3" }, { from: "t3", to: "r4" }, { from: "t3", to: "r5" }, { from: "t4", to: "r6" },
+  ]}
+  caption="Producers publish to durable, partitioned topics; each consumer subscribes to what it needs. Retention allows replay for reprocessing."
+/>
+
+Real-world anchor: Spotify's engineering blog (2016) described moving its event delivery from Kafka to Google Cloud Pub/Sub, for reliable delivery of royalty-relevant events.
+
+| Requirement | How messaging satisfies it |
+| --- | --- |
+| ~700 K events/s peak | the broker absorbs bursts (buffering, load levelling); consumers work at their own pace |
+| QA5 no lost royalty events | durable topics, <Term id="at-least-once">at-least-once delivery</Term>, client-side retry buffers, <Term id="idempotent">idempotent</Term> consumers that de-duplicate by event ID |
+| QA1 latency | clients fire and forget; telemetry never blocks playback (derived constraint 1) |
+| QA6 modifiability | a new consumer (e.g. a new analytics team) subscribes without changing producers |
+| QA4 availability | if royalty processing goes down, events wait in the bus; producers are unaffected |
+| Reprocessing | retention and replay allow recomputing after a bug fix in a consumer |
+
+Three of the four quality ASRs (QA1, QA5, QA6) are served by this one style. That's why S9 is architecturally significant even though users never see it. **"At-least-once + dedupe = effectively once":** the bus guarantees nothing is lost; the consumer (the royalty aggregator) removes duplicates.
+
+| Weakness | Mitigation in Streamify |
+| --- | --- |
+| eventual consistency: consumers lag behind | acceptable for analytics and royalties (daily); not used where read-your-writes matters |
+| duplicate delivery (at-least-once) | unique event IDs and idempotent processing / a dedupe filter |
+| ordering only within a partition | partition by user ID or track ID where order matters |
+| harder to trace end to end | correlation IDs, distributed tracing, schema registry |
+| the broker is critical infrastructure | managed, replicated broker across zones |
+
+**Rejected: clients calling a synchronous `POST /royalty/play`.** That creates <Term id="temporal-coupling">temporal coupling</Term>: if the royalty service is down, events are lost or playback slows down, breaking QA1 and QA5.
+
+*Think about it:* pipe-and-filter and messaging both use queues. What separates them? (A pipe carries a stream to *the next transformation step* in a fixed chain. A topic carries a *fact* to any number of independent subscribers, which the producer doesn't know about.)
+
+<Callout tone="orange" label="Common mistake">
+Asking "which style does this system use?" and picking one. Streamify uses five, each where its strengths match a subsystem's dominant qualities. Another trap is comparing layered with client-server: one organises code, the other organises running parts, so you use both.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["sinkhole-anti-pattern", "superseded", "dead-letter-queue", "at-least-once", "idempotent", "temporal-coupling"]} />

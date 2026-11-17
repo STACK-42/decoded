@@ -1,0 +1,166 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# N-Tier, Client-Server and Peer-to-Peer
+
+Three styles that differ in one big question: **who serves whom?** In client-server, one side always asks and the other always answers. In peer-to-peer, everyone does both.
+
+## The n-tier client-server pattern
+
+The <Term id="n-tier">n-tier</Term> style is a layered architecture: the system is split into **tiers**, each with one job.
+
+<DiagramTabs
+  title="N-tier: logical tiers and physical machines"
+  tabs={[
+    {
+      label: "Tiers",
+      width: 560,
+      height: 280,
+      nodes: [
+        { id: "w1", label: "Web client", x: 200, y: 35, w: 100 },
+        { id: "w2", label: "Web client", x: 320, y: 35, w: 100 },
+        { id: "w3", label: "Web client", x: 440, y: 35, w: 100 },
+        { id: "ws", label: "Web server", x: 320, y: 115, w: 340 },
+        { id: "as", label: "Application server", x: 320, y: 185, w: 340, tone: "sky" },
+        { id: "db", label: "Databases", x: 320, y: 255, w: 340, kind: "store" },
+        { id: "t1", label: "Client tier", x: 70, y: 35, kind: "plain" },
+        { id: "t2", label: "Web server tier", x: 70, y: 115, kind: "plain" },
+        { id: "t3", label: "Business logic tier", x: 70, y: 185, kind: "plain" },
+        { id: "t4", label: "Data mgmt tier", x: 70, y: 255, kind: "plain" },
+      ],
+      edges: [
+        { from: "w1", to: "ws", both: true },
+        { from: "w2", to: "ws", both: true },
+        { from: "w3", to: "ws", both: true },
+        { from: "ws", to: "as", both: true },
+        { from: "as", to: "db", both: true },
+      ],
+      caption: "Four tiers. Requests start at the client tier and travel down through the web and business-logic tiers to the data tier.",
+    },
+    {
+      label: "Machines",
+      width: 640,
+      height: 170,
+      nodes: [
+        { id: "a", label: "Web browser\n(thin client)", x: 80, y: 70, w: 130, h: 52, tone: "orange" },
+        { id: "b", label: "Presentation\nlogic", x: 240, y: 70, w: 120, h: 52, tone: "orange" },
+        { id: "c", label: "Application\nlogic", x: 400, y: 70, w: 120, h: 52, tone: "orange" },
+        { id: "d", label: "Database", x: 560, y: 70, w: 120, h: 52, kind: "store", tone: "mint" },
+        { id: "ma", label: "Machine A · Client tier", x: 80, y: 130, kind: "plain" },
+        { id: "mb", label: "Machine B · Web server", x: 240, y: 145, kind: "plain" },
+        { id: "mc", label: "Machine C · App server", x: 400, y: 130, kind: "plain" },
+        { id: "md", label: "Machine D · Data tier", x: 560, y: 145, kind: "plain" },
+      ],
+      edges: [
+        { from: "a", to: "b", both: true },
+        { from: "b", to: "c", both: true },
+        { from: "c", to: "d", both: true },
+      ],
+      caption: "One possible deployment: each tier on its own machine. The browser is a thin client: it only displays what the presentation tier sends.",
+    },
+  ]}
+/>
+
+The browser here is a <Term id="thin-client">thin client</Term>: almost all the work happens on the servers.
+
+## Client-server
+
+Operating Systems covers the mechanisms underneath, sockets, RPC and pipes, in [communication in client-server systems](/courses/operating-systems/interprocess-communication#communication-in-client-server-systems). Here we look at client-server as an architectural style.
+
+In <Term id="client-server">client-server</Term>, client processes interact with individual server processes, usually on a separate computer, to access data or a resource. **A server may in turn use the services of other servers**, so the same process can be a server to one side and a client to the other.
+
+<BoxDiagram
+  title="Client-server: processes on computers"
+  width={600}
+  height={210}
+  nodes={[
+    { id: "c1", label: "Client", x: 80, y: 50, w: 100, tone: "orange" },
+    { id: "c2", label: "Client", x: 80, y: 160, w: 100, tone: "orange" },
+    { id: "s1", label: "Server", x: 300, y: 105, w: 100, tone: "orange" },
+    { id: "s2", label: "Server", x: 520, y: 50, w: 100, tone: "orange" },
+  ]}
+  edges={[
+    { from: "c1", to: "s1", label: "invocation", bend: -14 },
+    { from: "s1", to: "c1", label: "result", bend: -14 },
+    { from: "c2", to: "s1", bend: -14 },
+    { from: "s1", to: "c2", bend: -14 },
+    { from: "s1", to: "s2", label: "invocation", bend: -14 },
+    { from: "s2", to: "s1", label: "result", bend: -14 },
+  ]}
+  caption="The middle server answers clients and is itself a client of another server. Each box is a process on its own computer."
+/>
+
+**Examples** (from the lecture's styles summary): browsers such as Chrome request pages from web servers such as Apache or Nginx over HTTP; email clients talk to mail servers over SMTP/IMAP.
+
+### Key properties
+
+- **<Term id="separation-of-concerns">Separation of concerns</Term>:** each tier handles one concern (display, business rules, data).
+- **<Term id="synchronous-communication">Synchronous communication</Term>:** requests flow in a single direction, from the client tier through the web and business-logic tiers to the data tier, and each caller waits for the answer.
+- **Flexible deployment** (which tier runs where is a [deployment view](/courses/advanced-software-engineering/allocation-views#the-deployment-style) question from Lecture 4): there are no restrictions on how a multi-tier application is deployed. All tiers can run on one machine, or, at the other extreme, each tier on its own machine.
+
+### Addressing quality attributes
+
+| Quality | How n-tier client-server handles it |
+| --- | --- |
+| **Availability** | Servers in each tier can be <Term id="replication">replicated</Term>, so one failure doesn't stop the tier. |
+| **Modifiability** | Separation of concerns: change the UI without touching the data tier. |
+| **Performance** | Depends on the speed of the connections between tiers, and on how much data is transferred across them. Every tier boundary adds a network hop. |
+| **Scalability** | Does the tier type matter? Yes: stateless tiers (web, application) scale by adding servers; the data tier is the hard one, because copies of data must stay consistent. |
+
+### Pros and cons (from the styles summary)
+
+| Pros | Cons |
+| --- | --- |
+| centralized data and control | the server is a single point of failure |
+| easier security and backups | the server can become a bottleneck |
+| thin clients, easy updates | depends on the network |
+
+<Callout tone="orange" label="The weak spot">
+A single server is a <Term id="single-point-of-failure">single point of failure</Term> and can become a bottleneck. That's why replication is the first availability tactic in this style.
+</Callout>
+
+## Peer-to-peer
+
+In <Term id="peer-to-peer">peer-to-peer</Term> (P2P), **all processes play similar roles**, cooperating as peers to perform distributed activities or computations, with no distinction between clients and servers. Each peer is both: it asks for resources and serves them.
+
+<BoxDiagram
+  title="Peer-to-peer"
+  width={560}
+  height={250}
+  nodes={[
+    { id: "p1", label: "Peer 1", x: 90, y: 60, w: 100, tone: "sky" },
+    { id: "p2", label: "Peer 2", x: 290, y: 40, w: 100, tone: "sky" },
+    { id: "p3", label: "Peer 3", x: 480, y: 80, w: 100, tone: "sky" },
+    { id: "p4", label: "Peer 4", x: 400, y: 200, w: 100, tone: "sky" },
+    { id: "p5", label: "Peers 5…N", x: 140, y: 200, w: 120, tone: "sky" },
+  ]}
+  edges={[
+    { from: "p1", to: "p5", both: true },
+    { from: "p1", to: "p4", both: true },
+    { from: "p2", to: "p3", both: true },
+    { from: "p2", to: "p4", both: true },
+    { from: "p3", to: "p5", both: true },
+    { from: "p3", to: "p4", both: true },
+  ]}
+  caption="Each peer runs the same application and shares its own objects. Any peer can talk to any other."
+/>
+
+**Examples:** BitTorrent (every downloader also uploads pieces to others) and Bitcoin (nodes share transactions and blocks without a central server).
+
+**A hybrid: P2P with a centralized index server**, as in the original Napster. Peers transfer files directly to each other, but a central server keeps the index of who has what. Searching is easy, but the index server is a single point of failure again.
+
+### Pros and cons
+
+| Pros | Cons |
+| --- | --- |
+| highly scalable: every new peer adds capacity | hard to secure: you must trust unknown peers |
+| no single point of failure | hard to manage and back up |
+| resources spread across the peers | performance and availability vary with which peers are online |
+
+<Callout tone="orange" label="Common mistake">
+Thinking n tiers need n machines. A tier is a logical layer; the lecture says all tiers can run on one machine or each on its own. Tier count is a design choice; machine count is a deployment choice.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["n-tier", "client-server", "thin-client", "separation-of-concerns", "synchronous-communication", "replication", "single-point-of-failure", "peer-to-peer"]} />

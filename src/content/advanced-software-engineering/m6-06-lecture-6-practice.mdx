@@ -1,0 +1,171 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 6 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 6 material (the Streamify case study). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-6-practice"
+  questions={questionsForQuiz(questions, "lecture-6-practice")}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-6-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Sequence understanding: in the press-play sequence, the client has the signed CDN URL. What happens next?",
+      figure: (
+        <SequenceDiagram
+          participants={["Engine", "Gateway", "KeySvc", "CDN"]}
+          steps={[
+            { from: 0, to: 1, label: "resolve(t42, market, quality)" },
+            { from: 1, to: 0, label: "signed CDN URL + fileId", dashed: true },
+            { from: 0, to: 2, label: "", hidden: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The engine asks the gateway to download the whole file" },
+        { id: "b", text: "The engine requests the key from the key service and the first chunk from the CDN at the same time" },
+        { id: "c", text: "The engine waits for the key, then asks the CDN for the full file" },
+        { id: "d", text: "The engine logs PlayStarted synchronously and waits for the bus" },
+      ],
+      correctOptionId: "b",
+      explanation: "Steps ⑦a (getKey) and ⑦b (GET range 0–N) are sent in parallel: the 'parallel requests' tactic for QA1. Audio never goes through the gateway, and logging is asynchronous.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: what belongs in the box marked ? so that play events are never lost and never block playback?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={170}
+          nodes={[
+            { id: "c", label: "S1 client\nevent logger", x: 90, y: 85, w: 140, h: 50, tone: "sky" },
+            { id: "m", label: "?", x: 300, y: 85, w: 150, kind: "missing" },
+            { id: "r", label: "Royalty aggregator", x: 500, y: 40, w: 170 },
+            { id: "d", label: "Data platform", x: 500, y: 130, w: 170 },
+          ]}
+          edges={[
+            { from: "c", to: "m", label: "batched, async" },
+            { from: "m", to: "r", dashed: true },
+            { from: "m", to: "d", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The API gateway" },
+        { id: "b", text: "A durable, partitioned pub/sub event bus (S9)" },
+        { id: "c", text: "The CDN" },
+        { id: "d", text: "The catalog's relational database" },
+      ],
+      correctOptionId: "b",
+      explanation: "Derived constraints 1 and 4: events must not block the client and must pass through a durable channel. That is S9, the messaging backbone, with at-least-once delivery.",
+    },
+    {
+      id: "d3",
+      prompt: "Error detection: what is wrong with this design for recording plays?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={140}
+          nodes={[
+            { id: "c", label: "Client", x: 90, y: 70, w: 110, tone: "sky" },
+            { id: "r", label: "Royalty service", x: 330, y: 70, w: 160, tone: "orange" },
+            { id: "db", label: "Royalty DB", x: 500, y: 70, w: 110, kind: "store" },
+          ]}
+          edges={[
+            { from: "c", to: "r", label: "sync POST /royalty/play" },
+            { from: "r", to: "db" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing; REST is the simplest option" },
+        { id: "b", text: "Temporal coupling: if the royalty service is down, plays are lost or playback slows, breaking QA1 and QA5" },
+        { id: "c", text: "The royalty service should use a NoSQL database" },
+        { id: "d", text: "The client should call the database directly" },
+      ],
+      correctOptionId: "b",
+      explanation: "This is the alternative the lecture rejects. A synchronous call ties the client to the royalty service being up. Writing directly to the database (d) is also rejected in ADR-002, for security and coupling.",
+    },
+    {
+      id: "d4",
+      prompt: "System interpretation: in the integrated architecture, which path do audio bytes take?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={180}
+          nodes={[
+            { id: "cl", label: "S1 Client", x: 300, y: 35, w: 140, tone: "sky" },
+            { id: "a", label: "A: API gateway", x: 100, y: 140, w: 150 },
+            { id: "b", label: "B: CDN edge", x: 300, y: 140, w: 140, tone: "mint" },
+            { id: "c", label: "C: Event bus", x: 500, y: 140, w: 140, tone: "orange" },
+          ]}
+          edges={[
+            { from: "cl", to: "a" },
+            { from: "cl", to: "b" },
+            { from: "cl", to: "c" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A: through the API gateway, so it can check rights" },
+        { id: "b", text: "B: straight from the CDN edge, bypassing the gateway" },
+        { id: "c", text: "C: through the event bus" },
+        { id: "d", text: "All three, in turn" },
+      ],
+      correctOptionId: "b",
+      explanation: "Control requests go through the gateway; audio bytes go straight to the CDN; events go to the bus. Rights are checked on the control path (and again at key issuance), not on the byte path.",
+    },
+    {
+      id: "d5",
+      prompt: "Relationship identification: ADR-001 (hybrid P2P, 2008) and ADR-004 (CDN delivery, ~2014). What is the relationship?",
+      options: [
+        { id: "a", text: "ADR-004 supersedes ADR-001; ADR-001 is kept with status 'superseded'" },
+        { id: "b", text: "ADR-004 deletes ADR-001" },
+        { id: "c", text: "They are unrelated decisions about different subsystems" },
+        { id: "d", text: "ADR-001 was a mistake that should never have been made" },
+      ],
+      correctOptionId: "a",
+      explanation: "Same subsystem (S7), same requirement (QA1); the context changed, so a new decision replaced the old one. Keeping ADR-001 preserves why P2P was used. It wasn't a mistake: it fit its time.",
+    },
+    {
+      id: "d6",
+      prompt: "Design decision: a new streaming start-up in 2024 has expensive bandwidth and mostly desktop and smart-TV users. Which argument best supports considering hybrid P2P?",
+      options: [
+        { id: "a", text: "P2P is always cheaper and simpler" },
+        { id: "b", text: "Constraint C5 (expensive bandwidth) applies again, and desktop/TV devices make better peers than phones" },
+        { id: "c", text: "P2P removes the need for DRM" },
+        { id: "d", text: "Pure P2P can enforce licensing" },
+      ],
+      correctOptionId: "b",
+      explanation: "This is the lecture's debate activity. The factors that retired P2P (mobile devices, cheap CDNs) are reversed here. It must still be hybrid: licensing needs a central authority, and P2P is harder to operate.",
+    },
+    {
+      id: "d7",
+      prompt: "Diagram construction: you're drawing the content ingestion subsystem (S8). Which diagram fits the lecture's design?",
+      options: [
+        { id: "a", text: "One ingest service that validates, transcodes and publishes in a single process" },
+        { id: "b", text: "A chain of stateless filters (validate → decode → normalise → transcode → fingerprint → encrypt → store → publish) linked by durable queues" },
+        { id: "c", text: "A peer-to-peer mesh of label servers" },
+        { id: "d", text: "A client-server call per audio file, waiting for the transcode to finish" },
+      ],
+      correctOptionId: "b",
+      explanation: "ADR-003: pipe-and-filter with durable queues. The monolithic ingest service (a) is the rejected alternative: a new codec would mean redeploying everything, and a slow transcoder would block validation.",
+    },
+  ]}
+/>

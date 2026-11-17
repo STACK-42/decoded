@@ -1,40 +1,726 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { Handshake, IoMethods } from "@/components/mdx/ArchitectureVisualizers";
 
 # Input and Output
 
-A keyboard sends a few bytes a second, while a CPU runs billions of instructions per second. Input and output are mainly about bridging that enormous gap in speed.
+A central processing unit executes billions of instructions per second, completing an internal register operation every fraction of a nanosecond. External peripherals operate on very different time scales: a mechanical keyboard delivers a few keystrokes per second, an optical mouse sends position updates every millisecond, a solid-state disk reads flash memory in microseconds, and a high-speed network transceiver captures packets every few tens of nanoseconds.
 
-## Devices and buffering
+Connecting these devices directly to the high-speed CPU datapath would stall the processor. **Input and output** (**I/O**) systems bridge the differences in operating speeds, data formats, and electrical voltages between peripherals and the CPU, allowing the processor to coordinate external devices without stalling user programs.
 
-A device connects through an **I/O module** (or controller), which has registers the CPU can read and write. Usually these are a data register, a status register ("are you ready?") and a command register.
+## Devices and the I/O controller
 
-Because the two sides run at different speeds, the controller holds data in a small memory, a **buffer**. A disk delivers a whole sector in one burst, whenever it's ready. The buffer holds it until the CPU or memory can take it.
+A peripheral does not connect directly to CPU registers or motherboard memory traces. Direct connections would force the CPU manufacturer to design silicon pins and microcode tailored to the electrical, mechanical, and timing details of thousands of different devices.
 
-## Handshaking
+Instead, each peripheral attaches to the computer through an interface chip called an **I/O module**, or **device controller**.
 
-How can two devices with different speeds and no shared clock reliably hand over data? It's like passing a heavy box: "Have you got it?" "Got it." "OK, letting go." That's a **handshake**.
+| System Layer | Operating Speed | Data Format | Physical Medium |
+|---|---|---|---|
+| **CPU Datapath** | Gigahertz ($< 1\text{ ns}$ cycle) | Parallel 64-bit words | Silicon die |
+| **System Bus** | Hundreds of megahertz | Synchronous parallel bus | Motherboard traces |
+| **I/O Controller** | Translates internal bus to peripheral standard | Buffers words and serializes streams | Controller chip |
+| **Peripheral Device** | Megahertz down to hertz | Serial packets, pulses, or analog | Cables, flash memory, disks |
+
+An I/O controller handles three primary tasks:
+
+1. **Electrical conversion**: It converts motherboard bus voltages (such as $1.2\text{ V}$ or $3.3\text{ V}$ logic levels) into the voltages, differential signals, or optical pulses used by external cables (such as USB, SATA, HDMI, or Ethernet).
+2. **Buffering**: It holds temporary data in internal storage called a **buffer**. For example, a solid-state disk reads an entire 4,096-byte page in a single rapid burst. The controller buffer holds these incoming bytes until the system bus is free, matching the burst speed of the storage medium to the availability of system memory. Buffering prevents **buffer overrun** (where new data arrives before old data is read, overwriting it) and **buffer underrun** (where an output device runs out of bytes during transmission).
+3. **Data formatting and error checking**: It translates between the parallel data words on the CPU bus and the serial bit streams on external cables. The controller also computes and checks error-detecting codes, such as a **cyclic redundancy check** (**CRC**), to catch transmission noise before presenting data to the CPU.
+
+### Controller register architecture
+
+To control a peripheral, the processor reads from and writes to dedicated registers implemented on the controller chip:
+
+- **Data In / Data Out Registers**: Hold the incoming byte or outgoing word moving between the peripheral and system memory.
+- **Status Register**: A set of single-bit flags, structured as a **bitmask** (a word where each bit represents a specific hardware condition), that the CPU reads to monitor device state:
+  - `BUSY`: Set to 1 while the peripheral is actively executing a command.
+  - `READY` or `DONE`: Set to 1 when an input byte is waiting in the data register, or when the output buffer is empty and ready for the next write.
+  - `ERROR`: Set to 1 when a hardware fault, parity check failure, or transmission timeout occurs.
+  - `IRQ`: Set to 1 when the controller asserts an interrupt request to get the processor's attention.
+- **Command / Control Register**: Accepts operational codes written by the CPU. These bits configure transfer modes, start media reads or writes, set baud rates, or enable interrupts.
+
+To access these registers, the CPU drives the address bus. An address decoder circuit on the motherboard matches the higher address bits and asserts the controller's **chip-select** ($\overline{\text{CS}}$) pin, an electrical line that enables the controller chip to read or drive the data bus. The lowest address bits (such as $A_1$ and $A_0$) connect to the controller's **register-select** ($RS$) inputs, determining which of the chip's internal registers (Data, Status, or Control) responds to the operation.
+
+## I/O addressing: memory-mapped vs. port-mapped
+
+Processors locate and address controller registers using one of two architectural strategies:
+
+| Architectural Property | Memory-Mapped I/O (MMIO) | Port-Mapped I/O (PMIO / Isolated I/O) |
+|---|---|---|
+| **Address Space** | Shares physical DRAM address space | Dedicated, independent I/O address space |
+| **CPU Instructions** | Standard memory instructions (`LDR`, `STR`, `MOV`) | Dedicated I/O instructions (`IN`, `OUT`) |
+| **Bus Control Signals** | Unified memory read and write lines ($\overline{\text{MEMR}}$, $\overline{\text{MEMW}}$) | Dedicated I/O read and write lines ($\overline{\text{IOR}}$, $\overline{\text{IOW}}$) |
+| **Virtual Memory Protection** | Standard page table permissions apply | Requires separate CPU privilege check |
+| **Caching Considerations** | Pages must be marked uncacheable | Naturally immune to cache pollution |
+| **Typical Architectures** | ARM, RISC-V, MIPS, modern x86 PCIe | Legacy x86 (Intel 8086 through Core i9) |
+
+Under **Memory-Mapped I/O** (**MMIO**), device registers occupy reserved regions of the physical memory map. When the CPU executes a standard store instruction to address `0xFFFF0000`, the memory bus address decoder routes the request to the controller's chip-select line instead of system DRAM.
+
+This design gives programs the full range of CPU addressing modes, pointer arithmetic, and index registers when interacting with hardware. However, these physical address ranges must be explicitly marked uncacheable in the [page table](/courses/computer-architecture/virtual-memory#the-page-table-and-page-table-entries-pte). If an MMIO region were cached, repeated CPU reads from a status register would hit the L1 cache, returning the same stale byte repeatedly while the hardware status on the silicon changes underneath.
+
+Under **Port-Mapped I/O** (**PMIO**), also called **isolated I/O**, I/O registers live in a separate $64\text{ KB}$ address space. The CPU provides specialized assembly instructions, such as `IN AL, DX` and `OUT DX, AL` on x86 processors. During a PMIO instruction, the CPU asserts dedicated bus lines ($\overline{\text{IOR}}$ and $\overline{\text{IOW}}$) instead of the standard memory lines ($\overline{\text{MEMR}}$ and $\overline{\text{MEMW}}$), signaling that the address belongs to an I/O device rather than DRAM.
+
+<Callout tone="orange" label="Trap: Memory-mapped I/O is not virtual memory">
+Do not confuse memory-mapped I/O with virtual memory or memory-mapped files. Virtual memory uses the MMU to translate program addresses into physical DRAM pages. Memory-mapped I/O assigns physical hardware bus addresses directly to the silicon registers of network cards, GPUs, and storage controllers.
+</Callout>
+
+<Callout tone="orange" label="Trap: Compilers can optimize away MMIO reads without volatile">
+When writing device drivers in C or C++, a common mistake is accessing MMIO registers through ordinary pointers:
+
+```c
+uint32_t *status_reg = (uint32_t *)0xFFFF0004;
+while (*status_reg & 0x01) {
+    /* wait for device */
+}
+```
+
+An optimizing compiler examines the loop and sees that the loop body never modifies `*status_reg`. It loads the value into a CPU register once before the loop and tests that register on every iteration. The loop then runs forever testing a frozen register value.
+
+To prevent this, declare device registers with `volatile`: `volatile uint32_t *status_reg`. The `volatile` qualifier tells the compiler that the value at that address can change asynchronously outside the program's control, forcing a real bus read on every loop iteration.
+</Callout>
+
+## Asynchronous handshaking protocols
+
+When two hardware chips communicate across independent clock domains, synchronous fixed-delay sampling fails because clock drift and signal propagation delays cause timing errors. Instead, systems use an **asynchronous handshake**, a coordination protocol where neither party advances until the other explicitly acknowledges the current state.
+
+In an open-loop **strobe**, the sender pulses a line and assumes the receiver is fast enough to sample the data. An asynchronous handshake avoids that assumption by waiting for an explicit acknowledgment at every step, working across any wire length or operating speed.
+
+A two-wire, four-phase asynchronous handshake uses two control signals: `READY` (asserted by the sender, also referred to as `REQ` or `Request`, or `MSYN` for master sync) and `ACK` (asserted by the receiver, also called `Acknowledge` or `SSYN` for slave sync).
 
 <Handshake />
 
+The protocol completes a full data word transfer across four sequential phases:
+
+| Phase | Originator | Signal Action | Meaning |
+|---|---|---|---|
+| **Phase 1** | Sender | Drives data bus; asserts `READY` (`REQ`) high | "Data bits are stable and valid on the bus lines." |
+| **Phase 2** | Receiver | Detects rising edge of `READY`; latches data; asserts `ACK` high | "I have captured the data into my internal latch." |
+| **Phase 3** | Sender | Detects rising edge of `ACK`; releases data lines; deasserts `READY` (`REQ`) low | "I see your acknowledgment; I am clearing the bus." |
+| **Phase 4** | Receiver | Detects falling edge of `READY`; clears input latch; deasserts `ACK` low | "The lines are idle; I am ready for the next transfer." |
+
+Because each signal edge depends on the previous edge, this four-phase cycle operates reliably regardless of temperature changes, cable lengths, or clock differences between the two devices.
+
 ## Three ways to move data
 
-Here's the same transfer done three ways. Compare the green.
+Architectures transfer data between peripherals and system memory using three distinct methods, balancing hardware complexity against CPU time.
 
 <IoMethods />
 
-**Programmed I/O** is the simplest. The CPU keeps reading the status register in a loop, which is called **polling** or busy-waiting. Then it moves each byte itself.
+### 1. Programmed I/O (polling)
 
-**Interrupt-driven I/O** frees the CPU between bytes. The device sends an [interrupt](/courses/microprocessors/interrupts) when it's ready, and the handler moves the byte. That's ideal for a keyboard. For a fast disk, it means an interrupt for every byte, and all the overhead that comes with it.
+Under **programmed I/O**, the CPU handles every byte transfer directly through software instructions. To receive incoming data, the processor writes a read request to the controller command register and enters a tight software loop reading the status register repeatedly.
 
-**DMA** (direct memory access) adds a helper chip that moves data directly between the device and memory. The CPU only tells it the address, the count and the direction, and it's interrupted once when the whole block is finished. It needs the [bus](/courses/computer-organization/buses) to do this, and it takes bus cycles when the CPU isn't using them, which is known as **cycle stealing**.
+This continuous check is called **polling**, or **busy-waiting**:
 
-| Method | Who moves the data | When the CPU is involved | Best for |
-|---|---|---|---|
-| Programmed | CPU | The whole time | Very simple or very fast short waits |
-| Interrupt | CPU | Once per byte or word | Slow devices |
-| DMA | DMA controller | Start and end of each block | Disks, networks, audio |
+```
+Loop:
+    Read Status Register
+    Extract READY bit
+    If READY == 0, jump to Loop
+Read Data Register
+Store word into memory buffer
+Increment buffer pointer
+```
 
-<Callout tone="violet" label="DMA and the cache">
-Because DMA writes straight to memory, the cache may be left holding an old copy of the data. The hardware or the operating system has to handle this, which is another case of the [coherence problem](/courses/computer-architecture/cache-policies).
+Polling requires no specialized interrupt hardware or bus arbitration logic. However, polling wastes CPU compute power when applied to slow or intermittent devices.
+
+Consider a mechanical keyboard. A fast typist generates at most 10 keystrokes per second (one keystroke every $100\text{ ms}$). On a 3 GHz processor, the CPU completes $3 \times 10^8$ clock cycles between successive keystrokes. Running a polling loop forces the processor to spend 300 million clock cycles doing nothing but reading a status register, burning electrical power and starving other software threads.
+
+<Callout tone="orange" label="Trap: High-rate polling starves background tasks">
+Using a tight polling loop on a single-core or unthreaded embedded processor starves low-priority background threads. Unless the programmer inserts deliberate yield or sleep intervals, the polling loop monopolizes 100% of the CPU's compute bandwidth, even when the peripheral has no data to deliver for hours.
 </Callout>
+
+<Callout tone="violet" label="When polling is the fastest choice">
+High-speed networking systems using kernel-bypass frameworks (such as DPDK) intentionally disable interrupts and use dedicated polling cores.
+
+When a 100 Gbps network interface receives 14 million packets per second, a packet arrives every 70 nanoseconds. The hardware overhead of saving registers, flushing pipelines, and executing interrupt handlers takes hundreds of nanoseconds per packet. Handling every packet via interrupts would cause complete system collapse. Polling eliminates context-switching overhead entirely when incoming data is continuous.
+</Callout>
+
+### 2. Interrupt-driven I/O
+
+To eliminate busy-waiting, **interrupt-driven I/O** transfers the waiting burden from software to hardware. The CPU issues a command to the peripheral controller and immediately returns to executing unrelated application code.
+
+When the peripheral finishes gathering data or becomes ready for the next byte, its controller raises an electrical **interrupt request** (`IRQ`) line connected to the processor.
+
+| Hardware Step | Architectural Action | Processor State |
+|---|---|---|
+| **1. Boundary Check** | CPU finishes the execution cycle of instruction $N$ | Evaluates interrupt lines before fetching instruction $N+1$ |
+| **2. Context Save** | Pushes [Program Counter](/courses/computer-architecture/ripple-and-synchronous-counters#the-program-counter) ($N+1$) and Processor Status Word (PSW) to stack | Masks further nested interrupts by clearing Interrupt Enable |
+| **3. Vector Lookup** | Reads the interrupt vector number from the bus or interrupt controller | Computes the memory offset into the Interrupt Vector Table (IVT) |
+| **4. Jump to ISR** | Loads the address from the IVT entry into the Program Counter | CPU begins executing the first instruction of the handler |
+| **5. Service Routine** | Reads byte from controller data register, writes to RAM, resets `IRQ` | Peripheral controller clears its internal interrupt flag |
+| **6. Return (`IRET`)** | Pops saved PSW and Program Counter from the stack | CPU transparently resumes instruction $N+1$ in original program |
+
+<Callout tone="violet" label="Interrupts vs. exceptions: Which return address is saved?">
+An asynchronous I/O interrupt arrives from external hardware without regard to the instruction being processed. The CPU lets the current instruction $N$ complete, saves the address of the next instruction ($N+1$), and resumes at $N+1$ when the ISR executes `IRET`.
+
+A synchronous exception or fault (such as a [page fault](/courses/computer-architecture/virtual-memory#page-faults-and-thrashing) or divide by zero) happens because instruction $N$ itself could not finish. The CPU saves the address of instruction $N$, allowing the operating system to resolve the fault and re-execute instruction $N$.
+</Callout>
+
+The **Interrupt Service Routine** (**ISR**) is a privileged operating system function that handles the device request.
+
+The **Interrupt Vector Table** (**IVT**) is an array of memory pointers stored in low RAM. Each entry contains the starting execution address for a specific hardware interrupt level.
+
+The **Processor Status Word** (**PSW**) holds arithmetic condition flags (Zero, Carry, Overflow, Negative) and processor mode flags (Supervisor mode, Interrupt Enable).
+
+A **maskable interrupt** can be temporarily deferred by software by clearing the Interrupt Enable flag in the PSW. This protects critical operating system code from being interrupted midway. A **non-maskable interrupt** (**NMI**) cannot be disabled; it is reserved for catastrophic hardware emergencies such as power failure detection, parity errors in DRAM, or hardware watchdog timer expirations.
+
+The elapsed time between the peripheral asserting the `IRQ` line and the execution of the first instruction in the ISR is the **interrupt latency**. Interrupt latency includes completing the current instruction, draining the execution pipeline, saving registers, and fetching the vector pointer from memory.
+
+<Callout tone="orange" label="Trap: Interrupt live-lock">
+If peripheral events arrive faster than the CPU can execute the ISR, the system enters **interrupt live-lock**. The CPU finishes one ISR and immediately takes another interrupt before making any progress on user applications. The system spends 100% of its CPU time saving and restoring registers in an endless loop, freezing useful computation.
+</Callout>
+
+#### Prioritizing multiple interrupting devices
+
+When several peripherals raise interrupt requests simultaneously, the CPU must prioritize which device to serve first:
+
+- **Software Polling**: All devices share a single interrupt pin. When the pin goes active, the CPU jumps to a general ISR that reads the status register of each device in software priority order. This requires minimal hardware, but low-priority devices experience significant response latency.
+- **Daisy-Chained Priority**: An Interrupt Acknowledge signal ($\overline{\text{INTA}}$) travels through a serial wire daisy-chained through each device controller. The first device with a pending interrupt intercepts the acknowledge signal, prevents it from propagating downstream, and places its unique vector number on the data bus. Downstream devices are blocked until the upstream device is serviced.
+- **Programmable Interrupt Controllers (PIC)**: A dedicated hardware controller (such as the legacy Intel 8259A or modern ARM Generic Interrupt Controller / GIC) accepts individual `IRQ` lines from multiple peripherals. An internal [priority encoder](/courses/logic-design/comparators-decoders-encoders#priority-encoders) selects the highest-priority request, passes its vector to the CPU, and enables nested preemption so high-priority events can preempt lower-priority handlers.
+
+### 3. Direct memory access (DMA)
+
+Interrupt-driven I/O works well for low-bandwidth devices like keyboards or mice, but it collapses on high-throughput storage and network controllers.
+
+Transferring a 4 KB disk block byte-by-byte via interrupts requires 4,096 separate interrupt invocations. Each interrupt forces hundreds of clock cycles of context-saving overhead, pipeline flushes, and stack manipulation, consuming hundreds of thousands of CPU cycles for a small amount of transferred data.
+
+**Direct Memory Access** (**DMA**) resolves this bottleneck by adding a specialized hardware coprocessor called a **DMA controller** (**DMAC**). The CPU offloads the entire block transfer to the DMAC, allowing data to stream directly between the peripheral and system RAM without passing through CPU registers.
+
+#### Internal architecture of a DMA controller
+
+A DMA controller contains dedicated registers for each DMA channel:
+
+1. **Memory Address Register (MAR)**: Holds the physical memory address in DRAM where data will be read or written. The DMAC automatically increments or decrements this address after every word transfer.
+2. **Word Count Register (WCR)** (or byte count register): Holds the number of words remaining in the block transfer. The DMAC decrements this counter after every word transfer.
+3. **Control Register**: Specifies transfer direction (peripheral-to-memory vs. memory-to-peripheral), transfer size (byte, halfword, word), and operating mode.
+4. **Status Register**: Reports transfer progress, error flags, and the **Terminal Count** (**TC**) flag, which is asserted when WCR reaches zero.
+
+The DMA transfer sequence follows a strict hardware protocol:
+
+| Step | Initiator | Hardware Action |
+|---|---|---|
+| **1. Setup** | CPU | CPU writes target address to MAR, word count to WCR, and direction to Control Register |
+| **2. Request** | Peripheral | Peripheral gathers data and asserts DMA Request (`DREQ`) to the DMAC |
+| **3. Bus Hold** | DMAC | DMAC asserts Bus Request (`HOLD` or `BR`) to the CPU |
+| **4. Bus Grant** | CPU | CPU completes its current bus cycle, floats its bus lines to high impedance (Hi-Z), and asserts Bus Acknowledge (`HLDA` or `BG`) |
+| **5. Direct Transfer** | DMAC | DMAC drives MAR onto address bus, asserts `MEMW` and `IOR` concurrently; data transfers directly from peripheral to DRAM |
+| **6. Update** | DMAC | DMAC increments MAR and decrements WCR |
+| **7. Completion** | DMAC | When WCR reaches 0, DMAC asserts Terminal Count (`TC`), releases the bus, and raises an `IRQ` to notify the CPU |
+
+#### DMA transfer modes
+
+A DMA controller can access the system bus in three different modes:
+
+- **Burst Mode (Block Mode)**: The DMAC takes control of the bus and transfers the entire block of data in one continuous operation without releasing the bus. This delivers maximum transfer throughput, but it locks the CPU out of main memory for the entire duration of the burst.
+- **Cycle Stealing**: The DMAC grabs the bus, transfers a single data word, and immediately releases the bus back to the CPU for one or more cycles. It steals an occasional memory cycle from the CPU, interleaving I/O and processor computation with minimal CPU disruption.
+- **Transparent Mode (Hidden DMA)**: The DMAC monitors the CPU clock phases and only transfers data during clock cycles when the CPU is executing internal register-to-register ALU operations and is guaranteed not to use the external memory bus. This achieves zero CPU slowdown, but requires complex timing synchronization logic.
+
+<Callout tone="orange" label="Trap: Cycle stealing does not make the peripheral faster">
+Cycle stealing takes longer to complete a block transfer than burst mode, not less. Because the controller must acquire and release the bus for every word, arbitration overhead adds up on every transfer. It exists solely to let the CPU access memory between I/O words, preventing long CPU freezes.
+</Callout>
+
+#### Scatter-gather DMA
+
+Modern operating systems use [virtual memory](/courses/computer-architecture/virtual-memory#pages-frames-and-address-decomposition), allocating physical memory in scattered, non-contiguous 4 KB page frames. A 64 KB file buffer that appears contiguous in virtual memory is physically fragmented across 16 different DRAM frames.
+
+Traditional DMA controllers can only transfer a single physically contiguous block. To handle fragmented memory without requiring the CPU to intervene between every 4 KB page, modern controllers use **scatter-gather DMA**:
+
+| Descriptor Field | Bit Width | Functional Purpose |
+|---|---|---|
+| **Physical Buffer Pointer** | 64 bits | Physical DRAM start address of this page frame |
+| **Byte Length** | 32 bits | Number of bytes to transfer within this page frame |
+| **Next Descriptor Pointer** | 64 bits | Physical address of the next descriptor (or NULL if terminal) |
+| **Control Flags** | 32 bits | Interrupt-on-completion (`IOC`), end-of-list (`EOL`), read/write |
+
+The CPU constructs a linked list of buffer descriptors in memory. The DMA controller autonomously traverses this chain, reading each descriptor, streaming the corresponding physical memory page, and jumping to the next descriptor until the entire fragmented buffer is transferred.
+
+## DMA and cache coherence
+
+Because a DMA controller bypasses the CPU and writes directly to main memory, it introduces a hardware hazard: the **cache coherence problem**.
+
+Consider what happens in a system with a [write-back cache](/courses/computer-architecture/cache-policies#what-happens-on-a-write):
+
+1. **DMA Output Hazard (Stale Memory)**: The CPU modifies data in an output buffer. With a write-back cache, the modified words reside in the L1/L2 cache with their dirty bits set, while main DRAM still holds obsolete data. If the DMA controller streams that buffer from DRAM to a network card, it transmits stale, unupdated data.
+2. **DMA Input Hazard (Stale Cache)**: A network card receives an incoming packet, and the DMA controller writes the bytes into DRAM. If the CPU already holds that memory range in its cache, the cache lines now contain old, obsolete data. When the CPU subsequently reads the buffer, it hits the cache and reads stale data, missing the newly arrived packet.
+
+Architectures resolve this using two techniques:
+
+- **Software Invalidation and Flushing**: The operating system kernel manually prepares cache lines before every DMA transfer. Before DMA output, the OS calls `clflush` or write-back instructions to force dirty lines to DRAM. Before reading DMA input, the OS invalidates matching cache lines, forcing the CPU to fetch fresh data from DRAM.
+- **Hardware Bus Snooping (Coherent DMA)**: The DMA controller connects to a coherent bus interconnect (such as the PCIe Root Complex). When DMA writes to memory, the cache controllers snoop the transaction and automatically invalidate or update matching internal cache lines. When DMA reads from memory, a cache holding dirty data intervenes and supplies the fresh data directly.
+
+<Callout tone="orange" label="Trap: Silent data corruption from missed cache flushes">
+If device driver code fails to flush CPU caches before initiating a DMA transmit, the network or disk controller reads old memory data from DRAM. Because the operation completes with zero hardware errors or exception faults, the driver silently transmits corrupted data over the network.
+</Callout>
+
+## Comparison of I/O transfer methods
+
+| Feature | Programmed I/O | Interrupt-Driven I/O | Direct Memory Access (DMA) |
+|---|---|---|---|
+| **Data Mover** | CPU | CPU | DMA Controller |
+| **CPU Involvement** | 100% of transfer time | Setup + once per byte/word | Setup + once per block |
+| **Hardware Complexity** | Minimal (no extra logic) | Moderate (interrupt lines, IVT) | High (DMAC, bus arbitration) |
+| **Transfer Rate** | Limited by CPU polling loop | Limited by ISR context-switch latency | Maximum (limited only by bus bandwidth) |
+| **Ideal Peripherals** | Dedicated real-time sensors, DPDK | Keyboards, mice, UART serial | NVMe SSDs, GPUs, Gigabit Ethernet |
+
+## Exam-style practice
+
+### Part 1: Written exam and lab problems
+
+#### Problem 1: Polling vs. interrupt overhead analysis
+
+<ModelAnswer>
+**Problem:** A computer system has a 1 GHz CPU ($10^9$ clock cycles per second, clock cycle time $t = 1\text{ ns}$). A network interface controller receives network packets at a steady rate of $50,000\text{ packets/second}$.
+
+1. **Part A (Polling):** The operating system polls the network controller at a frequency of $100,000\text{ times/second}$ (every $10\ \mu\text{s}$). Each polling check takes $30\text{ CPU cycles}$ when no packet is present, and $250\text{ cycles}$ to retrieve the packet when data is present. Calculate the total CPU cycles consumed per second and the percentage of CPU time spent on network I/O.
+2. **Part B (Interrupts):** The system switches to interrupt-driven I/O. Servicing each interrupt requires $40\text{ cycles}$ of initial overhead (pipeline flush, context saving, and vector dispatch), $250\text{ cycles}$ to process the packet in the ISR, and $30\text{ cycles}$ for state restoration (`IRET`). Calculate the total CPU cycles consumed per second and the percentage of CPU time spent on network I/O.
+3. **Part C (Crossover):** At what packet arrival rate (packets per second) does interrupt-driven I/O consume exactly the same amount of CPU time as the $100,000\text{ Hz}$ polling loop?
+
+---
+
+**Solution:**
+
+**Part A: Polling Calculation**
+
+The total number of polling attempts per second is $f_{\text{poll}} = 100,000\text{ polls/s}$.
+
+The packet arrival rate is $R = 50,000\text{ packets/s}$.
+
+- Polls finding a packet: $50,000\text{ polls/s} \times 250\text{ cycles} = 12,500,000\text{ cycles/s}$.
+- Polls finding no packet: $(100,000 - 50,000)\text{ polls/s} \times 30\text{ cycles} = 50,000 \times 30 = 1,500,000\text{ cycles/s}$.
+
+Total polling cycles per second:
+
+$$C_{\text{poll}} = 12,500,000 + 1,500,000 = 14,000,000\text{ cycles/second}$$
+
+CPU utilization:
+
+$$\text{Utilization} = \frac{14,000,000\text{ cycles/s}}{1,000,000,000\text{ cycles/s}} \times 100\text{\%} = 1.4\text{\%}$$
+
+The CPU spends $1.4\%$ of its computing capacity servicing the network interface under polling.
+
+**Part B: Interrupt Calculation**
+
+Each arriving packet generates exactly one interrupt. The total CPU cycles required per interrupt is:
+
+$$C_{\text{intr}} = C_{\text{context}} + C_{\text{process}} + C_{\text{restore}} = 40 + 250 + 30 = 320\text{ cycles/packet}$$
+
+At $50,000\text{ packets/s}$:
+
+$$C_{\text{total\_intr}} = 50,000\text{ packets/s} \times 320\text{ cycles/packet} = 16,000,000\text{ cycles/second}$$
+
+CPU utilization:
+
+$$\text{Utilization} = \frac{16,000,000\text{ cycles/s}}{1,000,000,000\text{ cycles/s}} \times 100\text{\%} = 1.6\text{\%}$$
+
+The CPU spends $1.6\%$ of its capacity on interrupts. At this high arrival rate, polling ($1.4\%$) uses less CPU time than interrupts ($1.6\%$) because it avoids context-switch overhead on every packet.
+
+**Part C: Crossover Point**
+
+Under the fixed $100,000\text{ Hz}$ polling routine, total cycles as a function of packet rate $R$ is:
+
+$$C_{\text{poll}}(R) = (100,000 - R) \times 30 + R \times 250 = 3,000,000 + 220 R$$
+
+Under interrupt-driven I/O, total cycles as a function of packet rate $R$ is:
+
+$$C_{\text{intr}}(R) = 320 R$$
+
+Equating the two:
+
+$$320 R = 3,000,000 + 220 R$$
+$$100 R = 3,000,000 \implies R = 30,000\text{ packets/second}$$
+
+- If the packet rate is below $30,000\text{ packets/s}$, interrupt-driven I/O is more efficient.
+- If the packet rate exceeds $30,000\text{ packets/s}$, polling consumes fewer CPU cycles.
+</ModelAnswer>
+
+#### Problem 2: DMA controller transfer timing and bus stealing
+
+<ModelAnswer>
+**Problem:** A storage controller uses DMA to transfer a $64\text{ KB}$ block ($65,536\text{ bytes}$) from an SSD controller buffer into main RAM. The system bus is $32\text{ bits}$ wide ($4\text{ bytes}$) and operates at $100\text{ MHz}$ ($10\text{ ns}$ clock period).
+
+1. **Part A (Burst Mode):** In burst mode, acquiring the bus takes $4\text{ bus cycles}$, each 4-byte word transfer takes $1\text{ bus cycle}$, and releasing the bus takes $2\text{ bus cycles}$. The CPU requires $600\text{ CPU cycles}$ at $1\text{ GHz}$ to initialize the DMA registers, and $450\text{ CPU cycles}$ to handle the completion interrupt. Calculate the total time to transfer the entire block, the effective transfer throughput in megabytes per second (MB/s), and the total CPU time consumed.
+2. **Part B (Comparison with Interrupts):** If the same $64\text{ KB}$ transfer were performed using interrupt-driven I/O moving $4\text{ bytes}$ per interrupt, and each interrupt required $60\text{ CPU cycles}$ of CPU processing time on the $1\text{ GHz}$ CPU, calculate the total CPU time required. How much CPU execution time does DMA save?
+
+---
+
+**Solution:**
+
+**Part A: DMA Burst Mode**
+
+1. Calculate the number of 4-byte words in the $64\text{ KB}$ block:
+
+$$N_{\text{words}} = \frac{65,536\text{ bytes}}{4\text{ bytes/word}} = 16,384\text{ words}$$
+
+2. Calculate the bus cycles required:
+
+$$C_{\text{bus}} = C_{\text{acquire}} + (N_{\text{words}} \times 1) + C_{\text{release}} = 4 + 16,384 + 2 = 16,390\text{ bus cycles}$$
+
+3. Calculate the bus transfer duration at $100\text{ MHz}$ ($t_{\text{bus}} = 10\text{ ns}$):
+
+$$T_{\text{bus}} = 16,390 \times 10\text{ ns} = 163,900\text{ ns} = 163.90\ \mu\text{s}$$
+
+4. Calculate CPU setup and completion interrupt time on the $1\text{ GHz}$ CPU ($t_{\text{cpu}} = 1\text{ ns}$):
+
+$$C_{\text{cpu}} = 600 + 450 = 1,050\text{ cycles}$$
+$$T_{\text{cpu}} = 1,050 \times 1\text{ ns} = 1,050\text{ ns} = 1.05\ \mu\text{s}$$
+
+5. Total elapsed time for the transfer:
+
+$$T_{\text{total}} = T_{\text{bus}} + T_{\text{cpu}} = 163.90\ \mu\text{s} + 1.05\ \mu\text{s} = 164.95\ \mu\text{s}$$
+
+6. Effective throughput:
+
+$$\text{Throughput} = \frac{65,536\text{ bytes}}{164.95 \times 10^{-6}\text{ s}} \approx 397,308,275\text{ B/s} \approx 378.91\text{ MB/s (binary)}$$
+
+The CPU is occupied for only $1.05\ \mu\text{s}$ out of the entire $164.95\ \mu\text{s}$ transfer, leaving the CPU $99.36\%$ free to run user processes.
+
+**Part B: Comparison with Interrupt-Driven Transfer**
+
+Moving $65,536\text{ bytes}$ in 4-byte words requires:
+
+$$N_{\text{interrupts}} = 16,384\text{ interrupts}$$
+
+If each interrupt requires $60\text{ CPU cycles}$:
+
+$$C_{\text{total\_cpu}} = 16,384 \times 60 = 983,040\text{ cycles}$$
+
+At $1\text{ GHz}$ ($1\text{ ns}$ per cycle):
+
+$$T_{\text{cpu\_interrupts}} = 983,040 \times 1\text{ ns} = 983.04\ \mu\text{s}$$
+
+Under interrupt-driven I/O, the CPU spends $983.04\ \mu\text{s}$ actively executing interrupt service code.
+
+**CPU Savings:**
+
+$$\Delta T_{\text{cpu}} = 983.04\ \mu\text{s} - 1.05\ \mu\text{s} = 981.99\ \mu\text{s}$$
+
+DMA reduces CPU overhead from $983.04\ \mu\text{s}$ down to $1.05\ \mu\text{s}$, a $936\times$ reduction in CPU time consumed.
+</ModelAnswer>
+
+#### Problem 3: Daisy-chain interrupt latency and vectoring overhead
+
+<ModelAnswer>
+**Problem:** A microprocessor system connects four peripheral controllers (Device 0: Storage, Device 1: Network, Device 2: High-Resolution Timer, Device 3: Serial Console) to a CPU using a prioritized daisy chain for interrupt acknowledge ($\overline{\text{INTA}}$).
+
+The hardware timing parameters are:
+- When any device requests an interrupt, it pulls the open-collector $\overline{\text{INTR}}$ line low.
+- The CPU samples $\overline{\text{INTR}}$ on the final clock tick of each instruction. The average time to complete the current executing instruction is $12\text{ ns}$.
+- Once the CPU detects $\overline{\text{INTR}}$, it takes $15\text{ ns}$ to assert the $\overline{\text{INTA}}$ signal at the input pin of Device 0.
+- Each device in the chain introduces a logic propagation delay of $6\text{ ns}$ to pass the acknowledge signal to the next device if it is not requesting an interrupt itself.
+- When the requesting device receives the acknowledge signal, it takes $10\text{ ns}$ to drive its 8-bit interrupt vector onto the data bus.
+- The CPU requires $8\text{ ns}$ of data bus setup time to latch the vector into its internal register.
+
+1. If only Device 3 requests an interrupt, calculate the total vector dispatch latency from the moment Device 3 asserts $\overline{\text{INTR}}$ until the CPU successfully latches Device 3's vector into its internal register.
+2. Suppose Device 1 and Device 3 assert $\overline{\text{INTR}}$ simultaneously. Explain step by step how the daisy-chain hardware resolves this contention. Which device receives service first, what happens to the acknowledge signal, and when will Device 3 receive service?
+3. Calculate the maximum number of devices that can be supported in this daisy chain if the entire interrupt vector acquisition phase (from the moment the CPU detects $\overline{\text{INTR}}$ and initiates the acknowledge cycle to vector latching) must complete within a strict bus budget of $75\text{ ns}$.
+
+---
+
+**Solution:**
+
+**Part 1: Vector dispatch latency for Device 3:**
+
+Device 3 is the 4th device in the physical daisy chain ($N = 4$, index $i = 3$).
+
+The sequence of non-overlapping hardware events is:
+- Instruction completion delay: $12\text{ ns}$
+- CPU INTA assertion delay: $15\text{ ns}$
+- Daisy chain propagation delay: Device 0, Device 1, and Device 2 each examine and propagate the acknowledge signal downstream without intercepting it ($3\text{ hops}$):
+  $$T_{\text{prop}} = 3 \times 6\text{ ns} = 18\text{ ns}$$
+- Vector bus drive delay: $10\text{ ns}$
+- CPU vector latch setup time: $8\text{ ns}$
+
+Total dispatch latency:
+
+$$T_{\text{total}} = 12\text{ ns} + 15\text{ ns} + 18\text{ ns} + 10\text{ ns} + 8\text{ ns} = 63\text{ ns}$$
+
+**Part 2: Simultaneous contention resolution:**
+
+When Device 1 and Device 3 pull $\overline{\text{INTR}}$ simultaneously:
+1. The CPU finishes the current instruction and asserts $\overline{\text{INTA}}$, which enters Device 0.
+2. Device 0 has no pending request, so its internal logic passes the acknowledge pulse to its output pin after $6\text{ ns}$.
+3. The acknowledge signal enters Device 1. Because Device 1 has an active interrupt pending, its internal logic intercepts the acknowledge signal and inhibits propagation to downstream pins ($\overline{\text{INTA\_OUT}}$ remains high).
+4. Device 1 asserts its 8-bit vector onto the system data bus. Device 3 never receives the acknowledge pulse and remains in the waiting state.
+5. Device 1's Interrupt Service Routine (ISR) executes. Once Device 1 completes service and deasserts its interrupt line, Device 3 continues to hold $\overline{\text{INTR}}$ asserted.
+6. The CPU finishes Device 1's handler (or executes an unmask instruction) and initiates a new interrupt acknowledge cycle. On this second cycle, Device 1 is idle, so it propagates the signal downstream to Device 2 and Device 3, allowing Device 3 to place its vector on the bus.
+
+**Part 3: Maximum devices under a $75\text{ ns}$ budget:**
+
+The vector acquisition phase starts when the CPU asserts $\overline{\text{INTA}}$ and ends when the vector is latched:
+
+$$T_{\text{acq}} = T_{\text{inta}} + (N - 1) \times T_{\text{prop\_gate}} + T_{\text{drive}} + T_{\text{latch}} \le 75\text{ ns}$$
+
+Substituting the given values:
+
+$$15\text{ ns} + (N - 1) \times 6\text{ ns} + 10\text{ ns} + 8\text{ ns} \le 75\text{ ns}$$
+$$33\text{ ns} + 6(N - 1)\text{ ns} \le 75\text{ ns}$$
+$$6(N - 1) \le 42 \implies N - 1 \le 7 \implies N \le 8$$
+
+The daisy chain can support a maximum of 8 devices while meeting the $75\text{ ns}$ acquisition deadline. Any 9th device would add $6\text{ ns}$, exceeding the timing budget ($75\text{ ns} + 6\text{ ns} = 81\text{ ns}$).
+</ModelAnswer>
+
+#### Problem 4: DMA cycle stealing vs. burst mode memory contention
+
+<ModelAnswer>
+**Problem:** A 2.5 GHz CPU operates with a base CPI of 1.4 when all memory requests hit in the L1 cache. The CPU memory bus is 64 bits wide ($8\text{ bytes}$) and runs at $200\text{ MHz}$ ($5\text{ ns}$ clock period).
+
+On average, user software executes one memory bus transaction (from L1 data cache misses or write-backs) every 25 CPU instructions. A storage controller transfers a file into main memory using a DMA engine at a sustained throughput of $400\text{ MB/s}$.
+
+1. Calculate the bus utilization (percentage of bus cycles) demanded by the DMA controller to maintain its $400\text{ MB/s}$ throughput.
+2. In cycle-stealing mode, DMA acquires single bus cycles between CPU memory accesses. What percentage of total bus capacity remains available to the CPU? Does the DMA transfer saturate the bus?
+3. Calculate the number of CPU memory transactions requested per second at the CPU's baseline instruction rate ($2.5\times 10^9 / 1.4\text{ instructions/s}$, with 1 bus request per 25 instructions). Calculate the CPU's bus cycle demand as a percentage of total bus capacity.
+4. Calculate the combined bus demand of both CPU and DMA. If memory bus collisions cause 20% of CPU memory requests to stall by 1 bus cycle ($5\text{ ns} = 12.5\text{ CPU cycles}$), calculate the new effective CPI during the transfer.
+
+---
+
+**Solution:**
+
+**Part 1: DMA bus utilization:**
+
+- Bus clock frequency: $200\text{ MHz} \implies 200 \times 10^6\text{ bus cycles/second}$.
+- Each 64-bit bus cycle transfers 8 bytes.
+- Maximum theoretical bus throughput:
+  $$\text{Throughput}_{\text{max}} = 8\text{ bytes} \times 200 \times 10^6\text{ cycles/s} = 1,600\text{ MB/s}$$
+- DMA throughput demand: $400\text{ MB/s}$.
+- DMA bus utilization:
+  $$\text{Utilization}_{\text{DMA}} = \frac{400\text{ MB/s}}{1,600\text{ MB/s}} \times 100\% = 25\%$$
+
+The DMA controller steals exactly 1 out of every 4 bus cycles ($50 \times 10^6\text{ cycles/second}$).
+
+**Part 2: Available CPU bus capacity:**
+
+- Remaining bus capacity:
+  $$100\% - 25\% = 75\%\text{ (equivalent to } 1,200\text{ MB/s)}$$
+- The DMA transfer does not saturate the bus because three-quarters of the bus cycles remain completely free for CPU memory transactions.
+
+**Part 3: CPU bus demand:**
+
+- Baseline instruction execution rate:
+  $$I = \frac{f_{\text{cpu}}}{\text{CPI}} = \frac{2.5 \times 10^9\text{ cycles/s}}{1.4\text{ cycles/instruction}} \approx 1.7857 \times 10^9\text{ instructions/second}$$
+- CPU memory requests per second (1 request per 25 instructions):
+  $$R_{\text{cpu}} = \frac{1.7857 \times 10^9}{25} \approx 7.1429 \times 10^7\text{ requests/second}$$
+- Each request occupies 1 bus cycle ($5\text{ ns}$).
+- CPU bus utilization:
+  $$\text{Utilization}_{\text{cpu}} = \frac{7.1429 \times 10^7\text{ requests/s}}{200 \times 10^6\text{ bus cycles/s}} \times 100\% \approx 35.71\%$$
+
+**Part 4: Combined demand and effective CPI:**
+
+- Combined bus demand:
+  $$\text{Demand}_{\text{total}} = 25\% + 35.71\% = 60.71\%$$
+  Because $60.71\% \le 100\%$, the bus easily sustains both devices simultaneously without structural starvation.
+- Stall penalty per collision: 1 bus cycle ($5\text{ ns}$) at $2.5\text{ GHz}$ ($0.4\text{ ns}$ cycle) equals:
+  $$\text{Stall cycles} = \frac{5\text{ ns}}{0.4\text{ ns/cycle}} = 12.5\text{ CPU cycles}$$
+- Probability of a memory request per instruction: $P_{\text{req}} = 1/25 = 0.04$.
+- Collision probability: $P_{\text{collision}} = 0.20$.
+- Average stall penalty per instruction:
+  $$\text{Stall}_{\text{avg}} = P_{\text{req}} \times P_{\text{collision}} \times 12.5\text{ cycles} = 0.04 \times 0.20 \times 12.5 = 0.10\text{ cycles/instruction}$$
+- Effective CPI during DMA transfer:
+  $$\text{CPI}_{\text{effective}} = \text{CPI}_{\text{base}} + \text{Stall}_{\text{avg}} = 1.40 + 0.10 = 1.50$$
+
+The CPU experiences a small $7.14\%$ slowdown ($1.50 / 1.40$) while the DMA controller streams data at $400\text{ MB/s}$ in the background.
+
+In contrast, if DMA operated in burst mode, the CPU would stall completely for the entire duration of each block transfer as soon as an L1 cache miss occurred.
+</ModelAnswer>
+
+#### Problem 5: Memory-mapped I/O address decoding and partial decoding aliasing
+
+<ModelAnswer>
+**Problem:** A 16-bit microprocessor has a 16-bit address bus ($A_{15} \dots A_0$) addressing $64\text{ KB}$ of total memory space.
+
+The memory architecture partitions space as follows:
+- Main RAM occupies the lower $32\text{ KB}$ ($0x0000$ to $0x7FFF$), enabled when $A_{15} = 0$.
+- Memory-mapped I/O peripherals occupy the upper $32\text{ KB}$ ($A_{15} = 1$).
+
+A peripheral chip has 4 internal 8-bit registers (Control, Status, Receive Data, Transmit Data) addressed by two register-select inputs $RS_1$ and $RS_0$. The system designer connects the peripheral using partial address decoding:
+- The peripheral chip select ($\overline{CS}$) connects to the output of a NAND gate that takes inputs $A_{15}$ and $A_{14}$.
+- Inputs $RS_1$ and $RS_0$ connect directly to address bus lines $A_1$ and $A_0$.
+- Address lines $A_{13}, A_{12}, A_{11}, A_{10}, A_9, A_8, A_7, A_6, A_5, A_4, A_3, A_2$ are left completely unconnected to the peripheral decoder.
+
+1. What address range in hexadecimal does this peripheral occupy, and how many total bytes of address space does it consume?
+2. How many distinct addresses map to the peripheral's Control Register ($RS_1 = 0, RS_0 = 0$)? Provide the lowest and highest hexadecimal addresses that access this single register.
+3. What is an address alias in computer architecture? Identify one severe software risk caused by address aliasing in partial decoding.
+4. How would the designer modify the address decoder to achieve full address decoding, placing the peripheral at the unique base address $0xC000$ to $0xC003$ without aliasing?
+
+---
+
+**Solution:**
+
+**Part 1: Address space consumed:**
+
+The active-low chip select asserts whenever $A_{15} = 1$ and $A_{14} = 1$.
+
+The 16-bit address pattern is:
+$$A_{15} A_{14} A_{13} \dots A_2 A_1 A_0 = 11xx\ xxxx\ xxxx\ xxrr_2$$
+where $x$ represents unconnected "don't care" bits and $r$ represents register select bits.
+
+- Lowest address ($A_{13} \dots A_0 = 0$):
+  $$1100\ 0000\ 0000\ 0000_2 = 0xC000$$
+- Highest address ($A_{13} \dots A_0 = 1$):
+  $$1111\ 1111\ 1111\ 1111_2 = 0xFFFF$$
+
+Total address space consumed:
+
+$$\text{Space} = 0xFFFF - 0xC000 + 1 = 0x4000 = 16,384\text{ bytes (16 KB)}$$
+
+Because the physical peripheral contains only 4 registers, it occupies $16\text{ KB}$ while utilizing only 4 bytes, wasting $16,380\text{ bytes}$ of address space.
+
+**Part 2: Distinct alias addresses for Control Register:**
+
+The Control Register is selected when $A_1 = 0$ and $A_0 = 0$.
+
+There are 12 unconnected address lines ($A_{13} \dots A_2$). Each unique combination of these 12 bits creates a distinct memory address that asserts $\overline{CS}$ and selects the Control Register:
+
+$$N_{\text{aliases}} = 2^{12} = 4,096\text{ distinct addresses}$$
+
+- Lowest alias address ($A_{13} \dots A_2 = 000000000000_2$):
+  $$1100\ 0000\ 0000\ 0000_2 = 0xC000$$
+- Highest alias address ($A_{13} \dots A_2 = 111111111111_2$):
+  $$1111\ 1111\ 1111\ 1100_2 = 0xFFFC$$
+
+**Part 3: Definition and software risk:**
+
+An **address alias** occurs when multiple distinct binary addresses activate the same physical hardware register because some address lines are omitted from decoding logic.
+
+**Software risk:** If an errant software routine, rogue pointer, or buffer overflow writes to any address in the $16\text{ KB}$ range $0xC000 \dots 0xFFFF$, it accidentally modifies an I/O device register rather than unmapped space. For example, a write to address $0xD840$ unexpectedly writes to the peripheral's Control Register, potentially resetting the device, dropping network links, or corrupting storage data without triggering a memory fault.
+
+**Part 4: Full address decoding modification:**
+
+To decode only the unique 4-byte range $0xC000 \dots 0xC003$:
+- The chip select must assert only when $A_{15} = 1, A_{14} = 1$, and all lines $A_{13} \dots A_2$ are simultaneously 0:
+  $$\overline{CS} = \overline{A_{15} \cdot A_{14} \cdot \overline{A_{13}} \cdot \overline{A_{12}} \dots \overline{A_2}}$$
+- The designer can implement this using a standard 3-to-8 decoder (such as a 74LS138) or multi-input comparator gates. This confines the peripheral to $0xC000 \dots 0xC003$ and frees the remaining $16,380\text{ bytes}$ ($0xC004 \dots 0xFFFF$) for other peripheral chips or ROM.
+</ModelAnswer>
+
+#### Problem 6: I/O buffer sizing and packet overrun under interrupt latency jitter
+
+<ModelAnswer>
+**Problem:** A serial communication UART controller receives asynchronous data from an external sensor at a baud rate of $115,200\text{ bits/second}$. Each transmitted character consists of 1 start bit, 8 data bits, and 1 stop bit ($10\text{ bits/character}$).
+
+The UART contains an internal hardware FIFO buffer. When the number of bytes stored in the FIFO reaches a programmable threshold of 8 bytes, the UART asserts an interrupt request line to notify the CPU.
+
+The operating system running on the CPU exhibits interrupt response latency jitter:
+- Under light system load, the CPU responds to the interrupt in $20\ \mu\text{s}$.
+- Under peak load, critical OS kernel routines disable interrupts to protect scheduling queues, causing worst-case interrupt response latency to reach $450\ \mu\text{s}$.
+- Once the CPU enters the interrupt service routine, it empties bytes from the FIFO into RAM at a rate of $1.5\ \mu\text{s}$ per byte.
+
+1. Calculate the character arrival rate and the exact time interval between consecutive arriving bytes.
+2. During the worst-case interrupt latency of $450\ \mu\text{s}$, how many additional bytes enter the UART FIFO after the interrupt threshold (8 bytes) has been reached?
+3. What is the minimum total FIFO capacity (in bytes) required to guarantee that no buffer overrun occurs under peak operating conditions? If the hardware vendor only manufactures FIFOs in powers of two ($8, 16, 32, 64\text{ bytes}$), which FIFO size must the engineer select?
+4. If a cost-cutting engineer chooses an 8-byte FIFO with an interrupt trigger threshold of 6 bytes, calculate the maximum allowable interrupt latency before data loss occurs.
+
+---
+
+**Solution:**
+
+**Part 1: Character arrival rate and time interval:**
+
+- Bits per character: 1 start + 8 data + 1 stop = 10 bits/byte.
+- Character arrival rate:
+  $$R_{\text{byte}} = \frac{115,200\text{ bits/s}}{10\text{ bits/byte}} = 11,520\text{ bytes/second}$$
+- Time interval between consecutive byte arrivals:
+  $$T_{\text{byte}} = \frac{1}{11,520\text{ bytes/s}} \approx 8.6806 \times 10^{-5}\text{ s} \approx 86.81\ \mu\text{s}$$
+
+One byte arrives at the UART every $86.81\ \mu\text{s}$.
+
+**Part 2: Additional bytes arriving during worst-case latency:**
+
+During the $450\ \mu\text{s}$ worst-case interrupt latency:
+
+$$N_{\text{new}} = \frac{450\ \mu\text{s}}{86.81\ \mu\text{s/byte}} \approx 5.18\text{ bytes}$$
+
+Because bytes arrive discretely:
+
+$$\lceil 5.18 \rceil = 6\text{ bytes}$$
+
+Up to 6 new bytes can arrive and enter the FIFO before the CPU executes the first read instruction of the ISR. Because the CPU empties the FIFO at $1.5\ \mu\text{s}$ per byte once the ISR starts, which is nearly 58 times faster than the incoming arrival interval ($86.81\ \mu\text{s}$ per byte), no backlog builds up once servicing begins.
+
+**Part 3: Minimum FIFO capacity:**
+
+- Total bytes in the FIFO when the CPU arrives:
+  $$\text{Bytes in FIFO} = \text{Threshold} + N_{\text{new}} = 8 + 6 = 14\text{ bytes}$$
+- The minimum total FIFO capacity required to prevent buffer overrun is $14\text{ bytes}$.
+- Selected standard power-of-two FIFO size: The smallest power of two greater than or equal to 14 is $16\text{ bytes}$. A 16-byte FIFO provides 2 bytes of safety headroom under worst-case conditions.
+
+**Part 4: Maximum allowable latency for 8-byte FIFO with 6-byte threshold:**
+
+- Buffer headroom remaining when interrupt triggers:
+  $$\text{Headroom} = \text{Capacity} - \text{Threshold} = 8 - 6 = 2\text{ bytes}$$
+- The FIFO can hold at most 2 additional bytes before it is full. Overrun occurs as soon as the 3rd byte finishes arriving.
+- The CPU must service the FIFO before the 3rd additional byte completes:
+  $$T_{\text{max\_latency}} < 3 \times T_{\text{byte}} = 3 \times 86.81\ \mu\text{s} \approx 260.43\ \mu\text{s}$$
+
+Any interrupt delay exceeding $260.4\ \mu\text{s}$ causes incoming data bytes to be dropped (overrun error).
+</ModelAnswer>
+
+---
+
+### Part 2: Multiple-choice practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="io-methods"
+  practice
+  questions={[
+    {
+      id: "io-p1",
+      prompt: "Why do high-throughput network controllers (such as 100 GbE NICs) switch from interrupt-driven I/O to polling under sustained peak traffic loads?",
+      options: [
+        { id: "a", text: "At high packet arrival rates, the CPU cycles spent saving context, flushing pipelines, and handling interrupt overhead exceed the cycles needed to poll status registers in a tight batch loop" },
+        { id: "b", text: "Interrupt lines on the PCIe bus overheat when triggered more than 10,000 times per second" },
+        { id: "c", text: "Polling forces peripheral controllers to double their internal hardware FIFO clock frequency" },
+        { id: "d", text: "Interrupt service routines are forbidden from accessing DMA memory buffers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Each interrupt incurs non-negligible context-switch overhead (saving register state, flushing pipelines, executing an ISR prologue and epilogue, and restoring state). When thousands of packets arrive per millisecond, the CPU becomes completely consumed by interrupt dispatch overhead (livelock). Polling in a dedicated loop eliminates context switching, allowing the CPU to process large batches of packets per check. Option (b) describes impossible physical thermal damage on silicon traces. Option (c) is false because bus and FIFO frequencies are governed by clock generators, not software polling. Option (d) is incorrect because ISRs routinely access DMA descriptor rings.",
+    },
+    {
+      id: "io-p2",
+      prompt: "In C or C++ driver programming, why must a pointer to a memory-mapped I/O status register be declared with the volatile type qualifier?",
+      options: [
+        { id: "a", text: "To instruct the optimizing compiler not to cache the register value in a CPU register or optimize away polling loops, ensuring every access produces a real memory bus read" },
+        { id: "b", text: "To store the device pointer directly in the Level 1 instruction cache" },
+        { id: "c", text: "To configure the processor memory management unit to enable write-back caching for that address" },
+        { id: "d", text: "To trigger an automatic hardware interrupt whenever the memory location changes" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A compiler optimizer assumes ordinary memory variables only change when modified by the program itself. Without volatile, the compiler may read the device status register into a CPU register once and reuse it across iterations of a while loop, turning it into an infinite loop. The volatile keyword forces the compiler to emit a real memory bus access for every reference. Option (b) is nonsense because pointers are stored in memory or registers, not L1 instruction cache. Option (c) is the opposite of reality: I/O addresses must be mapped as uncacheable or write-through, never write-back. Option (d) confuses compiler type qualifiers with hardware interrupt assertion.",
+    },
+    {
+      id: "io-p3",
+      prompt: "Which step in the interrupt servicing sequence is executed entirely by CPU hardware before the first instruction of the Interrupt Service Routine (ISR) runs?",
+      options: [
+        { id: "a", text: "Pushing the Program Counter and processor status flags onto the supervisor stack and loading the target ISR address from the vector table" },
+        { id: "b", text: "Saving all 32 general-purpose CPU registers onto the user heap" },
+        { id: "c", text: "Executing an IRET instruction to acknowledge the peripheral controller" },
+        { id: "d", text: "Flushing the entire L2 data cache to main RAM" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: When an interrupt is granted, the CPU hardware automatically saves the return address (Program Counter) and Processor Status Word (PSW/flags) onto the supervisor stack, fetches the interrupt vector from the bus or interrupt controller, looks up the corresponding ISR entry in the vector table, and branches to the ISR. Option (b) is incorrect because general-purpose register saving is the responsibility of the software ISR prologue, and it uses the stack, not the heap. Option (c) describes the final instruction of the ISR that returns execution to the interrupted program. Option (d) is unnecessary and would cause severe performance degradation.",
+    },
+    {
+      id: "io-p4",
+      prompt: "How does DMA cycle stealing differ from DMA burst mode?",
+      options: [
+        { id: "a", text: "In cycle stealing, the DMA controller transfers one word at a time between CPU memory cycles, whereas burst mode transfers an entire block in one continuous bus acquisition" },
+        { id: "b", text: "Cycle stealing transfers data without using the address bus, while burst mode requires an address decoder" },
+        { id: "c", text: "Cycle stealing can only write to disk, while burst mode can only read from disk" },
+        { id: "d", text: "Cycle stealing freezes the CPU clock oscillator, while burst mode increases CPU frequency" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In cycle stealing (single-cycle DMA), the DMA controller requests the bus, transfers a single data word, and immediately releases the bus back to the CPU. This interleaves I/O transfers with normal instruction execution, minimizing CPU stall latency. In burst mode (block DMA), the controller acquires the bus and transfers the entire block without releasing ownership, providing maximum transfer bandwidth but locking out the CPU if it needs the bus. Option (b) is false because all DMA transfers require the address bus. Option (c) is an invented distinction with no basis in hardware. Option (d) is completely false regarding CPU clock generation.",
+    },
+    {
+      id: "io-p5",
+      prompt: "In a four-phase asynchronous handshaking protocol between a CPU (master) and a peripheral controller (slave), what is the event that prompts the master to deassert its Request line?",
+      options: [
+        { id: "a", text: "The slave asserts its Acknowledge line, confirming that it has placed valid data on the bus or latched written data" },
+        { id: "b", text: "The global bus clock ticks from low to high" },
+        { id: "c", text: "The CPU watchdog timer expires" },
+        { id: "d", text: "The slave drops its Acknowledge line to logic 0" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The four-phase handshake proceeds in interlocking sequence: (1) Master asserts Request. (2) Slave responds by asserting Acknowledge once data is valid. (3) Seeing Acknowledge asserted, the Master reads/latches the data and deasserts Request. (4) Seeing Request deasserted, the Slave deasserts Acknowledge, returning the bus to idle. Option (b) is incorrect because asynchronous protocols use no shared bus clock. Option (c) describes an error condition, not normal protocol progression. Option (d) is phase 4 of the handshake, which occurs only after the master has already dropped Request in phase 3.",
+    },
+  ]}
+/>
+

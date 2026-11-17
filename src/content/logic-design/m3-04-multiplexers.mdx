@@ -55,8 +55,9 @@ A 4-to-1 multiplexer has four data lines ($I_0, I_1, I_2, I_3$), two select line
 
 The Boolean logic equation is:
 $$
-Y = \overline{E}' \cdot \big(S_1' S_0' I_0 + S_1' S_0 I_1 + S_1 S_0' I_2 + S_1 S_0 I_3\big)
+Y = E' \cdot \big(S_1' S_0' I_0 + S_1' S_0 I_1 + S_1 S_0' I_2 + S_1 S_0 I_3\big)
 $$
+When the enable pin is active-LOW (labeled $\overline{E}$ or $E'$), setting $E = 0$ yields $E' = 1$, enabling the data paths. Setting $E = 1$ forces $Y = 0$.
 
 The circuit consists of four 3-input AND gates, one 4-input OR gate, and two inverters. Notice that the select logic acts identically to a [2-to-4 decoder](/courses/logic-design/comparators-decoders-encoders#decoders-pick-exactly-one): each AND gate decodes one unique minterm of $(S_1, S_0)$ to enable exactly one data line.
 
@@ -117,8 +118,8 @@ Implement $F(A, B, C) = \sum m(1, 3, 5, 6)$ using a 4-to-1 multiplexer:
 1. Connect $A \to S_1$ and $B \to S_0$.
 2. Analyze the input pairs with variable $C$:
    - For $S_1 S_0 = 00$: contains minterms $m_0$ and $m_1$. $m_0 = 0$, $m_1 = 1$. Since $F = 1$ only when $C = 1$, set $I_0 = C$.
-   - For $S_1 S_0 = 01$: contains minterms $m_2$ and $m_3$. $m_2 = 0$, $m_3 = 1$. Set $I_1 = C$.
-   - For $S_1 S_0 = 10$: contains minterms $m_4$ and $m_5$. $m_4 = 0$, $m_5 = 1$. Set $I_2 = C$.
+   - For $S_1 S_0 = 01$: contains minterms $m_2$ and $m_3$. $m_2 = 0$, $m_3 = 1$. Since $F = 1$ only when $C = 1$, set $I_1 = C$.
+   - For $S_1 S_0 = 10$: contains minterms $m_4$ and $m_5$. $m_4 = 0$, $m_5 = 1$. Since $F = 1$ only when $C = 1$, set $I_2 = C$.
    - For $S_1 S_0 = 11$: contains minterms $m_6$ and $m_7$. $m_6 = 1$, $m_7 = 0$. Since $F = 1$ only when $C = 0$, set $I_3 = C'$.
 
 A single 4-to-1 MUX and one inverter (to produce $C'$) implements the entire 3-variable logic function.
@@ -132,26 +133,6 @@ When an application requires selecting from more inputs than a single IC provide
 ### Synthesizing a 16-to-1 MUX using 4-to-1 MUXes
 
 To choose from 16 inputs ($I_0\dots I_{15}$) with 4 select lines ($S_3, S_2, S_1, S_0$), five 4-to-1 multiplexers can be arranged in a two-tier tree with zero external gates:
-
-```
-Inputs I0 - I3   ───►┌─────────┐
-                     │ 4:1 MUX │───► D0
-S1, S0 ───────────┬─►└─────────┘
-                  │
-Inputs I4 - I7   ─┼─►┌─────────┐
-                  │  │ 4:1 MUX │───► D1
-                  ├─►└─────────┘     ┌─────────┐
-                  │                  │ 4:1 MUX │───► Final Output Y
-Inputs I8 - I11  ─┼─►┌─────────┐     │         │
-                  │  │ 4:1 MUX │───► D2│         │
-                  ├─►└─────────┘  ┌─►└─────────┘
-                  │               │   ▲
-Inputs I12 - I15 ─┼─►┌─────────┐  │   │
-                  │  │ 4:1 MUX │──┼─► D3
-                  └─►└─────────┘  │
-                                  │
-S3, S2 ───────────────────────────┴─────────────
-```
 
 - **First Tier (4 MUXes):** The four lower multiplexers receive data inputs $I_0\dots I_{15}$. Their select lines are wired in parallel to the two least significant address bits ($S_1, S_0$).
 - **Second Tier (1 MUX):** The fifth multiplexer receives the four intermediate outputs ($D_0, D_1, D_2, D_3$) as its data inputs. Its select lines are connected to the two most significant address bits ($S_3, S_2$).
@@ -368,6 +349,7 @@ using a single 4-to-1 multiplexer and the minimum number of standard external 2-
        - $(1, 1) \to m_7 = 0$
      - Minimal expression for $I_1$:
        $$I_1 = C' D' = (C + D)' \quad (\text{a 2-input NOR gate})$$
+       *(Note: Using De Morgan's form $(C + D)'$ takes the available uncomplemented inputs $C$ and $D$, avoiding an extra inverter for $D'$)*.
 
    - For $AB = 10$ (minterms $m_8$ to $m_{11}$):
      - Minterms present: $m_8$ ($1000_2$), $m_9$ ($1001_2$). Minterms $m_{10}, m_{11}$ are absent.
@@ -434,22 +416,22 @@ Modern digital datapaths (such as ARM and RISC-V execution pipelines) use transm
 3. **4-Bit Barrel Shifter Design (Rotate Right by $k$):**
    A barrel shifter performs multi-bit shifting in $O(1)$ clock cycles using $\log_2(4) = 2$ multiplexer stages:
    - **Stage 1 (Controlled by $S_0$, shifts by 1 position if $S_0 = 1$):**
-     Consists of four 2-to-1 MUXes producing intermediate vector $W = W_3 W_2 W_1 W_0$:
-     - For $S_0 = 0$: $W$ passes $D$ unchanged ($W_i = D_i$).
-     - For $S_0 = 1$: $W$ rotates $D$ right by 1 bit:
-       $$W_3 = (S_0=0 ? D_3 : D_0)$$
-       $$W_2 = (S_0=0 ? D_2 : D_3)$$
-       $$W_1 = (S_0=0 ? D_1 : D_2)$$
-       $$W_0 = (S_0=0 ? D_0 : D_1)$$
+     Consists of four 2-to-1 MUXes producing intermediate vector $W = W_3 W_2 W_1 W_0$. Each bit $i$ uses a 2-to-1 MUX driven by select line $S_0$:
+     - Input 0 receives unshifted bit $D_i$ (selected when $S_0 = 0$).
+     - Input 1 receives 1-bit right-rotated bit $D_{(i+1)\bmod 4}$ (selected when $S_0 = 1$):
+       - $W_3 = S_0' D_3 + S_0 D_0$
+       - $W_2 = S_0' D_2 + S_0 D_3$
+       - $W_1 = S_0' D_1 + S_0 D_2$
+       - $W_0 = S_0' D_0 + S_0 D_1$
 
    - **Stage 2 (Controlled by $S_1$, shifts by 2 positions if $S_1 = 1$):**
-     Consists of four 2-to-1 MUXes taking intermediate vector $W$ and producing final output $Y = Y_3 Y_2 Y_1 Y_0$:
-     - For $S_1 = 0$: $Y$ passes $W$ unchanged ($Y_i = W_i$).
-     - For $S_1 = 1$: $Y$ rotates $W$ right by 2 bits:
-       $$Y_3 = (S_1=0 ? W_3 : W_1)$$
-       $$Y_2 = (S_1=0 ? W_2 : W_0)$$
-       $$Y_1 = (S_1=0 ? W_1 : W_3)$$
-       $$Y_0 = (S_1=0 ? W_0 : W_2)$$
+     Consists of four 2-to-1 MUXes taking intermediate vector $W$ and producing final output $Y = Y_3 Y_2 Y_1 Y_0$. Each bit $i$ uses a 2-to-1 MUX driven by select line $S_1$:
+     - Input 0 receives unshifted bit $W_i$ (selected when $S_1 = 0$).
+     - Input 1 receives 2-bit right-rotated bit $W_{(i+2)\bmod 4}$ (selected when $S_1 = 1$):
+       - $Y_3 = S_1' W_3 + S_1 W_1$
+       - $Y_2 = S_1' W_2 + S_1 W_0$
+       - $Y_1 = S_1' W_1 + S_1 W_3$
+       - $Y_0 = S_1' W_0 + S_1 W_2$
 
    - **Operation Trace:**
      - If $k = 0$ ($S_1 S_0 = 00$): Stage 1 shift = 0, Stage 2 shift = 0 $\implies$ total rotate = 0.

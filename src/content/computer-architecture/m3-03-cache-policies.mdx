@@ -1,51 +1,673 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { ReplacementLab, WritePolicyLab, AmatCalculator } from "@/components/mdx/ArchitectureVisualizers";
 
 # Cache Policies: Replacement, Writes and Block Size
 
-[Mapping](/courses/computer-architecture/cache-mapping) says where a block may go. Designers have three more decisions to make.
+[Cache mapping](/courses/computer-architecture/cache-mapping) decides where in a cache an address can go. But mapping is only half the design. Hardware engineers must also choose three policies: which block to evict when a set is full, how to handle memory writes so data stays consistent, and how large each block should be.
+
+The goal is to keep **average memory access time** (AMAT) as low as possible while keeping data consistent across the system.
+
+## The 3Cs Miss Taxonomy
+
+To diagnose why cache misses occur, Mark Hill and David Patterson developed the **3Cs model**, which categorizes every cache miss into three primary causes:
+
+1. **Compulsory misses (Cold misses)**: The very first access to a memory block. The block has never been in the cache, so the miss is unavoidable unless hardware or software prefetching predicts the access beforehand.
+2. **Capacity misses**: The cache cannot contain all the blocks needed during program execution. If a program repeatedly accesses a working set of 128 KB on a 64 KB cache, blocks will be repeatedly evicted and re-fetched even if the cache has infinite associativity.
+3. **Conflict misses (Collision misses)**: Multiple distinct memory blocks map to the same set in a direct-mapped or set-associative cache. These misses occur because of non-uniform placement and would vanish if the cache were fully associative with the same capacity.
+4. **Coherence misses (The 4th C)**: In multiprocessor and multicore systems, a cache miss triggered when another processor core writes to a shared cache block, causing the local copy to be invalidated.
 
 ## What gets thrown out?
 
-When a set is full, something has to go. In a direct-mapped cache there's no choice, but in the others there is.
+When a cache set is completely full and a miss brings in a new block, hardware must pick an existing line to throw out. A cache **replacement policy** governs this decision. A direct-mapped cache has no choice because each address maps to only one line. Set-associative and fully associative caches need an eviction rule, such as **LRU** (Least Recently Used), FIFO, or random replacement.
 
-- **LRU** (least recently used): throw out whatever hasn't been used for the longest. It's like clearing your desk of whatever you haven't touched lately. Operating systems use the same rule for [page replacement](/courses/operating-systems/page-replacement-and-thrashing#least-recently-used-lru).
-- **FIFO** (first in, first out): throw out whatever has been there the longest, even if you're using it constantly.
-- **Random**: pick one at random. It's the cheapest to build, and it's surprisingly close to LRU.
+### Least Recently Used (LRU)
 
-Click through each access in both modes. Block 1 keeps getting used. Does it survive?
+The **Least Recently Used** (LRU) policy evicts the block that has remained unreferenced for the longest period of time.
+
+- **Rationale**: Exploits temporal locality. A block accessed recently is likely to be accessed again; a block untouched for thousands of cycles is the least likely to be needed soon.
+- **Hardware implementation**:
+  - In a 2-way set-associative cache, LRU requires exactly 1 bit per set. Setting the bit to 0 or 1 indicates which of the two ways was accessed most recently.
+  - In a 4-way set-associative cache, tracking true LRU order among 4 ways requires $\log_2(4!) = \log_2(24) \approx 5$ or 6 bits per set, or a $4 \times 4$ triangular bit matrix.
+  - For 8-way and 16-way caches, exact LRU becomes too complex and consumes too much power and silicon area.
+- **Pseudo-LRU (Tree-PLRU)**: Modern high-associativity caches approximate LRU using a binary decision tree. For an 8-way cache, each set stores 7 tracking bits ($B_0 \dots B_6$) organized as a 3-level binary tree:
+  - Root bit $B_0$ points to the left half (Ways 0 to 3) or right half (Ways 4 to 7).
+  - Level-1 bits $B_1, B_2$ point to pairs of ways (Ways 0-1 vs 2-3, and Ways 4-5 vs 6-7).
+  - Level-2 bits $B_3 \dots B_6$ point to individual ways.
+  When an access hits Way 2, the hardware flips all bits along the path to Way 2 so they point *away* from Way 2. When an eviction occurs, hardware follows the arrows to find an unreferenced **victim block**.
+
+### First-In, First-Out (FIFO)
+
+The **First-In, First-Out** (FIFO) policy evicts the block that has been resident in the set for the longest time, regardless of how frequently or recently it was accessed.
+
+- **Hardware implementation**: Simple circular counter per set pointing to the next victim way.
+- **Drawback**: FIFO frequently evicts critical loop variables, lookup tables, and OS kernel routines simply because they were loaded early during program startup.
+
+### Random Replacement
+
+The **Random** policy selects a victim line uniformly at random using a pseudorandom number generator or clock-driven counter.
+
+- **Hardware implementation**: Requires zero tracking bits in the cache tag array.
+- **Performance**: In large caches with high associativity ($\ge 8$-way), random replacement performs surprisingly close to LRU (within 1 to 2% miss rate) because the probability of accidentally picking the most critical active line is small.
+
+### Optimal Replacement (MIN / Belady's Algorithm)
+
+The **Optimal** (or MIN) algorithm evicts the block whose next access will occur furthest in the future.
+
+- **Theoretical bound**: Belady proved that MIN achieves the lowest possible miss rate for any fixed-size cache.
+- **Why it cannot be built**: Hardware cannot look into the future. MIN serves as an offline theoretical benchmark to measure how close practical policies come to perfection.
+
+Click through each access to compare how LRU and FIFO manage a shared cache set:
 
 <ReplacementLab />
 
 ## What happens on a write?
 
-The CPU changes a value that's in the cache. Now the cache and main memory disagree. When should memory be updated?
+Reads leave cache contents alone. Writes modify data. When the CPU writes a word to the cache, cache and main memory temporarily disagree. Maintaining **cache coherency** and data consistency across main memory and other processor cores requires clear write policies. Architecture defines two choices for write hits and two for write misses.
 
-- **Write-through**: write to both at once. Memory is always correct, but every write takes the slow trip to memory.
-- **Write-back**: write only to the cache, and mark the block with a **dirty bit**. Memory is only updated when that block gets thrown out. It's much faster, but more complicated.
+### Write Hit Policies
 
-Consider a loop updating a counter a thousand times. Write-through sends all thousand writes to memory. Write-back sends only the last.
+#### 1. Write-Through
+
+In a **write-through** cache, every write to the cache simultaneously updates main memory.
+
+- **Advantage**: Main memory always holds a clean, up-to-date copy of data. Simplifies cache coherence in multicore systems and makes recovery after power loss or fault straightforward.
+- **Disadvantage**: Main memory takes 50 to 100 ns to complete a write. If roughly 15% of all instructions are stores, waiting for DRAM on every store would stall the CPU pipeline continuously.
+- **Write Buffer**: To avoid processor stalls, write-through caches place a **write buffer** (a small FIFO queue, typically 4 to 16 entries) between the cache and memory bus. The processor writes the data to both the cache and the write buffer in 1 cycle and continues execution immediately. The memory controller drains the buffer to DRAM in the background.
+
+<Callout tone="orange" label="Write buffer saturation">
+A write buffer hides memory latency only if writes arrive in bursts followed by gaps. If a tight loop performs continuous stores faster than DRAM can absorb them, the write buffer fills to capacity. Subsequent stores stall the execution pipeline until the buffer drains.
+</Callout>
+
+#### 2. Write-Back (Copy-Back)
+
+In a **write-back** cache, writes update only the cache line. Main memory is not updated immediately.
+
+- **Dirty Bit ($D$)**: Each cache line includes a 1-bit **dirty flag** (or modified bit). When the processor writes to a line, the hardware marks its dirty bit as 1.
+- **Memory Update**: Main memory is updated only when a dirty line is evicted to make room for a new block. If a clean line (dirty bit 0) is evicted, it is discarded immediately with zero bus writes.
+- **Advantage**: It cuts memory bus traffic. A loop modifying an array element 10,000 times generates 10,000 cache writes, but only one write to main memory when the block is eventually replaced.
+- **Disadvantage**: More complex hardware. Evicting a dirty block requires two distinct memory operations: writing back the dirty victim to DRAM, and reading the incoming block into the cache.
+- **Write-Back Buffer**: When an eviction forces out a dirty block, waiting for it to write all the way to DRAM before fetching the new block would double the miss penalty. Fast caches copy the dirty block into a temporary **write-back buffer** (or victim buffer). The CPU fetches the requested block from DRAM right away and resumes execution. The memory controller writes the dirty block from the buffer to DRAM in the background.
 
 <WritePolicyLab />
 
-To lessen the waiting, write-through caches often use a small **write buffer**, so the CPU can drop off the write and move on.
+### Write Miss Policies
 
-<Callout tone="violet" label="The coherence problem">
-On a multicore chip, each core has its own cache. If one core uses write-back, the others can see old values. **Cache coherence** protocols keep them in step, and they're one reason multicore chips are hard to design.
+When the processor attempts to write to an address that is not in the cache, two approaches exist:
+
+1. **Write-Allocate (Fetch-on-Write)**: The missed block is fetched from main memory into the cache, and the write is executed in the cache line. This is the natural pairing for **write-back** caches, because subsequent writes to that block will hit in the cache.
+2. **No-Write-Allocate (Write-Around)**: The data is written directly to main memory without loading the block into the cache. This is the standard pairing for **write-through** caches, preventing non-repeated writes from evicting useful cached blocks.
+
+<Callout tone="orange" label="Assuming write-back always generates less bus traffic">
+Write-back cuts bus traffic when a program repeatedly updates the same cached block. But when write misses dominate, it can create more bus traffic than write-through. Under write-allocate, a write miss loads an entire 64-byte block from DRAM, even if the program wrote only a single 4-byte integer. In contrast, write-through with no-write-allocate sends only the 4-byte store across the bus without fetching the surrounding block.
 </Callout>
 
-## How big should a block be?
+<Callout tone="violet" label="Multicore cache coherence">
+On modern multi-core chips, each core contains a private L1 and L2 cache. If Core 0 writes to address $X$ in its private write-back cache, Core 1 reading address $X$ from its own cache could read stale data. Hardware **cache coherence protocols** (such as MESI: Modified, Exclusive, Shared, Invalid) monitor the system bus and invalidate or update private cache lines whenever another core writes to a shared memory address.
+</Callout>
 
-A bigger block brings in more neighbours, which helps [spatial locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works), up to a point. Too large, and you have two problems: fewer blocks fit, so useful data gets thrown out sooner, and each miss takes longer because there's more to copy. Common sizes settle around 64 bytes.
+## Block Size Trade-Offs
 
-## Putting a number on it
+Block size represents a trade-off between spatial locality and transfer overhead:
 
-The measure that ties all of this together is the **average memory access time**:
+1. **Increasing block size (from 16 to 64 bytes)**:
+   - Takes advantage of spatial locality by fetching neighbouring words that the program will likely need.
+   - Reduces the number of compulsory misses.
+   - Reduces the number of tag bits required per cache byte (since larger blocks mean fewer total lines).
+2. **Excessively large blocks (beyond 128 bytes)**:
+   - For a fixed total cache capacity, larger blocks mean fewer total sets. This causes more conflict and capacity misses.
+   - **Miss penalty increases**: Transferring a 256-byte block across a 64-bit bus requires 32 sequential transfers, tying up the memory controller and stalling the CPU for dozens of additional cycles.
+   - Spatial locality diminishes: if the program only uses 4 bytes of a 256-byte block, the remaining 252 bytes waste memory bandwidth and displace other useful data (**cache pollution**).
+
+Modern desktop and server processors universally standardize on **64-byte blocks**.
+
+## Average Memory Access Time (AMAT)
+
+The standard formula for memory subsystem performance is **Average Memory Access Time** (AMAT):
 
 $$
-\text{AMAT} = \text{hit time} + \text{miss rate} \times \text{miss penalty}
+\text{AMAT} = t_{\text{hit}} + (\text{Miss Rate} \times \text{Miss Penalty})
 $$
+
+Where:
+- $t_{\text{hit}}$ is the time to hit in the cache (typically 1 to 4 clock cycles for L1).
+- $\text{Miss Rate}$ is the fraction of all memory accesses that miss.
+- $\text{Miss Penalty}$ is the additional time required to fetch the block from the lower level of the memory hierarchy.
+
+Every memory reference queries the cache first. The processor cannot know whether a request will hit or miss until it searches the tag array. Therefore, the cache hit latency $t_{\text{hit}}$ is spent on every reference, whether it hits or misses.
+
+<Callout tone="orange" label="Forgetting hit latency on cache misses">
+A frequent student error when calculating total access time on a miss is forgetting $t_{\text{hit}}$. Students compute $\text{Latency} = \text{Miss Penalty}$, assuming the cache was bypassed. In reality, the processor spent $t_{\text{hit}}$ cycles checking the cache tags before declaring the miss and initiating the memory fetch. The total time spent on a miss is $t_{\text{hit}} + \text{Miss Penalty}$.
+</Callout>
 
 <AmatCalculator />
 
-Every decision in this lesson is an attempt to shrink one of these three terms. Larger caches lower the miss rate but raise the hit time. Adding another level of cache lowers the miss penalty.
+### Multi-Level Cache Hierarchies
+
+To overcome the latency-capacity dilemma, modern processors use a multi-level hierarchy:
+
+- **Level 1 (L1)**: Small (32 KB to 64 KB per core), fast (1 to 4 cycles, ~1 ns). Split into dedicated **L1 Instruction Cache (L1 I-Cache)** and **L1 Data Cache (L1 D-Cache)** to allow simultaneous instruction fetching and data load/store without structural hazards.
+- **Level 2 (L2)**: Moderate capacity (512 KB to 2 MB per core), fast (10 to 14 cycles, ~3 to 4 ns), unified (holds both instructions and data).
+- **Level 3 (L3)**: Large capacity (16 MB to 96 MB shared across all cores), moderate latency (30 to 50 cycles, ~10 to 15 ns).
+
+The multi-level AMAT equation expands as:
+
+$$
+\text{AMAT} = t_{L1} + \text{MR}_{L1} \times \left( t_{L2} + \text{MR}_{L2} \times \left( t_{L3} + \text{MR}_{L3} \times t_{\text{mem}} \right) \right)
+$$
+
+<Callout tone="orange" label="Confusing local and global miss rates">
+In multi-level cache problems, students frequently mix up local and global miss rates. If L1 has a 4% miss rate ($\text{MR}_{L1} = 0.04$) and L2 has a 20% local miss rate ($\text{MR}_{L2,\text{local}} = 0.20$), only $0.04 \times 0.20 = 0.008$ (or 0.8%) of all CPU instructions reach main memory. Plugging 20% directly into the main memory miss penalty formula overestimates DRAM traffic by a factor of 25.
+</Callout>
+
+<Callout tone="sky" label="Local vs. global miss rate">
+When analyzing multi-level caches:
+- **Local Miss Rate ($\text{MR}_{\text{local}}$)**: The fraction of references arriving at that specific cache level that miss.
+  $$\text{MR}_{L2\text{, local}} = \frac{\text{Misses at L2}}{\text{Total accesses to L2}}$$
+- **Global Miss Rate ($\text{MR}_{\text{global}}$)**: The fraction of all CPU memory references that miss at that cache level.
+  $$\text{MR}_{L2\text{, global}} = \frac{\text{Misses at L2}}{\text{Total CPU references}} = \text{MR}_{L1} \times \text{MR}_{L2\text{, local}}$$
+</Callout>
+
+<Callout tone="mint" label="Key takeaway">
+Cache performance is governed by the interaction of replacement, write, and sizing policies. LRU preserves temporally active data, while write-back with write-allocate prevents memory bus saturation. Multi-level cache hierarchies minimize AMAT by combining small, ultra-fast L1 split caches with large, unified L2 and L3 caches.
+</Callout>
+
+## Exam-Style Practice
+
+### Part 1: Written Exam & Lab Problems
+
+<ModelAnswer title="Problem 1: Multi-level cache AMAT and performance analysis">
+A processor has a clock frequency of 2 GHz (clock cycle time $\tau = 0.5\text{ ns}$).
+The memory hierarchy consists of a split L1 cache, a unified L2 cache, and main memory with the following parameters:
+
+- L1 hit time: 1 clock cycle (0.5 ns)
+- L1 miss rate: 4% (0.04)
+- L2 hit time: 10 clock cycles (5 ns)
+- L2 local miss rate: 20% (0.20)
+- Main memory access latency: 100 clock cycles (50 ns)
+
+1. Calculate the global miss rate for the L2 cache.
+2. Calculate the Average Memory Access Time (AMAT) in clock cycles and in nanoseconds.
+3. If an architectural redesign reduces the L2 local miss rate from 20% to 10%, calculate the new AMAT and the overall memory speedup.
+
+---
+
+**Solution:**
+
+**Part 1: Global Miss Rate for L2:**
+$$
+\text{Global MR}_{L2} = \text{MR}_{L1} \times \text{Local MR}_{L2} = 0.04 \times 0.20 = 0.008\text{ (or 0.8 percent)}
+$$
+Only 0.8% of all memory accesses issued by the CPU reach main memory.
+
+**Part 2: Baseline AMAT Calculation:**
+Using the multi-level AMAT formula:
+$$
+\text{AMAT} = t_{L1} + \text{MR}_{L1} \times \text{Miss Penalty}_{L1}
+$$
+The miss penalty of L1 is the time spent resolving the miss through L2:
+$$
+\text{Miss Penalty}_{L1} = t_{L2} + \text{Local MR}_{L2} \times t_{\text{mem}}
+$$
+Substituting the given cycle counts:
+$$
+\text{Miss Penalty}_{L1} = 10\text{ cycles} + 0.20 \times 100\text{ cycles} = 10 + 20 = 30\text{ cycles}
+$$
+Now compute overall AMAT in clock cycles:
+$$
+\text{AMAT} = 1\text{ cycle} + 0.04 \times 30\text{ cycles} = 1 + 1.2 = 2.2\text{ clock cycles}
+$$
+Convert to nanoseconds ($\tau = 0.5\text{ ns}$):
+$$
+\text{AMAT} = 2.2 \times 0.5\text{ ns} = 1.1\text{ ns}
+$$
+
+**Part 3: Redesign with L2 Local Miss Rate = 10%:**
+Recalculate the L1 miss penalty:
+$$
+\text{Miss Penalty}_{L1,\text{new}} = 10\text{ cycles} + 0.10 \times 100\text{ cycles} = 10 + 10 = 20\text{ cycles}
+$$
+Recalculate AMAT:
+$$
+\text{AMAT}_{\text{new}} = 1\text{ cycle} + 0.04 \times 20\text{ cycles} = 1 + 0.8 = 1.8\text{ clock cycles}
+$$
+In nanoseconds:
+$$
+\text{AMAT}_{\text{new}} = 1.8 \times 0.5\text{ ns} = 0.9\text{ ns}
+$$
+Memory speedup achieved:
+$$
+\text{Speedup} = \frac{\text{AMAT}_{\text{baseline}}}{\text{AMAT}_{\text{new}}} = \frac{2.2}{1.8} \approx 1.222
+$$
+This yields a $1.222\times$ memory speedup (an $18.2\text{\%}$ reduction in average access latency from 1.10 ns down to 0.90 ns).
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Memory bus traffic under write-through vs. write-back">
+A processor executes a benchmark program of 1,000,000 instructions.
+Memory reference statistics for the benchmark:
+- 30% of instructions are memory data reads (loads).
+- 10% of instructions are memory data writes (stores).
+- The remaining 60% are ALU operations that perform no data memory accesses.
+- Assume instruction fetch accesses are handled by a separate dedicated I-cache that incurs zero data bus traffic.
+
+The data cache has a block size of 64 bytes. The data miss rate for reads is 3%, and the data miss rate for writes is 5%.
+In the write-back cache, 40% of evicted blocks are dirty ($D = 1$).
+Assume a write-allocate policy for write-back, and a no-write-allocate policy for write-through. Assume word writes transfer 4 bytes.
+
+Calculate the total number of bytes transferred across the main memory bus for:
+1. A write-through cache with a write buffer.
+2. A write-back cache.
+
+---
+
+**Solution:**
+
+**Total memory references:**
+- Read instructions ($N_{\text{reads}}$) = $1{,}000{,}000 \times 0.30 = 300{,}000$ reads.
+- Write instructions ($N_{\text{writes}}$) = $1{,}000{,}000 \times 0.10 = 100{,}000$ writes.
+
+**Part 1: Write-Through (No-Write-Allocate):**
+In write-through:
+- Every read miss fetches a full 64-byte block from memory.
+  $$\text{Read misses} = 300{,}000 \times 0.03 = 9{,}000\text{ misses}$$
+  $$\text{Bytes from read misses} = 9{,}000 \times 64\text{ bytes} = 576{,}000\text{ bytes}$$
+- Because the cache is no-write-allocate, write misses do not fetch blocks.
+- Every write instruction (both hits and misses) must write its 4-byte word directly to main memory:
+  $$\text{Bytes from writes} = 100{,}000 \times 4\text{ bytes} = 400{,}000\text{ bytes}$$
+- Total memory bus bytes:
+  $$\text{Total Bytes}_{\text{WT}} = 576{,}000 + 400{,}000 = 976{,}000\text{ bytes} \approx 953.1\text{ KB}$$
+
+**Part 2: Write-Back (Write-Allocate):**
+In write-back:
+- Read misses fetch a 64-byte block:
+  $$\text{Read misses} = 300{,}000 \times 0.03 = 9{,}000\text{ blocks}$$
+- Write misses fetch a 64-byte block (due to write-allocate):
+  $$\text{Write misses} = 100{,}000 \times 0.05 = 5{,}000\text{ blocks}$$
+- Total block fetches = $9{,}000 + 5{,}000 = 14{,}000$ blocks.
+  $$\text{Bytes fetched into cache} = 14{,}000 \times 64\text{ bytes} = 896{,}000\text{ bytes}$$
+- Each of these 14,000 block allocations causes an eviction.
+  Of the evicted blocks, 40% are dirty and must be written back to main memory:
+  $$\text{Evicted dirty blocks} = 14{,}000 \times 0.40 = 5{,}600\text{ blocks}$$
+  $$\text{Bytes written back to memory} = 5{,}600 \times 64\text{ bytes} = 358{,}400\text{ bytes}$$
+- Total memory bus bytes:
+  $$\text{Total Bytes}_{\text{WB}} = 896{,}000 + 358{,}400 = 1{,}254{,}400\text{ bytes} \approx 1{,}225\text{ KB}$$
+
+Notice that when the write miss rate is high and blocks are large (64 bytes vs 4-byte words), write-allocate fetches 64 bytes for each miss. However, if the program demonstrates temporal locality where writes repeatedly update existing cached blocks (write hit rate 95%), write-back performs all repeated writes locally at zero memory bus cost.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 3: Replacement policy trace: LRU vs. FIFO vs. Tree-PLRU vs. Optimal (Belady's MIN)">
+Consider a single cache set containing 4 lines (4-way set-associative cache, or a 4-block fully associative cache).
+The cache begins completely empty (all valid bits 0).
+The processor executes the following 12-block reference stream:
+$$0, 1, 2, 3, 0, 1, 4, 0, 1, 2, 3, 4$$
+
+1. Trace the cache contents after each access under the following policies:
+   - (A) LRU (Least Recently Used)
+   - (B) FIFO (First-In, First-Out)
+   - (C) Tree-PLRU (using 3 binary decision tree bits: $B_0, B_1, B_2$)
+   - (D) Optimal (Belady's MIN algorithm)
+2. Determine the total hits, total misses, and hit rate for each policy.
+3. Classify every miss according to the 3Cs model (Compulsory vs. Capacity/Conflict).
+4. Explain how Tree-PLRU tracks state using only $k - 1 = 3$ bits per set, compared to true LRU which requires $\lceil \log_2(4!) \rceil = 5$ bits (or $4 \times 2 = 8$ bits for timestamps).
+
+---
+
+**Solution:**
+
+**Part 1: Step-by-step traces:**
+Initial state: `[Empty, Empty, Empty, Empty]`.
+References 1 to 4 (`0, 1, 2, 3`) are compulsory misses for all policies, filling the set with `[0, 1, 2, 3]`.
+
+- **Policy A: True LRU**
+  - Ref 5 (`0`): Hit. (State MRU $\to$ LRU: 0, 3, 2, 1).
+  - Ref 6 (`1`): Hit. (State MRU $\to$ LRU: 1, 0, 3, 2).
+  - Ref 7 (`4`): Miss. Evicts LRU (block 2). Set holds `[1, 0, 3, 4]`. (Order: 4, 1, 0, 3).
+  - Ref 8 (`0`): Hit. (Order: 0, 4, 1, 3).
+  - Ref 9 (`1`): Hit. (Order: 1, 0, 4, 3).
+  - Ref 10 (`2`): Miss. Evicts LRU (block 3). Set holds `[1, 0, 4, 2]`. (Order: 2, 1, 0, 4).
+  - Ref 11 (`3`): Miss. Evicts LRU (block 4). Set holds `[1, 0, 2, 3]`. (Order: 3, 2, 1, 0).
+  - Ref 12 (`4`): Miss. Evicts LRU (block 0). Set holds `[3, 2, 1, 4]`. (Order: 4, 3, 2, 1).
+  *LRU Summary*: **4 Hits, 8 Misses (Hit rate = 33.3%)**.
+
+- **Policy B: FIFO**
+  Evicts strictly in order of entry into the cache (Initial entry order: 0, 1, 2, 3).
+  - Ref 5 (`0`): Hit.
+  - Ref 6 (`1`): Hit.
+  - Ref 7 (`4`): Miss. Evicts oldest line (block 0!). Set holds `[4, 1, 2, 3]`. (Entry order: 1, 2, 3, 4).
+  - Ref 8 (`0`): Miss. Evicts oldest line (block 1). Set holds `[4, 0, 2, 3]`. (Entry order: 2, 3, 4, 0).
+  - Ref 9 (`1`): Miss. Evicts oldest line (block 2). Set holds `[4, 0, 1, 3]`. (Entry order: 3, 4, 0, 1).
+  - Ref 10 (`2`): Miss. Evicts oldest line (block 3). Set holds `[4, 0, 1, 2]`. (Entry order: 4, 0, 1, 2).
+  - Ref 11 (`3`): Miss. Evicts oldest line (block 4). Set holds `[3, 0, 1, 2]`. (Entry order: 0, 1, 2, 3).
+  - Ref 12 (`4`): Miss. Evicts oldest line (block 0). Set holds `[3, 4, 1, 2]`.
+  *FIFO Summary*: **2 Hits, 10 Misses (Hit rate = 16.7%)**. FIFO evicts active blocks (such as 0 and 1) simply because they arrived early.
+
+- **Policy C: Tree-PLRU**
+  Tree nodes: $B_0$ points to left pair ($0 \to \text{Ways 0, 1}$) or right pair ($1 \to \text{Ways 2, 3}$).
+  $B_1$ points to Way 0 ($0$) or Way 1 ($1$).
+  $B_2$ points to Way 2 ($0$) or Way 3 ($1$).
+  The bits point toward the candidate for eviction. On every access, bits on the path flip to point *away* from the accessed way:
+  - Access to Way 0: $B_0 \leftarrow 1, B_1 \leftarrow 1$
+  - Access to Way 1: $B_0 \leftarrow 1, B_1 \leftarrow 0$
+  - Access to Way 2: $B_0 \leftarrow 0, B_2 \leftarrow 1$
+  - Access to Way 3: $B_0 \leftarrow 0, B_2 \leftarrow 0$
+
+  Tracing references 5 through 12 (initial compulsory fills place `[0, 1, 2, 3]` in Ways 0, 1, 2, 3 with tree state $(B_0, B_1, B_2) = (0, 0, 0)$):
+  - Ref 5 (`0`): Hit in Way 0. Tree flips to $(1, 1, 0)$.
+  - Ref 6 (`1`): Hit in Way 1. Tree flips to $(1, 0, 0)$.
+  - Ref 7 (`4`): Miss! Tree points to Right ($B_0=1$), then Way 2 ($B_2=0$). Evicts Way 2 (block 2). Way 2 gets block 4. Tree flips to $(0, 0, 1)$. Set holds `[0, 1, 4, 3]`.
+  - Ref 8 (`0`): Hit in Way 0. Tree flips to $(1, 1, 1)$.
+  - Ref 9 (`1`): Hit in Way 1. Tree flips to $(1, 0, 1)$.
+  - Ref 10 (`2`): Miss! Tree points to Right ($B_0=1$), then Way 3 ($B_2=1$). Evicts Way 3 (block 3). Way 3 gets block 2. Tree flips to $(0, 0, 0)$. Set holds `[0, 1, 4, 2]`.
+  - Ref 11 (`3`): Miss! Tree points to Left ($B_0=0$), then Way 0 ($B_1=0$). Evicts Way 0 (block 0). Way 0 gets block 3. Tree flips to $(1, 1, 0)$. Set holds `[3, 1, 4, 2]`.
+  - Ref 12 (`4`): **HIT in Way 2!** Block 4 is still resident in Way 2 because Tree-PLRU evicted from the left subtree at step 11. Tree flips to $(0, 1, 1)$. Set holds `[3, 1, 4, 2]`.
+
+  *Tree-PLRU Summary*: **5 Hits, 7 Misses (Hit rate = 41.7%)**.
+  Here Tree-PLRU actually achieves a higher hit rate than True LRU (5 hits vs 4 hits). Because True LRU evicted block 4 at step 11, it missed on reference 12. Tree-PLRU protected block 4 in the right subtree because recent hits on blocks 0 and 1 had steered the eviction arrow toward the left subtree.
+
+- **Policy D: Optimal (Belady's MIN)**
+  Looking into future references:
+  At step 7 (`4`), cache has `[0, 1, 2, 3]`. Future references: `0` (step 8), `1` (step 9), `2` (step 10), `3` (step 11).
+  Block 3 is referenced furthest in the future. Evict block 3!
+  - Ref 7 (`4`): Miss. Evicts 3. Set holds `[0, 1, 2, 4]`.
+  - Ref 8 (`0`): Hit!
+  - Ref 9 (`1`): Hit!
+  - Ref 10 (`2`): Hit!
+  - Ref 11 (`3`): Miss. Future references: only `4` (step 12). Blocks 0, 1, 2 are never referenced again. Evict block 0. Set holds `[3, 1, 2, 4]`.
+  - Ref 12 (`4`): Hit!
+  *Optimal Summary*: **6 Hits, 6 Misses (Hit rate = 50.0%)**.
+
+**Part 2: Hit rate summary:**
+- LRU: 4 / 12 = 33.3%
+- FIFO: 2 / 12 = 16.7%
+- Tree-PLRU: 5 / 12 = 41.7%
+- Optimal: 6 / 12 = 50.0%
+
+**Part 3: 3Cs Miss Classification:**
+- **Compulsory misses**: References 1, 2, 3, 4 (`0, 1, 2, 3`) and reference 7 (`4`) are compulsory misses because these 5 blocks are accessed for the first time in execution.
+- **Capacity / Conflict misses**: References 10, 11, and 12 (`2, 3, 4`) under LRU are capacity/conflict misses because they had been loaded previously and were evicted due to set capacity limits.
+
+**Part 4: Tree-PLRU bit efficiency:**
+True LRU requires tracking all $4! = 24$ order permutations, taking $\lceil \log_2(24) \rceil = 5$ bits per set (and for 8-way, $\lceil \log_2(8!) \rceil = 16$ bits per set).
+Tree-PLRU requires only $k - 1$ decision bits (3 bits for 4-way, 7 bits for 8-way). This reduces hardware storage overhead by over 56% while delivering hit rates within 1% of true LRU.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: Write buffer saturation and pipeline stalls in write-through caches">
+A 2 GHz processor ($\tau = 0.5\text{ ns}$) features a write-through L1 data cache coupled to main memory through a 4-entry FIFO write buffer.
+Each memory write operation takes 40 ns (80 clock cycles) to transfer data over the memory bus and complete in DRAM.
+The write buffer accepts a store instruction in 1 clock cycle as long as it contains an empty slot. If the write buffer is completely full, the CPU pipeline must stall until the memory controller drains an entry.
+
+Consider a tight inner loop executing the following instruction sequence:
+```asm
+STORE [R1], R2      ; Store word to memory
+ADD R3, R3, 1       ; ALU
+SUB R4, R4, 1       ; ALU
+```
+Each iteration consists of 1 store instruction and 2 ALU instructions. Assume each instruction takes 1 base clock cycle without stalls, meaning stores are issued every 3 clock cycles.
+
+1. Trace the write buffer occupancy starting with an empty buffer at cycle 0. Determine at which clock cycle the CPU experiences its very first write stall.
+2. In steady state, calculate the number of CPU stall cycles incurred on each subsequent iteration of the loop.
+3. Calculate the effective CPI of this loop with the saturated write buffer.
+4. Calculate the maximum sustainable write frequency (in writes per clock cycle) that the memory subsystem can support without ever stalling the CPU.
+5. Explain how a write-back cache with dirty bits completely eliminates write buffer saturation for this workload.
+
+---
+
+**Solution:**
+
+**Part 1: Write buffer saturation timeline:**
+- Cycle 0: Iteration 1 issues Store 1. Buffer accepts Store 1 (occupancy = 1). Memory controller begins writing Store 1 to DRAM (will finish at cycle $0 + 80 = 80$).
+- Cycle 1: ALU `ADD`.
+- Cycle 2: ALU `SUB`.
+- Cycle 3: Iteration 2 issues Store 2. Buffer accepts Store 2 (occupancy = 2).
+- Cycle 4: ALU `ADD`.
+- Cycle 5: ALU `SUB`.
+- Cycle 6: Iteration 3 issues Store 3. Buffer accepts Store 3 (occupancy = 3).
+- Cycle 7: ALU `ADD`.
+- Cycle 8: ALU `SUB`.
+- Cycle 9: Iteration 4 issues Store 4. Buffer accepts Store 4 (occupancy = 4, buffer is now completely FULL!).
+- Cycle 10: ALU `ADD`.
+- Cycle 11: ALU `SUB`.
+- Cycle 12: Iteration 5 attempts to issue Store 5.
+  Because the write buffer is full (occupancy = 4) and Store 1 will not finish draining until cycle 80, the CPU pipeline stalls immediately at **cycle 12**!
+
+**Part 2: Steady-state stall cycles per iteration:**
+The CPU issues a store every 3 clock cycles.
+However, main memory can only drain 1 write entry every 80 clock cycles.
+Therefore, for every iteration, the CPU executes 2 ALU cycles + 1 Store cycle = 3 useful cycles, but must wait until the memory controller finishes draining one write (80 cycles total between writes):
+$$
+\text{Stall cycles per iteration} = 80 - 3 = 77\text{ stall cycles}
+$$
+
+**Part 3: Effective CPI:**
+Each iteration contains 3 instructions.
+Total cycles per iteration = $3\text{ useful cycles} + 77\text{ stall cycles} = 80\text{ cycles}$.
+$$
+\text{Effective CPI} = \frac{80\text{ cycles}}{3\text{ instructions}} \approx 26.67
+$$
+Write buffer saturation degrades execution throughput by a factor of $80 / 3 \approx 26.7\times$.
+
+**Part 4: Maximum sustainable write frequency:**
+$$
+\text{Max Write Frequency} = \frac{1\text{ write}}{80\text{ clock cycles}} = 0.0125\text{ writes per cycle (or 1.25\% of instructions)}
+$$
+If more than 1.25% of instructions in steady state are stores, a write-through buffer will eventually saturate and stall the CPU.
+
+**Part 5: Elimination via Write-Back Cache:**
+In a write-back cache, a store instruction writes directly to the fast SRAM cache line in 1 clock cycle and sets the block's dirty bit. No memory bus transaction is initiated. The CPU continues running at full 1-cycle CPI. Main memory traffic occurs only when a dirty block is evicted to make room for a new block, reducing memory bus write transactions by over 95%.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Block size optimization and AMAT trade-offs">
+A 1 GHz computer architecture ($\tau = 1\text{ ns}$) features a 64 KB 4-way set-associative L1 data cache with 1-cycle hit time.
+The memory bus has a width of 64 bits (8 bytes).
+When a cache miss occurs, memory bus latency consists of:
+- Fixed memory access latency: $t_{\text{access}} = 50\text{ ns}$ (50 clock cycles) to open the DRAM row and deliver the first 8-byte chunk.
+- Transfer time: $t_{\text{transfer}} = 5\text{ ns}$ (5 clock cycles) for each additional 8-byte bus transfer.
+
+The architectural team measures miss rates for different block sizes across a benchmark suite:
+- Size 1: 16-byte blocks ($B = 16$), Miss Rate = 5.0%
+- Size 2: 64-byte blocks ($B = 64$), Miss Rate = 2.0%
+- Size 3: 256-byte blocks ($B = 256$), Miss Rate = 1.6%
+
+1. Calculate the miss penalty (in clock cycles and nanoseconds) for each of the three block sizes.
+2. Calculate the Average Memory Access Time (AMAT) in nanoseconds for each block size.
+3. Identify which block size minimizes AMAT.
+4. Explain why increasing block size from 64 bytes to 256 bytes worsens AMAT despite lowering the cache miss rate.
+
+---
+
+**Solution:**
+
+**Part 1: Miss Penalty Calculations:**
+- **Size 1 (16 bytes)**:
+  Bus transfers required = $16\text{ bytes} / 8\text{ bytes per transfer} = 2$ transfers.
+  $$
+  \text{Miss Penalty} = 50 + 2 \times 5 = 60\text{ clock cycles} \quad (60\text{ ns})
+  $$
+- **Size 2 (64 bytes)**:
+  Bus transfers required = $64\text{ bytes} / 8\text{ bytes} = 8$ transfers.
+  $$
+  \text{Miss Penalty} = 50 + 8 \times 5 = 50 + 40 = 90\text{ clock cycles} \quad (90\text{ ns})
+  $$
+- **Size 3 (256 bytes)**:
+  Bus transfers required = $256\text{ bytes} / 8\text{ bytes} = 32$ transfers.
+  $$
+  \text{Miss Penalty} = 50 + 32 \times 5 = 50 + 160 = 210\text{ clock cycles} \quad (210\text{ ns})
+  $$
+
+**Part 2: AMAT Calculations ($\text{AMAT} = t_{\text{hit}} + \text{Miss Rate} \times \text{Miss Penalty}$):**
+- **For 16-byte blocks**:
+  $$
+  \text{AMAT}_{16} = 1\text{ ns} + 0.050 \times 60\text{ ns} = 1 + 3.00 = 4.00\text{ ns}
+  $$
+- **For 64-byte blocks**:
+  $$
+  \text{AMAT}_{64} = 1\text{ ns} + 0.020 \times 90\text{ ns} = 1 + 1.80 = 2.80\text{ ns}
+  $$
+- **For 256-byte blocks**:
+  $$
+  \text{AMAT}_{256} = 1\text{ ns} + 0.016 \times 210\text{ ns} = 1 + 3.36 = 4.36\text{ ns}
+  $$
+
+**Part 3: Optimal Block Size:**
+The **64-byte block size** minimizes AMAT at **2.80 ns** (a 30% reduction over 16-byte blocks and a 35.8% reduction over 256-byte blocks).
+
+**Part 4: Diminishing returns of large block size:**
+While increasing block size from 64 bytes to 256 bytes exploits spatial locality to marginally drop the miss rate (from 2.0% to 1.6%), the miss penalty grows from 90 ns to 210 ns (+133%). The marginal reduction in miss rate is overwhelmed by the massive bus transfer latency. Large blocks also mean fewer total sets in the cache ($64\text{ KB} / 256\text{ B} = 256\text{ lines} = 64\text{ sets}$), which increases conflict misses and wastes bus bandwidth loading words that the program may never touch.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: Multi-level cache inclusion properties: Inclusive vs. Exclusive vs. Non-Inclusive">
+A modern multicore processor features a private L1 cache of 32 KB per core and a shared L2 cache of 512 KB per core.
+Hardware architects must choose an inclusion policy between L1 and L2:
+- Option 1: Strictly Inclusive
+- Option 2: Strictly Exclusive
+- Option 3: Non-Inclusive, Non-Exclusive (NINE)
+
+1. Define the **Strictly Inclusive** policy. Explain what action the L2 cache controller must take when an L2 line is evicted, and identify the effect of this action on L1.
+2. Define the **Strictly Exclusive** policy. Describe the step-by-step sequence of events that occurs when an L1 read miss is resolved from L2. What is the total aggregate cache capacity available to each core under this policy?
+3. Define the **Non-Inclusive, Non-Exclusive (NINE)** policy.
+4. Compare all three policies on:
+   - Multicore cache coherence snooping overhead.
+   - Aggregate effective silicon storage capacity.
+   - Design and verification complexity.
+
+---
+
+**Solution:**
+
+**Part 1: Strictly Inclusive Cache Hierarchy:**
+- **Definition**: Every memory block present in the L1 cache *must* also be present in the L2 cache ($L1 \subset L2$).
+- **Eviction behavior**: When an L2 set fills up and evicts a block, the L2 controller must send a **back-invalidation probe** to the L1 cache. If that block is present in L1, it is immediately evicted from L1, even if the CPU core is actively using it. If the L1 copy is dirty, it must first be written back through L2 to memory.
+
+**Part 2: Strictly Exclusive Cache Hierarchy:**
+- **Definition**: A memory block resides in *either* L1 *or* L2, but never in both simultaneously ($L1 \cap L2 = \emptyset$).
+- **L1 Read Miss Sequence**:
+  1. The CPU requests block $X$. L1 misses.
+  2. Block $X$ is found in L2 (L2 hit).
+  3. Block $X$ is transferred from L2 into L1.
+  4. Block $X$ is deleted/invalidated from L2.
+  5. If loading $X$ into L1 forces an eviction of block $Y$ from L1, block $Y$ is written down into L2 (a "swap" or victim cache write).
+- **Aggregate capacity**: Because there is zero duplicate storage between levels:
+  $$
+  \text{Aggregate Capacity} = 32\text{ KB (L1)} + 512\text{ KB (L2)} = 544\text{ KB}
+  $$
+  Under an inclusive hierarchy, aggregate capacity is only 512 KB because L2 must duplicate L1's 32 KB.
+
+**Part 3: Non-Inclusive, Non-Exclusive (NINE) Hierarchy:**
+- **Definition**: No inclusion or exclusion invariant is enforced. A block present in L1 may or may not exist in L2.
+- **Behavior**: An eviction from L2 does *not* force a back-invalidation in L1. L1 evictions can be discarded (if clean) or written to L2 without swapping.
+
+**Part 4: Trade-off Comparison:**
+1. **Coherence Snooping Overhead**:
+   - *Inclusive*: Superior for multicore systems. Other cores or DMA controllers only need to snoop the L2 cache tags. If an address misses in L2, the hardware is guaranteed it is not in L1, shielding private L1 caches from snooping traffic and port contention.
+   - *Exclusive & NINE*: Every coherence probe from another core must interrogate both L2 and all private L1 caches, stealing L1 cache bandwidth from the CPU pipeline.
+2. **Aggregate Capacity**:
+   - *Exclusive*: Highest effective capacity ($544\text{ KB}$).
+   - *Inclusive*: Lowest effective capacity ($512\text{ KB}$). If L2 is not substantially larger than L1 (e.g. L2 only $2\times$ L1), inclusion waste becomes severe.
+3. **Hardware Complexity**:
+   - *Exclusive*: Requires bidirectional block swaps between L1 and L2 on misses, creating high interconnect traffic between cache levels.
+   - *NINE*: Simplest implementation with lowest verification overhead.
+</ModelAnswer>
+
+### Part 2: Multiple-Choice Practice
+
+<Quiz
+  practice
+  questions={[
+    {
+      id: "pol-p1",
+      prompt: "Which miss category in the 3Cs model can be eliminated by expanding total cache data capacity without altering block size or associativity?",
+      options: [
+        { id: "a", text: "Capacity misses" },
+        { id: "b", text: "Compulsory misses" },
+        { id: "c", text: "Conflict misses" },
+        { id: "d", text: "Coherence misses" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Capacity misses occur when the program's working set exceeds the total storage capacity of the cache. Increasing total cache size allows more blocks to fit, directly reducing capacity misses. Compulsory misses (b) cannot be reduced by sizing because the blocks have never been loaded. Conflict misses (c) result from limited associativity in mapping. Coherence misses (d) result from invalidations caused by writes from other processors in a multicore system.",
+    },
+    {
+      id: "pol-p2",
+      prompt: "What is the primary operational difference between write-through and write-back caches?",
+      options: [
+        { id: "a", text: "Write-through updates main memory on every store operation, whereas write-back updates only the cache line and defers writing to memory until the dirty line is evicted" },
+        { id: "b", text: "Write-through is only supported on direct-mapped caches, whereas write-back requires fully associative caches" },
+        { id: "c", text: "Write-back requires an external battery power supply to prevent data corruption" },
+        { id: "d", text: "Write-through stores data in ROM, whereas write-back stores data in SRAM" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Write-through ensures that memory always holds the latest data by forwarding every write to memory immediately, generating high bus traffic. Write-back marks modified blocks with a dirty bit and writes them to memory only when evicted, reducing bus traffic dramatically. Option (b), Option (c), and Option (d) are false claims.",
+    },
+    {
+      id: "pol-p3",
+      prompt: "Why is write-allocate usually paired with write-back rather than write-through?",
+      options: [
+        { id: "a", text: "Write-back captures subsequent writes to the fetched block inside the cache with zero bus traffic, justifying the miss penalty of loading the block" },
+        { id: "b", text: "Write-through hardware is physically incapable of reading memory" },
+        { id: "c", text: "Write-allocate permanently disables CPU branch prediction" },
+        { id: "d", text: "Write-back caches cannot support write-no-allocate under any circumstances" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Write-allocate brings the missing block into the cache on a write miss. In a write-back cache, subsequent writes to that same block are absorbed into the cache without touching the bus. In a write-through cache, fetching the block on a write miss provides little benefit because every subsequent write must still be transmitted across the bus to memory anyway. Option (b), Option (c), and Option (d) are factually incorrect.",
+    },
+    {
+      id: "pol-p4",
+      prompt: "How does Tree-PLRU (Pseudo-LRU) achieve high hardware efficiency compared to True LRU in an 8-way set-associative cache?",
+      options: [
+        { id: "a", text: "It uses a binary tree of only 7 bits per set to approximate recency, whereas True LRU requires 16 bits to encode all permutations" },
+        { id: "b", text: "It eliminates tag comparators entirely by using hashing" },
+        { id: "c", text: "It executes a software sorting algorithm inside the OS kernel" },
+        { id: "d", text: "It evicts blocks at random intervals using a thermal noise diode" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In an N-way set, a binary decision tree requires only N - 1 bits (7 bits for 8-way) pointing toward the candidate for eviction. True LRU requires ⌈log₂(8!)⌉ = 16 bits per set to track all 40,320 permutations. Tree-PLRU saves silicon area and eliminates the delay of updating complex LRU priority matrices. Option (b), Option (c), and Option (d) describe unrelated or incorrect mechanisms.",
+    },
+    {
+      id: "pol-p5",
+      prompt: "What is the specific role of the Dirty bit in a cache line?",
+      options: [
+        { id: "a", text: "It indicates that the cached block has been modified by a write and must be written back to memory upon eviction" },
+        { id: "b", text: "It indicates that the cache line has experienced a parity error" },
+        { id: "c", text: "It informs the processor that the line cannot be read by user programs" },
+        { id: "d", text: "It marks the line as the most recently used block in the set" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In write-back caches, a clean line matches main memory and can be discarded silently upon eviction. A dirty line (dirty bit = 1) has been modified by the CPU, so the cache controller must write it back to RAM before overwriting the line. Error bits handle parity (disproving b), protection bits handle permissions (disproving c), and LRU bits handle recency (disproving d).",
+    },
+    {
+      id: "pol-p6",
+      prompt: "What happens when cache block size is increased beyond the optimal design point?",
+      options: [
+        { id: "a", text: "The miss penalty from long memory bus transfer times and the increase in conflict misses outweigh the marginal gains in spatial locality, worsening AMAT" },
+        { id: "b", text: "The cache is converted into an unbuffered shift register" },
+        { id: "c", text: "The CPU clock frequency must be divided by four" },
+        { id: "d", text: "All compulsory misses are converted into capacity misses" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Increasing block size initially reduces compulsory misses through spatial locality. However, very large blocks take many cycles to transfer across the memory bus (increasing miss penalty), and reduce the total number of sets in the cache (increasing conflict misses). Once the penalty outweighs the miss rate improvement, AMAT increases. Option (b), Option (c), and Option (d) are nonsensical.",
+    },
+    {
+      id: "pol-p7",
+      prompt: "In a strictly inclusive L1/L2 cache hierarchy, what must occur when an entry is evicted from L2?",
+      options: [
+        { id: "a", text: "L2 issues a back-invalidation probe that immediately evicts the corresponding line from L1" },
+        { id: "b", text: "The block is promoted to L1 with elevated privilege" },
+        { id: "c", text: "The L1 cache is completely cleared and reset" },
+        { id: "d", text: "Main memory is powered down to conserve system energy" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Strict inclusion dictates that L1 must always be a subset of L2 (L1 ⊂ L2). Therefore, if a block is evicted from L2, it cannot remain in L1. L2 sends a back-invalidation signal to L1 to invalidate its copy. Option (b) describes an exclusive swap. Option (c) and Option (d) are absurd actions.",
+    },
+    {
+      id: "pol-p8",
+      prompt: "Why can Belady's Optimal (MIN) replacement policy never be implemented in real physical hardware?",
+      options: [
+        { id: "a", text: "It requires future knowledge of which memory addresses will be referenced by the program, which cannot be known in advance" },
+        { id: "b", text: "It requires infinite cache capacity" },
+        { id: "c", text: "It violates Boolean logic gate switching limits" },
+        { id: "d", text: "It is only compatible with quantum optical computers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Belady's MIN algorithm evicts the block that will not be accessed for the longest time in the future. Because real general-purpose hardware cannot predict future program branching, loop bounds, and data lookups with certainty, MIN serves solely as a theoretical optimal baseline to benchmark realizable policies like LRU. Option (b), Option (c), and Option (d) are false.",
+    },
+  ]}
+/>
+

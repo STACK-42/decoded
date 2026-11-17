@@ -1,7 +1,9 @@
-import { Callout, PracticalApplication, ApplicationsGrid, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph, PracticalApplication, ApplicationsGrid, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { KnapsackTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Dynamic Programming: The 0/1 Knapsack
+
+<Epigraph quote="Those who cannot remember the past are condemned to repeat it." by="George Santayana" source="The Life of Reason, 1905" />
 
 Greedy algorithms make a single choice at each step and never reconsider. Sometimes that produces the right answer, but as the coin example showed, a greedy choice can miss the best solution entirely. Trying every combination guarantees an optimal answer, but brute-force search is usually far too slow. **Dynamic programming** solves this by evaluating all valid options efficiently, without repeating work.
 

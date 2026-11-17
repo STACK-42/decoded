@@ -1,53 +1,727 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { PageTableLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Virtual Memory
 
-Here's a puzzle. Your computer runs dozens of programs at once. Each is compiled as if it had memory all to itself, starting from address 0. How can they all be at address 0? And how do programs run when they add up to more than the RAM you have?
+A multitasking operating system runs dozens or hundreds of programs at once. Each program is compiled as if it has all of memory to itself, starting at address 0. At the same time, programs like databases and browsers often need more memory than the motherboard physically holds.
 
-The answer is that the addresses a program uses aren't real. A **virtual address** is translated to a **physical address** by hardware each time memory is used. Think of phone extensions in an office: you dial "extension 12", and the switchboard connects you to whichever desk that person sits at today. The person can change desks, and your number still works.
+**Virtual memory** solves both problems. It separates the addresses software uses from the physical addresses wired into RAM chips. Every address the CPU emits is a **virtual address**. Before an access can reach memory, dedicated hardware translates it into a **physical address**.
 
-The idea also treats RAM as a [cache](/courses/computer-organization/memory-hierarchy) for the disk.
+Virtual memory provides three core benefits:
 
-The Operating Systems course covers the software side: [demand paging](/courses/operating-systems/virtual-memory#demand-paging) and [page replacement](/courses/operating-systems/page-replacement-and-thrashing#page-replacement).
+1. **Larger apparent memory**: The operating system treats physical RAM as a cache for disk or solid-state storage. Programs larger than physical RAM run without changes.
+2. **Process protection and isolation**: Each process receives its own address mapping. One process cannot read or corrupt memory belonging to another process or the kernel.
+3. **Simpler memory layout**: Compilers and linkers place code, heap data, and the stack at standard addresses without needing to know which physical RAM locations are free.
 
-## Pages and frames
+The Operating Systems course covers the software policies that support this hardware: [demand paging](/courses/operating-systems/virtual-memory#demand-paging) and [page replacement](/courses/operating-systems/page-replacement-and-thrashing#page-replacement).
 
-Memory is split up into fixed-size chunks. In virtual memory they're called **pages**, and in physical memory **frames**, and they're the same size (commonly 4 KB). Any page can go in any frame.
+## Pages, Frames, and Address Decomposition
 
-The address splits into two parts, a lot like a [cache address](/courses/computer-architecture/cache-mapping):
+Virtual memory partitions both virtual and physical address spaces into fixed-size contiguous blocks of memory:
+
+- A block in virtual memory is called a **virtual page** (or simply a page).
+- A block in physical memory is called a **page frame** (or physical frame).
+- Virtual pages and physical page frames have the exact same size, standardized at **4 KB** ($2^{12}$ bytes) in most general-purpose architectures, with support for larger "huge pages" (2 MB or 1 GB) for performance-critical workloads.
+
+When a program generates an $n$-bit virtual address, the hardware divides it into two fields:
+
+| Field | Virtual Page Number ($VPN$) | Page Offset ($p$ bits) |
+|---|---|---|
+| **Bit Position** | $A_{n-1} \dots A_p$ | $A_{p-1} \dots A_0$ |
+| **Hardware Function** | Selects virtual page in page table | Selects exact byte within page |
+
+1. **Page Offset ($p$ bits)**: Selects the specific byte within a page. A page size of $P$ bytes requires $p = \log_2(P)$ offset bits. For 4 KB pages, $p = \log_2(4096) = 12$ bits.
+2. **Virtual Page Number ($VPN$)**: Identifies which page in the virtual address space is being referenced:
 
 $$
-\text{page} = \lfloor \text{address} / \text{page size} \rfloor \qquad \text{offset} = \text{address} \bmod \text{page size}
+VPN = \lfloor \text{Virtual Address} / \text{Page Size} \rfloor
 $$
 
-The offset never changes. Only the page number gets translated, using a table in memory for each program, the **page table**.
+### The Translation Process
+
+During memory access, the offset never changes. The byte offset within a virtual page is identical to the byte offset within the destination physical frame:
 
 $$
-\text{physical address} = \text{frame} \times \text{page size} + \text{offset}
+\text{Physical Offset} = \text{Virtual Offset}
 $$
 
-Move the slider. Then pick an address on a page that's on disk.
+The **Memory Management Unit** (MMU), a hardware block located inside the processor die, translates the $VPN$ into a **Physical Frame Number** ($PFN$):
+
+$$
+\text{Physical Address} = (PFN \times \text{Page Size}) + \text{Page Offset}
+$$
+
+The translation proceeds along two concurrent paths:
+1. **Offset pass-through**: The lower $p$ bits ($A_{p-1} \dots A_0$) pass directly through untranslated, preserving the byte position within the physical frame.
+2. **Frame lookup**: The upper $VPN$ bits feed the MMU, which queries the page table (or TLB) to output the matching $PFN$.
+3. **Address concatenation**: The physical address is constructed by placing the $PFN$ in the high-order bits and appending the untouched page offset.
+
+<Callout tone="orange" label="Attempting to translate the page offset">
+A frequent beginner mistake is attempting to pass the offset bits through the page table or MMU translation logic. The page offset never changes during address translation. Because virtual pages and physical frames are the same size (typically 4 KB), byte 120 within a virtual page is physically stored at byte 120 within the assigned physical frame. Translation applies strictly to the Virtual Page Number ($VPN$).
+</Callout>
 
 <PageTableLab />
 
-## Page faults
+## The Page Table and Page Table Entries (PTE)
 
-What if a page isn't in RAM? The table entry says so, the hardware raises a **page fault** (a kind of [interrupt](/courses/microprocessors/interrupts)), and the operating system steps in. It finds a free frame, or evicts a page using a policy like [LRU](/courses/computer-architecture/cache-policies), reads the page from disk, updates the table and reruns the instruction. The program never knows.
+The translation from $VPN$ to $PFN$ is stored in a lookup data structure called the **page table**. The operating system maintains an independent page table for every running process. When the operating system schedules a process, it loads the base physical address of that process's page table into a dedicated processor control register, such as the **Page Table Base Register** (PTBR), known as `CR3` on x86 architectures.
 
-Disks are slow: a page fault costs millions of times more than a memory access. If a computer has too little RAM, it can spend nearly all of its time moving pages in and out, an effect called **thrashing**. When your computer gets very slow with too many things open, this is usually why.
+Each entry in a page table is called a **Page Table Entry** (PTE), typically 4 or 8 bytes wide, containing both the target frame address and control flags:
+
+| Field | Valid ($V$) | Referenced ($R$) | Write ($W$) | Execute ($X$) | User ($U/S$) | Dirty ($D$) | Physical Frame Number ($PFN$) |
+|---|---|---|---|---|---|---|---|
+| **Width** | 1 bit | 1 bit | 1 bit | 1 bit | 1 bit | 1 bit | High-order address bits |
+| **Purpose** | Resident in RAM | Page accessed | Writable | Machine code | User vs Kernel | Modified by store | Base frame address in RAM |
+
+1. **Valid bit ($V$)**: Indicates whether the virtual page is currently resident in physical RAM ($V = 1$) or resides out on secondary disk swap storage ($V = 0$).
+2. **Physical Frame Number ($PFN$)**: The base address bits of the physical RAM frame holding the page.
+3. **Protection bits ($R, W, X$)**: Hardware access permissions specifying whether the page can be read, written, or executed as CPU machine code. Attempting to write to a read-only page or execute data on a non-executable page triggers a hardware protection fault (such as a segmentation fault).
+4. **User / Supervisor bit ($U/S$)**: Enforces privilege rings, ensuring unprivileged user-mode applications cannot read or alter operating system kernel memory.
+5. **Dirty bit ($D$)**: Set to 1 by the hardware MMU whenever a processor store instruction modifies data within the page frame. When the page is eventually evicted from RAM, the operating system checks the dirty bit: if $D = 1$, the page must be written back to disk; if $D = 0$, it can be overwritten immediately.
+6. **Referenced bit ($R$ or Accessed bit $A$)**: Set to 1 by hardware whenever any byte in the page is read or written. Operating system page replacement algorithms (such as the Clock algorithm) inspect this bit to identify actively used pages.
+
+<Callout tone="orange" label="Confusing virtual address space with physical memory">
+Students often confuse the size of the virtual address space with the amount of installed physical RAM. On a 32-bit CPU, every process receives a full $2^{32} = 4\text{ GB}$ virtual address space, even if the computer physically contains only 512 MB of RAM. The 4 GB address space is dictated by the pointer bit width, not by the motherboard DRAM chips.
+</Callout>
+
+## Multi-Level (Hierarchical) Page Tables
+
+In a naive design, a single linear array stores the page table. On a 32-bit architecture with 4 KB pages:
+
+- Virtual address space = $2^{32}\text{ bytes} = 4\text{ GB}$.
+- Number of pages = $2^{32} / 2^{12} = 2^{20} = 1{,}048{,}576$ pages.
+- At 4 bytes per PTE, a single linear page table requires:
+  $$1{,}048{,}576 \times 4\text{ bytes} = 4\text{ MB of contiguous physical RAM per process.}$$
+
+If a system runs 250 active processes, 1 GB of physical memory would be consumed by page tables alone, even though most processes only use a few megabytes of actual code and data. On 64-bit architectures with 48-bit virtual addresses, a linear page table would require an impossible 512 gigabytes of storage per process.
+
+### Two-Level Page Tables
+
+To solve this scaling problem, architectures implement **multi-level page tables**. In a two-level paging system (such as 32-bit x86), the 20-bit $VPN$ is partitioned into two 10-bit indices:
+
+| Field | Page Directory Index ($PDI$) | Page Table Index ($PTI$) | Page Offset ($p$) |
+|---|---|---|---|
+| **Bit Position** | $A_{31} \dots A_{22}$ (10 bits) | $A_{21} \dots A_{12}$ (10 bits) | $A_{11} \dots A_0$ (12 bits) |
+| **Indexed Table** | Page Directory | Secondary Page Table | Byte within 4 KB frame |
+
+1. **Page Directory Index (10 bits)**: Indexes into the **Page Directory** (a single 4 KB table containing 1,024 **Page Directory Entries** (PDEs), pointed to by the PTBR/`CR3` register). Each valid PDE contains the physical base address of a secondary page table.
+2. **Page Table Index (10 bits)**: Indexes into that secondary **Page Table** (each also 4 KB in size, holding 1,024 PTEs).
+3. **Offset (12 bits)**: Indexes the byte within the 4 KB page frame.
+
+The primary benefit is **sparse allocation**. If a program uses only 2 MB of code at address `0x00400000` and 1 MB of stack at address `0xBFFFF000`, the operating system allocates only the top-level Page Directory (4 KB) and two secondary Page Tables (8 KB). The remaining 1,022 entries in the Page Directory are marked invalid ($V = 0$) and require no secondary page tables. Storage drops from 4 MB down to 12 KB per process.
+
+In 64-bit processors, this hierarchy extends to four levels:
+- **PML4** (Page Map Level 4)
+- **PDPT** (Page Directory Pointer Table)
+- **PD** (Page Directory)
+- **PT** (Page Table)
 
 ## Making it fast: the TLB
 
-There's a problem. Every memory access now needs a page table lookup first, which is itself a memory access, so every access costs twice as much. The fix is another cache. The **TLB** (translation lookaside buffer) is a small, fast cache of recent translations, and thanks to [locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works) it hits the vast majority of the time.
+Multi-level page tables save memory, but they introduce a severe performance penalty. On a two-level page table, every processor memory reference requires:
+1. One memory read to fetch the Page Directory Entry.
+2. A second memory read to fetch the Page Table Entry.
+3. A third memory access to finally read or write the actual program data operand.
 
-## What you get from it
+Translating every address would triple memory latency, reducing computer speed by over 60%.
 
-- **Isolation**: each program has its own table, so it can't even name another program's memory. A crash stays contained. This is the basis of [protected mode](/courses/microprocessors/bus-cycles).
-- **More memory than you have**: rarely used pages can wait on disk.
-- **Simple programs**: each one can assume it starts at address 0, with memory all in one piece.
-- **Sharing**: two programs can map the same frame, so a shared library only needs one copy in RAM.
+To accelerate **virtual memory** translation and eliminate this overhead, the MMU includes a dedicated hardware cache called the **Translation Lookaside Buffer** (TLB).
 
-<Callout tone="violet" label="Cache and virtual memory compared">
-Same idea at different levels of the hierarchy, with different names. Block becomes page, cache miss becomes page fault. A cache is managed entirely by hardware because a miss costs nanoseconds. A page fault costs milliseconds, which is long enough for the operating system to run software to deal with it.
+The TLB is a small, highly associative hardware cache (typically 64 to 512 entries) containing recently translated $(VPN \to PFN)$ mappings:
+1. When the CPU emits a virtual address, the MMU queries the TLB tag array using the $VPN$.
+2. **TLB Hit**: If the translation is present and valid, the TLB outputs the $PFN$ in less than 1 clock cycle. The physical address is assembled immediately with zero main memory overhead.
+3. **TLB Miss**: If the translation is absent from the TLB, the hardware must perform a **page table walk**:
+   - **Hardware Page Table Walker** (x86, ARM): Dedicated [finite-state machines](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) in the MMU traverse the hierarchical page tables in memory, load the missing PTE into the TLB, and retry the memory access.
+   - **Software-Managed TLB** (MIPS, SPARC): The MMU generates a TLB Miss trap exception. The operating system kernel executes a short, optimized trap handler that fetches the PTE and inserts it into the TLB using privileged instructions.
+
+<Callout tone="orange" label="Confusing TLB misses with page faults">
+Do not confuse a TLB miss with a page fault. A **TLB miss** merely means the address translation is not currently cached in the processor's high-speed TLB; the page is almost always already resident in physical RAM, requiring only a quick hardware page table walk (tens of nanoseconds). A **page fault** occurs when the page is completely absent from physical RAM ($V = 0$ in the PTE), requiring an operating system trap and slow secondary storage disk I/O (millions of nanoseconds).
 </Callout>
+
+### Process Context and the TLB
+
+Because each process has its own unique virtual address mapping, virtual address `0x00400000` in Process A maps to a completely different physical frame than `0x00400000` in Process B.
+
+When the operating system performs a context switch between processes, older architectures flushed the entire TLB (invalidating all entries). Flushing causes severe performance slowdowns because the new process immediately incurs dozens of compulsory TLB misses.
+
+Modern architectures tag each TLB entry with an **Address Space Identifier** (ASID, on ARM/MIPS) or **Process Context Identifier** (PCID, on x86). The hardware compares both the $VPN$ and the currently active process ASID. This allows translations belonging to multiple different processes to coexist safely inside the TLB across context switches without flushing.
+
+## Page Faults and Thrashing
+
+When a program accesses a virtual page whose PTE has its valid bit cleared ($V = 0$), the MMU cannot produce a physical address. The hardware halts instruction execution and raises a **page fault exception** (a synchronous [hardware trap/interrupt](/courses/microprocessors/interrupts)).
+
+The operating system kernel handles the page fault through several steps:
+
+1. **Verify reference**: The kernel checks whether the virtual address falls within a valid memory segment defined by the process. If invalid (such as dereferencing a NULL pointer), the OS terminates the process with a segmentation violation.
+2. **Locate backing store**: The OS locates the requested page block on secondary storage (the disk swap space or mapped executable file).
+3. **Select physical frame**: The OS finds an empty page frame in physical RAM. If RAM is full, it invokes a page replacement algorithm (such as [LRU or Clock replacement](/courses/operating-systems/page-replacement-and-thrashing#least-recently-used-lru)) to evict an existing resident page. If the evicted page has its dirty bit set ($D = 1$), it writes the page back to disk.
+4. **Disk I/O transfer**: The OS reads the requested page from disk into the allocated frame. Secondary storage is magnetic or flash-based: reading a 4 KB page takes between 10 microseconds (NVMe SSD) and 10 milliseconds (mechanical disk). The OS switches the CPU to another runnable thread while the disk transfer proceeds.
+5. **Update PTE**: When the I/O transfer finishes, the OS records the new $PFN$ in the page table, sets the valid bit to 1 ($V = 1$), and clears the dirty bit ($D = 0$).
+6. **Restart instruction**: The OS restores process state and restarts the exact machine instruction that triggered the page fault. This time, the translation hits in the page table, loads into the TLB, and completes normally.
+
+<Callout tone="orange" label="Thrashing">
+Because disk access latency ($10\text{ ms}$) is approximately $100{,}000$ to $1{,}000{,}000$ times slower than DRAM access latency ($50\text{ ns}$), page faults are exceptionally expensive. If the combined working sets of active processes exceed physical RAM capacity, the system spends virtually 100% of its execution time swapping pages to and from disk. This condition is called **thrashing**. In thrashing, CPU utilization drops toward zero while disk queues stay saturated.
+</Callout>
+
+## Interaction Between Caches and Virtual Memory
+
+When an architecture contains both a cache and virtual memory, hardware must decide in what order translation and cache lookup occur:
+
+| Architecture | Index Derivation | Tag Comparison | Advantages | Drawbacks |
+|---|---|---|---|---|
+| **PIPT** | Physical Address Bits | Physical Address Bits | Zero aliasing | TLB on critical path before cache lookup |
+| **VIVT** | Virtual Address Bits | Virtual Address Bits | Fast (no TLB delay) | Aliasing and context switch flushes |
+| **VIPT** | Virtual Address Bits | Physical Address Bits | Parallel TLB and cache lookup | Way size constrained by page size |
+
+1. **Physically Indexed, Physically Tagged (PIPT)**: The virtual address is translated by the TLB first. The resulting physical address is then used to index the cache and compare tags. PIPT is completely free of aliasing problems, but it places the TLB latency directly on the critical path before the cache can even begin line lookup.
+2. **Virtually Indexed, Virtually Tagged (VIVT)**: Both index and tag come from the virtual address. Caching occurs with zero TLB delay. However, VIVT suffers from cache coherency pitfalls:
+   - **Homonyms (Aliasing)**: The same virtual address in two different processes refers to two distinct physical frames. Without flushing the cache or tracking process IDs, Process B could read stale data belonging to Process A.
+   - **Synonyms**: Two different virtual addresses refer to the same physical frame. The same memory byte could be cached in two different lines, causing inconsistency if one is modified.
+3. **Virtually Indexed, Physically Tagged (VIPT)**: The high-performance compromise used in modern L1 caches.
+
+### Why VIPT Dominates Modern L1 Caches
+
+Recall that a 4 KB page has 12 offset bits ($A_{11} \dots A_0$). Because the page offset is never modified during address translation, the lower 12 bits of a virtual address are **identical** to the lower 12 bits of the physical address.
+
+In a VIPT cache, the cache controller extracts the set index bits directly from these lower offset bits. The cache array can look up the set in parallel while the TLB translates the $VPN$ into the $PFN$. When the cache line tags are read out from the cache SRAM, the physical frame number arrives from the TLB just in time to compare tags.
+
+<Callout tone="orange" label="VIPT aliasing when cache way exceeds page size">
+If the size of a single cache way exceeds the page size ($\text{Way Size} > \text{Page Size}$), the cache index requires bits from the Virtual Page Number ($VPN$). Because the operating system can map multiple virtual pages to the same physical frame with different high-order address bits, the exact same physical byte can map to two distinct cache sets simultaneously. This creates cache synonyms, where a write to one cache line does not update the other, corrupting program data.
+</Callout>
+
+<Callout tone="sky" label="The VIPT aliasing limit">
+To guarantee that a VIPT cache never suffers from aliasing, the set index bits ($s$) plus the block offset bits ($b$) must fit entirely within the page offset bits ($p$):
+$$
+s + b \le p \iff \frac{\text{Total Cache Capacity}}{k} \le \text{Page Size}
+$$
+In words: **The size of each cache way must not exceed the page size.** For a 4 KB page size, an 8-way set-associative L1 cache can be up to $8 \times 4\text{ KB} = 32\text{ KB}$ without any aliasing risk.
+</Callout>
+
+<Callout tone="violet" label="Comparing cache and virtual memory">
+Caches and virtual memory solve the same problem at two different scales:
+- A cache block corresponds to a virtual memory page.
+- A cache miss corresponds to a page fault.
+- Cache mapping corresponds to address translation.
+- A cache write buffer corresponds to operating system dirty page writeback daemons.
+A cache is managed 100% by hardware because a miss costs nanoseconds. Virtual memory page faults are managed by operating system software because a disk transfer takes milliseconds, leaving plenty of time for software routines to execute.
+</Callout>
+
+<Callout tone="mint" label="Key takeaway">
+Virtual memory provides isolation, protection, and a large address space by translating virtual pages to physical frames via page tables. The TLB caches active translations to preserve memory performance. VIPT organization allows L1 caches to index in parallel with TLB translation, delivering single-cycle access while maintaining system-wide memory protection.
+</Callout>
+
+## Exam-Style Practice
+
+### Part 1: Written Exam & Lab Problems
+
+<ModelAnswer title="Problem 1: Two-level hierarchical page table address decoding and memory overhead">
+A 32-bit byte-addressed computer architecture features a two-level hierarchical page table system with 4 KB pages ($2^{12}$ bytes).
+The 32-bit virtual address is partitioned as follows:
+- Bits $A_{31} \dots A_{22}$ (10 bits): Page Directory Index
+- Bits $A_{21} \dots A_{12}$ (10 bits): Page Table Index
+- Bits $A_{11} \dots A_0$ (12 bits): Page Offset
+
+Each Page Directory Entry (PDE) and Page Table Entry (PTE) is 4 bytes wide.
+The Page Table Base Register (PTBR) contains physical address `0x00200000`.
+
+1. Decode the virtual address `0x20803456`:
+   - Determine the Page Directory Index (in decimal and hexadecimal).
+   - Determine the Page Table Index (in decimal and hexadecimal).
+   - Determine the Page Offset (in hexadecimal).
+   - Calculate the exact byte physical address of the PDE within the Page Directory.
+2. Consider a process whose active address space consists of:
+   - Code: 8 MB starting at virtual address `0x00000000`.
+   - Stack: 4 MB starting at virtual address `0xFFC00000` (growing downward).
+   Calculate the total memory (in bytes and kilobytes) required to store the page tables for this process under:
+   - A single-level (linear) page table.
+   - The two-level hierarchical page table.
+
+---
+
+**Solution:**
+
+**Part 1: Address decoding for `0x20803456`:**
+Convert `0x20803456` into 32-bit binary:
+$$
+\text{0x20803456} = 0010\ 0000\ 1000\ 0000\ 0011\ 0100\ 0101\ 0110_2
+$$
+Partition the bit fields:
+- Directory bits ($A_{31} \dots A_{22}$): `0010 0000 10` = `0x082` = 130 in decimal.
+- Page Table bits ($A_{21} \dots A_{12}$): `00 0000 0011` = `0x003` = 3 in decimal.
+- Offset bits ($A_{11} \dots A_0$): `0100 0101 0110` = `0x456`.
+
+Physical address of the PDE:
+Each PDE is 4 bytes wide. The Page Directory starts at base address `0x00200000`.
+$$
+\text{PDE Address} = \text{PTBR} + (\text{Directory Index} \times 4\text{ bytes}) = \text{0x00200000} + (130 \times 4) = \text{0x00200000} + 520 = \text{0x00200208}
+$$
+
+**Part 2: Page table memory overhead comparison:**
+
+*Single-level page table:*
+A linear table must contain an entry for every virtual page in the entire 4 GB address space, regardless of whether the page is allocated:
+$$
+\text{Total pages} = \frac{4\text{ GB}}{4\text{ KB}} = 2^{20} = 1{,}048{,}576\text{ entries}
+$$
+$$
+\text{Storage} = 1{,}048{,}576 \times 4\text{ bytes} = 4{,}194{,}304\text{ bytes} = 4\text{ MB}
+$$
+
+*Two-level page table:*
+- The top-level Page Directory is always allocated:
+  1 Page Directory = 1,024 entries $\times 4\text{ bytes} = 4\text{ KB}$ (1 page frame).
+- Code segment: 8 MB.
+  Each secondary Page Table maps $1{,}024\text{ pages} \times 4\text{ KB per page} = 4\text{ MB}$ of virtual address space.
+  Therefore, an 8 MB code segment requires:
+  $$8\text{ MB} / 4\text{ MB per table} = 2\text{ secondary Page Tables}$$
+- Stack segment: 4 MB.
+  The 4 MB stack segment requires:
+  $$4\text{ MB} / 4\text{ MB per table} = 1\text{ secondary Page Table}$$
+- Total secondary tables allocated = $2 + 1 = 3$ Page Tables.
+  Each secondary Page Table occupies $1{,}024 \times 4\text{ bytes} = 4\text{ KB}$.
+  Storage for secondary tables = $3 \times 4\text{ KB} = 12\text{ KB}$.
+
+Total page table memory consumed:
+$$
+\text{Total Memory}_{\text{two-level}} = 4\text{ KB (Directory)} + 12\text{ KB (Tables)} = 16\text{ KB}
+$$
+The two-level hierarchical organization reduces page table memory footprint from 4,096 KB down to 16 KB (a 99.6% reduction in memory overhead).
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Effective Memory Access Time (EMAT) with TLB and page faults">
+A computer system employs a two-level page table and an on-chip Translation Lookaside Buffer (TLB).
+The system timing and probability parameters are:
+- TLB lookup time ($t_{\text{TLB}}$): 2 ns
+- Main memory access time ($t_{\text{mem}}$): 50 ns
+- Disk page fault service time ($t_{\text{disk}}$): 8 ms ($8{,}000{,}000\text{ ns}$)
+- TLB hit rate ($\alpha$): 98% (0.98)
+- When a TLB miss occurs, the page is resident in memory (no page fault) 99.99% of the time. A page fault occurs on only 0.01% ($p = 0.0001$) of TLB misses.
+
+1. Derive the expression for Effective Memory Access Time (EMAT) and calculate EMAT in nanoseconds.
+2. What would the effective memory access time be if the system had no TLB (every translation walked the two-level page table in memory, assuming zero page faults)?
+3. What is the maximum allowable page fault rate $p_{\max}$ (relative to all memory references) if the average access time must not exceed 65 ns?
+
+---
+
+**Solution:**
+
+**Part 1: EMAT Calculation:**
+An access proceeds through three possible paths:
+1. **TLB Hit (probability $\alpha = 0.98$)**:
+   The physical address is produced in $t_{\text{TLB}} = 2\text{ ns}$. Then 1 memory access fetches the data operand ($t_{\text{mem}} = 50\text{ ns}$).
+   $$t_1 = t_{\text{TLB}} + t_{\text{mem}} = 2 + 50 = 52\text{ ns}$$
+2. **TLB Miss, Memory Hit (probability $(1 - \alpha)(1 - p) = 0.02 \times 0.9999 \approx 0.019998$)**:
+   The TLB lookup fails ($2\text{ ns}$). The MMU accesses the Page Directory ($50\text{ ns}$), then the Page Table ($50\text{ ns}$), and finally fetches the data operand ($50\text{ ns}$).
+   $$t_2 = t_{\text{TLB}} + 2 \times t_{\text{mem}} + t_{\text{mem}} = 2 + 100 + 50 = 152\text{ ns}$$
+3. **TLB Miss, Page Fault (probability $(1 - \alpha) \times p = 0.02 \times 0.0001 = 2 \times 10^{-6}$)**:
+   The page must be fetched from disk ($t_{\text{disk}} = 8{,}000{,}000\text{ ns}$) before accessing data:
+   $$t_3 \approx 8{,}000{,}000\text{ ns}$$
+
+Calculating EMAT:
+$$
+\text{EMAT} = \alpha \times t_1 + (1 - \alpha)(1 - p) \times t_2 + (1 - \alpha)p \times t_3
+$$
+$$
+\text{EMAT} = (0.98 \times 52) + (0.019998 \times 152) + (2 \times 10^{-6} \times 8{,}000{,}000)
+$$
+$$
+\text{EMAT} = 50.96 + 3.0397 + 16.0 = 70.00\text{ ns}
+$$
+Notice that even a tiny page fault probability of 1 in 500,000 accesses ($2 \times 10^{-6}$) adds 16 ns (nearly 23%) to the entire system's average access latency.
+
+**Part 2: Access time without TLB (zero page faults):**
+Without a TLB, every reference requires walking the two-level page table (2 memory accesses) followed by the actual data access:
+$$
+T_{\text{no TLB}} = 3 \times t_{\text{mem}} = 3 \times 50\text{ ns} = 150\text{ ns}
+$$
+The TLB speeds up average memory access from 150 ns down to 70 ns (even with page faults included).
+
+**Part 3: Maximum allowable page fault rate for $\text{EMAT} \le 65\text{ ns}$:**
+Let $P_f$ be the global page fault probability across all memory references:
+$$
+\text{EMAT} \approx (1 - P_f) \times (\alpha \times 52 + (1 - \alpha) \times 152) + P_f \times 8{,}000{,}000 \le 65
+$$
+With $\alpha = 0.98$, the fault-free access time is:
+$$
+T_{\text{fault-free}} = 0.98(52) + 0.02(152) = 50.96 + 3.04 = 54\text{ ns}
+$$
+Now substitute into the equation:
+$$
+54 + P_f \times (8{,}000{,}000 - 54) \le 65
+$$
+$$
+P_f \times 8{,}000{,}000 \le 65 - 54 = 11\text{ ns}
+$$
+$$
+P_f \le \frac{11}{8{,}000{,}000} \approx 1.375 \times 10^{-6}
+$$
+To maintain an average memory access time below 65 ns, no more than 1 out of every 727,000 memory references may trigger a page fault.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 3: 4-level x86-64 virtual memory address translation and table walking">
+Modern 64-bit x86-64 processors implement a 48-bit canonical virtual address space with 4 KB page frames ($2^{12}$ bytes). Address translation uses a 4-level hierarchical page table composed of:
+1. Level 4: Page Map Level 4 (PML4)
+2. Level 3: Page Directory Pointer Table (PDPT)
+3. Level 2: Page Directory (PD)
+4. Level 1: Page Table (PT)
+
+Each entry across all 4 levels is 8 bytes (64 bits) wide. Control Register 3 (`CR3`) holds the 64-bit physical base address of the active PML4 table (`0x00000001A0000000`).
+
+1. Derive the bit partitioning of the 64-bit virtual address into Sign Extension, PML4 Index, PDPT Index, PD Index, PT Index, and Page Offset. Explain why each table index consists of exactly 9 bits.
+2. Given canonical virtual address `0x00007FFF01234567`:
+   - Determine the PML4, PDPT, PD, and PT indices (in hexadecimal and decimal).
+   - Determine the byte Page Offset (in hexadecimal).
+3. Compute the exact physical address of the Level 4 PML4 entry evaluated by the MMU hardware during the first step of the page walk.
+4. Explain how setting the Page Size bit ($PS = 1$) in a Level 2 Page Directory entry bypasses the Level 1 Page Table to create a 2 MB "Huge Page", and calculate how this affects TLB coverage.
+
+---
+
+**Solution:**
+
+**Part 1: Address bit budgeting:**
+- 4 KB page size $\implies 4{,}096\text{ bytes} \implies$ Page Offset $p = \log_2(4{,}096) = 12$ bits ($A_{11} \dots A_0$).
+- Each table is 1 page ($4{,}096\text{ bytes}$).
+- Each entry is 8 bytes.
+- Entries per page table: $4{,}096\text{ bytes} / 8\text{ bytes/entry} = 512 = 2^9$ entries.
+- To index 512 entries, each level requires $\log_2(512) = 9$ bits.
+
+Bit partition of the 64-bit address:
+- Offset: Bits $A_{11} \dots A_0$ (12 bits)
+- PT Index (Level 1): Bits $A_{20} \dots A_{12}$ (9 bits)
+- PD Index (Level 2): Bits $A_{29} \dots A_{21}$ (9 bits)
+- PDPT Index (Level 3): Bits $A_{38} \dots A_{30}$ (9 bits)
+- PML4 Index (Level 4): Bits $A_{47} \dots A_{39}$ (9 bits)
+- Sign extension: Bits $A_{63} \dots A_{48}$ (16 bits) must replicate bit $A_{47}$ to form a valid canonical address.
+
+**Part 2: Decoding `0x00007FFF01234567`:**
+Convert the lower 48 bits to binary:
+`0x7FFF01234567` =
+`0111 1111 1111 1111 0000 0001 0010 0011 0100 0101 0110 0111`
+
+Partition the 48 bits into 9-bit table indices and the 12-bit page offset:
+
+| Field | Bit Range | Binary Slice | Hex | Decimal |
+|---|---|---|---|---|
+| **PML4 Index** | $A_{47} \dots A_{39}$ (9 bits) | `0 1111 1111` | `0x0FF` | 255 |
+| **PDPT Index** | $A_{38} \dots A_{30}$ (9 bits) | `1 1111 1100` | `0x1FC` | 508 |
+| **PD Index** | $A_{29} \dots A_{21}$ (9 bits) | `0 0000 1001` | `0x009` | 9 |
+| **PT Index** | $A_{20} \dots A_{12}$ (9 bits) | `0 0011 0100` | `0x034` | 52 |
+| **Page Offset** | $A_{11} \dots A_0$ (12 bits) | `0100 0101 0110 0111` | `0x567` | 1,383 |
+
+**Part 3: Physical address of PML4 entry:**
+$$
+\text{PML4 Entry Address} = \text{CR3 Base} + (\text{PML4 Index} \times 8\text{ bytes})
+$$
+$$
+\text{PML4 Entry Address} = \text{0x00000001A0000000} + (255 \times 8) = \text{0x00000001A0000000} + 2{,}040\text{ bytes} = \text{0x00000001A00007F8}
+$$
+
+**Part 4: 2 MB Huge Pages and TLB Coverage:**
+When bit 7 ($PS$, Page Size) of a Level 2 Page Directory entry is set ($PS = 1$), the entry points directly to a contiguous 2 MB physical frame instead of a Level 1 Page Table. The lower 21 bits of the virtual address ($A_{20} \dots A_0$, combining the PT index and offset: $9 + 12 = 21$ bits, $2^{21} = 2\text{ MB}$) serve as the byte offset within the huge page.
+- **Impact on TLB Reach**: A single TLB entry for a 4 KB page covers 4 KB of RAM. A 512-entry L1 TLB covers $512 \times 4\text{ KB} = 2\text{ MB}$. With 2 MB huge pages, a single TLB entry covers 2 MB, and 512 entries cover $512 \times 2\text{ MB} = 1\text{ GB}$ of RAM, virtually eliminating TLB misses for large databases and virtual machines.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: Inverted page table design and hashing analysis">
+A 64-bit computer system features 16 GB of physical RAM ($2^{34}$ bytes) and uses 4 KB virtual pages ($2^{12}$ bytes).
+To avoid the memory footprint of forward-mapped multi-level page tables, the architects design an **Inverted Page Table** (IPT).
+
+1. Calculate the total number of physical page frames in the system, and determine the exact number of entries in the inverted page table.
+2. Each IPT entry requires:
+   - Process Identifier (PID): 16 bits
+   - Virtual Page Number (VPN): 36 bits
+   - Protection & status flags (Valid, Dirty, Referenced, User/Kernel, Read/Write): 12 bits
+   - Hash chain pointer (collision chain): 24 bits
+   Assuming entries are aligned to 16 bytes (128 bits), calculate the total memory required to store the IPT. Contrast this with the memory required by a 4-level hierarchical page table for 1,000 active processes.
+3. Trace the steps the MMU hardware follows to translate a virtual address under an IPT using a Hash Anchor Table (HAT).
+4. Explain why a Translation Lookaside Buffer (TLB) is strictly mandatory for acceptable performance on an inverted page table system.
+
+---
+
+**Solution:**
+
+**Part 1: Physical frames and IPT size:**
+- Physical RAM capacity: $16\text{ GB} = 16 \times 2^{30}\text{ bytes} = 2^{34}\text{ bytes}$.
+- Page size: $4\text{ KB} = 2^{12}\text{ bytes}$.
+- Total physical frames:
+  $$
+  N_{\text{frames}} = \frac{2^{34}\text{ bytes}}{2^{12}\text{ bytes/frame}} = 2^{22} = 4{,}194{,}304\text{ frames}
+  $$
+- In an inverted page table, there is exactly one entry per physical frame. Therefore, the IPT contains exactly **4,194,304 entries**.
+
+**Part 2: Memory overhead comparison:**
+- **IPT memory footprint**:
+  $$
+  \text{IPT Storage} = 4{,}194{,}304\text{ entries} \times 16\text{ bytes/entry} = 67{,}108{,}864\text{ bytes} = 64\text{ MB}
+  $$
+  The IPT consumes exactly 64 MB of RAM, regardless of how many processes are running or how large their virtual address spaces are.
+- **Hierarchical forward-mapped page table**:
+  In a 4-level page table, each process requires at least 1 PML4 table (4 KB) and several lower-level tables. For 1,000 active processes with moderately sparse address spaces (averaging 500 KB of page tables each), total memory consumed would be $1{,}000 \times 500\text{ KB} = 500\text{ MB}$, and grows linearly with the number of processes. The IPT scales strictly with physical RAM size, not virtual address space size.
+
+**Part 3: Address translation steps using the Hash Anchor Table:**
+1. The CPU generates virtual address $(\text{PID}, \text{VPN}, \text{Offset})$.
+2. The hardware computes a hash: $\text{HashIndex} = \text{Hash}(\text{PID}, \text{VPN}) \bmod N_{\text{HAT}}$.
+3. The MMU accesses the Hash Anchor Table (HAT) at `HashIndex` to retrieve the frame index of the first entry in the collision chain.
+4. The MMU accesses the IPT entry at that frame index and compares its stored `PID` and `VPN` against the requested `PID` and `VPN`.
+5. If they match: Translation succeeds. The physical frame number ($PFN$) is the index of this IPT entry. Physical address $= (PFN \times 4096) + \text{Offset}$.
+6. If they do not match: The MMU follows the 24-bit hash chain pointer to the next IPT entry in the linked list and repeats the check.
+7. If the pointer is `NULL` (end of chain): A page fault trap is signaled to the operating system.
+
+**Part 4: Why a TLB is mandatory:**
+In a standard hierarchical page table, a translation takes a fixed number of lookups (4 memory reads for 4 levels). In an inverted page table, resolving an address involves hashing and chasing a linked list through memory. If each lookup requires 2 or 3 memory reads along the collision chain, memory access latency would triple. A high-hit-rate TLB (98%+) translates addresses in hardware in 1 cycle, making IPT hash table walks extremely rare.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Virtually Indexed, Physically Tagged (VIPT) cache and page coloring">
+An engineering team is designing a 64 KB L1 data cache with 64-byte blocks for a processor with 4 KB virtual pages ($p = 12$ bits).
+
+1. State the mathematical condition required for a Virtually Indexed, Physically Tagged (VIPT) cache to guarantee that no cache aliasing (synonyms) can occur without OS intervention. Explain the physical reason behind this inequality.
+2. Determine whether a direct-mapped 64 KB cache with 64-byte blocks satisfies this condition. If not, calculate how many address bits cause aliasing.
+3. Determine the minimum associativity $k$ required to make this 64 KB cache completely immune to aliasing with 4 KB pages.
+4. Suppose the hardware uses a 4-way set-associative 64 KB cache. Explain how the Operating System's memory manager uses **Page Coloring** to prevent cache aliasing, and calculate how many distinct page colors the OS must manage.
+
+---
+
+**Solution:**
+
+**Part 1: The VIPT Anti-Aliasing Condition:**
+$$
+s + b \le p
+$$
+where:
+- $b = \text{block offset bits}$
+- $s = \text{cache set index bits}$
+- $p = \text{virtual memory page offset bits}$
+
+*Physical reason*: Virtual memory translates only the virtual page number (VPN) to a physical frame number (PFN). The page offset bits ($A_{p-1} \dots A_0$) are never modified; they are identical in both virtual and physical addresses. When $s + b \le p$, the cache index ($s$) and block offset ($b$) are derived entirely from within the unmodified page offset bits ($A_{p-1} \dots A_0$). Therefore, the cache index is identical whether computed from the virtual address or physical address, guaranteeing that any two virtual aliases to the same physical page will always map to the exact same cache set.
+
+**Part 2: Analysis of Direct-Mapped 64 KB Cache:**
+- Block size $B = 64\text{ bytes} \implies b = \log_2(64) = 6$ bits.
+- Sets $S = 65{,}536 / 64 = 1{,}024 \implies s = \log_2(1{,}024) = 10$ bits.
+- $s + b = 10 + 6 = 16$ bits.
+- Page offset $p = \log_2(4{,}096) = 12$ bits.
+Condition check:
+$$
+s + b = 16 > p = 12
+$$
+The condition is violated.
+The upper $16 - 12 = 4$ bits of the cache index (bits $A_{15} \dots A_{12}$) are virtual address bits that undergo translation. If two processes share a physical page, their virtual addresses may have different values in bits $A_{15} \dots A_{12}$, causing the same physical data to be cached simultaneously in two different cache sets (cache synonym / aliasing bug).
+
+**Part 3: Minimum Associativity for Hardware Anti-Aliasing:**
+To satisfy $s + b \le 12$ with $b = 6$:
+$$
+s \le 12 - 6 = 6\text{ bits} \implies \text{Max Sets } S \le 2^6 = 64\text{ sets}
+$$
+Total cache lines = $64\text{ KB} / 64\text{ B} = 1{,}024$ lines.
+Associativity:
+$$
+k = \frac{\text{Total Lines}}{\text{Sets}} = \frac{1{,}024}{64} = 16\text{ ways}
+$$
+The cache must be at least **16-way set-associative** to eliminate aliasing in hardware without OS page coloring.
+
+**Part 4: Operating System Page Coloring:**
+In a 4-way set-associative 64 KB cache:
+- Number of sets $S = 1{,}024 / 4 = 256 \implies s = 8$ bits.
+- $s + b = 8 + 6 = 14$ bits $> 12$ bits.
+There are $14 - 12 = 2$ overlapping virtual index bits ($A_{13}, A_{12}$).
+- Number of page colors:
+  $$
+  \text{Colors} = 2^2 = 4\text{ distinct colors}
+  $$
+- **Mechanism**: The OS divides physical memory frames into 4 bins (colors 0, 1, 2, 3) based on physical address bits $A_{13}, A_{12}$. Whenever the OS allocates a physical frame for a virtual page, it ensures that the physical frame color matches the virtual address bits $A_{13}, A_{12}$. If two virtual addresses share the same physical frame, the OS guarantees they are mapped to the same virtual color, ensuring they always hash to the same cache set and preventing aliasing.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: Page replacement algorithm trace: FIFO vs. LRU vs. Clock (Second-Chance)">
+A process is allocated 3 physical page frames in main memory (initially empty).
+The process generates the following reference string of virtual page accesses:
+$$2, 3, 2, 1, 5, 2, 4, 5, 3, 2, 5, 2$$
+
+1. Trace page allocation, hits, and page faults across all 12 references under:
+   - (A) FIFO (First-In, First-Out)
+   - (B) LRU (Least Recently Used)
+   - (C) Clock / Second-Chance algorithm (using a circular frame buffer with reference bits)
+   - (D) Optimal (Belady's MIN algorithm)
+2. Summarize the total page fault count and fault rate for all four algorithms.
+3. Illustrate the state of reference bits and clock hand advancement during the Clock algorithm trace at each eviction.
+4. Explain Belady's Anomaly. Why can FIFO suffer more page faults when given more physical memory frames, while stack algorithms like LRU are mathematically guaranteed not to exhibit this behavior?
+
+---
+
+**Solution:**
+
+**Part 1: Step-by-step traces:**
+Initial state of frames: `[Empty, Empty, Empty]`.
+
+- **Policy A: FIFO**
+  1. `2`: Fault $\to$ `[2, -, -]`
+  2. `3`: Fault $\to$ `[2, 3, -]`
+  3. `2`: Hit $\to$ `[2, 3, -]`
+  4. `1`: Fault $\to$ `[2, 3, 1]` (Oldest: 2)
+  5. `5`: Fault $\to$ Evicts 2 $\to$ `[5, 3, 1]` (Oldest: 3)
+  6. `2`: Fault $\to$ Evicts 3 $\to$ `[5, 2, 1]` (Oldest: 1)
+  7. `4`: Fault $\to$ Evicts 1 $\to$ `[5, 2, 4]` (Oldest: 5)
+  8. `5`: Hit $\to$ `[5, 2, 4]`
+  9. `3`: Fault $\to$ Evicts 5 $\to$ `[3, 2, 4]` (Oldest: 2)
+  10. `2`: Hit $\to$ `[3, 2, 4]`
+  11. `5`: Fault $\to$ Evicts 2 $\to$ `[3, 5, 4]` (Oldest: 4)
+  12. `2`: Fault $\to$ Evicts 4 $\to$ `[3, 5, 2]`
+  *FIFO Total*: **9 Faults, 3 Hits (Fault rate = 75.0%)**.
+
+- **Policy B: LRU**
+  1. `2`: Fault $\to$ `[2, -, -]`
+  2. `3`: Fault $\to$ `[2, 3, -]`
+  3. `2`: Hit $\to$ MRU order: 2, 3
+  4. `1`: Fault $\to$ `[2, 3, 1]` (MRU: 1, 2, 3)
+  5. `5`: Fault $\to$ Evicts 3 (LRU) $\to$ `[2, 5, 1]` (MRU: 5, 1, 2)
+  6. `2`: Hit $\to$ (MRU: 2, 5, 1)
+  7. `4`: Fault $\to$ Evicts 1 (LRU) $\to$ `[2, 5, 4]` (MRU: 4, 2, 5)
+  8. `5`: Hit $\to$ (MRU: 5, 4, 2)
+  9. `3`: Fault $\to$ Evicts 2 (LRU) $\to$ `[3, 5, 4]` (MRU: 3, 5, 4)
+  10. `2`: Fault $\to$ Evicts 4 (LRU) $\to$ `[3, 5, 2]` (MRU: 2, 3, 5)
+  11. `5`: Hit $\to$ (MRU: 5, 2, 3)
+  12. `2`: Hit $\to$ (MRU: 2, 5, 3)
+  *LRU Total*: **7 Faults, 5 Hits (Fault rate = 58.3%)**.
+
+- **Policy C: Clock / Second-Chance**
+  Each frame has a reference bit $R$. Clock hand points to frame to inspect.
+  When looking for victim: if $R = 1$, set $R = 0$ and advance hand; if $R = 0$, evict frame, set $R = 1$, advance hand. On hit, set $R = 1$.
+  - Ref 1 (`2`): Fault $\to$ Frame 0: Page 2 ($R=1$). Hand $\to$ 1.
+  - Ref 2 (`3`): Fault $\to$ Frame 1: Page 3 ($R=1$). Hand $\to$ 2.
+  - Ref 3 (`2`): Hit $\to$ Frame 0: Page 2 ($R=1$). Hand stays 2.
+  - Ref 4 (`1`): Fault $\to$ Frame 2: Page 1 ($R=1$). Hand $\to$ 0.
+  - Ref 5 (`5`): Fault. Hand at 0. Frame 0 has $R=1 \to$ set $R=0$, hand $\to$ 1. Frame 1 has $R=1 \to$ set $R=0$, hand $\to$ 2. Frame 2 has $R=1 \to$ set $R=0$, hand $\to$ 0. Frame 0 now has $R=0 \to$ evicts 2. Frame 0 gets Page 5 ($R=1$). Hand $\to$ 1.
+  - Ref 6 (`2`): Fault. Hand at 1. Frame 1 (Page 3) has $R=0 \to$ evicts 3. Frame 1 gets Page 2 ($R=1$). Hand $\to$ 2.
+  - Ref 7 (`4`): Fault. Hand at 2. Frame 2 (Page 1) has $R=0 \to$ evicts 1. Frame 2 gets Page 4 ($R=1$). Hand $\to$ 0.
+  - Ref 8 (`5`): Hit $\to$ Frame 0 (Page 5) sets $R=1$. Hand stays 0.
+  - Ref 9 (`3`): Fault. Hand at 0 (Page 5, $R=1 \to$ set $R=0$, hand $\to$ 1). Hand at 1 (Page 2, $R=1 \to$ set $R=0$, hand $\to$ 2). Hand at 2 (Page 4, $R=1 \to$ set $R=0$, hand $\to$ 0). Hand at 0 (Page 5, $R=0 \to$ evicts 5). Frame 0 gets Page 3 ($R=1$). Hand $\to$ 1.
+  - Ref 10 (`2`): Hit $\to$ Frame 1 (Page 2) sets $R=1$. Hand stays 1.
+  - Ref 11 (`5`): Fault. Hand at 1 (Page 2, $R=1 \to$ set $R=0$, hand $\to$ 2). Hand at 2 (Page 4, $R=0 \to$ evicts 4). Frame 2 gets Page 5 ($R=1$). Hand $\to$ 0.
+  - Ref 12 (`2`): Hit $\to$ Frame 1 (Page 2) sets $R=1$.
+  *Clock Total*: **8 Faults, 4 Hits (Fault rate = 66.7%)**.
+
+- **Policy D: Optimal (Belady's MIN)**
+  - Refs 1-4 (`2, 3, 2, 1`): Faults on 2, 3, 1 $\to$ `[2, 3, 1]`.
+  - Ref 5 (`5`): Fault $\to$ Evicts 3 (referenced latest: step 9) $\to$ `[2, 5, 1]`.
+  - Ref 6 (`2`): Hit.
+  - Ref 7 (`4`): Fault $\to$ Evicts 1 (never referenced again) $\to$ `[2, 5, 4]`.
+  - Ref 8 (`5`): Hit.
+  - Ref 9 (`3`): Fault $\to$ Evicts 4 (never referenced again) $\to$ `[2, 5, 3]`.
+  - Refs 10-12 (`2, 5, 2`): All Hits.
+  *Optimal Total*: **6 Faults, 6 Hits (Fault rate = 50.0%)**.
+
+**Part 2: Hit and fault rate summary:**
+- FIFO: 9 Faults (75.0% fault rate)
+- LRU: 7 Faults (58.3% fault rate)
+- Clock: 8 Faults (66.7% fault rate)
+- Optimal: 6 Faults (50.0% fault rate)
+
+**Part 3: Clock hand advancement:**
+The Clock algorithm maintains a circular linked list of the 3 frames with a single reference bit per frame. By clearing reference bits as the hand sweeps past and evicting the first frame found with a 0 bit, the algorithm approximates LRU with $O(1)$ hardware cost per access, avoiding the expensive timestamp updates of true LRU.
+
+**Part 4: Belady's Anomaly and Stack Algorithms:**
+- **Belady's Anomaly**: For non-stack replacement algorithms like FIFO, increasing physical page frames can paradoxically increase page fault counts for certain reference strings (such as $1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5$, which generates 9 faults on 3 frames but 10 faults on 4 frames).
+- **Stack Algorithms**: An algorithm is a stack algorithm if the set of pages in memory for $m$ frames is always a subset of the pages in memory for $m+1$ frames ($M(m) \subset M(m+1)$). LRU and Optimal are stack algorithms: adding physical frames cannot evict a page that would have been kept with fewer frames. Therefore, LRU and Optimal are mathematically immune to Belady's Anomaly.
+</ModelAnswer>
+
+### Part 2: Multiple-Choice Practice
+
+<Quiz
+  practice
+  questions={[
+    {
+      id: "vm-p1",
+      prompt: "What is the primary architectural purpose of the Translation Lookaside Buffer (TLB)?",
+      options: [
+        { id: "a", text: "To cache recently used virtual-to-physical address translations in high-speed hardware, avoiding multi-cycle page table walks in main memory" },
+        { id: "b", text: "To store dirty disk sectors before they are written to non-volatile storage" },
+        { id: "c", text: "To translate 32-bit CPU instructions into micro-operations" },
+        { id: "d", text: "To synchronize processor clock frequencies with external peripherals" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A page table walk in memory requires multiple memory reads (up to 4 reads in x86-64). The TLB is a fast associative cache on the CPU die that stores recent VPN-to-PFN mappings, resolving translations in a single clock cycle with hit rates exceeding 98%. Option (b) describes a disk write cache. Option (c) describes instruction decoding. Option (d) describes clock phase-locked loops.",
+    },
+    {
+      id: "vm-p2",
+      prompt: "Why do modern 64-bit operating systems use multi-level (hierarchical) page tables rather than a single flat page table?",
+      options: [
+        { id: "a", text: "Multi-level page tables allocate memory only for address regions currently in use, avoiding gigabytes of empty page table entries for sparse address spaces" },
+        { id: "b", text: "Single flat page tables are physically incapable of storing physical addresses" },
+        { id: "c", text: "Multi-level page tables eliminate the need for address translation hardware" },
+        { id: "d", text: "Hierarchical tables reduce the number of memory accesses required per translation from 1 to 4" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a 48-bit address space with 4 KB pages, a flat page table would require 2³⁶ entries (over 512 gigabytes of table storage per process!). Multi-level tables create intermediate directory tables only for active virtual memory segments (code, stack, heap), reducing typical page table overhead to a few megabytes. Option (b) and Option (c) are false. Option (d) reverses the trade-off: multi-level tables increase memory accesses on TLB misses.",
+    },
+    {
+      id: "vm-p3",
+      prompt: "What happens when the CPU attempts to access a virtual address whose Page Table Entry (PTE) has its Valid bit set to 0?",
+      options: [
+        { id: "a", text: "The MMU triggers a Page Fault hardware exception, transferring execution to the operating system kernel to load the page from disk" },
+        { id: "b", text: "The processor resets the computer power supply immediately" },
+        { id: "c", text: "The hardware automatically rewrites the virtual address to 0x00000000" },
+        { id: "d", text: "The CPU halts instruction execution permanently until power cycled" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A Valid bit of 0 means the requested page does not reside in physical RAM (it may be swapped out to disk or unallocated). The MMU raises a page fault interrupt, saving processor state and invoking the OS page fault handler to allocate a frame, fetch data from disk, update the PTE to valid, and restart the faulted instruction. Option (b), Option (c), and Option (d) describe catastrophic failures that do not occur.",
+    },
+    {
+      id: "vm-p4",
+      prompt: "In a Virtually Indexed, Physically Tagged (VIPT) cache, what mathematical condition guarantees that cache aliasing (synonyms) cannot occur?",
+      options: [
+        { id: "a", text: "Index bits + Offset bits <= Page Offset bits (s + b <= p)" },
+        { id: "b", text: "Index bits >= Tag bits" },
+        { id: "c", text: "Page size must equal total physical memory capacity" },
+        { id: "d", text: "Associativity must equal 1 (direct-mapped)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The lower p bits (page offset) are identical in virtual and physical addresses because virtual memory translation modifies only the virtual page number. If s + b <= p, the entire cache index is derived from within the unmodified offset, ensuring that any virtual alias to the same physical page maps to the exact same cache set. Option (b), Option (c), and Option (d) are incorrect conditions.",
+    },
+    {
+      id: "vm-p5",
+      prompt: "How does the Clock (Second-Chance) page replacement algorithm approximate LRU with low hardware overhead?",
+      options: [
+        { id: "a", text: "It uses a circular pointer and 1 reference bit per frame, clearing the bit on first inspection and evicting the first page found with bit 0" },
+        { id: "b", text: "It records the exact nanosecond timestamp of every memory access in an internal SRAM register" },
+        { id: "c", text: "It evicts the page with the highest physical frame number" },
+        { id: "d", text: "It counts the total number of instructions executed since the last reboot" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: True LRU requires expensive hardware timestamps or complex priority lists. The Clock algorithm arranges frames in a circular queue. When an eviction is needed, the clock hand advances: if a page's reference bit is 1, it gets a 'second chance' (bit cleared to 0); if 0, it is selected for eviction. This provides near-LRU performance with only 1 bit per page. Option (b) describes true LRU with hardware timestamps. Option (c) and Option (d) are fabricated replacement rules.",
+    },
+    {
+      id: "vm-p6",
+      prompt: "What is the primary advantage of an Inverted Page Table over forward-mapped multi-level page tables?",
+      options: [
+        { id: "a", text: "Table size is bounded strictly by physical RAM size rather than the number of active processes or virtual address space width" },
+        { id: "b", text: "It eliminates all TLB misses entirely" },
+        { id: "c", text: "It allows virtual addresses to be translated without memory lookups" },
+        { id: "d", text: "It prevents memory fragmentation on disk" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: An inverted page table has exactly one entry per physical page frame. Regardless of how many processes exist or how sparse 64-bit virtual address spaces are, the IPT memory overhead remains fixed at a small fraction of physical RAM (e.g. 64 MB for 16 GB RAM). Option (b), Option (c), and Option (d) are false claims.",
+    },
+    {
+      id: "vm-p7",
+      prompt: "On an architecture with a software-managed TLB (such as MIPS or SPARC), how is a TLB miss serviced?",
+      options: [
+        { id: "a", text: "The hardware raises a fast TLB miss exception, transferring control to an OS trap handler that walks the page table and writes the entry into the TLB" },
+        { id: "b", text: "The processor resets and reloads the kernel image from ROM" },
+        { id: "c", text: "The CPU pipeline halts and waits for an external DMA controller" },
+        { id: "d", text: "The hardware switches automatically to physical memory mode without virtual memory" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a software-managed TLB, the hardware contains no page table walker. On a TLB miss, it traps to an optimized kernel routine that walks the OS-defined page table structure, selects an entry to evict, writes the new translation into the TLB using special instructions, and resumes execution. Option (b), Option (c), and Option (d) are incorrect.",
+    },
+    {
+      id: "vm-p8",
+      prompt: "What is Belady's Anomaly in the context of virtual memory page replacement?",
+      options: [
+        { id: "a", text: "The phenomenon where increasing the number of physical page frames allocated to a process results in an increased number of page faults under FIFO replacement" },
+        { id: "b", text: "The condition where TLB reach exceeds physical RAM capacity" },
+        { id: "c", text: "A hardware failure where disk write buffers corrupt physical page frames" },
+        { id: "d", text: "The mathematical proof that LRU is optimal for all access patterns" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Laszlo Belady discovered in 1969 that under FIFO page replacement, increasing the frame allocation can cause more page faults because FIFO is not a stack algorithm. Stack algorithms like LRU and Optimal guarantee that pages held in m frames are always a subset of pages held in m+1 frames, preventing this anomaly. Option (b), Option (c), and Option (d) are factually incorrect.",
+    },
+  ]}
+/>
+

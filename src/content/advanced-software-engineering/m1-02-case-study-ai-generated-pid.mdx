@@ -1,0 +1,135 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, SequenceDiagram, FloatAccumulator } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Case Study: The AI-Generated PID Controller
+
+The [previous lesson](/courses/advanced-software-engineering/engineering-in-the-age-of-ai) argued that AI needs engineering around it. This lesson shows what happens when that engineering is missing, using one incident with two separate failures.
+
+## The setting
+
+- **Domain:** a high-reliability aerospace control subsystem.
+- **Task:** implement a <Term id="pid-controller">PID controller</Term> that quickly stabilizes altitude.
+- **Pressure:** the team was far behind schedule.
+- **Action:** a junior engineer used an AI coding assistant to write the controller's main loop.
+
+## How a feedback controller works
+
+A <Term id="feedback-loop">feedback loop</Term> keeps comparing *where you are* with *where you want to be*, and makes many small corrections. The difference between the two is the **error**.
+
+<BoxDiagram
+  title="A closed feedback loop"
+  width={600}
+  height={200}
+  nodes={[
+    { id: "target", label: "Target\naltitude", x: 70, y: 60, kind: "plain" },
+    { id: "cmp", label: "compare\n(error)", x: 200, y: 60, w: 110 },
+    { id: "pid", label: "PID\ncontroller", x: 350, y: 60, tone: "sky" },
+    { id: "act", label: "Actuator", x: 510, y: 60 },
+    { id: "sensor", label: "Sensor", x: 350, y: 160 },
+  ]}
+  edges={[
+    { from: "target", to: "cmp" },
+    { from: "cmp", to: "pid", label: "error" },
+    { from: "pid", to: "act", label: "command" },
+    { from: "act", to: "sensor", label: "aircraft moves", bend: -40 },
+    { from: "sensor", to: "cmp", label: "measured" },
+  ]}
+  caption="Measure, compare, correct, and repeat many times a second."
+/>
+
+The three letters are three "voices" that each suggest a correction:
+
+| Term | Looks at | Asks | Effect |
+| --- | --- | --- | --- |
+| **P**, proportional | the present | "How far off are we right now?" | an immediate push, bigger when the error is bigger |
+| **I**, integral | the past | "Have we been off-target for too long?" | a steady push that grows while a small error persists |
+| **D**, derivative | the future | "How fast are we closing the gap?" | brakes, so we don't overshoot |
+
+The **I** term is a running total: every cycle, it adds the current error to a sum. That sum is where this story goes wrong.
+
+## The setup
+
+The LLM produced a standard PID algorithm in Python. The syntax was perfect and the maths matched the textbook. Its unit tests, which the LLM also wrote, all passed. The engineer checked the logic against the textbook, approved the pull request, and the code went to a <Term id="hil-simulation">hardware-in-the-loop simulation</Term>.
+
+Before reading on, ask yourself: *what could go wrong?*
+
+<SequenceDiagram
+  title="One control cycle, 12 hours in"
+  participants={["Sensor", "AI PID", "Accumulator (F32)", "Actuator"]}
+  steps={[
+    { from: 0, to: 1, label: "error delta = 0.0000001" },
+    { from: 1, to: 2, label: "sum = 100000.0 + 0.0000001" },
+    { note: "silent truncation to 100000.0", at: 2 },
+    { from: 2, to: 1, label: "return 100000.0", dashed: true },
+    { from: 1, to: 3, label: "command (0.0 correction)" },
+    { note: "physical drift / loss", at: 3 },
+  ]}
+  caption="The sequence from the lecture: the tiny error is added, vanishes, and the actuator receives no correction."
+/>
+
+## The incident: a silent logic bug
+
+**The flaw:** the LLM stored the integral sum as a standard <Term id="float32">32-bit float</Term>.
+
+Over a 12-hour simulation, the sum grew very large. When the sensor reported microscopic errors, such as 0.0000001, adding them to the huge sum changed nothing at all. The lecture calls this *catastrophic cancellation (type truncation)*. The more precise name is <Term id="absorption">absorption</Term>, or swamping: the tiny number is below the precision a 32-bit float keeps at that size, so it is rounded away.
+
+The controller effectively ignored every small correction. The result was a silent, unrecoverable loss of altitude.
+
+Try it. Pick how big the sum has already grown, and watch what each 0.0000001 actually adds:
+
+<FloatAccumulator />
+
+**Why it happens, step by step:**
+
+1. A 32-bit float keeps 24 binary digits of precision, about 7 decimal digits.
+2. Near 100000, the gap between one float32 value and the next is 2⁻⁷ = 0.0078125.
+3. Adding 0.0000001 lands far closer to 100000 than to the next value up, so the result rounds back to 100000.
+4. No error is raised. Every test that used small, short runs passes, because the sum never got big.
+
+A 64-bit float (about 16 decimal digits) keeps the corrections here. Real controllers also clamp the integral term so it can't grow without limit (called *anti-windup*), which keeps the sum small in the first place.
+
+<Callout tone="orange" label="Source note">
+The lecture's term "catastrophic cancellation" usually means something else: losing precision when you *subtract* two nearly equal numbers. What happened here, a small number disappearing when *added* to a large one, is absorption. Both come from the same limit, the fixed number of digits a float keeps.
+</Callout>
+
+## The security flaw: an AI supply chain attack
+
+While investigating, the architecture team found a second, unrelated problem.
+
+To format the telemetry output, the LLM had written `import yaml_config_parser`. It was a <Term id="hallucination">hallucinated</Term> dependency: the model invented a plausible package name. The developer installed it with `pip` without checking.
+
+The package was real, but it was a known malicious <Term id="typosquatting">typosquatting</Term> library that ran remote code as soon as it was imported. The AI had accidentally become the entry point for a <Term id="supply-chain-attack">supply chain attack</Term>.
+
+<BoxDiagram
+  title="How the malicious package got in"
+  width={600}
+  height={130}
+  nodes={[
+    { id: "llm", label: "LLM suggests\nimport yaml_config_parser", x: 105, y: 65, w: 180, h: 52 },
+    { id: "pip", label: "developer runs\npip install", x: 305, y: 65, w: 140, h: 52 },
+    { id: "pkg", label: "malicious package\nruns code on import", x: 495, y: 65, w: 170, h: 52, tone: "orange" },
+  ]}
+  edges={[
+    { from: "llm", to: "pip", label: "no check" },
+    { from: "pip", to: "pkg", label: "installs" },
+  ]}
+/>
+
+## What would have caught each failure
+
+Neither failure was a lack of intelligence in the model. Both were missing engineering.
+
+| Failure | Why it got through | What engineering would have caught it |
+| --- | --- | --- |
+| Integral sum stops changing | The tests came from the same model that wrote the code and only covered short runs | Independent tests, long-duration simulation, reviewing the numeric types, not just the maths |
+| Malicious dependency | A suggested import was installed without question | Dependency allow-lists, lock files, and checking that a package is the one you meant |
+
+This is the course's argument in miniature: AI writes code quickly, and engineering decides whether that code can be trusted.
+
+<Callout tone="orange" label="Common mistake">
+"The maths matches the textbook, so the code is correct." The formula was right; the *implementation* (a 32-bit sum, a hallucinated import) was wrong. Also, switching to 64-bit floats only moves the limit further away. A real controller also clamps the integral term so it can't grow forever.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["pid-controller", "feedback-loop", "float32", "absorption", "hil-simulation", "hallucination", "typosquatting", "supply-chain-attack"]} />

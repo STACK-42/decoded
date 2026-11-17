@@ -1,0 +1,134 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, FeatureCostChart, EisenhowerMatrix, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Economics of Architecture
+
+Why care about structure at all? Not because clean code looks nice. The lecture's answer is purely economic.
+
+## The goal of architecture
+
+> **Goal = minimize the human resources required to build and maintain a system.**
+
+People's time is the main cost of software. Good architecture is whatever keeps that cost low over the system's whole life.
+
+- **Good design:** the cost of adding the 100th feature is the same as the cost of adding the 1st. Effort stays stable.
+- **Bad design:** the cost per line of code grows exponentially over the system's lifetime. Each change gets harder because it has to work around all the earlier messes.
+
+<FeatureCostChart />
+
+## The "clean up later" fallacy
+
+Also called **the hare's overconfidence**, after the fable of the tortoise and the hare.
+
+Developers keep telling themselves: *"We can clean it up later; we just have to get to market first!"*
+
+**The reality:** market pressure never lets up. Nobody will ever give you permission to "stop and clean up," because there is always a next deadline.
+
+**Making messes is always slower than staying clean, on any time scale.** The mess slows you down from the next day on, not just in some distant future.
+
+## Two values: behavior and structure
+
+Every software system gives its stakeholders two different kinds of value:
+
+1. **<Term id="behavior-value">Behavior</Term>:** what it does right now. Making the machine do what stakeholders want *today*.
+2. **<Term id="structure-value">Architecture (structure)</Term>:** keeping the software "soft." Making sure the machine can easily do what stakeholders want *tomorrow*.
+
+The lecture's one-line argument for the second: **if machine behavior were meant to be hard to change, we would have built it in hardware.** The "soft" in software is the whole point.
+
+## The cost-friction principle
+
+How can you tell that an architecture is decaying? Look at the *friction* of change, and separate two things about a requested change:
+
+- the **<Term id="scope-of-change">scope of change</Term>**: how big the requested feature is, logically;
+- the **<Term id="shape-of-change">shape of change</Term>**: how well the request fits the system's current structure.
+
+> **The principle:** in a healthy system, the cost of a change is proportional *only* to its scope, never to its shape.
+
+**Example.** Two requests, both "small": *add a new payment method* and *add a field to the invoice*. In a healthy system both cost about the same, because both are small. In a decaying system, one of them happens to cut across five tangled modules and costs ten times more. When cost depends on shape, the structure is getting in the way.
+
+<DiagramTabs
+  title="Same-sized changes, two structures"
+  tabs={[
+    {
+      label: "Healthy: new payment method",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" },
+      ],
+      highlight: ["pay"],
+      caption: "Small scope, small cost: only Payments changes.",
+    },
+    {
+      label: "Healthy: new invoice field",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" },
+      ],
+      highlight: ["inv"],
+      caption: "Also small scope, and also one module. In a healthy system the cost follows the scope.",
+    },
+    {
+      label: "Decaying: new invoice field",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "inv" }, { from: "inv", to: "ord" }, { from: "ord", to: "pay", bend: 40 },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" }, { from: "ui", to: "db", bend: -60 },
+      ],
+      highlight: ["ui", "pay", "inv", "ord", "db"],
+      caption: "The same small request, but the modules reach into each other, so the change ripples through all five. The shape, not the scope, sets the cost: the warning sign of decay.",
+    },
+  ]}
+/>
+
+## The Eisenhower matrix in software
+
+The lecture maps software work onto President Eisenhower's urgency matrix:
+
+<EisenhowerMatrix />
+
+Architecture lives in **Quadrant 2**: important but never urgent. That is exactly why it gets skipped. The failure mode that **destroys companies** is letting Quadrant 3 features (urgent, loud, trivial) win over Quadrant 2 architecture again and again.
+
+## Extreme value trade-offs
+
+What happens if an organization runs at one extreme of behavior versus structure?
+
+| Case | Scenario | Immediate outcome | Long-term survival |
+| --- | --- | --- | --- |
+| **A** | **Perfect behavior, rigid structure:** the program does exactly what's needed today, but the code is heavily coupled and rigid. | **Success.** Stakeholders are happy; revenue arrives now. | **Death.** The moment requirements shift, the cost of refactoring approaches infinity. The system freezes. |
+| **B** | **Defective behavior, soft structure:** the program has bugs today, but the architecture is decoupled and modular. | **Friction.** Complaints and bug reports right away. | **Immortal.** Fixing the defects takes almost no effort, because the cost of change doesn't depend on shape. |
+
+<Callout tone="neon" label="The surprising conclusion">
+A program that works but can't change will eventually become useless when the world changes. A program that doesn't work yet but is easy to change can be made to work. So structure is the greater of the two values, even though behavior is the one stakeholders shout about.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Reading a *big* change as a sign of bad architecture. Big scope is fine; big features cost more everywhere. The warning sign is a small change that costs a lot because of its *shape*: it cuts across the structure.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["behavior-value", "structure-value", "scope-of-change", "shape-of-change"]} />

@@ -99,6 +99,8 @@ $$
 Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
 $$
 
+The two terms describe the two ways $Q(t+1)$ can be 1: either an explicit Set command arrives ($S = 1$, which forces the output high), or the latch was already 1 ($Q(t) = 1$) and no Reset command arrived ($R' = 1$, so $R = 0$). If a Reset arrives ($R = 1$, meaning $R' = 0$), the second term drops to 0 and forces $Q(t+1) = 0$.
+
 ### Excitation Table
 
 In sequential circuit synthesis, we frequently know the desired transition from current state $Q(t)$ to next state $Q(t+1)$ and must determine the required inputs $(S, R)$. This mapping is called an **excitation table**:
@@ -210,7 +212,7 @@ An active-HIGH NOR SR latch has identical gates, each with a propagation delay o
 1. **Timing Trace:**
    - At $t = 10\text{ ns}$: $S$ rises to 1. The input to NOR 2 is now $S = 1, Q = 0$.
    - At $t = 11\text{ ns}$: $S$ falls back to 0. Notice that this happens *before* the propagation delay of NOR 2 ($t_{pd} = 2\text{ ns}$) has elapsed!
-   - At $t = 12\text{ ns}$: The output of NOR 2 begins responding to the earlier input state. However, because $S$ was only high for $1\text{ ns}$, which is shorter than the gate's inertial delay and propagation delay ($2\text{ ns}$), the internal nodes fail to charge fully. Even if $Q'$ momentarily dips toward ground, at $t = 12\text{ ns}$ both $S = 0$ and $Q = 0$, so NOR 2 immediately pulls $Q'$ back to 1.
+   - At $t = 12\text{ ns}$: The output of NOR 2 begins responding to the earlier input state. However, because $S$ was only high for $1\text{ ns}$, which is shorter than the gate's propagation delay ($t_{pd} = 2\text{ ns}$), the input returns to 0 before the gate can complete its transition. The internal node capacitance does not charge fully past the logic threshold. At $t = 12\text{ ns}$ both $S = 0$ and $Q = 0$, so NOR 2 immediately pulls $Q'$ back to 1.
    - The signal never reaches the threshold required to trigger NOR 1. Therefore, $Q$ remains at 0 and $Q'$ remains at 1.
    - The latch **fails to set**. The narrow pulse is rejected as an incomplete glitch.
 
@@ -363,7 +365,7 @@ $$Q(t+1) = S + R' Q(t) \quad \text{subject to} \quad S \cdot R = 0$$
 
    Groupings:
    - Group 1: Entire bottom row ($S = 1$, covering minterms 4, 5, 7, 6) $\implies S$.
-   - Group 2: Quad covering columns 01 and 11 across both rows (minterms 1, 5 and don't-care 7, and minterm 3 is 0; specifically, minterms 1 and 5 combine with no other minterms since 3 is 0, grouping cell $(0, 01)$ and $(1, 01)$) $\implies R' Q$.
+   - Group 2: Pair covering column $01$ across both rows (minterm 1 at $(0, 01)$ and minterm 5 at $(1, 01)$, where $R=0, Q=1$ and $S$ varies) $\implies R' Q$.
    Resulting minimal SOP:
    $$Q(t+1) = S + R' Q$$
 </ModelAnswer>

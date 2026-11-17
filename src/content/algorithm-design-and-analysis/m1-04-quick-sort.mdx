@@ -1,7 +1,9 @@
-import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, Epigraph, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, LeetCodeProblems, PartitionVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Quick Sort: Pick a Pivot
+
+<Epigraph quote="I conclude that there are two ways of constructing a software design: One way is to make it so simple that there are obviously no deficiencies, and the other way is to make it so complicated that there are no obvious deficiencies. The first method is far more difficult." by="C. A. R. Hoare" source="The Emperor's Old Clothes (ACM Turing Award Lecture), 1980" />
 
 [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) executes its simplest phase first (splitting arrays down the middle) and its complex phase last (merging sorted subarrays). Quick sort reverses that order. It performs the sorting work **up front** during partitioning, leaving no combination work at the end.
 

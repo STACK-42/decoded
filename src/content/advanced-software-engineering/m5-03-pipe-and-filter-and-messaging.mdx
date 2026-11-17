@@ -1,0 +1,144 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, PipelineRunner, MessageQueueStepper } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Pipe-and-Filter and Messaging
+
+Both styles decouple components by **not letting them call each other directly**. In pipe-and-filter, data flows through a chain. In messaging, requests wait in a queue.
+
+## Pipe-and-filter
+
+In the <Term id="pipe-and-filter">pipe-and-filter</Term> style:
+
+- **streams of data are passed from one filter program to another;**
+- **filters can run concurrently:** a consumer doesn't have to wait for the producer to finish before it starts reading the producer's output;
+- **components are <Term id="filter">filters</Term>,** which transform input data streams into output data streams, possibly producing output incrementally (a bit at a time);
+- **connectors are <Term id="pipe">pipes</Term>:** conduits for data streams;
+- **the style invariant: filters are independent (no shared state).**
+
+**Example:** the UNIX shell, whose `|` you can try in Operating Systems' [Linux lab](/courses/operating-systems/lab-linux-commands#redirection-and-pipes). Step through this pipeline:
+
+<PipelineRunner />
+
+`ls invoices` lists the files, `grep -e August` keeps the lines containing "August", and `sort` puts them in order. Each command is a filter; each `|` is a pipe. Because they share nothing, you can reorder, remove or add filters freely, and in a real shell all three run at the same time.
+
+### One system, two views
+
+The lecture draws a small text-processing system both ways:
+
+<BoxDiagram
+  title="C&C view: filters and pipes"
+  width={560}
+  height={230}
+  nodes={[
+    { id: "split", label: "Split", x: 80, y: 115, w: 100, tone: "sky" },
+    { id: "up", label: "To-upper", x: 280, y: 40, w: 120, tone: "sky" },
+    { id: "low", label: "To-lower", x: 280, y: 190, w: 120, tone: "sky" },
+    { id: "merge", label: "Merge", x: 480, y: 115, w: 100, tone: "sky" },
+  ]}
+  edges={[
+    { from: "split", to: "up", label: "pipe" },
+    { from: "split", to: "low", label: "pipe" },
+    { from: "up", to: "merge", label: "pipe" },
+    { from: "low", to: "merge", label: "pipe" },
+  ]}
+  caption="At runtime, data flows from Split through two filters in parallel and is combined by Merge."
+/>
+
+<BoxDiagram
+  title="Module view: who uses whom"
+  width={600}
+  height={220}
+  nodes={[
+    { id: "main", label: "main", x: 300, y: 35, w: 100, kind: "package" },
+    { id: "split", label: "split", x: 90, y: 110, w: 90, kind: "package" },
+    { id: "tl", label: "to_lower", x: 230, y: 110, w: 100, kind: "package" },
+    { id: "tu", label: "to_upper", x: 370, y: 110, w: 100, kind: "package" },
+    { id: "merge", label: "merge", x: 510, y: 110, w: 90, kind: "package" },
+    { id: "config", label: "config", x: 200, y: 190, w: 100, kind: "package" },
+    { id: "stdio", label: "stdio", x: 400, y: 190, w: 100, kind: "package" },
+  ]}
+  edges={[
+    { from: "main", to: "split", dashed: true },
+    { from: "main", to: "tl", dashed: true },
+    { from: "main", to: "tu", dashed: true },
+    { from: "main", to: "merge", dashed: true },
+    { from: "split", to: "config", dashed: true },
+    { from: "tl", to: "stdio", dashed: true },
+    { from: "tu", to: "config", dashed: true },
+    { from: "merge", to: "stdio", dashed: true },
+    { from: "split", to: "stdio", dashed: true },
+    { from: "merge", to: "config", dashed: true },
+  ]}
+  caption="In the code, main uses each filter module, and every filter uses config and stdio (dashed: x uses y; some lines are left out for clarity). This view says nothing about data flow; the C&C view says nothing about config."
+/>
+
+### Disadvantages, cautions and qualities
+
+The lecture leaves these as questions. Answers:
+
+| | |
+| --- | --- |
+| **Disadvantages** | Not suited to interactive systems, which need request-response, not a one-way stream. Each filter may have to parse and re-format the data (conversion overhead). Error handling across the chain is hard: which filter failed, and what happens to data already in the pipes? |
+| **Cautions** | Agree on one data format between filters. Keep filters truly stateless, or the "independent filters" invariant breaks. A slow filter limits the whole pipeline's speed. |
+| **Qualities it supports** | Reuse and modifiability (filters are composable and easy to add or reorder), and performance through concurrency (filters run in parallel). |
+
+## Messaging
+
+In the <Term id="messaging">messaging</Term> style, clients don't call servers directly. They put messages in a <Term id="message-queue">queue</Term>.
+
+<BoxDiagram
+  title="Messaging"
+  width={520}
+  height={110}
+  nodes={[
+    { id: "c", label: "Client", x: 80, y: 55, w: 100, tone: "orange" },
+    { id: "q", label: "Queue", x: 260, y: 55, w: 140, kind: "store" },
+    { id: "s", label: "Server", x: 440, y: 55, w: 100, tone: "orange" },
+  ]}
+  edges={[
+    { from: "c", to: "q" },
+    { from: "q", to: "s" },
+  ]}
+/>
+
+### Key property: asynchronous communication
+
+- Clients send requests to the queue, **where the message is stored until an application removes it**.
+- After the client has written the message to the queue, **it continues without waiting** for the message to be removed.
+
+That is <Term id="asynchronous-communication">asynchronous communication</Term>. The queue is first-in, first-out: the same [queue](/courses/data-structures/queues-and-deques) as in Data Structures, at system scale. Inside one machine, Operating Systems' [indirect communication](/courses/operating-systems/interprocess-communication#indirect-communication) through mailboxes is the same idea. Step through it:
+
+<MessageQueueStepper />
+
+Notice step 2: the client sent two orders before the server had taken either. And at the end the server finds the queue empty: the two sides run at their own pace.
+
+### Addressing quality attributes
+
+| Quality | How messaging handles it |
+| --- | --- |
+| **Availability** | Queues can be replicated across messaging servers, so messages survive a server failure. If the receiving server is down, messages wait in the queue instead of being lost. |
+| **Modifiability** | Asynchronous communication: sender and receiver don't need to know about each other or run at the same time. The **message format** becomes the contract: change it carefully, because every receiver depends on it. |
+
+Real messaging systems use a <Term id="message-broker">message broker</Term>, such as RabbitMQ, Apache Kafka or JMS, to store and route messages. The lecture's summary gives two examples. When you place an Amazon order, payment, warehouse and shipping are handled through message queues (Amazon SQS). And LinkedIn built Kafka to move trillions of messages a day between its systems.
+
+| Pros (from the styles summary) | Cons |
+| --- | --- |
+| loose coupling of components | extra infrastructure (the broker) |
+| reliable, buffered delivery | harder debugging and tracing |
+| handles load peaks well | eventual consistency, added latency |
+
+<Callout tone="mint" label="Compare with client-server">
+In [client-server](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#client-server), the client waits for each answer (<Term id="synchronous-communication">synchronous</Term>). In messaging it doesn't. The price is that the client can't immediately know whether its request succeeded.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Thinking filters run one after another, each finishing first. They can run at the same time, passing data along as it's produced. In messaging, the opposite slip: expecting the client to know the result straight away. It doesn't wait, so it doesn't know.
+</Callout>
+
+## Readings for this lecture
+
+*Essential Software Architecture* (Gorton), chapters 7 and 8.
+
+## Key terms
+
+<KeyTerms ids={["pipe-and-filter", "filter", "pipe", "messaging", "message-queue", "asynchronous-communication", "message-broker"]} />

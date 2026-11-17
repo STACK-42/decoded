@@ -8,6 +8,8 @@ import { LearningPaths } from "@/components/LearningPaths";
 import { learningPaths, prerequisites, trackGroups } from "@/content/paths";
 import { courses, getCourse, getLesson } from "@/content/registry";
 import { tools } from "@/content/tools";
+import { TOOL_BADGES } from "@/components/tools/toolBadges";
+import Tools from "@/pages/Tools";
 
 const registry = readFileSync(path.resolve(__dirname, "../content/registry.ts"), "utf8");
 
@@ -91,6 +93,22 @@ describe("course prerequisites", () => {
 });
 
 describe("tools", () => {
+  it("renders the tools page with authentic badges", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <Tools />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Browse by tool")).toBeTruthy();
+    expect(container.querySelectorAll("svg").length).toBeGreaterThan(30);
+  });
+
+  it("every tool has authentic badges configured", () => {
+    for (const tool of tools) {
+      expect(TOOL_BADGES[tool.name]?.length, `Missing badges for ${tool.name}`).toBeGreaterThan(0);
+    }
+  });
+
   for (const tool of tools) {
     for (const link of tool.lessons) {
       it(`${tool.name} → ${link.course}/${link.lesson} exists and mentions "${link.mentions}"`, () => {

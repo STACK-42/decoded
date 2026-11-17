@@ -1,0 +1,168 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Views and Structures
+
+A real system is too rich to show in one picture. Lecture 4 is about how architects describe it with several pictures instead, each called a **view**.
+
+## One architecture, many views
+
+The lecture opens with an equation drawn as books:
+
+> **Documentation of an architecture = the relevant views + documentation that applies beyond any one view.**
+
+Which views are "relevant"? It depends on what you and the other stakeholders care about most:
+
+- **different views expose different <Term id="quality-attribute">quality attributes</Term> to different degrees.** A deployment view (which software runs on which machine) tells you a lot about performance and availability, and almost nothing about how easy the code is to change;
+- **different views support different goals,** and highlight different elements and relations.
+
+**Can a single view represent an architecture?** No. Recall the definition from [Lecture 2](/courses/advanced-software-engineering/complexity-architecture-and-design#what-is-software-architecture): architecture is the *set of structures* needed to reason about the system. "Set" is plural on purpose.
+
+## Structures versus views
+
+- A **<Term id="structure">structure</Term>** is the set of elements itself, as it exists in the system (the code, the running processes, the hardware).
+- A **<Term id="view">view</Term>** is a *representation* of a coherent set of architectural elements: it shows a set of elements and the relations among them.
+
+So **a view is a representation of one or more structures.** A structure is the territory; a view is a map of it.
+
+<Callout tone="orange" label="Same word, different meaning">
+Lecture 2 used "structure" for one of software's two values: [structure vs behavior](/courses/advanced-software-engineering/the-economics-of-architecture#two-values-behavior-and-structure), meaning how easy the system is to change. Here a structure is a concrete set of elements in the system (the modules, or the running processes). Both are about architecture, but they answer different questions.
+</Callout>
+
+The lecture illustrates "one system, many views" with the cover of *Gödel, Escher, Bach*: one carved block casts the shadow "G" from one side, "E" from another and "B" from a third. Each shadow holds *some* of the information; only the block holds *all* of it.
+
+## Three kinds of structures
+
+Architectural structures fall into three groups, matching three broad kinds of decisions an architect makes:
+
+| Kind | Elements | The question it answers |
+| --- | --- | --- |
+| **Module structures** | units of implementation (packages, classes, files) | How is the code divided up, and who uses what? |
+| **Component-and-connector (C&C) structures** | runtime units (processes, servers, data stores) and their interactions | How does the system behave while it runs? |
+| **Allocation structures** | software elements mapped to non-software things (hardware, files, teams) | Where does the software run, live and get built? |
+
+The next three lessons take one kind each: [module views](/courses/advanced-software-engineering/module-views), [C&C views](/courses/advanced-software-engineering/component-and-connector-views) and [allocation views](/courses/advanced-software-engineering/allocation-views).
+
+Here is one small system, a vehicle climate-control system from the lecture, seen three ways:
+
+<DiagramTabs
+  title="One climate-control system, three views"
+  tabs={[
+    {
+      label: "Module view",
+      width: 600,
+      height: 250,
+      nodes: [
+        { id: "ref", label: "ReferenceModel", x: 110, y: 40, w: 160 },
+        { id: "disp", label: "Display", x: 440, y: 40, w: 120 },
+        { id: "ts", label: "TemperatureSensor", x: 110, y: 135, w: 170 },
+        { id: "ctl", label: "Controller", x: 300, y: 135, w: 120, tone: "sky" },
+        { id: "act", label: "Actuator", x: 470, y: 135, w: 120 },
+        { id: "cool", label: "Cooler", x: 360, y: 225, w: 90 },
+        { id: "heat", label: "Heater", x: 470, y: 225, w: 90 },
+        { id: "fan", label: "Fan", x: 575, y: 225, w: 50 },
+      ],
+      edges: [
+        { from: "ctl", to: "ref", label: "checks" },
+        { from: "ctl", to: "disp", label: "updates" },
+        { from: "ctl", to: "ts", label: "calls" },
+        { from: "ctl", to: "act", label: "calls" },
+        { from: "cool", to: "act", head: "triangle" },
+        { from: "heat", to: "act", head: "triangle" },
+        { from: "fan", to: "act", head: "triangle" },
+      ],
+      caption: "Classes and how they relate in the code. Cooler, Heater and Fan are kinds of Actuator (the hollow triangles are generalization).",
+    },
+    {
+      label: "C&C view",
+      width: 560,
+      height: 220,
+      nodes: [
+        { id: "ctl", label: "Controller", x: 280, y: 45, w: 140, kind: "component", tone: "sky" },
+        { id: "sen", label: "Sensor", x: 100, y: 170, w: 120, kind: "component" },
+        { id: "act", label: "Actuator", x: 280, y: 170, w: 120, kind: "component" },
+        { id: "gui", label: "GUI", x: 460, y: 170, w: 120, kind: "component" },
+      ],
+      edges: [
+        { from: "ctl", to: "sen", label: "sense" },
+        { from: "ctl", to: "act", label: "actuate" },
+        { from: "ctl", to: "gui", label: "display" },
+      ],
+      caption: "The running parts and how they interact. It can simplify: one Actuator component stands for Cooler, Heater and Fan.",
+    },
+    {
+      label: "Allocation view",
+      width: 560,
+      height: 220,
+      nodes: [
+        { id: "ecu", label: "Climate ECU", x: 150, y: 70, w: 160, h: 60, kind: "node" },
+        { id: "head", label: "Head unit", x: 420, y: 70, w: 160, h: 60, kind: "node" },
+        { id: "c1", label: "Controller", x: 100, y: 180, w: 110, kind: "component" },
+        { id: "c2", label: "Sensor", x: 215, y: 180, w: 100, kind: "component" },
+        { id: "c3", label: "GUI", x: 420, y: 180, w: 100, kind: "component" },
+      ],
+      edges: [
+        { from: "c1", to: "ecu", label: "runs on", dashed: true },
+        { from: "c2", to: "ecu", dashed: true },
+        { from: "c3", to: "head", label: "runs on", dashed: true },
+        { from: "ecu", to: "head", label: "CAN", head: "none" },
+      ],
+      caption: "Which runtime component runs on which piece of hardware. (This tab is our own illustration; the lecture shows only the first two views of this system.)",
+    },
+  ]}
+/>
+
+## Module versus component
+
+This distinction trips people up, so the lecture asks a series of questions:
+
+- **Static or dynamic?** A <Term id="module">module</Term> is static: it exists in the code. A <Term id="component">component</Term> is dynamic: it exists while the system runs.
+- **Unit of implementation or runtime entity?** Module = unit of implementation. Component = runtime entity.
+- **Where do source code, XML files, config files and parser grammar files fit?** They are implementation artifacts, so they belong to the module world.
+- **An executable binary?** It sits in between: it is produced from modules, and when it runs it becomes one or more components. Allocation views (the install style) describe exactly this mapping.
+- **"Every module becomes exactly one component at runtime, so who cares?"** **No.** The mapping isn't one-to-one:
+  - **one module can become many components.** One `Server` module can run as many server processes at once;
+  - **many modules can become one component.** A dozen packages compile into a single running client.
+
+<BoxDiagram
+  title="Decomposition view vs client-server view of the same system"
+  width={600}
+  height={240}
+  nodes={[
+    { id: "sys", label: "System", x: 120, y: 30, kind: "plain" },
+    { id: "client", label: "Client", x: 120, y: 85, w: 140, kind: "package" },
+    { id: "server", label: "Server", x: 120, y: 160, w: 140, kind: "package" },
+    { id: "s1", label: "S1", x: 450, y: 120, w: 60, h: 34, tone: "sky" },
+    { id: "c1", label: "C1", x: 360, y: 40, w: 48, h: 30 },
+    { id: "c2", label: "C2", x: 450, y: 30, w: 48, h: 30 },
+    { id: "c3", label: "C3", x: 540, y: 40, w: 48, h: 30 },
+    { id: "c4", label: "C4", x: 560, y: 120, w: 48, h: 30 },
+    { id: "c5", label: "C5", x: 540, y: 200, w: 48, h: 30 },
+    { id: "c6", label: "C6", x: 450, y: 212, w: 48, h: 30 },
+    { id: "c7", label: "C7", x: 360, y: 200, w: 48, h: 30 },
+    { id: "c8", label: "C8", x: 340, y: 120, w: 48, h: 30 },
+  ]}
+  edges={[
+    { from: "c1", to: "s1", both: true },
+    { from: "c2", to: "s1", both: true },
+    { from: "c3", to: "s1", both: true },
+    { from: "c4", to: "s1", both: true },
+    { from: "c5", to: "s1", both: true },
+    { from: "c6", to: "s1", both: true },
+    { from: "c7", to: "s1", both: true },
+    { from: "c8", to: "s1", both: true },
+  ]}
+  caption="Left: two modules, Client and Server. Right: at runtime the one Client module runs as many client components (C1…C8, up to C10 in the lecture's figure), all talking to server S1 by request-reply."
+/>
+
+<Callout tone="violet" label="Who cares?">
+You do, as soon as you ask about performance or availability. Those depend on how many components run and where, which the module view doesn't show. Modifiability depends on how the code is divided, which the C&C view doesn't show. That's why you need both.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Treating one diagram as "the architecture," or treating module and component as synonyms. A module is code you build; a component is something that runs. One Client module can run as ten client components.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["view", "structure", "module", "component", "quality-attribute"]} />

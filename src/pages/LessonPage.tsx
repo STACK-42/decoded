@@ -31,9 +31,11 @@ function readSidebarPref() {
 // links to other lessons get a hover preview of the definition they point at
 const mdxComponents = { pre: CodeBlock, a: LessonLink };
 
+/** At least a screen tall, so "Mark as complete" and the previous/next links start off
+ *  screen; otherwise the arriving lesson shoves them down, a large layout shift. */
 function LessonSkeleton() {
   return (
-    <div role="status" aria-label="Loading lesson" className="animate-pulse space-y-4 py-4">
+    <div role="status" aria-label="Loading lesson" className="animate-pulse space-y-4 py-4 min-h-screen">
       <div className="h-10 w-2/3 bg-secondary" />
       <div className="h-4 w-full bg-secondary" />
       <div className="h-4 w-11/12 bg-secondary" />

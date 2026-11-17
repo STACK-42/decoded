@@ -1,65 +1,185 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SegmentCalculator } from "@/components/mdx/MicroprocessorVisualizers";
 
 # Segments and Physical Addresses
 
-The 8086 has a puzzle to solve. It has 20 address lines, to reach 1 MB of memory. But all of its registers are 16 bits, and a 16-bit number can only count up to 64 KB. How can it make a 20-bit address from 16-bit parts?
+The 8086 processor has 20 physical address lines (A0 to A19), allowing it to address $2^{20} = 1,048,576\text{ bytes}$ (exactly 1 MB) of system memory. However, all internal registers in the 8086 are only 16 bits wide. A 16-bit register can count from `0000h` to `FFFFh`, which reaches only $2^{16} = 65,536\text{ bytes}$ (64 KB). To bridge this gap and access the full 1 MB address space with 16-bit registers, the 8086 divides memory into blocks using a technique called **segmentation**.
 
-It uses two registers together. Think of giving directions: "Go to the building on 5th Street, then walk 30 steps." The street is the **segment**, the steps are the **offset**.
+Each independent block of memory is called a **segment**. A segment is a continuous region of memory up to 64 KB in size that starts on a 16-byte boundary. Within that segment, any individual byte is located by its distance from the segment start. That distance is called an **offset**.
+
+Programmers describe a location in memory using a two-part **logical address**, written as `Segment:Offset` (such as `24F6:634Ah`). The hardware Bus Interface Unit (BIU) translates this logical pair into an absolute 20-bit **physical address** that it outputs directly onto the address pins of the processor chip.
 
 ## The formula
 
-Multiply the segment by 10h, which shifts it one hex digit left and adds a 0 at the end. Then add the offset:
+To convert a 16-bit segment value and a 16-bit offset into a 20-bit physical address, the processor shifts the segment value 4 bits to the left, which is equivalent to multiplying by $10_h$ (16 in decimal). This shift adds one hexadecimal zero to the end, expanding the 16-bit segment number into a 20-bit base address. The processor then adds the 16-bit offset:
 
 $$
 \text{Physical address} = \text{Segment} \times 10_h + \text{Offset}
 $$
 
-A worked example with DS = 24F6h and SI = 634Ah:
+Why does a 4-bit left shift multiply by 16 and produce a 20-bit number? Consider the segment register value `24F6h`. In binary, 16 bits represent this number:
 
 ```
-  24F60    segment × 10h
-+  634A    offset
--------
-  2B2AA    physical address
+0010  0100  1111  0110
 ```
 
-Try the three examples. Then enter some numbers of your own.
+Shifting this bit pattern 4 positions to the left moves every bit four places higher and inserts four zeros at the lowest positions:
+
+```
+0010  0100  1111  0110  0000
+```
+
+This resulting number has 20 bits. In hexadecimal notation, each digit corresponds to exactly 4 binary bits (one nibble). Shifting left by 4 bits therefore moves each hexadecimal digit one place to the left and appends a trailing `0h`. The 16-bit segment `24F6h` becomes the 20-bit base address `24F60h`.
+
+Now follow the complete physical address calculation for the logical address `24F6:634Ah`:
+
+1. Multiply the segment value `24F6h` by $10_h$ to obtain the segment base address `24F60h`.
+2. Add the offset `634Ah` to this base address.
+
+Perform the hexadecimal addition column by column from right to left:
+
+```
+  24F60h    (segment base: 24F6h × 10h)
++  634Ah    (offset)
+--------
+  2B2AAh    (20-bit physical address)
+```
+
+- Column 0 (units): `0h + Ah = Ah`.
+- Column 1 (sixteens): `6h + 4h = Ah`.
+- Column 2 (256s): `Fh + 3h = 15 + 3 = 18`. In hexadecimal, $18 = 16 \times 1 + 2$, which gives `2h` with a carry of `1h` into the next column.
+- Column 3 (4096s): `4h + 6h + 1h (carry) = 11`, which is `Bh`.
+- Column 4 (65536s): `2h + 0h = 2h`.
+
+The resulting 20-bit physical address is `2B2AAh`. The processor places these 20 bits on address lines A0 through A19 to read or write the selected byte in RAM.
+
+<Callout tone="orange" label="Trap: adding without the 4-bit left shift">
+A common beginner mistake is adding the 16-bit segment directly to the 16-bit offset (`24F6h + 634Ah = 8840h`). This yields an incorrect 16-bit sum. The segment must always be shifted left by 4 bits (multiplied by $10_h$) before adding the offset, producing a 20-bit address.
+</Callout>
+
+Try the three examples below. Then enter numbers of your own to test the calculation.
 
 <SegmentCalculator />
 
 ## Three kinds of address
 
-For the same location, there are three names to learn:
+When working with 8086 memory, keep these three related concepts distinct:
 
-- **Physical address**: the real 20-bit number on the address pins, like `2B2AA`.
-- **Offset**: the distance from the start of the segment, like `634A`.
-- **Logical address**: how a program writes it, as Segment:Offset, like `24F6:634A`.
+- **Logical address**: how an assembly instruction or program writes a location, in `Segment:Offset` format, such as `24F6:634Ah`.
+- **Offset**: the 16-bit numerical distance from the start of a segment to the desired byte, such as `634Ah`. In instructions, the offset is also called the effective address.
+- **Physical address**: the actual 20-bit binary value (from `00000h` to `FFFFFh`) generated by the Bus Interface Unit and driven onto address pins A0 to A19, such as `2B2AAh`.
 
 ## The size of a segment
 
-Since an offset is 16 bits, it runs from 0000h to FFFFh, and each segment can span up to 64 KB. To find a segment's range, use the lowest and highest offsets:
+A 16-bit offset can take any value from `0000h` to `FFFFh`. Because $2^{16} = 65,536$, a single segment can span up to 64 KB of memory without changing the segment register.
 
-| | Calculation | Result |
+Because the segment register is shifted left by 4 bits, its lowest 4 bits are always `0000b` (`0h`). A 16-byte memory block that begins on an address divisible by 16 (ending in `0h`) is called a **paragraph**. Every segment must start on a paragraph boundary.
+
+To find the memory range spanned by any segment, evaluate the lowest possible offset (`0000h`) and the highest possible offset (`FFFFh`):
+
+| Boundary | Calculation | Result |
 |---|---|---|
-| Lower limit | 24F60 + 0000 | 24F60h |
-| Upper limit | 24F60 + FFFF | 34F5Fh |
+| Segment base (lower limit) | 24F60h + 0000h | 24F60h |
+| Segment top (upper limit) | 24F60h + FFFFh | 34F5Fh |
+
+Adding `FFFFh` to `24F60h` is equivalent to adding `10000h` and subtracting 1: `24F60h + 10000h - 1 = 34F60h - 1 = 34F5Fh`. The segment covers all 65,536 bytes between physical addresses `24F60h` and `34F5Fh` inclusive.
+
+Because paragraph boundaries occur every 16 bytes, a new segment can start every 16 bytes in physical memory. When segments begin fewer than 64 KB apart, they create **overlapping segments**.
+
+<Callout tone="orange" label="Trap: assuming distinct logical addresses mean distinct memory cells">
+Multiple distinct logical addresses can point to the exact same physical memory cell. For example, `1000:0020h`, `1001:0010h`, and `1002:0000h` all yield physical address `10020h`:
+- `1000h × 10h + 0020h = 10000h + 0020h = 10020h`
+- `1001h × 10h + 0010h = 10010h + 0010h = 10020h`
+- `1002h × 10h + 0000h = 10020h + 0000h = 10020h`
+
+Never assume that two different `Segment:Offset` pairs refer to different memory locations.
+</Callout>
 
 ## Four segments for four purposes
 
-A program's memory is divided up by what it holds, and each kind has a register to point to it:
+An 8086 program organizes its memory into four logical areas based on what the memory contains. Each area is tracked by a dedicated 16-bit segment register, and the hardware pairs each segment register with specific default offset registers:
 
-| Segment | Register | Holds | Offset register used with it |
+| Segment | Register | Holds | Default offset registers |
 |---|---|---|---|
-| Code | **CS** | The program's instructions | IP |
-| Data | **DS** | Variables and arrays | BX, SI, DI |
-| Stack | **SS** | The [stack](/courses/microprocessors/stack-and-procedures) | SP, BP |
-| Extra | **ES** | Extra data, often string destinations | DI |
+| Code | **CS** | Machine code instructions | IP |
+| Data | **DS** | Variables, constants, and arrays | BX, SI, DI |
+| Stack | **SS** | The [stack](/courses/microprocessors/stack-and-procedures) (frames and return addresses) | SP, BP |
+| Extra | **ES** | Extra target data, including string destinations | DI |
 
-When you write `MOV AL, [SI]`, you don't mention a segment, because the CPU knows that SI goes with DS. The next instruction always comes from CS:IP.
+These default combinations mean that instructions do not need to specify a segment register for every memory access:
 
-<Callout tone="orange" label="Different addresses can reach the same place">
-1000:0020 and 1002:0000 are both physical address 10020h. Segments can overlap, because they can start every 16 bytes. So don't assume two different logical addresses mean two different locations.
-</Callout>
+- The next instruction byte is always fetched from **CS:IP**.
+- A general memory access such as `MOV AL, [SI]` automatically computes its physical address using **DS:SI**.
+- Stack instructions such as `PUSH`, `POP`, and `CALL` automatically use **SS:SP**.
+- Base pointer accesses such as `MOV AX, [BP+4]` automatically use **SS:BP**.
+- String destination instructions such as `STOSB` and `MOVSB` automatically write to **ES:DI**.
 
-Modern 64-bit systems no longer use segments this way. They use [virtual memory](/courses/computer-architecture/virtual-memory), a much more powerful idea with the same goal of mapping a program's addresses to real locations.
+When an instruction needs to access data in a segment other than its default, you can prepend a **segment override prefix**. For example, writing `MOV AL, ES:[BX]` instructs the Bus Interface Unit to pair pointer `BX` with `ES` instead of the default `DS`. The assembler inserts a 1-byte prefix code (`26h` for ES, `2Eh` for CS, `36h` for SS, or `3Eh` for DS) immediately before the instruction opcode. Certain pairings cannot be overridden: instruction fetches must use CS, stack operations must use SS, and string destinations must use ES.
+
+Modern 64-bit processors operating in long mode no longer rely on segmentation for memory protection and address expansion. Instead, they treat memory as a flat 64-bit address space managed by [virtual memory](/courses/computer-architecture/virtual-memory) paging hardware.
+
+## Practice by hand
+
+### Problem 1: Calculating physical addresses and segment ranges
+
+A system has register values `CS = 4A20h` and `IP = 0150h`.
+
+1. Calculate the 20-bit base address of the code segment.
+2. Calculate the 20-bit physical address of the instruction fetched by the processor.
+3. Determine the lowest and highest physical addresses that this 64 KB segment can span.
+
+<ModelAnswer>
+1. **Segment base address**:
+   Shift the segment register left by 4 bits (multiply by $10_h$):
+   $$\text{Base} = 4\text{A}20_h \times 10_h = 4\text{A}200_h$$
+
+2. **Physical address**:
+   Add the instruction pointer offset (`IP = 0150h`) to the base address:
+   ```
+     4A200h   (segment base)
+   +  0150h   (IP offset)
+   --------
+     4A350h   (physical address)
+   ```
+   The processor fetches the instruction from physical address **`4A350h`**.
+
+3. **Segment boundaries (64 KB range)**:
+   A segment offset ranges from `0000h` to `FFFFh`:
+   - Lower limit (offset `0000h`):
+     $$4\text{A}200_h + 0000_h = 4\text{A}200_h$$
+   - Upper limit (offset `FFFFh`):
+     $$4\text{A}200_h + \text{FFFF}_h = 5\text{A}1\text{FF}_h$$
+     (Calculation: $4\text{A}200_h + 10000_h - 1 = 5\text{A}200_h - 1 = 5\text{A}1\text{FF}_h$).
+
+   The segment covers the physical address range **`4A200h` to `5A1FFh`**.
+</ModelAnswer>
+
+### Problem 2: Finding alternate logical addresses for a physical address
+
+A data byte is stored at the 20-bit physical address `3C450h`.
+
+Provide three distinct, valid logical addresses in `Segment:Offset` form that point to this exact physical address. Show the calculation for each pair.
+
+<ModelAnswer>
+To find a valid `Segment:Offset` representation for physical address `3C450h`, select any segment value whose base address (`Segment × 10h`) is less than or equal to `3C450h` and within `FFFFh` (64 KB) of it. The offset is then:
+$$\text{Offset} = \text{Physical Address} - (\text{Segment} \times 10_h)$$
+
+Here are three distinct valid logical addresses:
+
+1. **`3C45:0000h`**:
+   - Base address: $3\text{C}45_h \times 10_h = 3\text{C}450_h$.
+   - Offset: $3\text{C}450_h - 3\text{C}450_h = 0000_h$.
+   - Check: $3\text{C}450_h + 0000_h = 3\text{C}450_h$.
+
+2. **`3C40:0050h`**:
+   - Base address: $3\text{C}40_h \times 10_h = 3\text{C}400_h$.
+   - Offset: $3\text{C}450_h - 3\text{C}400_h = 0050_h$.
+   - Check: $3\text{C}400_h + 0050_h = 3\text{C}450_h$.
+
+3. **`3C00:0450h`**:
+   - Base address: $3\text{C}00_h \times 10_h = 3\text{C}000_h$.
+   - Offset: $3\text{C}450_h - 3\text{C}000_h = 0450_h$.
+   - Check: $3\text{C}000_h + 0450_h = 3\text{C}450_h$.
+
+Another valid combination is `3000:C450h` ($30000_h + \text{C}450_h = 3\text{C}450_h$). Because segments can start at any paragraph boundary (every 16 bytes), all of these pairs access the exact same physical byte in memory.
+</ModelAnswer>

@@ -3,6 +3,8 @@ import { recordAnswers } from "@/lib/review";
 import { useProgress } from "@/hooks/useProgress";
 import { recordQuizScore } from "@/lib/progressSync";
 import { QuizAverage } from "@/components/LearnerCounts";
+import { FALLBACK_ICON, resolveToolIcon } from "@/components/tools/resolveToolIcon";
+import { ToolIcon } from "@/components/tools/ToolIcon";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -204,11 +206,23 @@ export function PracticalApplication({
   tool?: string;
   children: ReactNode;
 }) {
+  const iconInfo = resolveToolIcon(tool, title) ?? FALLBACK_ICON;
+
   return (
-    <div className="my-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all duration-200 hover:border-violet/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
+    <div className="group/app my-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all duration-200 hover:border-violet/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
       <div className="flex items-baseline justify-between gap-3 mb-2 flex-wrap">
         <h4 className="font-display text-lg font-semibold leading-tight">{title}</h4>
-        {tool && <span className="rounded-full bg-orange/10 px-2.5 py-0.5 font-mono text-xs text-orange">{tool}</span>}
+        {tool && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange/10 px-2.5 py-0.5 font-mono text-xs font-medium text-orange">
+            <ToolIcon
+              simpleIcon={iconInfo.simpleIcon}
+              lucideIcon={iconInfo.lucideIcon}
+              color={iconInfo.color}
+              className="w-3.5 h-3.5 shrink-0"
+            />
+            {tool}
+          </span>
+        )}
       </div>
       <div className="text-sm text-muted-foreground leading-relaxed [&>p:last-child]:mb-0">
         {children}
@@ -981,6 +995,8 @@ export type QuizQuestion = {
   options: QuizOption[];
   correctOptionId: string;
   explanation?: string;
+  /** A diagram or code shown under the prompt, for questions about a system or a picture. */
+  figure?: ReactNode;
 };
 
 /** A written exam question's model answer, hidden behind a button so the reader can try first. */
@@ -1069,6 +1085,7 @@ export function Quiz(props: QuizProps) {
             <div className="px-5 py-4 border-b border-border/60 bg-gradient-to-r from-violet/[0.07] to-transparent">
               <p className="font-medium leading-relaxed">{question.prompt}</p>
             </div>
+            {question.figure && <div className="px-5 pt-4 [&>*]:my-0">{question.figure}</div>}
             <div className="p-5 space-y-2.5">
               {question.options.map((option, oi) => {
                 const isSelected = selectedOptionId === option.id;

@@ -1,0 +1,120 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Complexity, Architecture and Design
+
+Why is software so hard to build well, and what exactly is "architecture"? This lesson answers both, and shows why the line between architecture and design is thinner than most people think.
+
+<Callout tone="mint" label="Lecture 2 in four lessons">
+1. **This lesson:** why software is hard, and what architecture is.
+2. [The economics of architecture](/courses/advanced-software-engineering/the-economics-of-architecture): why structure is worth paying for.
+3. [The architect's role](/courses/advanced-software-engineering/the-architects-role): what architects do, and the two laws every architecture obeys.
+4. [ML systems in production](/courses/advanced-software-engineering/ml-systems-in-production): why machine learning is the hardest test of all of this.
+</Callout>
+
+## The software crisis and "No Silver Bullet"
+
+In 1968, NATO held a conference about the **"software crisis"**: projects were late, over budget and full of bugs. Decades later, Fred Brooks argued in his essay *No Silver Bullet* that no single tool or method will ever make software easy, because part of its difficulty is built into the problem.
+
+He split complexity into two kinds:
+
+| | <Term id="essential-complexity">Essential complexity</Term> | <Term id="accidental-complexity">Accidental complexity</Term> |
+| --- | --- | --- |
+| Where it comes from | The problem itself: real, complicated, often contradictory business rules | Us: poor architecture decisions, chaotic frameworks, undisciplined code |
+| Can we remove it? | No. A tax system is complicated because tax law is. | Yes. It is self-inflicted. |
+| Example | An insurance policy has 40 exceptions because the law does | The same rule is copied into five places, so a change needs five edits |
+
+**The whole discipline of software engineering is dedicated to eliminating accidental complexity.** Essential complexity can only be organized, not removed.
+
+## Why software is uniquely hard
+
+Brooks named four properties that are part of software's nature. They don't go away with better tools.
+
+1. **Complexity.** No two parts of a program are alike (if they were, we'd reuse one), and the number of possible states grows exponentially with every variable you add.
+2. **Conformity.** Physics has natural laws; software doesn't. It must fit whatever humans decided: other people's interfaces, old legacy systems, regulations.
+3. **Changeability.** Because code *looks* easy to change, it is under constant pressure to change, far more than a building, which nobody expects to move after it is built.
+4. **Invisibility.** You can't see software. Its structural flaws hide until the code runs.
+
+<Callout tone="violet" label="Why this matters for the rest of the course">
+Changeability is the property architecture fights hardest. Lecture 2's next lesson is about keeping software cheap to change, and the [SOLID principles](/courses/advanced-software-engineering/design-principles-and-srp) of Lecture 3 are tools for exactly that.
+</Callout>
+
+## Architecture and design are one continuum
+
+**Myth:** architecture is the high-level boxes on a whiteboard; design is the low-level code.
+
+**Fact:** there is no real conceptual difference between the two. They form one unbroken fabric of decisions, from the largest to the smallest.
+
+**Axiom I:** low-level details directly support and define the high-level structures. One can't exist without the other.
+
+You can't be a "whiteboard architect." If the code is a mess, the architecture has failed, however good the diagram looks.
+
+## What is software architecture?
+
+The lecture uses this definition:
+
+> The **<Term id="software-architecture">software architecture</Term>** of a system is the set of structures needed to reason about the system, which comprises software elements, relations among them, and properties of both.
+
+Read it piece by piece:
+
+- **structures**: there is more than one way to look at a system (Lecture 4 is all about this),
+- **needed to reason about the system**: architecture is what you need in order to think about how the system behaves and how it can fail,
+- **elements, relations, properties**: the parts, how they connect, and their qualities (speed, reliability, and so on).
+
+That gives a practical test for what belongs in the architecture:
+
+- the details you include in your architecture model **to reason about failures and qualities** are **architectural details**;
+- the full design includes other details needed to *build* the system but **not** needed for that reasoning. Those are **design details**.
+
+<BoxDiagram
+  title="Architect and developer decisions"
+  width={600}
+  height={270}
+  nodes={[
+    { id: "arch", label: "Architect", x: 80, y: 135, tone: "sky", w: 110 },
+    { id: "ch", label: "Architecture\ncharacteristics", x: 245, y: 45, w: 140, h: 48 },
+    { id: "st", label: "Style", x: 245, y: 135, w: 140 },
+    { id: "cs", label: "Component\nstructure", x: 245, y: 225, w: 140, h: 48 },
+    { id: "dev", label: "Developer", x: 410, y: 135, tone: "violet", w: 110 },
+    { id: "cd", label: "Class design", x: 535, y: 45, w: 110 },
+    { id: "ui", label: "User interface", x: 535, y: 135, w: 110 },
+    { id: "src", label: "Source code", x: 535, y: 225, w: 110 },
+  ]}
+  edges={[
+    { from: "arch", to: "ch" },
+    { from: "arch", to: "st" },
+    { from: "arch", to: "cs" },
+    { from: "st", to: "dev", label: "hand-over?" },
+    { from: "dev", to: "cd" },
+    { from: "dev", to: "ui" },
+    { from: "dev", to: "src" },
+  ]}
+  caption="The traditional picture splits decisions between an architect and a developer. The lecture's point is that this hand-over is not a wall: both sides make one continuous set of decisions."
+/>
+
+### Architecture is design, but not all design is architecture
+
+Architecture consists of the **<Term id="architectural-decision">architectural design decisions</Term>**; every other design decision is non-architectural. The lecture leaves three questions to think about. The answers below are ours, not the slides':
+
+- **Which decisions are non-architectural?** Ones you don't need in order to reason about the system's qualities, such as a local variable's name or which loop style a function uses.
+- **Which decisions does the architect leave to others?** Most of the internal design of each module, as long as it respects the boundaries and rules the architecture sets.
+- **Can a detailed decision still be architectural?** Yes. "The UI layer may never import the database package" is a single import rule, yet it decides whether the layers stay separate. Size doesn't make a decision architectural; its effect on the system's qualities does.
+
+## The house architect analogy
+
+A building architect doesn't stop at sketches. A complete blueprint covers both scales:
+
+- **Macroscopic layout:** how rooms flow, elevations, structural volume.
+- **Microscopic specifications:** the diameter of the sump pump outlet, the size of the foundation bolts, drywall thickness, where the light switches go.
+
+If the microscopic details are neglected, the house doesn't work, however good the layout.
+
+**The software equivalent:** high-level <Term id="decoupling">decoupling</Term> is achieved only through microscopic code choices, such as `import` statements and variable declarations. If one class imports another, they are <Term id="coupling">coupled</Term>, whatever the diagram says.
+
+<Callout tone="orange" label="Common mistake">
+Deciding what is architectural by *size*: "big boxes are architecture, small code is design." A one-line import rule can be architectural. The test is whether you need the detail to reason about the system's qualities and failures.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["essential-complexity", "accidental-complexity", "software-architecture", "architectural-decision", "coupling", "decoupling"]} />

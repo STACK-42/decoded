@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Flag } from "lucide-react";
+import { Flag, Link2 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteChrome";
 import { SignInDialog } from "@/components/AccountButton";
 import { CourseGlyph } from "@/components/brand/Glyphs";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { flattenLessons, getCourse, type Course } from "@/content/registry";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { fetchPublicProfile, reportProfile, type PublicProfile as Profile, type ReportReason } from "@/lib/profiles";
+import { copyLink, profileShareUrl } from "@/lib/shareLinks";
 
 const accentText: Record<Course["accent"], string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -133,7 +134,17 @@ export default function PublicProfile() {
                     Learning on Decoded since {new Date(profile.since).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
                   </p>
                 </div>
-                <ReportDialog handle={profile.handle} />
+                <div className="flex items-center gap-5">
+                  <button
+                    type="button"
+                    onClick={() => copyLink(profileShareUrl(profile.handle))}
+                    className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Link2 className="h-3.5 w-3.5" aria-hidden />
+                    Copy link
+                  </button>
+                  <ReportDialog handle={profile.handle} />
+                </div>
               </header>
 
               <div className="eyebrow text-muted-foreground mb-4">Courses</div>

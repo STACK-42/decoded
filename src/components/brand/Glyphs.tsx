@@ -44,6 +44,15 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M10.6 7.1L7.2 15.8M13.4 7.1l3.4 8.7" />
     </svg>
   ),
+  // three stacked layers: an architecture
+  "advanced-software-engineering": ({ className }) => (
+    <svg {...base} className={className}>
+      <rect x="4" y="4" width="16" height="4" rx="1" />
+      <rect x="4" y="10" width="7" height="4" rx="1" />
+      <rect x="13" y="10" width="7" height="4" rx="1" fill="currentColor" />
+      <rect x="4" y="16" width="16" height="4" rx="1" />
+    </svg>
+  ),
   // bracketed matrix
   "computational-mathematics": ({ className }) => (
     <svg {...base} className={className}>

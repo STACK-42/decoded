@@ -1,16 +1,16 @@
 <div align="center">
 
-<a href="https://decoded.stack42.tech"><img src="banner.png" alt="Decoded: computer science proofs, decoded to production tools" width="100%" /></a>
+<a href="https://csdecod.ing"><img src="banner.png" alt="Decoded: computer science proofs, decoded to production tools" width="100%" /></a>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/STACK-42/decoded/ci.yml?branch=main&label=CI)](https://github.com/STACK-42/decoded/actions/workflows/ci.yml)
 [![Deploy](https://img.shields.io/github/actions/workflow/status/STACK-42/decoded/deploy.yml?branch=main&label=deploy)](https://github.com/STACK-42/decoded/actions/workflows/deploy.yml)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fdecoded.stack42.tech&label=decoded.stack42.tech)](https://decoded.stack42.tech)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fcsdecod.ing&label=csdecod.ing)](https://csdecod.ing)
 [![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-646cff?logo=vite&logoColor=white)](https://vite.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![MDX](https://img.shields.io/badge/MDX-1b1f24?logo=mdx&logoColor=white)](https://mdxjs.com)
 
-**[decoded.stack42.tech](https://decoded.stack42.tech)**
+**[csdecod.ing](https://csdecod.ing)**
 
 </div>
 
@@ -28,21 +28,22 @@ Decoded tries to draw that map. Every lesson answers one question:
 
 | Course | Status | Lessons |
 | --- | --- | --- |
-| [Theory of Computation](https://decoded.stack42.tech/courses/theory-of-computation) | Available | 17, across Foundations, Finite Automata and Context-Free Languages |
-| [Algorithm Design & Analysis](https://decoded.stack42.tech/courses/algorithm-design-and-analysis) | Available | 14, from Big-O through sorting, searching, graphs, greedy and DP |
-| [Advanced Algorithms & Analysis](https://decoded.stack42.tech/courses/advanced-algorithms) | Available | 24, from recurrences and hashing through red-black trees, shortest paths and P vs NP |
-| [Computational Mathematics](https://decoded.stack42.tech/courses/computational-mathematics) | Available | 31, across matrices, polynomials, number theory and cryptography, in MATLAB with Python and ML links, plus a project that cleans noise out of a voice recording |
-| [Computer Organization](https://decoded.stack42.tech/courses/computer-organization) | Available | 10, a top-down tour of the CPU, buses, memory and storage |
-| [Logic Design](https://decoded.stack42.tech/courses/logic-design) | Available | 23, from gates and K-maps to latches, flip-flops and a memory unit, with live circuits |
-| [Microprocessors](https://decoded.stack42.tech/courses/microprocessors) | Available | 12, real 8086 assembly with a step-through simulator |
-| [Computer Architecture](https://decoded.stack42.tech/courses/computer-architecture) | Available | 15, instruction sets, cache, virtual memory, I/O, pipelines and parallelism |
-| [Operating Systems](https://decoded.stack42.tech/courses/operating-systems) | Available | 17, from system calls and processes through synchronization, CPU scheduling and virtual memory, with Linux and Java threads labs |
-| [Discrete Mathematics](https://decoded.stack42.tech/courses/discrete-mathematics) | Available | 23, across logic, sets, proof, counting, graphs and probability, with interactive truth tables, relations and proofs |
-| [Data Structures](https://decoded.stack42.tech/courses/data-structures) | Available | 16, from arrays and linked lists through hash maps, heaps, tries and union-find, in Python with Java and C++ |
-| [Computer Networks](https://decoded.stack42.tech/courses/computer-networks) | Available | 13, from layers and packets through subnets, routing, TCP, congestion control, DNS and HTTPS |
-| [Computer Graphics](https://decoded.stack42.tech/courses/computer-graphics) | Available | 20, from pixels, color depth and resolution through CRT and flat-panel displays to DDA and Bresenham line drawing, step by step |
-| [Computer Literacy](https://decoded.stack42.tech/courses/computer-literacy) | Available | 3 |
-| [The Exam Mind](https://decoded.stack42.tech/courses/the-exam-mind) | Available | 4 |
+| [Theory of Computation](https://csdecod.ing/courses/theory-of-computation) | Available | 17, across Foundations, Finite Automata and Context-Free Languages |
+| [Algorithm Design & Analysis](https://csdecod.ing/courses/algorithm-design-and-analysis) | Available | 14, from Big-O through sorting, searching, graphs, greedy and DP |
+| [Advanced Algorithms & Analysis](https://csdecod.ing/courses/advanced-algorithms) | Available | 24, from recurrences and hashing through red-black trees, shortest paths and P vs NP |
+| [Advanced Software Engineering](https://csdecod.ing/courses/advanced-software-engineering) | Available | 30, across six lectures: engineering around AI, the economics of architecture, SOLID on car software, architectural views, ten architectural styles, and a Spotify-style streaming platform case study, with tap-to-define terms and system/diagram questions |
+| [Computational Mathematics](https://csdecod.ing/courses/computational-mathematics) | Available | 31, across matrices, polynomials, number theory and cryptography, in MATLAB with Python and ML links, plus a project that cleans noise out of a voice recording |
+| [Computer Organization](https://csdecod.ing/courses/computer-organization) | Available | 10, a top-down tour of the CPU, buses, memory and storage |
+| [Logic Design](https://csdecod.ing/courses/logic-design) | Available | 23, from gates and K-maps to latches, flip-flops and a memory unit, with live circuits |
+| [Microprocessors](https://csdecod.ing/courses/microprocessors) | Available | 12, real 8086 assembly with a step-through simulator |
+| [Computer Architecture](https://csdecod.ing/courses/computer-architecture) | Available | 15, instruction sets, cache, virtual memory, I/O, pipelines and parallelism |
+| [Operating Systems](https://csdecod.ing/courses/operating-systems) | Available | 17, from system calls and processes through synchronization, CPU scheduling and virtual memory, with Linux and Java threads labs |
+| [Discrete Mathematics](https://csdecod.ing/courses/discrete-mathematics) | Available | 23, across logic, sets, proof, counting, graphs and probability, with interactive truth tables, relations and proofs |
+| [Data Structures](https://csdecod.ing/courses/data-structures) | Available | 16, from arrays and linked lists through hash maps, heaps, tries and union-find, in Python with Java and C++ |
+| [Computer Networks](https://csdecod.ing/courses/computer-networks) | Available | 13, from layers and packets through subnets, routing, TCP, congestion control, DNS and HTTPS |
+| [Computer Graphics](https://csdecod.ing/courses/computer-graphics) | Available | 20, from pixels, color depth and resolution through CRT and flat-panel displays to DDA and Bresenham line drawing, step by step |
+| [Computer Literacy](https://csdecod.ing/courses/computer-literacy) | Available | 3 |
+| [The Exam Mind](https://csdecod.ing/courses/the-exam-mind) | Available | 4 |
 | Distributed Systems | Coming soon | |
 
 Lessons mix reading with step-through visualizers, practicals and end-of-module quizzes. Progress is saved in your browser, and signing in with GitHub or Google is optional if you want it to follow you between devices.
@@ -77,6 +78,6 @@ To add a whole course, follow [docs/building-a-course.md](docs/building-a-course
 
 ## Deployment
 
-Every push to `main` builds the site and publishes it to GitHub Pages at [decoded.stack42.tech](https://decoded.stack42.tech). The [CI workflow](.github/workflows/ci.yml) runs lint, typecheck, tests and a build on each push and pull request.
+Every push to `main` builds the site and publishes it to GitHub Pages at [csdecod.ing](https://csdecod.ing). The [CI workflow](.github/workflows/ci.yml) runs lint, typecheck, tests and a build on each push and pull request.
 
 Sign-in and saved progress run on a Cloudflare Worker in [`worker/`](worker), which pushing doesn't deploy. Run `npm run migrate` (if there's a new migration) and then `npx wrangler deploy` from that folder, before pushing any site change that depends on it.

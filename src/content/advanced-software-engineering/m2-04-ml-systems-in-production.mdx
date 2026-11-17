@@ -1,0 +1,142 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Machine Learning Systems in Production
+
+Machine learning systems are, according to the lecture, the ultimate test of architecture. This lesson explains why, when ML is the right tool, when it isn't, and how ML systems differ from ordinary software.
+
+## The probabilistic paradigm shift
+
+A *paradigm shift* is a change in the basic way of doing something. Here, the change is from rules people write to rules a model learns from data.
+
+In traditional software, engineers write <Term id="deterministic">deterministic</Term> rules that turn inputs into outputs. Machine learning turns this around.
+
+<BoxDiagram
+  title="Traditional software versus machine learning"
+  width={600}
+  height={210}
+  nodes={[
+    { id: "in", label: "Input", x: 70, y: 50 },
+    { id: "rules", label: "Rules (code)\nwritten by people", x: 260, y: 50, w: 160, h: 48, tone: "sky" },
+    { id: "out", label: "Output", x: 470, y: 50 },
+    { id: "data", label: "Historical data\n(X and Y)", x: 120, y: 160, w: 150, h: 48 },
+    { id: "train", label: "training", x: 290, y: 160, w: 100 },
+    { id: "model", label: "Statistical model\n(probabilistic rules)", x: 470, y: 160, w: 170, h: 48, tone: "violet" },
+  ]}
+  edges={[
+    { from: "in", to: "rules" },
+    { from: "rules", to: "out" },
+    { from: "data", to: "train" },
+    { from: "train", to: "model" },
+  ]}
+  caption="Top: Input + deterministic rules (code) → output. Bottom: historical data (inputs X and known answers Y) → a statistical model, whose rules were learned, not written."
+/>
+
+**The architectural challenge:** in ML, *data is code*. If the real-world data changes, which is called <Term id="data-drift">data drift</Term>, the system's behavior changes silently, with no code change and no error.
+
+## What machine learning is, and when to use it
+
+> **Machine learning** is the use of complex models to extract patterns from existing data to predict unseen data.
+
+Use ML when:
+
+1. **the rules are highly dynamic**, so hand-written code would keep going out of date (fraud patterns change every week);
+2. **the problem operates at massive scale** (ranking billions of search results);
+3. **the mapping is non-linear**, so humans can't write the `if` statements (recognizing a face in a photo).
+
+## When NOT to use machine learning
+
+Before adding a probabilistic engine, an architect must check that ML is really needed. Don't use ML if:
+
+1. **Simple rules are enough.** A [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), a lookup table or a simple heuristic works and is easy to audit.
+2. **Data is scarce.** Clean, representative, labelled historical data doesn't exist or costs too much.
+3. **Full <Term id="interpretability">interpretability</Term> is required.** The business or the law needs a complete trace of the exact logic, as in medical diagnosis or aerospace triggers.
+4. **The environment has no stable patterns.** The process creating the data has no statistical regularities, or changes faster than you can retrain (the lecture's example: predicting dice rolls). ML needs <Term id="stationarity">stationarity</Term>.
+5. **Errors are too costly.** The system can't tolerate a probabilistic failure at all, such as a critical hardware shut-off where a failure costs lives.
+
+**Architecture default:** start with clean, rule-based logic, and switch to ML only when evidence shows rules can't meet the requirements.
+
+<BoxDiagram
+  title="Should this be machine learning?"
+  width={600}
+  height={300}
+  nodes={[
+    { id: "q1", label: "Do simple rules\nwork well enough?", x: 150, y: 40, w: 170, h: 48 },
+    { id: "q2", label: "Is there enough\nclean, labelled data?", x: 150, y: 125, w: 170, h: 48 },
+    { id: "q3", label: "Can you accept\nsome wrong answers?", x: 150, y: 210, w: 170, h: 48 },
+    { id: "rules", label: "Use rules", x: 460, y: 40, w: 150, tone: "mint" },
+    { id: "nodata", label: "Not ML (yet)", x: 460, y: 125, w: 150, tone: "orange" },
+    { id: "risk", label: "Not ML", x: 460, y: 210, w: 150, tone: "orange" },
+    { id: "ml", label: "ML may fit", x: 150, y: 280, w: 150, h: 34, tone: "violet" },
+  ]}
+  edges={[
+    { from: "q1", to: "rules", label: "yes" },
+    { from: "q1", to: "q2", label: "no" },
+    { from: "q2", to: "nodata", label: "no" },
+    { from: "q2", to: "q3", label: "yes" },
+    { from: "q3", to: "risk", label: "no" },
+    { from: "q3", to: "ml", label: "yes" },
+  ]}
+  caption="A simplified decision path built from the lecture's checklist. Interpretability and stable patterns are further checks before the last box."
+/>
+
+## Four pillars of production ML systems
+
+1. **Reliability.** The system keeps working despite hardware or network faults. ML adds a new threat: <Term id="silent-failure">silent failures</Term>, where a model returns well-formed answers that are stale, wrong or biased.
+2. **Scalability.** Handling growth in data, in <Term id="qps">QPS</Term>, or in the number of models. This needs automatic CPU/GPU scaling and a way to run thousands of customized models.
+3. **Maintainability.** Clear separation of concerns, standard feature stores (one shared place where the inputs models use are computed and stored), and shared interfaces so data scientists and MLOps engineers (the people who deploy and run models in production) can work together.
+4. **Adaptability.** The architecture can detect performance decay (drift) and trigger retraining smoothly.
+
+## Traditional software engineering versus ML engineering
+
+| Dimension | Traditional software | Machine learning systems |
+| --- | --- | --- |
+| Where the logic comes from | written explicitly by engineers | emerges from code + data + hyperparameters (training settings people choose, such as how long to train) |
+| How it fails | loudly: [stack traces](/courses/computer-literacy/systems-layer#reading-error-messages), null pointers, crashes | silently: valid output, wrong behavior or bias |
+| How it's tested | unit tests check exact outputs | statistical evaluation checks probabilistic bounds |
+| How it decays | when dependencies or APIs change | as soon as real-world data drifts |
+| Artifact size | megabytes (binaries, containers) | gigabytes to terabytes (model weights) |
+
+<Callout tone="mint" label="Connection">
+A silent ML failure is the same kind of danger as the [float32 bug](/courses/advanced-software-engineering/case-study-ai-generated-pid#the-incident-a-silent-logic-bug) in Lecture 1: valid-looking output, no error, wrong behavior. Both need checks beyond "it didn't crash."
+</Callout>
+
+## Think and defend: three dilemmas
+
+The lecture ends with three dilemmas. There is no single right answer; the point is to reason with the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): everything is a <Term id="trade-off">trade-off</Term>. Try each before opening the model answer. The model answers were written for this course; the slides only pose the questions.
+
+**Dilemma 1: speed vs. structural integrity.** Your startup has 3 months of money left. The CEO demands a big pivot to a new feature set. Built cleanly, it takes 4 months and the company dies. Hacked together, it takes 2 months but leaves an unmaintainable mess. What is the "least worst" decision?
+
+<ModelAnswer>
+A company that runs out of money gets no second chance, so ship in about 2 months. But hack *deliberately*. Keep the mess inside clear boundaries (one module, one service) so it can be replaced. Write down the shortcuts as <Term id="technical-debt">technical debt</Term>. Plan to pay that debt back as soon as the company survives. Remember the ["clean up later" fallacy](/courses/advanced-software-engineering/the-economics-of-architecture#the-clean-up-later-fallacy): the clean-up won't happen by itself, so it has to be scheduled.
+</ModelAnswer>
+
+**Dilemma 2: latency vs. throughput.** You're building an ML-driven high-frequency trading bot. Option A processes trades one at a time: <Term id="latency">latency</Term> 10 ms, <Term id="throughput">throughput</Term> 100 QPS. Option B batches 50 trades: latency 45 ms, throughput 1,000 QPS. Which do you choose?
+
+<ModelAnswer>
+In high-frequency trading, a price prediction loses value within milliseconds, so latency usually matters most: Option A. Option B handles ten times more trades but each decision arrives 35 ms later, by which time the price may have moved. Option B would be right if the bot's real bottleneck were volume (for example, many slow-moving orders). The point is to name which quality the business actually needs.
+</ModelAnswer>
+
+**Dilemma 3: accuracy vs. maintainability (the ensembling paradox).** A Kaggle grandmaster builds an ensemble of 15 deep-learning models. It improves conversion accuracy by 0.5% over one simple model, but needs triple the server budget and 15 separate data pipelines. Do you deploy it?
+
+<ModelAnswer>
+Usually not. 0.5% more accuracy must pay for 3× the servers plus maintaining 15 pipelines, each of which can drift or break on its own. Compare the money that 0.5% brings in with the infrastructure and engineering cost. For most businesses the simple model wins on reliability, maintainability and adaptability, three of the four pillars. If 0.5% is worth millions (a very large business), the ensemble might be justified.
+</ModelAnswer>
+
+## Summary of Lecture 2
+
+1. Architecture and design are one continuum. Cleanliness is speed.
+2. Architecture is a series of local trade-offs; there is no perfect system.
+3. ML systems fail silently, so they need statistical checks, not only deterministic tests.
+
+<Callout tone="orange" label="Common mistake">
+Assuming no errors means it works. ML systems fail silently: the output is well-formed but wrong. The other common mistake is reaching for ML when a rule, a regex or a lookup table would do. The lecture's default is rules first.
+</Callout>
+
+## Readings for this lecture
+
+*Clean Architecture*, chapters 1–2 · *Fundamentals of Software Architecture*, chapters 1–2 · *Designing Machine Learning Systems*, chapter 1.
+
+## Key terms
+
+<KeyTerms ids={["data-drift", "silent-failure", "stationarity", "interpretability", "qps", "latency", "throughput"]} />

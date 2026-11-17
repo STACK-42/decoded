@@ -25,6 +25,7 @@ const TocContextFreeQuiz = lesson(() => import("@/content/theory-of-computation/
 const LitTyping = lesson(() => import("@/content/computer-literacy/01-physical-layer.mdx"));
 const LitLanguage = lesson(() => import("@/content/computer-literacy/02-language-layer.mdx"));
 const LitSystems = lesson(() => import("@/content/computer-literacy/03-systems-layer.mdx"));
+const LitQuiz = lesson(() => import("@/content/computer-literacy/04-fluency-quiz.mdx"));
 const AdaWhatIsAnAlgorithm = lesson(() => import("@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx"));
 const AdaCountingSteps = lesson(() => import("@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx"));
 const AdaJavaLabToolkit = lesson(() => import("@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx"));
@@ -63,6 +64,36 @@ const AaMst = lesson(() => import("@/content/advanced-algorithms/m3-03-minimum-s
 const AaHuffman = lesson(() => import("@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx"));
 const AaShortestPaths = lesson(() => import("@/content/advanced-algorithms/m3-05-shortest-paths.mdx"));
 const AaPNP = lesson(() => import("@/content/advanced-algorithms/m4-01-p-and-np.mdx"));
+const AseAgeOfAi = lesson(() => import("@/content/advanced-software-engineering/m1-01-engineering-in-the-age-of-ai.mdx"));
+const AsePid = lesson(() => import("@/content/advanced-software-engineering/m1-02-case-study-ai-generated-pid.mdx"));
+const AseL1Practice = lesson(() => import("@/content/advanced-software-engineering/m1-03-lecture-1-practice.mdx"));
+const AseComplexity = lesson(() => import("@/content/advanced-software-engineering/m2-01-complexity-architecture-and-design.mdx"));
+const AseEconomics = lesson(() => import("@/content/advanced-software-engineering/m2-02-the-economics-of-architecture.mdx"));
+const AseArchitectsRole = lesson(() => import("@/content/advanced-software-engineering/m2-03-the-architects-role.mdx"));
+const AseMlSystems = lesson(() => import("@/content/advanced-software-engineering/m2-04-ml-systems-in-production.mdx"));
+const AseL2Practice = lesson(() => import("@/content/advanced-software-engineering/m2-05-lecture-2-practice.mdx"));
+const AseSrp = lesson(() => import("@/content/advanced-software-engineering/m3-01-design-principles-and-srp.mdx"));
+const AseOcp = lesson(() => import("@/content/advanced-software-engineering/m3-02-open-closed-principle.mdx"));
+const AseLsp = lesson(() => import("@/content/advanced-software-engineering/m3-03-liskov-substitution-principle.mdx"));
+const AseIsp = lesson(() => import("@/content/advanced-software-engineering/m3-04-interface-segregation-principle.mdx"));
+const AseDip = lesson(() => import("@/content/advanced-software-engineering/m3-05-dependency-inversion-principle.mdx"));
+const AseL3Practice = lesson(() => import("@/content/advanced-software-engineering/m3-06-lecture-3-practice.mdx"));
+const AseViews = lesson(() => import("@/content/advanced-software-engineering/m4-01-views-and-structures.mdx"));
+const AseModuleViews = lesson(() => import("@/content/advanced-software-engineering/m4-02-module-views.mdx"));
+const AseCcViews = lesson(() => import("@/content/advanced-software-engineering/m4-03-component-and-connector-views.mdx"));
+const AseAllocationViews = lesson(() => import("@/content/advanced-software-engineering/m4-04-allocation-views.mdx"));
+const AseL4Practice = lesson(() => import("@/content/advanced-software-engineering/m4-05-lecture-4-practice.mdx"));
+const AseProcess = lesson(() => import("@/content/advanced-software-engineering/m5-01-architecture-process-and-styles.mdx"));
+const AseNTier = lesson(() => import("@/content/advanced-software-engineering/m5-02-n-tier-client-server-and-peer-to-peer.mdx"));
+const AsePipeMessaging = lesson(() => import("@/content/advanced-software-engineering/m5-03-pipe-and-filter-and-messaging.mdx"));
+const AseTenStyles = lesson(() => import("@/content/advanced-software-engineering/m5-04-ten-styles-at-a-glance.mdx"));
+const AseL5Practice = lesson(() => import("@/content/advanced-software-engineering/m5-05-lecture-5-practice.mdx"));
+const AseL6Requirements = lesson(() => import("@/content/advanced-software-engineering/m6-01-requirements-and-quality-scenarios.mdx"));
+const AseL6Decomposition = lesson(() => import("@/content/advanced-software-engineering/m6-02-decomposing-streamify.mdx"));
+const AseL6Elements = lesson(() => import("@/content/advanced-software-engineering/m6-03-elements-and-press-play.mdx"));
+const AseL6Styles = lesson(() => import("@/content/advanced-software-engineering/m6-04-choosing-styles-per-subsystem.mdx"));
+const AseL6Integrated = lesson(() => import("@/content/advanced-software-engineering/m6-05-integrated-architecture-and-evaluation.mdx"));
+const AseL6Practice = lesson(() => import("@/content/advanced-software-engineering/m6-06-lecture-6-practice.mdx"));
 const CmMatrices = lesson(() => import("@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx"));
 const CmTranspose = lesson(() => import("@/content/computational-mathematics/m0-02-transpose-and-products.mdx"));
 const CmMultiply = lesson(() => import("@/content/computational-mathematics/m0-03-multiplying-matrices.mdx"));
@@ -305,6 +336,7 @@ export const courses: Course[] = [
     description:
       "Back in the 1930s mathematicians who put the first principles of this field weren't writing and shipping apps. They were asking much simpler questions, like 'what is computable?' That question produced regex, parsers, CPUs, cryptography, and the famous world of antivirus software. This small course decodes each topic in the theory of computation into the tools you are going to use or already in use.",
     accent: "neon",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
@@ -320,10 +352,10 @@ export const courses: Course[] = [
       },
       {
         title: "Finite Automata",
-        blurb: "The first formal computing model — and the engine behind every regex.",
+        blurb: "The first formal computing model, and the engine behind every regex.",
         lessons: [
           { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
-          { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
+          { slug: "nfa", title: "NFA: Nondeterministic Automata", duration: "12 min", Component: TocNfa },
           { slug: "regular-expressions", title: "Reading and Writing Regular Expressions", duration: "15 min", kind: "practical", Component: TocRegularExpressions },
           { slug: "transition-graphs", title: "Transition Graphs", duration: "14 min", Component: TocTransitionGraphs },
           { slug: "kleenes-theorem", title: "Kleene's Theorem", duration: "15 min", Component: TocKleenesTheorem },
@@ -352,6 +384,7 @@ export const courses: Course[] = [
     description:
       "Everything about computing is interaction. The more precisely you speak to the machine, the more effective you become. That fluency has three layers: physical, language and systems. It comes from years of watching what separates fluent users from frustrated ones.",
     accent: "orange",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
@@ -362,6 +395,7 @@ export const courses: Course[] = [
           { slug: "physical-layer", title: "The Physical Layer", duration: "6 min", Component: LitTyping },
           { slug: "language-layer", title: "The Language Layer", duration: "7 min", Component: LitLanguage },
           { slug: "systems-layer",  title: "The Systems Layer",  duration: "7 min", Component: LitSystems },
+          { slug: "fluency-quiz",   title: "Quiz: The Three Layers of Fluency", duration: "8 min", kind: "quiz", Component: LitQuiz },
         ],
       },
     ],
@@ -486,6 +520,90 @@ export const courses: Course[] = [
         blurb: "Problems that are easy to check but seem impossible to solve quickly, and the million-dollar question behind them.",
         lessons: [
           { slug: "p-and-np", title: "P, NP, NP-Hard and NP-Complete", duration: "20 min", Component: AaPNP },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "advanced-software-engineering",
+    title: "Advanced Software Engineering",
+    tagline: "Architecture is the decisions that are hard to change later.",
+    description:
+      "Software engineering for the age of AI, decoded. Why an LLM needs an engineered harness, essential versus accidental complexity, the economics of architecture, the SOLID principles applied to real car software, architectural views (module, component-and-connector, allocation), ten architectural styles from n-tier to microservices, and a full case study that architects a Spotify-style streaming platform with five styles at once. Every lecture has highlighted terms you can tap for a definition, diagrams of the systems it describes, and a practice set with system and diagram questions.",
+    accent: "sky",
+    status: "available",
+    authors: [asmaaFarouq],
+    modules: [
+      {
+        title: "Foundations of Modern Engineering: The AI-Augmented SDLC",
+        label: "Lecture 1",
+        blurb: "Why AI makes classic engineering more important, told through two case studies.",
+        lessons: [
+          { slug: "engineering-in-the-age-of-ai", title: "Software Engineering in the Age of AI", duration: "14 min", Component: AseAgeOfAi },
+          { slug: "case-study-ai-generated-pid", title: "Case Study: The AI-Generated PID Controller", duration: "14 min", Component: AsePid },
+          { slug: "lecture-1-practice", title: "Lecture 1 Practice", duration: "15 min", kind: "quiz", Component: AseL1Practice },
+        ],
+      },
+      {
+        title: "Foundations of Modern Engineering",
+        label: "Lecture 2",
+        blurb: "Complexity, what architecture is, why it pays, what architects do, and ML systems.",
+        lessons: [
+          { slug: "complexity-architecture-and-design", title: "Complexity, Architecture and Design", duration: "16 min", Component: AseComplexity },
+          { slug: "the-economics-of-architecture", title: "The Economics of Architecture", duration: "12 min", Component: AseEconomics },
+          { slug: "the-architects-role", title: "The Architect's Role and the Laws of Architecture", duration: "18 min", Component: AseArchitectsRole },
+          { slug: "ml-systems-in-production", title: "Machine Learning Systems in Production", duration: "18 min", Component: AseMlSystems },
+          { slug: "lecture-2-practice", title: "Lecture 2 Practice", duration: "20 min", kind: "quiz", Component: AseL2Practice },
+        ],
+      },
+      {
+        title: "SOLID Principles",
+        label: "Lecture 3",
+        blurb: "Five design principles, each shown on real driver-assistance and infotainment code.",
+        lessons: [
+          { slug: "design-principles-and-srp", title: "Design Principles and the Single Responsibility Principle", duration: "22 min", Component: AseSrp },
+          { slug: "open-closed-principle", title: "The Open–Closed Principle", duration: "16 min", Component: AseOcp },
+          { slug: "liskov-substitution-principle", title: "The Liskov Substitution Principle", duration: "20 min", Component: AseLsp },
+          { slug: "interface-segregation-principle", title: "The Interface Segregation Principle", duration: "14 min", Component: AseIsp },
+          { slug: "dependency-inversion-principle", title: "The Dependency Inversion Principle", duration: "20 min", Component: AseDip },
+          { slug: "lecture-3-practice", title: "Lecture 3 Practice", duration: "20 min", kind: "quiz", Component: AseL3Practice },
+        ],
+      },
+      {
+        title: "Architectural Views",
+        label: "Lecture 4",
+        blurb: "One system, many views: modules, components and connectors, and allocation.",
+        lessons: [
+          { slug: "views-and-structures", title: "Views and Structures", duration: "14 min", Component: AseViews },
+          { slug: "module-views", title: "Module Views: Decomposition and Uses", duration: "14 min", Component: AseModuleViews },
+          { slug: "component-and-connector-views", title: "Component-and-Connector Views", duration: "14 min", Component: AseCcViews },
+          { slug: "allocation-views", title: "Allocation Views: Deployment, Install and Work Assignment", duration: "14 min", Component: AseAllocationViews },
+          { slug: "lecture-4-practice", title: "Lecture 4 Practice", duration: "20 min", kind: "quiz", Component: AseL4Practice },
+        ],
+      },
+      {
+        title: "Building Software Architecture",
+        label: "Lecture 5",
+        blurb: "The architecture process, and ten architectural styles with their trade-offs.",
+        lessons: [
+          { slug: "architecture-process-and-styles", title: "The Architecture Process and Architectural Styles", duration: "16 min", Component: AseProcess },
+          { slug: "n-tier-client-server-and-peer-to-peer", title: "N-Tier, Client-Server and Peer-to-Peer", duration: "14 min", Component: AseNTier },
+          { slug: "pipe-and-filter-and-messaging", title: "Pipe-and-Filter and Messaging", duration: "14 min", Component: AsePipeMessaging },
+          { slug: "ten-styles-at-a-glance", title: "Ten Architecture Styles at a Glance", duration: "16 min", Component: AseTenStyles },
+          { slug: "lecture-5-practice", title: "Lecture 5 Practice", duration: "20 min", kind: "quiz", Component: AseL5Practice },
+        ],
+      },
+      {
+        title: "Architecting a Global Music Streaming Platform",
+        label: "Lecture 6",
+        blurb: "One case study, start to finish: requirements, decomposition, elements, and a style for each subsystem.",
+        lessons: [
+          { slug: "requirements-and-quality-scenarios", title: "Streamify, Stage 1: Requirements and Quality Scenarios", duration: "20 min", Component: AseL6Requirements },
+          { slug: "decomposing-streamify", title: "Streamify, Stage 2: Decomposing the System", duration: "16 min", Component: AseL6Decomposition },
+          { slug: "elements-and-press-play", title: "Streamify, Stage 3: Elements, Connectors and \"Press Play\"", duration: "18 min", Component: AseL6Elements },
+          { slug: "choosing-styles-per-subsystem", title: "Streamify, Stage 4: Choosing a Style for Each Subsystem", duration: "24 min", Component: AseL6Styles },
+          { slug: "integrated-architecture-and-evaluation", title: "Streamify: The Integrated Architecture, ADRs and Evaluation", duration: "20 min", Component: AseL6Integrated },
+          { slug: "lecture-6-practice", title: "Lecture 6 Practice", duration: "25 min", kind: "quiz", Component: AseL6Practice },
         ],
       },
     ],
@@ -618,7 +736,7 @@ export const courses: Course[] = [
       "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
     accent: "neon",
     status: "available",
-    rounds: 7,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -684,6 +802,7 @@ export const courses: Course[] = [
       "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
     accent: "orange",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -732,6 +851,7 @@ export const courses: Course[] = [
       "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
     accent: "violet",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -875,6 +995,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -1075,7 +1196,7 @@ export const courses: Course[] = [
       "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
     accent: "sky",
     status: "available",
-    rounds: 3,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

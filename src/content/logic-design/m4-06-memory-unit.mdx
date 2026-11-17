@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
-import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/components/mdx/LogicVisualizers";
+import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # The Memory Unit: Putting It All Together
 
@@ -50,29 +50,12 @@ In **Random-Access Memory (RAM)**, the word "random" means that **any arbitrary 
 
 At the intersection of each word row and bit column sits an elementary 1-bit **Binary Cell (BC)**:
 
-```
-                      Data In (I)
-                           |
-                           v
-                     +-----------+
-                     | Steering  |
-      Select ------->|   Gates   |
-                     +-----------+
-                           |
-                           v
-                     +-----------+
-                     |  D Latch  |
-                     +-----------+
-                           |
-                           v
-                     +-----------+
-  Read/Write ------->| Tri-State |
-                     |  Buffer   |
-                     +-----------+
-                           |
-                           v
-                      Data Out (Y)
-```
+| Port / Signal | Direction | Function |
+| :--- | :---: | :--- |
+| **Data In ($I$)** | Input | Data bit to be written into the storage latch |
+| **Select ($Sel$)** | Input | Word line activation signal from the address decoder |
+| **Read/Write ($R/W'$)** | Input | Control line ($0 = \text{Write}$ via steering gates, $1 = \text{Read}$ via tri-state buffer) |
+| **Data Out ($Y$)** | Output | Stored bit driven onto the bit line when $Sel = 1$ and $R/W' = 1$ |
 
 The binary cell contains three primary functions:
 1. **Bistable Storage:** A cross-coupled latch or flip-flop that stores the bit.
@@ -98,28 +81,7 @@ The routing congestion and silicon area make 1D decoding impossible for large me
 
 ### 2D (Coincident) Decoding: The Grid Matrix
 
-To solve this scaling bottleneck, commercial RAM chips organize storage cells into a two-dimensional square matrix:
-
-```
-                       Column Address (A9..A5)
-                                 |
-                                 v
-                        +-----------------+
-                        | 5-to-32 Column  |
-                        |     Decoder     |
-                        +-----------------+
-                                 |
-                                 | 32 Column Lines
-                                 v
-     Row Address       +--------------------+
-      (A4..A0)  -----> | 32 x 32 Array      |
-                       | of Binary Cells    |
-        5-to-32        | (1024 Total Cells) |
-      Row Decoder      +--------------------+
-                                 |
-                                 v
-                            Data Output
-```
+To solve this scaling bottleneck, commercial RAM chips organize storage cells into a two-dimensional square matrix.
 
 For a 1024-word memory ($k = 10$ address lines):
 1. The 10 address bits are split into two 5-bit halves:
@@ -143,17 +105,16 @@ If two conventional logic gates were connected to the same wire, and one tried t
 
 To share a bus safely, circuits use **tri-state buffers** (three-state logic):
 
-```
-       Input (A) -----[ > ]-----+----- Output (Y)
-                        ^
-                        |
-                    Enable (EN)
-```
+| Enable ($EN$) | Input ($A$) | Output ($Y$) | Electrical State |
+| :---: | :---: | :---: | :--- |
+| 1 | 0 | 0 | Driven Low ($0\text{ V}$) |
+| 1 | 1 | 1 | Driven High ($+V_{DD}$) |
+| 0 | $\times$ | $\text{Hi-Z}$ | High-Impedance (Open Circuit / Disconnected) |
 
 A tri-state buffer has three possible electrical output states:
 1. **Logic 0:** Low voltage ($0\text{ V}$).
 2. **Logic 1:** High voltage ($+3.3\text{ V}$ or $+5\text{ V}$).
-3. **High-Impedance ($\text{Hi-Z}$):** The output transistors are completely switched off. The terminal acts as an open circuit (virtual infinite electrical resistance), disconnecting the device from the wire.
+3. **High-Impedance ($\text{Hi-Z}$):** The output transistors are completely switched off. The terminal acts as an open circuit (virtual infinite electrical resistance), disconnecting the device from the wire. $\text{Hi-Z}$ is not a third voltage level like 0 V or 2.5 V: it is an electrical disconnection that draws no current and drives no voltage, allowing whichever device is active to dictate the bus voltage without electrical conflict.
 
 When a memory chip is not actively being read, its internal tri-state output buffers are placed in $\text{Hi-Z}$. This allows other chips to transmit data across the shared wires without interference.
 
@@ -166,15 +127,14 @@ Communication between a processor and a RAM chip is governed by three primary ac
 - **/WE (Write Enable):** Commands a Write when LOW (0) and a Read when HIGH (1).
 - **/OE (Output Enable):** Controls the tri-state output buffers during a read operation, preventing bus contention during address changes.
 
-```
-Read Cycle Timing:
-Addresses    ----+=========================+----------------
-                 |<----- Access Time t_AA ------>|
-                 |                         |
-/CS, /OE     ----+-------------------------+----------------
-                                           |
-Data Out     ------------------------------+======= Valid ==
-```
+<TimingDiagram
+  signals={[
+    { name: "Address", bits: [0, 1, 1, 1, 1, 1, 1, 0], tone: "stroke-mint" },
+    { name: "/CS, /OE", bits: [1, 0, 0, 0, 0, 0, 0, 1], tone: "stroke-foreground" },
+    { name: "Data Out", bits: [0, 0, 0, 0, 1, 1, 1, 0], tone: "stroke-orange" },
+  ]}
+  marks={[1, 4]}
+/>
 
 - **Read Access Time ($t_{AA}$):** The maximum time interval from the moment stable addresses appear on the bus until valid data emerges at the data output pins.
 - **Write Pulse Width ($t_W$):** The minimum duration /WE must be held LOW to guarantee data is permanently captured by the internal cells.
@@ -226,30 +186,6 @@ Engineers routinely combine standard commercial memory ICs to build memory modul
     - Address range `0xC00` to `0xFFF`: Decoder selects Chip 3 (/CS3 = 0).
   - All four chips connect their 8 data pins directly to the shared 8-bit system data bus ($D_7 \dots D_0$).
   - Because only the single selected chip enables its tri-state buffers, **bus contention is completely avoided**.
-
-```
-                           A11, A10 (High Address Bits)
-                              |
-                              v
-                     +-----------------+
-                     | 2-to-4 Decoder  |
-                     +-----------------+
-                       |    |    |    |
-           /CS0 -------+    |    |    |
-           /CS1 ------------+    |    |
-           /CS2 -----------------+    |
-           /CS3 ----------------------+
-                       |    |    |    |
-                       v    v    v    v
-                    +----+----+----+----+
-                    |RAM0|RAM1|RAM2|RAM3|  (Four 1K x 8 Chips)
-                    +----+----+----+----+
-                       |    |    |    |
-                       +----+----+----+-----> Shared 8-Bit Data Bus (D7..D0)
-                       ^
-                       |
-     A9..A0 -----------+ (Parallel to All Chips)
-```
 
 <MemoryExpansionLab />
 
@@ -312,6 +248,7 @@ Design an **$8\text{K} \times 16$** memory system using commercial **$2\text{K} 
    - In every bank of two chips:
      - The first chip connects to data bus lines $D_7 \dots D_0$ (low byte).
      - The second chip connects to data bus lines $D_{15} \dots D_8$ (high byte).
+   - Bank 0 pairs Chip 0 (low byte) and Chip 1 (high byte). Bank 1 pairs Chip 2 and Chip 3. Bank 2 pairs Chip 4 and Chip 5. Bank 3 pairs Chip 6 and Chip 7.
    - All 4 low-byte chips wire their data pins to $D_7 \dots D_0$, and all 4 high-byte chips wire their data pins to $D_{15} \dots D_8$.
    - /WE connects in parallel to all 8 chips.
 </ModelAnswer>
@@ -389,7 +326,7 @@ A standard CMOS Static RAM (SRAM) cell consists of six transistors: two PMOS pul
 2. **Read Stability Constraint (Cell Ratio $\beta$):**
    - If $V_{bump}$ rises above the threshold voltage $V_{th(N_R)}$ of the opposing NMOS driver $N_R$, $N_R$ will turn ON, discharging $Q'$ and accidentally flipping the stored bit!
    - To keep $V_{bump}$ safely below $V_{th}$, driver transistor $N_L$ must have much lower resistance than access transistor $A_L$.
-   - Lower resistance requires a wider channel: the **cell ratio** is defined as:
+   - Because channel resistance is inversely proportional to transistor channel width ($R_{on} \propto 1/W$), lower resistance requires a wider channel. The **cell ratio** is defined as:
      $$\beta = \frac{(W/L)_{driver}}{(W/L)_{access}} = \frac{(W/L)_{N_L}}{(W/L)_{A_L}} \ge 1.2 \text{ to } 1.5$$
    - The pull-down NMOS driver must be physically wider (stronger) than the access transistor.
 

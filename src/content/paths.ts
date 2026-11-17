@@ -33,6 +33,12 @@ export const learningPaths: LearningPath[] = [
     description: "How a computer runs programs, how the OS shares it between them, and how machines talk across the world.",
     courses: ["computer-organization", "operating-systems", "computer-networks"],
   },
+  {
+    slug: "software-engineering",
+    title: "Building real software",
+    description: "The structures your code is made of, the machine and network it runs on, then how to design systems that stay easy to change.",
+    courses: ["data-structures", "operating-systems", "computer-networks", "advanced-software-engineering"],
+  },
 ];
 
 /** Courses that make a course easier. Nothing is locked; these are only suggestions. */
@@ -40,6 +46,7 @@ export const prerequisites: Record<string, string[]> = {
   "algorithm-design-and-analysis": ["discrete-mathematics"],
   "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics", "data-structures"],
   "computational-mathematics": ["discrete-mathematics"],
+  "advanced-software-engineering": ["data-structures", "operating-systems", "computer-networks"],
   "theory-of-computation": ["discrete-mathematics"],
   "distributed-systems": ["operating-systems", "computer-networks"],
   "computer-organization": ["computer-literacy"],
@@ -60,6 +67,6 @@ export const trackGroups: TrackGroup[] = [
     title: "Algorithms & maths",
     courses: ["algorithm-design-and-analysis", "data-structures", "computational-mathematics", "advanced-algorithms"],
   },
-  { slug: "systems", title: "Systems", courses: ["operating-systems", "computer-networks", "distributed-systems"] },
+  { slug: "systems", title: "Systems", courses: ["operating-systems", "computer-networks", "distributed-systems", "advanced-software-engineering"] },
   { slug: "theory", title: "Theory & graphics", courses: ["theory-of-computation", "computer-graphics"] },
 ];

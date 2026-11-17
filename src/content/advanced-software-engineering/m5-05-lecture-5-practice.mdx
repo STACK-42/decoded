@@ -1,0 +1,189 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 5 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 5 material (building an architecture, and the ten styles). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-5-practice"
+  questions={questionsForQuiz(questions, "lecture-5-practice")}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-5-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "System interpretation: in this n-tier system, which component is responsible for applying business rules such as 'orders over $1,000 need approval'?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={250}
+          nodes={[
+            { id: "a", label: "A: Web browser", x: 260, y: 30, w: 200 },
+            { id: "b", label: "B: Web server", x: 260, y: 95, w: 200 },
+            { id: "c", label: "C: Application server", x: 260, y: 160, w: 200 },
+            { id: "d", label: "D: Database", x: 260, y: 225, w: 200, kind: "store" },
+          ]}
+          edges={[
+            { from: "a", to: "b", both: true },
+            { from: "b", to: "c", both: true },
+            { from: "c", to: "d", both: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A" },
+        { id: "b", text: "B" },
+        { id: "c", text: "C" },
+        { id: "d", text: "D" },
+      ],
+      correctOptionId: "c",
+      explanation: "The application server is the business logic tier. The browser is a thin client, the web server handles presentation, and the database is the data management tier.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: playback, catalog and analytics services must exchange events without knowing about each other. What goes in the middle?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={200}
+          nodes={[
+            { id: "p", label: "Playback service", x: 100, y: 60, w: 160 },
+            { id: "c", label: "Catalog service", x: 100, y: 150, w: 160 },
+            { id: "m", label: "?", x: 310, y: 105, w: 140, kind: "missing" },
+            { id: "r", label: "Recommendations", x: 510, y: 60, w: 150 },
+            { id: "a", label: "Analytics", x: 510, y: 150, w: 150 },
+          ]}
+          edges={[
+            { from: "p", to: "m", label: "publish" },
+            { from: "c", to: "m", label: "publish" },
+            { from: "m", to: "r", label: "subscribe", dashed: true },
+            { from: "m", to: "a", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A pipe" },
+        { id: "b", text: "A pub/sub broker with topics" },
+        { id: "c", text: "An API gateway" },
+        { id: "d", text: "A load balancer" },
+      ],
+      correctOptionId: "b",
+      explanation: "Publish and subscribe arrows meet at a broker with topics (Spotify's song.played). An API gateway routes client requests to services; it doesn't decouple publishers from subscribers.",
+    },
+    {
+      id: "d3",
+      prompt: "Sequence understanding: in the messaging style, what happens right after the client writes 'order #1' to the queue?",
+      figure: (
+        <SequenceDiagram
+          participants={["Client", "Queue", "Server"]}
+          steps={[
+            { from: 0, to: 1, label: "put(order #1)" },
+            { from: 0, to: 0, label: "", hidden: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The client waits until the server replies" },
+        { id: "b", text: "The client continues with its own work; the message waits in the queue" },
+        { id: "c", text: "The queue calls the client back" },
+        { id: "d", text: "The server pushes the message back to the client" },
+      ],
+      correctOptionId: "b",
+      explanation: "Asynchronous: the message is stored until the server removes it, and the client carries on immediately.",
+    },
+    {
+      id: "d4",
+      prompt: "Design decision: a log-processing job reads raw logs, removes noise, parses fields and writes a report, with no user interaction. Which style fits best?",
+      options: [
+        { id: "a", text: "Peer-to-peer" },
+        { id: "b", text: "Pipe-and-filter" },
+        { id: "c", text: "Client-server" },
+        { id: "d", text: "Event-based plug-ins" },
+      ],
+      correctOptionId: "b",
+      explanation: "A one-way stream of transformations with no interaction is exactly what pipe-and-filter is for (like cat log | grep ERROR | sort).",
+    },
+    {
+      id: "d5",
+      prompt: "Error detection: this was drawn as a microservices design. What's wrong?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={200}
+          nodes={[
+            { id: "o", label: "Orders svc", x: 110, y: 50, w: 130 },
+            { id: "u", label: "Users svc", x: 280, y: 50, w: 130 },
+            { id: "p", label: "Payment svc", x: 450, y: 50, w: 130 },
+            { id: "db", label: "One shared database", x: 280, y: 160, w: 220, kind: "store", tone: "orange" },
+          ]}
+          edges={[
+            { from: "o", to: "db" },
+            { from: "u", to: "db" },
+            { from: "p", to: "db" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing; sharing a database saves money" },
+        { id: "b", text: "Each microservice should own its data; a shared database couples them, so they can't change or deploy independently" },
+        { id: "c", text: "There should be only one service" },
+        { id: "d", text: "Services must talk through pipes" },
+      ],
+      correctOptionId: "b",
+      explanation: "Database per service is part of the style's definition. A shared schema means one service's change can break the others.",
+    },
+    {
+      id: "d6",
+      prompt: "Relationship identification: in this pipeline, what connects Split to To-upper, and what may the two share?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={130}
+          nodes={[
+            { id: "s", label: "Split", x: 80, y: 65, w: 100, tone: "sky" },
+            { id: "u", label: "To-upper", x: 260, y: 65, w: 120, tone: "sky" },
+            { id: "m", label: "Merge", x: 440, y: 65, w: 100, tone: "sky" },
+          ]}
+          edges={[
+            { from: "s", to: "u", label: "?" },
+            { from: "u", to: "m" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A pipe; they share no state" },
+        { id: "b", text: "A method call; they share a global variable" },
+        { id: "c", text: "A message broker; they share a database" },
+        { id: "d", text: "Inheritance; they share a base class" },
+      ],
+      correctOptionId: "a",
+      explanation: "In pipe-and-filter, connectors are pipes carrying data streams, and the style invariant is that filters are independent: no shared state.",
+    },
+    {
+      id: "d7",
+      prompt: "Diagram construction: a ride-sharing app needs a mobile client, request routing to Trips, Users and Payments services, and each service's data kept separately. Which diagram fits?",
+      options: [
+        { id: "a", text: "Clients → API gateway → Trips, Users, Payments services, each with its own database" },
+        { id: "b", text: "Clients → one server → one shared database" },
+        { id: "c", text: "A chain of filters from client to database" },
+        { id: "d", text: "Peers that all store every trip" },
+      ],
+      correctOptionId: "a",
+      explanation: "Independent services, each owning its data, behind a single entry point: microservices with an API gateway, as in the styles summary's Netflix-style reference architecture.",
+    },
+  ]}
+/>

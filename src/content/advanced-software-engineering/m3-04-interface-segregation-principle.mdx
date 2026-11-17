@@ -1,0 +1,188 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# The Interface Segregation Principle
+
+> **Clients should not be forced to depend on methods they do not use.**
+
+or, as Robert C. Martin also puts it: *"Many client-specific interfaces are better than one general-purpose interface."* This is the <Term id="isp">Interface Segregation Principle</Term>. A **client** here is any code that uses an interface.
+
+## Fat versus segregated interfaces
+
+| <Term id="fat-interface">"Fat" interface</Term> | Segregated interfaces |
+| --- | --- |
+| describes every kind of implementer in one interface | small, focused interfaces built around what each client needs |
+| implementers are forced into dummy methods (`throw`, `return null`) | implementers provide only what they really support |
+| any change forces recompiling and re-testing every client | a change affects only the clients of that one interface |
+
+Why it matters in cars:
+
+- **Mixed criticality.** A QM (non-safety) infotainment app must never depend on an interface that exposes <Term id="asil">ASIL-rated</Term> motion control.
+- **Cybersecurity (ISO/SAE 21434).** Bloated interfaces enlarge the <Term id="attack-surface">attack surface</Term>. Small interfaces enforce <Term id="least-privilege">least privilege</Term>.
+- **SOA and AUTOSAR Adaptive.** Services are deployed as small, fine-grained interfaces, not as one vehicle-wide "god interface." They talk over automotive service protocols such as SOME/IP and DDS.
+
+## The violation: a fat VehicleOperator
+
+**Scenario:** a Level 3 car has two possible operators, the human driver and the autonomous driving stack.
+
+```java
+public interface VehicleOperator {
+    // Motion control
+    void steer(double angleDeg);
+    void accelerate(double mps2);
+    void brake(double mps2);
+    // Driver monitoring (DMS)
+    double getDrowsinessLevel();
+    GazeDirection getGazeDirection();
+    boolean areHandsOnWheel();
+    // Software lifecycle
+    HealthStatus runSelfDiagnosis();
+    void installOtaUpdate(SoftwarePackage pkg);
+}
+```
+
+This "god interface" bundles motion actuators, biometric driver monitoring and OTA software deployment into one. Both implementations are forced into fakes:
+
+```java
+public class HumanDriverModel implements VehicleOperator {
+    public void steer(double a) { /* read steering-wheel input */ }
+    public double getDrowsinessLevel() { return dmsCamera.estimateDrowsiness(); }
+    public HealthStatus runSelfDiagnosis() { return null; }        // humans have no self-diagnosis!
+    public void installOtaUpdate(SoftwarePackage p) {
+        throw new UnsupportedOperationException();                  // can't OTA-update a human!
+    }
+}
+
+public class AutomatedDrivingStack implements VehicleOperator {
+    public void steer(double a) { /* trajectory controller output */ }
+    public HealthStatus runSelfDiagnosis() { /* watchdog, sensor checks */ }
+    public double getDrowsinessLevel() { return 0.0; }              // AI "never gets tired"?
+    public GazeDirection getGazeDirection() { return null; }        // → NullPointerException later!
+    public boolean areHandsOnWheel() { return false; }              // triggers a false hands-off alarm!
+}
+```
+
+### The dangers of interface pollution
+
+| Client | Really needs | Is forced to depend on | Risk |
+| --- | --- | --- | --- |
+| `DriverMonitoringSystem` | drowsiness, gaze, hands | the whole interface, OTA included | re-tested whenever OTA code changes |
+| `VehicleMotionController` | steer, accelerate, brake | DMS and OTA methods | churn in safety-critical code |
+| `OtaUpdateManager` | install update, diagnostics | `steer`, `brake` | serious security hole |
+
+- **Silent logic bugs:** `areHandsOnWheel() == false` from the AD stack triggers a spurious emergency alert.
+- **Attack surface:** the OTA manager can call steering and braking directly.
+- **Verification <Term id="coupling">coupling</Term>:** changing the DMS gaze format forces recompiling and re-certifying the motion controllers.
+
+## The fix: client-specific interfaces
+
+```java
+public interface MotionControl {          // client: VehicleMotionController (ASIL-rated)
+    void steer(double angleDeg);
+    void accelerate(double mps2);
+    void brake(double mps2);
+}
+public interface AttentionMonitorable {   // client: DriverMonitoringSystem
+    double getDrowsinessLevel();
+    GazeDirection getGazeDirection();
+    boolean areHandsOnWheel();
+}
+public interface SelfDiagnosable {        // client: health monitoring / safety supervisor
+    HealthStatus runSelfDiagnosis();
+}
+public interface OtaUpdatable {           // client: OtaUpdateManager
+    void installOtaUpdate(SoftwarePackage pkg);
+}
+
+public class HumanDriverModel implements MotionControl, AttentionMonitorable { /* no fake OTA */ }
+public class AutomatedDrivingStack implements MotionControl, SelfDiagnosable, OtaUpdatable { /* no fake eyes */ }
+
+public class DriverMonitoringSystem {
+    public void check(AttentionMonitorable driver) { /* AD stack can't even be passed here */ }
+}
+public class OtaUpdateManager {
+    public void update(OtaUpdatable target, SoftwarePackage pkg) { /* can't see steer()/brake() */ }
+}
+public class VehicleMotionController {
+    public void apply(MotionControl operator) { /* works with human OR AD stack (LSP) */ }
+}
+```
+
+<DiagramTabs
+  title="Who depends on what"
+  tabs={[
+    {
+      label: "Fat interface",
+      width: 600,
+      height: 230,
+      nodes: [
+        { id: "dms", label: "DriverMonitoring\nSystem", x: 100, y: 40, w: 150, h: 48 },
+        { id: "vmc", label: "VehicleMotion\nController", x: 300, y: 40, w: 150, h: 48 },
+        { id: "ota", label: "OtaUpdate\nManager", x: 500, y: 40, w: 150, h: 48, tone: "orange" },
+        { id: "vo", label: "VehicleOperator\n(8 methods)", stereo: "interface", x: 300, y: 130, w: 200, h: 56, tone: "orange" },
+        { id: "h", label: "HumanDriverModel", x: 170, y: 205, w: 170 },
+        { id: "ad", label: "AutomatedDrivingStack", x: 430, y: 205, w: 190 },
+      ],
+      edges: [
+        { from: "dms", to: "vo" },
+        { from: "vmc", to: "vo" },
+        { from: "ota", to: "vo" },
+        { from: "h", to: "vo", head: "triangle", dashed: true },
+        { from: "ad", to: "vo", head: "triangle", dashed: true },
+      ],
+      caption: "Every client sees every method. The OTA manager can reach steer() and brake().",
+    },
+    {
+      label: "Segregated",
+      width: 600,
+      height: 260,
+      nodes: [
+        { id: "dms", label: "DMS", x: 80, y: 35, w: 100 },
+        { id: "vmc", label: "MotionController", x: 230, y: 35, w: 150 },
+        { id: "hm", label: "Health monitor", x: 390, y: 35, w: 140 },
+        { id: "ota", label: "OtaUpdateManager", x: 535, y: 35, w: 120 },
+        { id: "am", label: "Attention\nMonitorable", x: 80, y: 125, w: 120, h: 48, tone: "sky" },
+        { id: "mc", label: "MotionControl", x: 230, y: 125, w: 130, tone: "sky" },
+        { id: "sd", label: "SelfDiagnosable", x: 390, y: 125, w: 140, tone: "sky" },
+        { id: "ou", label: "OtaUpdatable", x: 535, y: 125, w: 120, tone: "sky" },
+        { id: "h", label: "HumanDriverModel", x: 150, y: 225, w: 170 },
+        { id: "ad", label: "AutomatedDrivingStack", x: 440, y: 225, w: 190 },
+      ],
+      edges: [
+        { from: "dms", to: "am" },
+        { from: "vmc", to: "mc" },
+        { from: "hm", to: "sd" },
+        { from: "ota", to: "ou" },
+        { from: "h", to: "am", head: "triangle", dashed: true },
+        { from: "h", to: "mc", head: "triangle", dashed: true },
+        { from: "ad", to: "mc", head: "triangle", dashed: true },
+        { from: "ad", to: "sd", head: "triangle", dashed: true },
+        { from: "ad", to: "ou", head: "triangle", dashed: true },
+      ],
+      caption: "Each client depends on one small interface. Each operator implements only what it truly supports.",
+    },
+  ]}
+/>
+
+### What we gained
+
+| Problem before | Now |
+| --- | --- |
+| dummy returns (`null`, `0.0`, `false`) and exceptions | gone, enforced by the compiler's type checks |
+| spurious hands-off alarms | the AD stack isn't `AttentionMonitorable`, so wiring it to the DMS won't compile |
+| OTA manager could reach steering and braking | it sees only `OtaUpdatable`: minimal attack surface |
+| DMS changes forced motion re-verification | interfaces change on independent lifecycles |
+
+**Level 3 handover becomes clean:** `VehicleMotionController` just switches which `MotionControl` it receives, human or AD stack. That substitution is type-safe and [LSP-compliant](/courses/advanced-software-engineering/liskov-substitution-principle).
+
+<Callout tone="orange" label="ISP vs SRP">
+They sound alike but look from different sides. [SRP](/courses/advanced-software-engineering/design-principles-and-srp) is about a *class*: it should answer to one actor. ISP is about an *interface's clients*: none should depend on methods it doesn't use.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Splitting an interface into one-method pieces for its own sake. Split by *client*: each interface is what one kind of client needs (MotionControl for the motion controller, OtaUpdatable for the OTA manager). And don't confuse ISP with SRP: ISP looks from the client's side.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["isp", "fat-interface", "attack-surface", "least-privilege"]} />

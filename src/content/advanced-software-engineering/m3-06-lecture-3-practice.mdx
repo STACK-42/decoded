@@ -1,0 +1,165 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 3 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 3 material (SOLID). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-3-practice"
+  questions={questionsForQuiz(questions, "lecture-3-practice")}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-3-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Error detection: which principle does this design break most directly?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={180}
+          nodes={[
+            { id: "sf", label: "SensorFusion", x: 120, y: 90, w: 150, tone: "orange" },
+            { id: "r", label: "SupplierARadarDriver", x: 400, y: 45, w: 190 },
+            { id: "c", label: "SupplierBCameraDriver", x: 400, y: 140, w: 190 },
+          ]}
+          edges={[
+            { from: "sf", to: "r", label: "new" },
+            { from: "sf", to: "c", label: "new" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "LSP" },
+        { id: "b", text: "ISP" },
+        { id: "c", text: "DIP: high-level policy depends directly on low-level concrete drivers" },
+        { id: "d", text: "None; this is the recommended design" },
+      ],
+      correctOptionId: "c",
+      explanation: "The arrows go from policy to detail and the drivers are created with new. The fix: fusion owns an ObjectSensor interface that adapters implement.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: what should replace the ? so that fusion never names a supplier?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={210}
+          nodes={[
+            { id: "sf", label: "SensorFusion", x: 120, y: 50, w: 150, tone: "sky" },
+            { id: "m", label: "?", x: 400, y: 50, w: 150, kind: "missing" },
+            { id: "a", label: "SupplierCRadarAdapter", x: 230, y: 165, w: 200 },
+            { id: "b", label: "SimulatedSensor", x: 470, y: 165, w: 160 },
+          ]}
+          edges={[
+            { from: "sf", to: "m", label: "uses" },
+            { from: "a", to: "m", head: "triangle", dashed: true },
+            { from: "b", to: "m", head: "triangle", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "SupplierCRadarDriver" },
+        { id: "b", text: "The ObjectSensor interface, owned by the fusion package" },
+        { id: "c", text: "The CAN bus" },
+        { id: "d", text: "A composition root" },
+      ],
+      correctOptionId: "b",
+      explanation: "Both adapters 'realize' (dashed + hollow triangle) the missing element, so it must be an interface. Fusion uses it. The composition root wires objects together but isn't implemented by anyone.",
+    },
+    {
+      id: "d3",
+      prompt: "Relationship identification: OccupancyGrid3D holds a list of OccupancyGrid layers that don't exist without it. What relationship is this?",
+      figure: (
+        <BoxDiagram
+          width={500}
+          height={130}
+          nodes={[
+            { id: "g3", label: "OccupancyGrid3D", x: 120, y: 65, w: 170 },
+            { id: "g", label: "OccupancyGrid\n(one per layer)", x: 380, y: 65, w: 170, h: 48 },
+          ]}
+          edges={[{ from: "g3", to: "g", label: "layers" }]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Inheritance" },
+        { id: "b", text: "Composition (with delegation)" },
+        { id: "c", text: "Aggregation" },
+        { id: "d", text: "Realization" },
+      ],
+      correctOptionId: "b",
+      explanation: "The 3D grid owns its layers, and they have no independent lifecycle: composition. It delegates isFree(x, y, z) to them. Aggregation would be parts that live independently, like a radar used by sensor fusion.",
+    },
+    {
+      id: "d4",
+      prompt: "Design decision: the OTA update manager must install packages on the AD stack but must never be able to steer. Which interface should OtaUpdateManager.update() accept?",
+      options: [
+        { id: "a", text: "VehicleOperator" },
+        { id: "b", text: "AutomatedDrivingStack" },
+        { id: "c", text: "OtaUpdatable" },
+        { id: "d", text: "MotionControl" },
+      ],
+      correctOptionId: "c",
+      explanation: "With ISP the OTA manager sees only installOtaUpdate(). Accepting VehicleOperator or the concrete stack would expose steer() and brake(): a larger attack surface.",
+    },
+    {
+      id: "d5",
+      prompt: "Sequence understanding: at runtime, which object does SensorFusion.fuse() call first, and what does it call it through?",
+      figure: (
+        <SequenceDiagram
+          participants={["SensorFusion", "ObjectSensor (interface)", "SupplierCRadarAdapter"]}
+          steps={[
+            { from: 0, to: 1, label: "detectObjects(cycle)" },
+            { from: 1, to: 2, label: "", hidden: true },
+            { from: 2, to: 0, label: "ObjectList (vehicle frame)", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The call reaches SupplierCRadarAdapter.detectObjects() through the ObjectSensor interface (polymorphic dispatch)" },
+        { id: "b", text: "SensorFusion calls the CAN driver directly" },
+        { id: "c", text: "The adapter calls SensorFusion first" },
+        { id: "d", text: "The interface runs its own code" },
+      ],
+      correctOptionId: "a",
+      explanation: "At runtime the call still flows from policy to detail; only the source-code dependency is inverted. The interface has no code of its own: the adapter's implementation runs.",
+    },
+    {
+      id: "d6",
+      prompt: "Diagram construction: Navigation must let the driver switch between Fastest, Eco and Avoid-tolls at runtime. Which class diagram is right?",
+      options: [
+        { id: "a", text: "NavigationService with a switch on a mode string" },
+        { id: "b", text: "NavigationService → RoutingStrategy (interface), with FastestRoute, EcoRoute and AvoidTollsRoute realizing it" },
+        { id: "c", text: "FastestRoute, EcoRoute and AvoidTollsRoute each extend NavigationService" },
+        { id: "d", text: "One RoutingStrategy class with three boolean flags" },
+      ],
+      correctOptionId: "b",
+      explanation: "The Strategy pattern: the service depends on one interface and holds a strategy object it can swap at runtime. Subclassing the service (c) binds at build time; the switch (a) violates OCP.",
+    },
+    {
+      id: "d7",
+      prompt: "System interpretation: in the ISP design, which client can accept both a HumanDriverModel and an AutomatedDrivingStack?",
+      options: [
+        { id: "a", text: "DriverMonitoringSystem.check(AttentionMonitorable)" },
+        { id: "b", text: "OtaUpdateManager.update(OtaUpdatable, …)" },
+        { id: "c", text: "VehicleMotionController.apply(MotionControl)" },
+        { id: "d", text: "None of them" },
+      ],
+      correctOptionId: "c",
+      explanation: "Both operators implement MotionControl, so the motion controller works with either. That's what makes Level 3 handover clean. Only the human is AttentionMonitorable; only the AD stack is OtaUpdatable.",
+    },
+  ]}
+/>

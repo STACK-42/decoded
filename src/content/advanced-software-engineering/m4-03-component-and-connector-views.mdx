@@ -1,0 +1,106 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { Term, KeyTerms, BoxDiagram, UmlComponentNotation } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Component-and-Connector Views
+
+A <Term id="cc-view">component-and-connector (C&C) view</Term> shows the system **while it runs**: the things that execute, and the paths along which they interact.
+
+## Components and connectors
+
+- **<Term id="component">Components</Term>** are runtime units: processes, clients, servers and data stores.
+- **<Term id="connector">Connectors</Term>** are the possible pathways of interaction between components: communication links, protocols and information flows.
+
+Examples of connectors: **service invocation** (calling a service), **message queues**, **event multicast** and **pipes**. Each of these becomes the heart of an <Term id="architectural-style">architectural style</Term> in [Lecture 5](/courses/advanced-software-engineering/architecture-process-and-styles).
+
+<Callout tone="violet" label="Connectors are first-class">
+In a C&C view a connector isn't just a line. "Calls synchronously over HTTP" and "drops a message in a queue" are different connectors with very different behavior when something fails, so a good C&C view says which one each line is.
+</Callout>
+
+## What C&C structures answer
+
+- What are the major executing components, and how do they interact?
+- What are the major shared data stores?
+- Which parts of the system are <Term id="replication">replicated</Term>?
+- How does data move through the system?
+- Which parts of the system can run in parallel?
+
+**How do they help?** With runtime qualities: **performance** (where's the bottleneck?), **security** (which components talk to the outside world?), **availability** (what happens if this component dies? is it replicated?).
+
+## The concurrency view
+
+A <Term id="concurrency-view">concurrency view</Term> is a C&C view that lets the architect find:
+
+- **opportunities for parallelism**: components that can run at the same time,
+- **locations of <Term id="resource-contention">resource contention</Term>**: places where several components compete for the same resource.
+
+Its units are components; its connectors are their communication mechanisms.
+
+## UML notation for C&C
+
+UML draws a component as a box (with a small component icon) and makes its interfaces explicit:
+
+<UmlComponentNotation />
+
+- **<Term id="provided-interface">Provided interface</Term>** (lollipop): a service this component offers.
+- **<Term id="required-interface">Required interface</Term>** (socket): a service this component needs.
+- **<Term id="port">Port</Term>**: the named point on the component's edge where an interface attaches.
+
+A connection is drawn by plugging a socket into a matching lollipop. Components that only know the interfaces they require are the runtime face of Lecture 3's [Dependency Inversion Principle](/courses/advanced-software-engineering/dependency-inversion-principle). In the lecture's example, an *Order System* requires `CustomerLookup` (provided by a *Customer Repository*) and `ProductAccessor` (provided by an *Inventory System*):
+
+<BoxDiagram
+  title="Order system wired through interfaces"
+  width={600}
+  height={230}
+  nodes={[
+    { id: "order", label: "Order System", x: 120, y: 55, w: 160, kind: "component", tone: "sky" },
+    { id: "cl", label: "CustomerLookup", x: 330, y: 55, kind: "interface" },
+    { id: "repo", label: "Customer\nRepository", x: 500, y: 55, w: 140, h: 48, kind: "component" },
+    { id: "pa", label: "ProductAccessor", x: 120, y: 140, kind: "interface" },
+    { id: "inv", label: "Inventory System", x: 120, y: 205, w: 170, kind: "component" },
+  ]}
+  edges={[
+    { from: "order", to: "cl", label: "requires", dashed: true },
+    { from: "repo", to: "cl", label: "provides", head: "none" },
+    { from: "order", to: "pa", label: "requires", dashed: true },
+    { from: "inv", to: "pa", label: "provides", head: "none" },
+  ]}
+  caption="The Order System never names the Customer Repository or the Inventory System, only the interfaces it requires. Compare this with Dependency Inversion in Lecture 3."
+/>
+
+### The lecture's C&C example, and a notation warning
+
+The lecture's climate-control example draws a *Controller* component connected to *Sensor*, *Actuator* and *GUI* with plain labelled arrows (`sense`, `actuate`, `display`). The lecture itself flags this: **such arrows should be replaced by the correct lollipop notations.** A plain arrow doesn't say who provides and who requires the service.
+
+<BoxDiagram
+  title="The climate-control C&C view in lollipop notation"
+  width={600}
+  height={230}
+  nodes={[
+    { id: "ctl", label: "Controller", x: 300, y: 45, w: 150, kind: "component", tone: "sky" },
+    { id: "i1", label: "sense", x: 120, y: 125, kind: "interface" },
+    { id: "i2", label: "actuate", x: 300, y: 125, kind: "interface" },
+    { id: "i3", label: "display", x: 480, y: 125, kind: "interface" },
+    { id: "sen", label: "Sensor", x: 120, y: 200, w: 120, kind: "component" },
+    { id: "act", label: "Actuator", x: 300, y: 200, w: 120, kind: "component" },
+    { id: "gui", label: "GUI", x: 480, y: 200, w: 120, kind: "component" },
+  ]}
+  edges={[
+    { from: "ctl", to: "i1", dashed: true },
+    { from: "ctl", to: "i2", dashed: true },
+    { from: "ctl", to: "i3", dashed: true },
+    { from: "sen", to: "i1", head: "none" },
+    { from: "act", to: "i2", head: "none" },
+    { from: "gui", to: "i3", head: "none" },
+  ]}
+  caption="Our redrawing: Sensor, Actuator and GUI each provide an interface (lollipop); the Controller requires all three (dashed dependency to each)."
+/>
+
+**C&C views can simplify.** The module view of the same system has separate Cooler, Heater and Fan classes; the C&C view shows one Actuator component. A view only needs the detail its concern requires.
+
+<Callout tone="orange" label="Common mistake">
+Putting classes into a C&C view, or drawing bare arrows. A C&C view shows runtime components, and each line should say what kind of connector it is (call, queue, event, pipe) and, in UML, who provides and who requires the interface.
+</Callout>
+
+## Key terms
+
+<KeyTerms ids={["cc-view", "component", "connector", "concurrency-view", "resource-contention", "provided-interface", "required-interface", "port"]} />

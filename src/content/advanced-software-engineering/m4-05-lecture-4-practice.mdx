@@ -1,0 +1,198 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
+import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 4 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 4 material (architectural views). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-4-practice"
+  questions={questionsForQuiz(questions, "lecture-4-practice")}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-4-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Diagram interpretation: what kind of view is this?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={180}
+          nodes={[
+            { id: "web", label: "Web server", x: 110, y: 70, w: 150, h: 54, kind: "node" },
+            { id: "app", label: "App server", x: 320, y: 70, w: 150, h: 54, kind: "node" },
+            { id: "db", label: "DB server", x: 520, y: 70, w: 140, h: 54, kind: "node" },
+            { id: "war", label: "shop.war", x: 110, y: 155, w: 110, kind: "note" },
+          ]}
+          edges={[
+            { from: "web", to: "app", label: "«intranet»", head: "none" },
+            { from: "app", to: "db", label: "«intranet»", head: "none" },
+            { from: "war", to: "web", label: "«deploy»", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A decomposition view" },
+        { id: "b", text: "A uses view" },
+        { id: "c", text: "A deployment view (allocation)" },
+        { id: "d", text: "A work assignment view" },
+      ],
+      correctOptionId: "c",
+      explanation: "3-D nodes, communication paths and «deploy» arrows put software onto hardware: a UML deployment view, one of the allocation styles.",
+    },
+    {
+      id: "d2",
+      prompt: "Error detection: this is meant to be a decomposition view. What's wrong?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={190}
+          nodes={[
+            { id: "sys", label: "System", x: 260, y: 35, w: 120, kind: "package" },
+            { id: "a", label: "Billing", x: 140, y: 110, w: 120, kind: "package" },
+            { id: "b", label: "Orders", x: 380, y: 110, w: 120, kind: "package" },
+            { id: "u", label: "Utils", x: 260, y: 170, w: 120, kind: "package", tone: "orange" },
+          ]}
+          edges={[
+            { from: "a", to: "sys", head: "none" },
+            { from: "b", to: "sys", head: "none" },
+            { from: "u", to: "a", head: "none", label: "part of" },
+            { from: "u", to: "b", head: "none", label: "part of" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing" },
+        { id: "b", text: "Utils has two parents; in decomposition each module has exactly one parent" },
+        { id: "c", text: "System should be part of Billing" },
+        { id: "d", text: "Packages can't be decomposed" },
+      ],
+      correctOptionId: "b",
+      explanation: "A module can be part of only one parent. If both Billing and Orders depend on Utils, that's a uses relation, which belongs in a uses view, not in the decomposition.",
+    },
+    {
+      id: "d3",
+      prompt: "Diagram interpretation: the lecture says the arrows in this C&C diagram 'should be replaced'. Why?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={180}
+          nodes={[
+            { id: "ctl", label: "Controller", x: 280, y: 40, w: 140, kind: "component" },
+            { id: "s", label: "Sensor", x: 100, y: 145, w: 120, kind: "component" },
+            { id: "a", label: "Actuator", x: 280, y: 145, w: 120, kind: "component" },
+            { id: "g", label: "GUI", x: 460, y: 145, w: 120, kind: "component" },
+          ]}
+          edges={[
+            { from: "ctl", to: "s", label: "sense" },
+            { from: "ctl", to: "a", label: "actuate" },
+            { from: "ctl", to: "g", label: "display" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Arrows must always point upward" },
+        { id: "b", text: "A plain arrow doesn't say which side provides and which requires the interface; lollipop/socket notation does" },
+        { id: "c", text: "C&C diagrams can't contain a controller" },
+        { id: "d", text: "The labels should be class names" },
+      ],
+      correctOptionId: "b",
+      explanation: "In UML, components connect through provided (lollipop) and required (socket) interfaces at ports. Sensor, Actuator and GUI provide; the Controller requires.",
+    },
+    {
+      id: "d4",
+      prompt: "Diagram construction: you must show which .jar file each running EJB component is packaged in, and the folder tree on the server. Which view do you draw?",
+      options: [
+        { id: "a", text: "Deployment view" },
+        { id: "b", text: "Install view" },
+        { id: "c", text: "Uses view" },
+        { id: "d", text: "Generalization view" },
+      ],
+      correctOptionId: "b",
+      explanation: "The install style maps C&C components to files and folders in production, and its notation must show the file tree. Deployment maps components to hardware instead.",
+    },
+    {
+      id: "d5",
+      prompt: "Missing component: in this install view, what goes in the box marked ?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={200}
+          nodes={[
+            { id: "ear", label: "DukesBankApp.ear", stereo: "artifact", x: 280, y: 40, w: 200, h: 50 },
+            { id: "m", label: "?", x: 150, y: 120, w: 150, kind: "missing" },
+            { id: "c", label: "customer-ejb.jar", x: 410, y: 120, w: 160 },
+            { id: "comp", label: "AccountController\nAccountEJB", x: 150, y: 180, w: 170, h: 40, kind: "component" },
+          ]}
+          edges={[
+            { from: "ear", to: "m", label: "«manifest»", dashed: true },
+            { from: "ear", to: "c", dashed: true },
+            { from: "m", to: "comp", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A server machine" },
+        { id: "b", text: "account-ejb.jar, the archive that packages the account components" },
+        { id: "c", text: "The development team" },
+        { id: "d", text: "A message queue" },
+      ],
+      correctOptionId: "b",
+      explanation: "An install view maps components to files. The .ear contains .jar files, and account-ejb.jar manifests AccountController and AccountEJB. Machines belong in a deployment view; teams in work assignment.",
+    },
+    {
+      id: "d6",
+      prompt: "Relationship identification: one Client module runs as ten client processes talking to one server. What is the relationship between the module and the processes?",
+      options: [
+        { id: "a", text: "One module, many components" },
+        { id: "b", text: "Many modules, one component" },
+        { id: "c", text: "Exactly one module per component" },
+        { id: "d", text: "Generalization" },
+      ],
+      correctOptionId: "a",
+      explanation: "This is the lecture's decomposition-vs-client-server figure: a single module becomes many runtime components. That's why a module view alone can't answer performance questions.",
+    },
+    {
+      id: "d7",
+      prompt: "System interpretation: in this deployment, which machine failure stops every user?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={170}
+          nodes={[
+            { id: "pc", label: "User PCs", x: 80, y: 80, w: 120, h: 50, kind: "node" },
+            { id: "app", label: "App server", x: 290, y: 80, w: 140, h: 50, kind: "node", tone: "sky" },
+            { id: "db1", label: "DB (primary)", x: 500, y: 45, w: 140, h: 44, kind: "node" },
+            { id: "db2", label: "DB (replica)", x: 500, y: 125, w: 140, h: 44, kind: "node" },
+          ]}
+          edges={[
+            { from: "pc", to: "app", head: "none" },
+            { from: "app", to: "db1", head: "none" },
+            { from: "app", to: "db2", head: "none" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "One user PC" },
+        { id: "b", text: "The app server: it is the only one, so it is a single point of failure" },
+        { id: "c", text: "The primary database" },
+        { id: "d", text: "None; everything is replicated" },
+      ],
+      correctOptionId: "b",
+      explanation: "The database is replicated, so it survives losing one copy. The single app server is not. This is the kind of availability question deployment views answer.",
+    },
+  ]}
+/>
