@@ -336,6 +336,7 @@ export const courses: Course[] = [
     description:
       "Back in the 1930s mathematicians who put the first principles of this field weren't writing and shipping apps. They were asking much simpler questions, like 'what is computable?' That question produced regex, parsers, CPUs, cryptography, and the famous world of antivirus software. This small course decodes each topic in the theory of computation into the tools you are going to use or already in use.",
     accent: "neon",
+    rounds: 8,
     status: "available",
     authors: [ahmedAlghali],
     modules: [
