@@ -13,19 +13,23 @@ The simplest rendering approach tests each pixel once at its geometric center. I
 
 <AntialiasDemo />
 
-A tilted line rendered this way breaks into a visible staircase pattern. Each time the path crosses into an adjacent row or column, it jumps by an entire pixel, forming a stepped artifact called a **dogleg**. These stair-step artifacts are called **jaggies**, and the visual distortion is known as **aliasing** (or stair-stepping). Aliasing appears along diagonal edges, curves, the contours of vector fonts, and any non-orthogonal color boundary.
+A tilted line rendered this way breaks into a visible staircase pattern. Whenever the path crosses into the next row or column, it jumps by an entire pixel, forming a sudden step often called a **dogleg**. These stair-step artifacts are called **jaggies**, and the visual distortion is known as **aliasing** (or stair-stepping). Aliasing appears along diagonal edges, curves, vector font outlines, and any slanted or curved edge.
 
-The term aliasing comes from signal sampling theory: while mathematical geometry exists in continuous space with real-number coordinates, digital screens sample space at discrete pixel centers. Different continuous positions map onto the same discrete pixel coordinates, becoming aliases of one another.
+In [signal sampling](/courses/computational-mathematics/sound-and-sampling#sampling-what-44100-per-second-means), taking too few measurements makes a fast signal masquerade as a slower one, becoming an "alias" of itself. In the same way, sampling a continuous line at discrete pixel centers maps different exact positions onto the same pixel coordinates, so those lines share the same stepped pixel "alias."
 
 ## Antialiasing: partial coverage, partial color
 
-**Antialiasing** refers to rendering techniques that minimize the visibility of jaggies. Instead of forcing an all-or-nothing decision, the renderer calculates what fraction of the pixel area the shape covers and blends the foreground and background colors in that exact proportion. If a black line on a white background covers 40% of a pixel, that pixel is assigned a color that is 40% black and 60% white (40% gray).
+**Antialiasing** refers to rendering techniques that minimize the visibility of jaggies. Instead of forcing an all-or-nothing decision, the renderer calculates what fraction of the pixel area the shape covers and blends the foreground and background colors in that exact proportion (using the [alpha-blending rule](/courses/computer-graphics/color-pixels#32-bit-color-adding-alpha) from Module 0). If a black line (0) on a white background (255) covers 40% of a pixel, that pixel blends 40% black with 60% white:
 
-In 8-bit grayscale values where white is 255 and black is 0, the pixel brightness is given by $255 \times (1 - \text{coverage})$. At 40% coverage, the brightness is $255 \times (1 - 0.40) = 255 \times 0.60 = 153$ (a light gray). At 50% coverage, $255 \times 0.50 = 127.5$, which rounds to 128 (medium gray).
+$$
+255 \times (1 - \text{coverage}) = 255 \times (1 - 0.40) = 255 \times 0.60 = 153
+$$
 
-Switch the visualizer above to **Antialiased**. The demo approximates coverage by sampling each pixel across a 4 × 4 grid of 16 sub-points. The pixel darkness corresponds to the fraction of sample points inside the line boundary. If 6 of the 16 sub-points fall within the line, the coverage is $6 \div 16 = 37.5\%$, giving a brightness of $255 \times (1 - 0.375) \approx 159$. Viewed close up, the line edges appear softly blurred with gray pixels; at normal viewing distances, human vision integrates those intermediate shades into a clean, continuous boundary.
+At 50% coverage, $255 \times 0.50 = 127.5$, which rounds to 128 (medium gray).
 
-Computing the exact geometric area of polygon-pixel intersections across millions of pixels is computationally demanding. Practical rendering engines approximate coverage by testing multiple sub-pixel locations per pixel, a technique known as **supersampling**.
+Switch the visualizer above to **Antialiased**. The demo approximates coverage by sampling each pixel across a 4 × 4 grid of 16 sample points. The pixel darkness corresponds to the fraction of sample points inside the line boundary. If 6 of the 16 points fall within the line, the coverage is $6 \div 16 = 37.5\%$, giving a brightness of $255 \times (1 - 0.375) \approx 159$. Viewed close up, the line edges appear softly blurred with gray pixels; at normal viewing distances, human vision integrates those intermediate shades into a clean, continuous boundary.
+
+Computing the exact overlap area between every shape and millions of pixels is computationally demanding. Practical rendering engines approximate coverage by testing multiple sample points inside each pixel, a technique known as **supersampling**.
 
 <Callout tone="orange" label="Antialiasing modifies color, not resolution">
 Antialiasing does not increase the physical resolution or add genuine geometric detail to an image. It replaces sharp, stepped pixel boundaries with calibrated intermediate shades that appear smooth to the eye. The output remains a discrete pixel grid.
@@ -40,15 +44,15 @@ This explains the line artifact observed in the [previous lesson](/courses/compu
 Graphics pipelines reduce stair-step artifacts through three primary strategies:
 
 1. **Increase physical pixel density.** Higher resolution displays feature smaller physical pixels, reducing the visible width of individual stair steps. At densities above 400 PPI on mobile screens, individual steps are nearly imperceptible to the naked eye.
-2. **Antialias during rendering.** Calculate geometric coverage or sample sub-pixel locations during rasterization to shade border pixels proportionally.
-3. **Filter the image after rasterization.** Apply post-processing blur filters, such as a **Gaussian blur**, which computes weighted averages of neighboring pixels to soften hard transitions across the rendered image.
+2. **Antialias during rendering.** Calculate geometric coverage or test multiple sample points inside each pixel during rasterization to shade border pixels proportionally.
+3. **Filter the finished image.** Apply a blur filter after rasterization (called **post-processing**), such as a **Gaussian blur**, which computes [weighted averages](/courses/computational-mathematics/averaging-is-convolution#step-1-multiply-and-add) of neighboring pixels to soften hard steps.
 
 <PracticalApplication title="Real-time rendering" tool="MSAA, FXAA, TAA">
-Video games and GPU applications use hardware-accelerated variants of these methods. Multisample antialiasing (MSAA) tests multiple depth and coverage samples per pixel along polygon silhouettes while computing pixel shaders only once per pixel. Post-processing techniques like FXAA (Fast Approximate Antialiasing) and TAA (Temporal Antialiasing) detect high-contrast edges in the finished frame or across consecutive frames to smooth artifacts at low computational cost.
+Video games and GPU applications use hardware-accelerated variants of these methods. Multisample antialiasing (MSAA) checks multiple depth and coverage points inside each pixel along triangle edges while running the expensive color calculation only once per pixel. Fast post-processing methods like FXAA (Fast Approximate Antialiasing) and TAA (Temporal Antialiasing) scan the finished frame, or blend consecutive frames, to smooth jagged edges at low cost.
 </PracticalApplication>
 
 <PracticalApplication title="Text and typography" tool="Subpixel font rendering">
-Operating system font engines apply antialiasing to all vector typefaces. Advanced rendering systems manipulate the individual red, green, and blue [subpixels](/courses/computer-graphics/flat-panels) of flat-panel displays independently, effectively tripling the horizontal sampling resolution for character edges.
+Operating system font engines apply antialiasing to all vector typefaces. Advanced rendering systems manipulate the physical red, green, and blue [subpixels](/courses/computer-graphics/flat-panels) on flat-panel displays independently, effectively tripling the horizontal sampling resolution for character edges.
 </PracticalApplication>
 
 Antialiasing governs how pixels are shaded along boundaries. First, however, the rendering engine must determine which discrete pixel locations a line crosses. The [next lesson](/courses/computer-graphics/slope-and-the-line-equation) introduces line-drawing algorithms, beginning with the classical equation of a straight line.

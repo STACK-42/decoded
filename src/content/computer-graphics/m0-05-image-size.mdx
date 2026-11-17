@@ -13,7 +13,7 @@ Every pixel in an uncompressed image occupies a fixed number of bits, so finding
 4. **Convert to kilobytes:** divide by 1024.
 5. **Convert to megabytes:** divide by 1024 again.
 
-Why divide by 1024 instead of 1000? Computer operating systems and hardware measure memory capacities using [powers of two](/courses/computer-organization/bits-and-bytes#how-much-is-a-lot), where $2^{10} = 1024$ bytes equal one binary kilobyte (KB). Use 1024 for memory and frame buffer calculations unless a question explicitly specifies decimal units.
+Why divide by 1024 instead of 1000? Computer operating systems and hardware measure memory capacities using [powers of two](/courses/computer-organization/bits-and-bytes#how-much-is-a-lot), where $2^{10} = 1024$ bytes equal one binary kilobyte (KB). Use 1024 for RAM and frame buffer sizes unless a specification explicitly states decimal units (1000).
 
 <Callout tone="orange" label="Two classic slips">
 Skipping step 3 leaves the answer in bits rather than bytes, making the result 8 times too large. In addition, step 2 multiplies by the **bit depth** (such as 24 for true color), never by the count of distinct colors ($16{,}777{,}216$).
@@ -21,14 +21,17 @@ Skipping step 3 leaves the answer in bits rather than bytes, making the result 8
 
 When bit depth is a multiple of 8, steps 2 and 3 can be combined into a single step. For a 24-bit image, multiplying pixels directly by 3 yields bytes ($24 \div 8 = 3$). This shortcut works for 8-bit (1 byte), 16-bit (2 bytes), 24-bit (3 bytes), and 32-bit (4 bytes) formats, but does not apply to sub-byte formats like 1-bit or 4-bit images.
 
-## Worked example: one picture, four depths
+## Worked example: one image, five depths
 
 Consider an image measuring 640 × 480 pixels. It contains $640 \times 480 = 307{,}200$ pixels.
 
 **1-bit (binary):**
 
 $$
-307{,}200 \text{ bits} \div 8 = 38{,}400 \text{ bytes} \div 1024 = 37.5 \text{ KB}
+\begin{aligned}
+307{,}200 \text{ bits} \div 8 &= 38{,}400 \text{ bytes} \\
+38{,}400 \div 1024 &= 37.5 \text{ KB}
+\end{aligned}
 $$
 
 **8-bit (grayscale):** one byte per pixel.
@@ -40,19 +43,29 @@ $$
 **16-bit (high color):** two bytes per pixel.
 
 $$
-307{,}200 \times 2 = 614{,}400 \text{ bytes} \div 1024 = 600 \text{ KB}
+\begin{aligned}
+307{,}200 \times 2 &= 614{,}400 \text{ bytes} \\
+614{,}400 \div 1024 &= 600 \text{ KB}
+\end{aligned}
 $$
 
 **24-bit (true color):** three bytes per pixel.
 
 $$
-307{,}200 \times 3 = 921{,}600 \text{ bytes} \div 1024 = 900 \text{ KB}
+\begin{aligned}
+307{,}200 \times 3 &= 921{,}600 \text{ bytes} \\
+921{,}600 \div 1024 &= 900 \text{ KB}
+\end{aligned}
 $$
 
 **32-bit (true color with alpha):** four bytes per pixel.
 
 $$
-307{,}200 \times 4 = 1{,}228{,}800 \text{ bytes} \div 1024 = 1200 \text{ KB}
+\begin{aligned}
+307{,}200 \times 4 &= 1{,}228{,}800 \text{ bytes} \\
+1{,}228{,}800 \div 1024 &= 1200 \text{ KB} \\
+1200 \div 1024 &\approx 1.17 \text{ MB}
+\end{aligned}
 $$
 
 The results show a clear relationship: the 8-bit image is 8 times the size of the 1-bit image, and the 24-bit image is 3 times the size of the 8-bit image. Uncompressed storage requirements grow in direct proportion to bit depth.
@@ -82,7 +95,7 @@ $$
 $$
 
 <Callout tone="orange" label="Round at the end">
-Maintain full numerical precision throughout intermediate steps. Rounding numbers mid-calculation introduces compounding errors. For example, $44{,}175{,}300 \div 1024^2 \approx 42.1288\text{ MB}$, which rounds to 42.13 MB, not 42.12 MB.
+Maintain full numerical precision throughout intermediate steps and round only at the very end. For example, $44{,}175{,}300 \div 1024^2 \approx 42.1288\text{ MB}$ rounds to 42.13 MB; truncating digits early produces 42.12 MB instead.
 </Callout>
 
 ## Try your own
@@ -93,6 +106,6 @@ Select a preset resolution or enter custom dimensions. Every calculation step is
 
 ## Uncompressed memory versus file compression
 
-These calculations determine the memory an image occupies in RAM or within a display [frame buffer](/courses/computer-graphics/crt-and-raster-scan#the-frame-buffer) while being displayed or edited, as well as file sizes in uncompressed formats like BMP. Image files stored on disk as JPEG or PNG are usually much smaller because they compress redundant pixel data. However, display hardware cannot directly scan out compressed formats: before an image is drawn on screen, the file must be decoded into an uncompressed pixel grid in memory.
+These calculations determine the memory an image occupies in RAM or within a display [frame buffer](/courses/computer-graphics/crt-and-raster-scan#the-frame-buffer) while being displayed or edited, as well as file sizes in uncompressed formats like BMP. Image files stored on disk as JPEG or PNG are usually much smaller because they compress redundant pixel data. However, display hardware cannot read compressed formats directly onto the screen: before an image is displayed, software or hardware must decode it into an uncompressed pixel grid in memory.
 
 This completes the Pixels and Color module. [Test yourself on these concepts](/courses/computer-graphics/images-quiz) before continuing to resolution.

@@ -1196,7 +1196,7 @@ export const courses: Course[] = [
       "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
     accent: "sky",
     status: "available",
-    rounds: 4,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

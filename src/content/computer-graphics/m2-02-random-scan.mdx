@@ -3,17 +3,17 @@ import { ScanDisplay } from "@/components/mdx/GraphicsVisualizers";
 
 # Random Scan Displays
 
-A raster display sweeps across every row regardless of what is on screen. A **random-scan display**, also known as a **vector display**, works differently: the electron beam travels only where lines appear in the drawing, tracing each line segment directly from one coordinate to another like a pen on a plotter.
+A raster CRT sweeps across every row regardless of what is on screen. A **random-scan display**, also known as a **vector display**, is a CRT that steers its electron beam differently: the beam travels only where lines appear in the drawing, tracing each line segment directly from one coordinate to another like a mechanical pen drawing on paper.
 
-Here, "random" does not mean chaotic or unpredictable. It means the beam can jump directly to any coordinate on the screen, like addressing random-access memory, rather than following a predetermined top-to-bottom raster sweep.
+Here, "random" does not mean chaotic or unpredictable. It means the beam can jump directly to any coordinate on the screen, like addressing [random-access memory](/courses/computer-organization/ram-and-rom#primary-memory-four-kinds-of-chip), rather than following a predetermined top-to-bottom raster sweep.
 
 ## The display file
 
 A random-scan system does not store a grid of pixels. Instead, it stores an ordered list of drawing commands called the **display file** (also called a display list or display program): instructions like "line from (2, 13) to (13, 13)" and "line from (13, 13) to (13, 6)".
 
-1. The application program describes the drawing to a **graphics package**, a software library providing drawing functions.
+1. Your program describes the drawing to a **graphics package** (a software library providing drawing commands).
 2. The graphics package converts those shapes into basic line instructions and writes them to the display file in memory.
-3. A dedicated **display processor** (or display controller) reads commands sequentially from the display file and steers the electron beam along each line.
+3. A dedicated **display processor** (often called a **display processing unit** or **graphics controller** in vector hardware) reads commands sequentially from the display file and steers the electron beam directly along each line.
 4. When the display processor reaches the end of the list, it loops back to the first instruction, repeatedly redrawing the picture to maintain phosphor glow.
 
 The interactive visualizer below draws the house using its display file. The highlighted line indicates the command currently being traced by the beam:
@@ -27,24 +27,16 @@ Switch between raster and random modes to see the difference. The raster beam sw
 | | Raster scan | Random scan |
 |---|---|---|
 | Beam path | Every row, top to bottom, every frame | Only along the lines in the picture |
-| Stores | A frame buffer: one value per pixel | A display file: a list of line commands |
-| Lines look | Jagged on diagonals (stair steps) | Perfectly smooth |
-| Can show | Realistic scenes, millions of colors, shading and shadows | Lines only, no realistic shaded scenes |
+| Memory stored | A frame buffer: one value per pixel | A display file: a list of line commands |
+| Line appearance | Jagged on diagonals (stair steps) | Smooth continuous lines |
+| Shading and photos | Realistic shaded scenes, millions of colors | Lines only, no realistic shaded scenes |
 | Refresh time | Fixed, regardless of screen content | Increases with the number of lines |
-| Resolution | Lower, limited by the frame buffer | High, since lines are drawn directly |
-| Memory | A full frame buffer | Only the display file |
+| Hardware bottleneck | Needed costly RAM for early frame buffers | Needed fast deflection amplifiers for jumps |
 
-The core trade-off comes down to scene complexity versus fill capability: **random-scan displays draw smooth lines but cannot fill solid regions**, making photographic or shaded images impossible. Furthermore, if a drawing contains too many lines, the beam cannot trace all of them before the phosphor begins to fade, causing the screen to flicker. Raster displays can render arbitrary filled shapes and photographic color variations, but diagonal edges exhibit visible stair-step patterns.
-
-Standard computer graphics curricula and examinations summarize the two approaches as follows:
-
-- **Raster advantages**: supports photographic images, realistic shading, shadows, and millions of distinct colors.
-- **Raster disadvantages**: lower spatial sharpness along diagonal lines, and historically required expensive memory for the frame buffer.
-- **Random-scan advantages**: high resolution, lines have smooth continuous edges without stair-stepping, and the beam moves only where parts of the image exist.
-- **Random-scan disadvantages**: cannot render realistic shaded surfaces, and the image flickers when drawings exceed the beam's refresh budget.
+The core trade-off comes down to scene complexity versus filled surfaces. **Random-scan displays draw crisp, unstepped lines, but they cannot fill solid regions or render photographs**: trying to hatch a solid shape with hundreds of tight lines pushes the display file past the phosphor's brief glow time, making the screen flicker before the beam finishes the loop. Raster displays handle arbitrary filled shapes, lighting, and photos in fixed refresh time, at the cost of stair-stepping on diagonal edges.
 
 <Callout tone="orange" label="Which display was expensive?">
-Older textbooks often list raster displays as expensive because of the frame buffer. Storing a dedicated color value for every pixel on screen required substantial memory when RAM was costly. In contrast, early random-scan systems saved memory by storing only short command lists, but required complex, high-speed deflection circuitry. When semiconductor memory prices dropped, raster displays became far cheaper because the rest of the unit reused mass-produced television components.
+Older textbooks often list raster displays as expensive because of the frame buffer. Storing a dedicated color value for every pixel on screen required substantial memory when RAM was costly. In contrast, early random-scan systems saved memory by storing only short command lists, but needed complex, high-speed deflection amplifiers so the beam could jump rapidly to arbitrary coordinates rather than sweeping steadily row by row. When semiconductor memory prices dropped, raster displays became far cheaper because the rest of the unit reused mass-produced television components.
 </Callout>
 
 <Callout tone="sky" label="Why raster won">

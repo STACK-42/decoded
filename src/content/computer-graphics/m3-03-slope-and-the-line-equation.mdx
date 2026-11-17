@@ -30,12 +30,12 @@ Slope is always the change in $y$ divided by the change in $x$, never the revers
 | Slope | Line behavior | Angle with x-axis |
 |---|---|---|
 | $m > 0$ | Rises from left to right | Between 0° and 90° |
-| $m < 0$ | Falls from left to right | Between 90° and 180° |
+| $m < 0$ | Falls from left to right | Between −90° and 0° (or 90° to 180° counterclockwise) |
 | $m = 0$ | Purely horizontal ($\Delta y = 0$): $y$ remains constant | 0° |
 | Undefined | Purely vertical ($\Delta x = 0$): division by zero | 90° |
-| $\lvert m \rvert < 1$ | Gentle: horizontal run exceeds vertical rise | Less than 45° |
-| $\lvert m \rvert = 1$ | Perfect diagonal | Exactly 45° |
-| $\lvert m \rvert > 1$ | Steep: vertical rise exceeds horizontal run | Greater than 45° |
+| $\lvert m \rvert < 1$ | Gentle: horizontal run exceeds vertical rise | Magnitude less than 45° |
+| $\lvert m \rvert = 1$ | Perfect diagonal | Magnitude 45° |
+| $\lvert m \rvert > 1$ | Steep: vertical rise exceeds horizontal run | Magnitude greater than 45° |
 
 The slope corresponds to the trigonometric tangent of the angle $\theta$ that the line forms with the positive x-axis: $m = \tan\theta$. A 45° diagonal line has a slope of $\tan 45° = 1$. For the example above, $\theta = \tan^{-1}(2/3) \approx 33.7°$, which is below 45° because its slope is less than 1.
 
@@ -44,7 +44,7 @@ Drag the endpoints in the visualizer below to observe how rise, run, and slope b
 <SlopeExplorer />
 
 <Callout tone="sky" label="The unit slope boundary">
-The threshold $\lvert m \rvert = 1$ is critical for raster line algorithms. Whether the absolute slope is less than or greater than 1 determines whether the algorithm must step along the x-axis or the y-axis to avoid leaving gaps in the rendered line.
+The threshold $\lvert m \rvert = 1$ is critical for raster line algorithms. When $\lvert m \rvert > 1$, the line rises more than one row per column, so stepping only along $x$ skips rows and leaves gaps. Whether the absolute slope is below or above 1 decides which axis to step along.
 </Callout>
 
 ## The slope-intercept equation
@@ -61,7 +61,7 @@ $$
 c = y_1 - m x_1 = 10 - \frac{2}{3} \times 5 = 10 - 3.333 = 6.667
 $$
 
-The line passing through $P_1(5, 10)$ and $P_2(11, 14)$ is defined by $y = 0.667x + 6.667$. Evaluating this equation at the second endpoint confirms the formulation: $0.667 \times 11 + 6.667 = 14$.
+The line passing through $P_1(5, 10)$ and $P_2(11, 14)$ is $y = \frac{2}{3}x + \frac{20}{3}$, or approximately $y = 0.667x + 6.667$. Evaluating the exact fraction at the second endpoint confirms it: $\frac{2}{3} \times 11 + \frac{20}{3} = \frac{42}{3} = 14$ (whereas the rounded decimals give $0.667 \times 11 + 6.667 = 14.004$, already showing small rounding drift).
 
 ## The naive algorithm: just use the equation
 
@@ -86,7 +86,7 @@ Step through the calculation for $P_1(5, 10)$ to $P_2(11, 14)$. The blue indicat
 | 11 | 14 | 14 | (11, 14) |
 
 <Callout tone="orange" label="Do not round the intercept">
-Rounding the intercept $c = 6.667$ to $7$ before plotting shifts the entire line upwards by a third of a pixel. Evaluating $y = 0.667x + 7$ yields pixels $(7, 12)$ and $(10, 14)$ instead of $(7, 11)$ and $(10, 13)$, and the line misses the starting endpoint $(5, 10)$. Maintain full numerical precision for $m$ and $c$, and round only when converting the final $y$ coordinate to a pixel index.
+Rounding the intercept $c = 6.667$ to $7$ before plotting shifts the entire line upwards by a third of a pixel. Evaluating $y = 0.667x + 7$ yields pixels $(7, 12)$ and $(10, 14)$ instead of $(7, 11)$ and $(10, 13)$, and the continuous line no longer passes through $(5, 10)$ ($0.667 \times 5 + 7 = 10.335$, even though rounding still lands on pixel $(5, 10)$). Maintain full numerical precision for $m$ and $c$, and round only when converting the final $y$ coordinate to a pixel index.
 </Callout>
 
 ### Rounding vs truncation
@@ -103,14 +103,14 @@ Some software implementations cast floating-point coordinates to integer types, 
 | 10 | 13.333 | 13 | 13 |
 | 11 | 14 | 14 | 14 |
 
-Truncation consistently rounds downward, causing plotted pixels to deviate up to nearly a full pixel below the mathematical line. True rounding keeps every plotted pixel within half a pixel of the continuous line. In C and C++, `round(y)` or `static_cast<int>(y + 0.5)` implements symmetric nearest-integer rounding for non-negative coordinates.
+Truncation consistently rounds downward, causing plotted pixels to deviate up to nearly a full pixel below the mathematical line. True rounding keeps every plotted pixel within half a pixel of the continuous line. In C and C++, `round(y)` or `static_cast<int>(y + 0.5)` rounds non-negative numbers to the nearest integer (rounding `.5` upward).
 
 ## Where the naive algorithm breaks
 
-Evaluating $y = mx + c$ sequentially across $x$ fails under two conditions:
+Evaluating $y = mx + c$ sequentially across $x$ has three drawbacks:
 
-1. **Steep lines ($\lvert m \rvert > 1$)**: For a line rising 8 rows while spanning only 3 columns (such as from $(2, 1)$ to $(4, 9)$), stepping along $x$ plots only 3 pixels. The resulting line has large vertical gaps between rows. To render steep lines without gaps, the algorithm must step along $y$ by single units and solve for $x = (y - c) / m$.
+1. **Steep lines ($\lvert m \rvert > 1$)**: For a line spanning 9 rows ($\Delta y = 8$) across only 3 columns ($\Delta x = 2$), such as from $(2, 1)$ to $(4, 9)$, stepping along $x$ plots only 3 pixels. The resulting line has large vertical gaps between rows. To render steep lines without gaps, the algorithm must step along $y$ by single units and solve for $x = (y - c) / m$.
 2. **Vertical lines**: When a line is purely vertical ($\Delta x = 0$), the slope $m = \Delta y / \Delta x$ requires division by zero, making the formulation undefined.
-3. **Computational overhead**: Every pixel calculation requires a floating-point multiplication ($m \cdot x$), a floating-point addition, and a rounding operation. On graphics hardware rendering thousands of lines per frame, repetitive floating-point multiplication creates a performance bottleneck.
+3. **Computational overhead**: Every pixel calculation requires a [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) multiplication ($m \cdot x$), a floating-point addition, and a rounding operation. On graphics hardware rendering thousands of lines per frame, repetitive floating-point multiplication creates a performance bottleneck.
 
 The [next lesson](/courses/computer-graphics/dda) introduces the Digital Differential Analyzer, resolving these limitations through incremental arithmetic.
