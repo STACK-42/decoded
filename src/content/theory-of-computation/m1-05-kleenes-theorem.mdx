@@ -87,7 +87,7 @@ Look at how each table unfolds by hand:
 
 ## What else follows
 
-The union rule works with any combining condition, which shows that regular languages are **closed** under more operations (meaning applying the operation never produces a non-regular language). Mark a pair final when **both** halves are final, and you get an FA for the **intersection** of two regular languages. Swap final and non-final states in one complete [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), and you get its **complement** (all strings in $\Sigma^*$ that the original DFA rejected). So regular languages are closed under union, concatenation, star, intersection and complement.
+The union rule works with any combining condition, which shows that regular languages are **closed** under more operations (meaning applying the operation never produces a non-regular language). Mark a pair final when **both** halves are final, and you get an FA for the [**intersection**](/courses/discrete-mathematics/sets#set-operations) of two regular languages. Swap final and non-final states in one complete [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), and you get its [**complement**](/courses/discrete-mathematics/sets#set-operations) (all strings in $\Sigma^*$ that the original DFA rejected). So regular languages are closed under union, concatenation, star, intersection and complement.
 
 <Callout tone="orange" label="Flipping final states only works on a complete DFA">
   Two conditions must hold before you flip final and non-final states to build a complement:

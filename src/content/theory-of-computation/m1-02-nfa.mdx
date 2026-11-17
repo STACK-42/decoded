@@ -16,7 +16,7 @@ An NFA is still a five-tuple $(Q, \Sigma, \delta, q_0, F)$. Only the transition 
 
 The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can also transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol.
 
-Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states (including the empty set $\emptyset$ and $Q$ itself). For example, if $Q = \{q_0, q_1\}$, then $\mathcal{P}(Q) = \{\emptyset, \{q_0\}, \{q_1\}, \{q_0, q_1\}\}$, which has $2^2 = 4$ subsets. So $\delta$ returns a *set* of possible next states, which may be $\emptyset$ when there is no transition.
+Second, $\mathcal{P}(Q)$ is the **[power set](/courses/discrete-mathematics/sets#power-sets)** of $Q$, the set of all subsets of states (including the empty set $\emptyset$ and $Q$ itself). For example, if $Q = \{q_0, q_1\}$, then $\mathcal{P}(Q) = \{\emptyset, \{q_0\}, \{q_1\}, \{q_0, q_1\}\}$, which has $2^2 = 4$ subsets. So $\delta$ returns a *set* of possible next states, which may be $\emptyset$ when there is no transition.
 
 Everything else ($Q$, $\Sigma$, $q_0$, $F$) means exactly what it meant for a DFA.
 

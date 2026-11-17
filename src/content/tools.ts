@@ -11,6 +11,7 @@ export const tools: Tool[] = [
     lessons: [
       { course: "theory-of-computation", lesson: "nfa", mentions: "regex" },
       { course: "theory-of-computation", lesson: "regular-expressions", mentions: "grep" },
+      { course: "theory-of-computation", lesson: "transition-graphs", mentions: "ripgrep" },
       { course: "theory-of-computation", lesson: "regex-playground", mentions: "regex" },
     ],
   },
@@ -18,8 +19,10 @@ export const tools: Tool[] = [
     name: "Compilers and parsers",
     what: "How a program turns source code or JSON into a structure it can work with.",
     lessons: [
+      { course: "theory-of-computation", lesson: "grammars", mentions: "yacc" },
       { course: "theory-of-computation", lesson: "context-free-grammars", mentions: "parser" },
       { course: "theory-of-computation", lesson: "pushdown-automata", mentions: "JSON" },
+      { course: "theory-of-computation", lesson: "cfg-equals-pda", mentions: "parser" },
       { course: "microprocessors", lesson: "stack-and-procedures", mentions: "compiler" },
     ],
   },

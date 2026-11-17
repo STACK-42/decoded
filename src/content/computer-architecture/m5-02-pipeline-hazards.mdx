@@ -172,7 +172,7 @@ Used in early RISC architectures (like MIPS and SPARC): the instruction located 
 Real programs contain branches whose outcomes change dynamically. **Dynamic branch prediction** uses history tables in hardware to forecast branch directions:
 
 - **1-bit predictor**: Remembers a single bit (Taken or Not Taken) for each branch address. In a loop that executes 10 times, a 1-bit predictor mispredicts twice: once when exiting the loop, and once on the first iteration when the loop is entered again. Accuracy is only $80\%$.
-- **2-bit saturating counter**: Requires two consecutive mistakes to change its prediction. It operates as a 4-state finite state machine:
+- **2-bit saturating counter**: Requires two consecutive mistakes to change its prediction. It operates as a 4-state [finite state machine](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means):
 
 | State | Name | Prediction | Next State if Taken | Next State if Not Taken |
 |---|---|---|---|---|

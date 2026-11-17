@@ -38,7 +38,7 @@ Given any state in $Q$ and any symbol in $\Sigma$, $\delta$ returns one next sta
 
 **$q_0$** is the **initial state** (also called the **start state**), where computation always begins. $q_0 \in Q$.
 
-**$F$** is the set of [accept states](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) (also called **final states**), the double circles. $F \subseteq Q$. Because $F$ can be *any* subset of $Q$, a DFA can have zero accept states ($F = \emptyset$, rejecting every string), can include the start state ($q_0 \in F$, meaning the empty string is accepted), or can make every state accepting ($F = Q$). If the machine runs out of input while its current state is in $F$, it accepts the input.
+**$F$** is the set of [accept states](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) (also called **final states**), the double circles. $F \subseteq Q$. Because $F$ can be *any* [subset](/courses/discrete-mathematics/sets#subsets) of $Q$, a DFA can have zero accept states ($F = \emptyset$, rejecting every string), can include the start state ($q_0 \in F$, meaning the empty string is accepted), or can make every state accepting ($F = Q$). If the machine runs out of input while its current state is in $F$, it accepts the input.
 
 <Callout tone="violet" label="Why a five-tuple">
   Five components are the minimum needed to fully specify a [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means). Give someone these five and they can reconstruct the diagram exactly, and they can also reason about the machine mathematically without drawing it.
@@ -165,7 +165,7 @@ $$
 
 The return type is $Q$, not the power set of $Q$, so one input pair always gives one state, which is the entire rule of determinism.
 
-Two consequences follow. First, a DFA simulator is a simple loop: read one character, look up the next state in a table, and never backtrack. That's why regex engines built on DFAs run in time linear in the length of the input. Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
+Two consequences follow. First, a DFA simulator is a simple loop: read one character, look up the next state in a table, and never backtrack. That's why regex engines built on DFAs run in [time linear in the length of the input](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations). Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
 
 <Callout tone="sky" label="Historical note">
   The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire, before it was used to describe computation. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The [parking meter](/courses/theory-of-computation/how-to-read-a-machine#a-first-example-a-parking-meter), the regex engine, and the original neuron model are all instances of the same five-tuple.
