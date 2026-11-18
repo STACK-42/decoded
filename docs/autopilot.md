@@ -56,7 +56,8 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
     - [x] Theory of Computation: +34 (26 → 60), 2 or 3 for each of the 15 taught lessons, each with `lesson` and (all but the intro) `section`. The bank test now finds a lesson's file through `registry.ts`, since `m1-01-states-symbols.mdx` is the slug `states-symbols-and-transitions`. (PR #91, stacked on #90)
     - [x] Microprocessors: +34 (10 → 44), 3 for each of the 11 taught lessons (4 for segments), each with `lesson` and (all but one) `section`. (PR #94, stacked on #91)
     - [x] Computer Organization: +26 (10 → 36), 2 or 3 for each of the 9 taught lessons, each with `lesson` and `section`. (PR #96, stacked on #94)
-    - Still to do, measured 2026-11-16: Discrete Mathematics 26, Data Structures 20, Computer Networks 9. Advanced Software Engineering (42) is new and left to its authors.
+    - [x] Discrete Mathematics: +26 (42 → 68), 1 or 2 for each of the 17 taught lessons, each with `lesson` and `section`. (PR #101)
+    - Still to do, measured 2026-11-16: Data Structures 20, Computer Networks 9. Advanced Software Engineering (42) is new and left to its authors.
   - [ ] 4d. Set `lesson`/`section` on the 259 migrated questions.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
 - [ ] 6. Account sync for review cards and exam attempts.
@@ -92,6 +93,7 @@ Nothing. The exam-stack block (since 2026-11-06, over #68's inline practice ques
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-18 06:10 (run A): the owner merged everything on 2026-11-17 (the exam stack #90 to #96, #86, #92, #99, #100), so this phase branches from main again. Exam phase 4c, Discrete Mathematics: +26 questions over all 17 taught lessons (precedence, vacuous truth, contrapositive vs converse, nested quantifiers, composition order, partial orders, proof setups, the base case, strong induction, invariant checks, sum and product rules, binomial and Pascal, pigeonhole, K₇, Euler vs Hamiltonian, tree height, expectation, birthday pairs), numbers checked by script. PR #101, open.
 - 2026-11-17 14:50 (run C): from the 2026-11-12 audit, the Computer Organization `bits-and-bytes` unit ladder (124 px too wide at 390 px) now fits. Its captions now sit under their bars in a two-column grid at every width, which also fixes the desktop TB and PB captions wrapping unindented, and "2^0 = 1 bytes" now reads "1 byte". PR #99, open. Its CI check is red only because main is: The Exam Mind's round 7 (#97) renamed a heading that a bank question points at; fixed in PR #100.
 - 2026-11-17 10:40 (run B): exam phase 4c, Computer Organization: +26 questions over all 9 taught lessons, numbers checked by script (500 GB shown as 465.7, G = 01000111, 2¹⁶ and 2¹² locations, the disk capacity 516,096,000 bytes, 4.2 ms average wait at 7,200 rpm). PR #96, open, stacked on #94.
 - 2026-11-17 06:10 (run A): exam phase 4c, Microprocessors: +34 questions over all 11 taught lessons, every value checked by script (C8h + 64h flags, CS:IP and segment limits, effective address, MUL/DIV results, XOR case flip, LOOP sum, SP after push/pop, INT 21h vector at 84h). PR #94, open, stacked on #91.
