@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { ANALYTICS_TOKEN } from "@/lib/analytics";
+import { HELLO_EMAIL, HELP_EMAIL } from "@/lib/contact";
 import { deleteAccount } from "@/lib/progressSync";
 
 export default function Privacy() {
@@ -90,6 +91,12 @@ export default function Privacy() {
             and progress in that one course: how many lessons are done and the latest one. They don't see quiz scores or
             your other courses. Either of you can remove the other at any time, and they aren't told. If you turn your
             profile off, you disappear from your companions' lists until you turn it back on.
+          </p>
+
+          <h2 className="font-display">If you email us</h2>
+          <p>
+            Mail to <a href={`mailto:${HELLO_EMAIL}`}>{HELLO_EMAIL}</a> or <a href={`mailto:${HELP_EMAIL}`}>{HELP_EMAIL}</a>{" "}
+            passes through Cloudflare to the maintainer's inbox. It's read by a person and isn't added to a mailing list.
           </p>
 
           <h2 className="font-display">Deleting your data</h2>

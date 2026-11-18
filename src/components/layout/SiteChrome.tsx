@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 import { useReviewCards } from "@/hooks/useReviewCards";
+import { HELLO_EMAIL } from "@/lib/contact";
 import { dueIds, localDay } from "@/lib/review";
 
 /** Shown only when review questions are due, with how many. */
@@ -72,6 +73,7 @@ export function SiteFooter() {
           <Link to="/courses" className="link-draw hover:text-foreground transition-colors">Courses</Link>
           <Link to="/tools" className="link-draw hover:text-foreground transition-colors">Tools</Link>
           <Link to="/team" className="link-draw hover:text-foreground transition-colors">Contributors</Link>
+          <a href={`mailto:${HELLO_EMAIL}`} className="link-draw hover:text-foreground transition-colors">Contact</a>
           <Link to="/privacy" className="link-draw hover:text-foreground transition-colors">Privacy</Link>
         </nav>
         <span className="flex flex-col gap-2 md:items-end">

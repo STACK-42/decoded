@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { ahmedAlghali, asmaaFarouq } from "@/content/authors";
+import { HELLO_EMAIL, HELP_EMAIL } from "@/lib/contact";
 
 export default function Team() {
   useEffect(() => {
@@ -36,6 +37,16 @@ export default function Team() {
               image={asmaaFarouq.image}
               href={asmaaFarouq.href}
             />
+            <div className="border border-border p-6 bg-muted/5">
+              <div className="font-display font-bold text-lg mb-2">Get in touch</div>
+              <p className="text-sm text-muted-foreground leading-relaxed font-body mb-4">
+                Questions, ideas, a mistake in a lesson, or something that's broken. A person reads every message.
+              </p>
+              <div className="flex flex-col gap-2 font-mono text-[11px] tracking-widest">
+                <a href={`mailto:${HELLO_EMAIL}`} className="text-neon hover:underline underline-offset-4">Say hello: {HELLO_EMAIL}</a>
+                <a href={`mailto:${HELP_EMAIL}`} className="text-neon hover:underline underline-offset-4">Report a problem: {HELP_EMAIL}</a>
+              </div>
+            </div>
             <div className="border border-dashed border-border p-6 bg-muted/5">
               <div className="font-display font-bold text-lg mb-2">Join in</div>
               <p className="text-sm text-muted-foreground leading-relaxed font-body mb-4">
