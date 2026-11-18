@@ -1,14 +1,27 @@
-/* Mail sent to the site's public addresses is forwarded to the maintainer's own inbox.
-   Cloudflare Email Routing hands each message to this handler. The inbox itself is the
-   FORWARD_TO secret, so it never appears in the repo. */
+/* Mail sent to the site's addresses is forwarded to a real inbox. Cloudflare Email Routing
+   hands each message to this handler. The inboxes are Worker secrets, so they never appear
+   in this public repo. Keep the shared addresses in step with src/lib/contact.ts. */
 
-/** Keep in step with src/lib/contact.ts, which the site links to. */
-export const ADDRESSES = ["hello@csdecod.ing", "help@csdecod.ing"];
+export interface EmailEnv {
+  /** Inbox for hello@, help@ and ahmed@. */
+  FORWARD_TO: string;
+  /** Inbox for asmaa@. */
+  FORWARD_TO_ASMAA: string;
+}
 
-export async function handleEmail(message: ForwardableEmailMessage, env: { FORWARD_TO: string }): Promise<void> {
-  if (!ADDRESSES.includes(message.to.toLowerCase())) {
+/** Each address and the secret holding the inbox it forwards to. */
+export const ADDRESSES: Record<string, keyof EmailEnv> = {
+  "hello@csdecod.ing": "FORWARD_TO",
+  "help@csdecod.ing": "FORWARD_TO",
+  "ahmed@csdecod.ing": "FORWARD_TO",
+  "asmaa@csdecod.ing": "FORWARD_TO_ASMAA",
+};
+
+export async function handleEmail(message: ForwardableEmailMessage, env: EmailEnv): Promise<void> {
+  const secret = ADDRESSES[message.to.toLowerCase()];
+  if (!secret) {
     message.setReject("No mailbox here.");
     return;
   }
-  await message.forward(env.FORWARD_TO);
+  await message.forward(env[secret]);
 }

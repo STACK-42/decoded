@@ -17,6 +17,8 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
   /** Where mail for hello@ and help@ is forwarded. A secret, so the address stays out of the repo. */
   FORWARD_TO: string;
+  /** Where mail for asmaa@ is forwarded. A secret too. */
+  FORWARD_TO_ASMAA: string;
 }
 
 async function route(request: Request, env: Env): Promise<Response> {

@@ -9,11 +9,17 @@ function message(to: string) {
 }
 
 describe("email", () => {
-  it.each(["hello@csdecod.ing", "help@csdecod.ing", "Help@CSDecod.ing"])("forwards %s to the inbox", async (to) => {
+  it.each(["hello@csdecod.ing", "help@csdecod.ing", "ahmed@csdecod.ing", "Help@CSDecod.ing"])("forwards %s to the inbox", async (to) => {
     const m = message(to);
     await worker.email!(m, env);
     expect(m.forward).toHaveBeenCalledWith("inbox@example.com");
     expect(m.setReject).not.toHaveBeenCalled();
+  });
+
+  it("forwards asmaa@ to her own inbox", async () => {
+    const m = message("asmaa@csdecod.ing");
+    await worker.email!(m, env);
+    expect(m.forward).toHaveBeenCalledWith("asmaa-inbox@example.com");
   });
 
   it("rejects an address nobody uses", async () => {
