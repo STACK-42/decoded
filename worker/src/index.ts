@@ -3,6 +3,7 @@ import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./
 import { allCourseStats, courseStats } from "./stats";
 import { share } from "./share";
 import { acceptInvite, createInvite, getInvite, listCompanions, removeCompanion } from "./companions";
+import { handleEmail } from "./email";
 import { getOwnProfile, getPublicProfile, reportProfile, saveOwnProfile, searchProfiles } from "./profiles";
 
 export interface Env {
@@ -14,6 +15,8 @@ export interface Env {
   GITHUB_CLIENT_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  /** Where mail for hello@ and help@ is forwarded. A secret, so the address stays out of the repo. */
+  FORWARD_TO: string;
 }
 
 async function route(request: Request, env: Env): Promise<Response> {
@@ -124,4 +127,5 @@ export default {
     headers.set("X-Content-Type-Options", "nosniff");
     return new Response(response.body, { status: response.status, headers });
   },
+  email: handleEmail,
 } satisfies ExportedHandler<Env>;
