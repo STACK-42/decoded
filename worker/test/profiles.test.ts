@@ -48,7 +48,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("handle rules", () => {
   it("accepts ordinary handles", () => {
-    for (const h of ["sara_k", "mo7", "grape_lover", "classic_dev", "a1b"]) expect(handleProblem(h), h).toBeNull();
+    for (const h of ["sara_k", "mo7", "grape_lover", "classic_dev", "a1b", "asmaa", "asmaa_6"]) expect(handleProblem(h), h).toBeNull();
   });
 
   it("rejects the wrong shape", () => {
@@ -56,7 +56,7 @@ describe("handle rules", () => {
   });
 
   it("rejects reserved names and blocked words, however they're dressed up", () => {
-    for (const h of ["admin", "ad_min7", "decoded", "ahmed_alghali", "ahmedalghali1", "a7med7x7", "xfuckx", "big_ass", "rape99"]) {
+    for (const h of ["admin", "ad_min7", "decoded", "ahmed_alghali", "ahmedalghali1", "asmaa_farouq", "a7med7x7", "xfuckx", "big_ass", "rape99"]) {
       expect(handleProblem(h), h).toBe("not_allowed");
     }
   });

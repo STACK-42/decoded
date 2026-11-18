@@ -8,10 +8,11 @@ const SEARCH_LIMIT = 20;
 const REPORT_REASONS = ["offensive", "impersonation", "personal-info", "other"];
 
 // Compared with the handle's letters only (digits and "_" removed), so "ad_min7" counts as "admin".
+// Authors are reserved by full name only: a first name like "asmaa" belongs to every Asmaa.
 const RESERVED = new Set([
   "admin", "administrator", "decoded", "support", "help", "moderator", "mod", "staff", "team", "official",
   "root", "system", "api", "null", "undefined", "anonymous", "deleted", "settings", "profile", "people",
-  "ahmedalghali", "asmaafarouq", "amedx", "asmaa",
+  "ahmedalghali", "asmaafarouq", "amedx",
 ]);
 // Rejected anywhere in the handle's letters.
 const BLOCKED_ANYWHERE = ["fuck", "shit", "cunt", "nigg", "fagg", "whore", "slut", "bitch", "porn", "hitler", "pedo"];
