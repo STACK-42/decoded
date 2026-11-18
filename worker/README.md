@@ -12,25 +12,6 @@ npx wrangler deploy    # then publish the Worker
 > [!IMPORTANT]
 > Run the migration first, then deploy the Worker, then push the site. A Worker that expects a table the database doesn't have yet breaks sign-in for everyone.
 
-## Contact email
-
-`hello@`, `help@` and `ahmed@csdecod.ing` forward to the maintainer's inbox, and `asmaa@csdecod.ing` to Asmaa's. Cloudflare Email Routing hands each message to the Worker's `email` handler (`src/email.ts`), which forwards it, or rejects any other address. The inbox is a secret so it stays out of this public repo.
-
-One-time setup, after the first deploy:
-
-```bash
-npx wrangler secret put FORWARD_TO         # the maintainer's inbox
-npx wrangler secret put FORWARD_TO_ASMAA   # Asmaa's inbox
-```
-
-Then in the Cloudflare dashboard, under the csdecod.ing zone:
-
-1. Email, Email Routing: turn it on and let it add the MX and SPF records.
-2. Destination addresses: add both inboxes and click the verification link Cloudflare sends to each. Forwarding fails until that's done.
-3. Routing rules: add a custom address for each of `hello`, `help`, `ahmed` and `asmaa`, each set to "Send to a Worker" and pointed at `decoded-api`.
-
-To add or change an address, edit `ADDRESSES` in `src/email.ts` (and `src/lib/contact.ts` if the site shows it), add a matching routing rule, and deploy.
-
 ## Moderating profiles
 
 People report a profile with the Report link on its page. Reports land in `profile_reports`, one per person per profile. To see the newest:

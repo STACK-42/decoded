@@ -11,8 +11,6 @@ export default defineConfig(async () => ({
           GITHUB_CLIENT_SECRET: "test-client-secret",
           GOOGLE_CLIENT_ID: "test-google-id",
           GOOGLE_CLIENT_SECRET: "test-google-secret",
-          FORWARD_TO: "inbox@example.com",
-          FORWARD_TO_ASMAA: "asmaa-inbox@example.com",
           TEST_MIGRATIONS: await readD1Migrations("./migrations"),
         },
       },
