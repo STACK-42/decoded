@@ -15,4 +15,17 @@ describe("contributors page", () => {
     expect(screen.getByRole("link", { name: /Ahmed Alghali/ }).getAttribute("href")).toBe("https://github.com/a7med7x7");
     expect(screen.getByRole("link", { name: /Asmaa Farouq/ }).getAttribute("href")).toBe("https://github.com/Asmaa6777");
   });
+
+  it("shows contributors' csdecod.ing addresses and the contact addresses", () => {
+    render(
+      <MemoryRouter>
+        <Team />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "ahmed@csdecod.ing" }).getAttribute("href")).toBe("mailto:ahmed@csdecod.ing");
+    expect(screen.getByRole("link", { name: "asmaa@csdecod.ing" }).getAttribute("href")).toBe("mailto:asmaa@csdecod.ing");
+    expect(screen.getByRole("link", { name: /hello@csdecod.ing/ }).getAttribute("href")).toBe("mailto:hello@csdecod.ing");
+    expect(screen.getByRole("link", { name: /help@csdecod.ing/ }).getAttribute("href")).toBe("mailto:help@csdecod.ing");
+    expect(screen.getByRole("link", { name: "Ask for your address →" }).getAttribute("href")).toContain("mailto:hello@csdecod.ing");
+  });
 });

@@ -29,6 +29,7 @@ export default function Team() {
               bio="I hear and I forget. I see and I remember. I do and I understand."
               image={ahmedAlghali.image}
               href={ahmedAlghali.href}
+              email={ahmedAlghali.email}
             />
             <CreatorCard
               name={asmaaFarouq.name}
@@ -36,6 +37,7 @@ export default function Team() {
               bio="The best way to predict the future is to invent it."
               image={asmaaFarouq.image}
               href={asmaaFarouq.href}
+              email={asmaaFarouq.email}
             />
             <div className="border border-border p-6 bg-muted/5">
               <div className="font-display font-bold text-lg mb-2">Get in touch</div>
@@ -50,11 +52,12 @@ export default function Team() {
             <div className="border border-dashed border-border p-6 bg-muted/5">
               <div className="font-display font-bold text-lg mb-2">Join in</div>
               <p className="text-sm text-muted-foreground leading-relaxed font-body mb-4">
-                Decoded is open source. Add a course from your class notes, or pick up something smaller.
+                Decoded is open source. Add a course from your class notes, or pick up something smaller. Every contributor can have a @csdecod.ing address that forwards to their own inbox, so you never have to publish a personal one.
               </p>
               <div className="flex flex-col gap-2 font-mono text-[11px] uppercase tracking-widest">
                 <a href="https://github.com/STACK-42/decoded/blob/main/docs/building-a-course.md" target="_blank" rel="noopener noreferrer" className="text-neon hover:underline underline-offset-4">Build a course →</a>
                 <a href="https://github.com/STACK-42/decoded/issues" target="_blank" rel="noopener noreferrer" className="text-neon hover:underline underline-offset-4">See open issues →</a>
+                <a href={`mailto:${HELLO_EMAIL}?subject=${encodeURIComponent("I want a csdecod.ing address")}`} className="text-neon hover:underline underline-offset-4">Ask for your address →</a>
               </div>
             </div>
           </div>
@@ -66,12 +69,12 @@ export default function Team() {
   );
 }
 
-function CreatorCard({ name, role, bio, image, href }: { name: string; role: string; bio?: string; image: string; href?: string }) {
-  const Wrapper: React.ElementType = href ? "a" : "div";
+function CreatorCard({ name, role, bio, image, href, email }: { name: string; role: string; bio?: string; image: string; href?: string; email?: string }) {
+  const Profile: React.ElementType = href ? "a" : "div";
   const linkProps = href ? { href, target: "_blank", rel: "noopener noreferrer" } : {};
   return (
-    <Wrapper {...linkProps} className="group block border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="group border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
+      <Profile {...linkProps} className="flex items-center gap-4 mb-4">
         <img
           width={56}
           height={56}
@@ -84,12 +87,17 @@ function CreatorCard({ name, role, bio, image, href }: { name: string; role: str
           <div className="font-display font-bold text-lg">{name}</div>
           <div className="font-mono text-[10px] text-neon uppercase tracking-widest">{role}</div>
         </div>
-      </div>
+      </Profile>
       {bio && (
         <p className="text-sm text-muted-foreground leading-relaxed font-body italic">
           "{bio}"
         </p>
       )}
-    </Wrapper>
+      {email && (
+        <a href={`mailto:${email}`} className="mt-4 block font-mono text-[11px] tracking-widest text-neon hover:underline underline-offset-4">
+          {email}
+        </a>
+      )}
+    </div>
   );
 }

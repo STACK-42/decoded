@@ -36,7 +36,7 @@ Every rule for the words inside a lesson (voice, plain language, lesson shape, c
 - [ ] One `lazy()` import per lesson in `src/content/registry.ts`, and a course entry with `slug`, `title`, `tagline`, `description`, `accent`, `status`, `authors` and `modules`
 - [ ] Quiz and lab lessons marked with `kind: "quiz"` or `kind: "practical"`
 - [ ] Each lesson's `#` heading matches its `title` in the registry
-- [ ] Your entry in `src/content/authors.ts`
+- [ ] Your entry in `src/content/authors.ts`, with an `email` if you want a public contact address. Ask the maintainer for a `you@csdecod.ing` address that forwards to your own inbox, so you never publish a personal one (it is an Email Routing rule in the Cloudflare dashboard, nothing in the code)
 - [ ] A course icon in `src/components/brand/Glyphs.tsx`
 - [ ] Learning paths and prerequisites in `src/content/paths.ts`, and any real tools in `src/content/tools.ts`
 - [ ] A row in the README's course table
