@@ -247,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q1",
     quiz: "hardware-datapath-quiz",
+    lesson: "demystifying-circuit-schematics",
+    section: "marks-on-wires-and-pins",
     prompt: "In a digital schematic, what does an inversion bubble (small circle) on an input pin signify?",
     options: [
       { id: "a", text: "The input is active-low: it acts when pulled to 0" },
@@ -260,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q2",
     quiz: "hardware-datapath-quiz",
+    lesson: "sequential-logic-and-latches",
+    section: "the-sr-latch",
     prompt: "Why is S = 1 and R = 1 considered a forbidden input condition in an SR latch built from NOR gates?",
     options: [
       { id: "a", text: "It causes both outputs Q and Q' to become 0, and subsequent release produces an unpredictable race condition" },
@@ -273,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q3",
     quiz: "hardware-datapath-quiz",
+    lesson: "registers-and-shift-registers",
+    section: "shift-registers",
     prompt: "A 4-bit Serial-In Serial-Out (SISO) shift register starts cleared at 0000. Data bits 1, 0, 1, 1 arrive sequentially, shifting right with bits entering at the most significant bit (Q3). What is the register's 4-bit state immediately after the 4th clock tick?",
     options: [
       { id: "a", text: "1101" },
@@ -286,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q4",
     quiz: "hardware-datapath-quiz",
+    lesson: "ripple-and-synchronous-counters",
+    section: "the-settling-problem",
     prompt: "A 4-bit binary ripple counter has a flip-flop propagation delay of 12 ns per stage. What is the maximum settling time when rolling from 7 (0111) to 8 (1000)?",
     options: [
       { id: "a", text: "48 ns" },
@@ -299,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q5",
     quiz: "hardware-datapath-quiz",
+    lesson: "ripple-and-synchronous-counters",
+    section: "synchronous-counters",
     prompt: "In designing a 3-bit synchronous binary counter using T flip-flops, what is the required input equation for the most significant toggle input T2?",
     options: [
       { id: "a", text: "T2 = A1 · A0" },
@@ -312,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/hardware-datapath-quiz/q6",
     quiz: "hardware-datapath-quiz",
+    lesson: "ripple-and-synchronous-counters",
+    section: "the-program-counter",
     prompt: "How does the CPU's Program Counter (PC) handle non-sequential jumps and branches?",
     options: [
       { id: "a", text: "The control unit sets the PC's LOAD input, and the jump address is loaded into its flip-flops" },

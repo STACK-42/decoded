@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q1",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "memory-is-one-long-array",
     prompt: "An int array starts at address 2000 and each int takes 4 bytes. Where is a[25]?",
     options: [
       { id: "a", text: "2025" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q2",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "what-arrays-are-good-and-bad-at",
     prompt: "Why is inserting at index 0 of a 1,000,000-item array slow?",
     options: [
       { id: "a", text: "Finding index 0 takes a long time" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q3",
     quiz: "lists-quiz",
+    lesson: "dynamic-arrays",
+    section: "why-doubling-is-o1-per-append",
     prompt: "A dynamic array doubles its capacity when full. What is the amortized cost of an append?",
     options: [
       { id: "a", text: "O(1)" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q4",
     quiz: "lists-quiz",
+    lesson: "dynamic-arrays",
+    section: "why-doubling-is-o1-per-append",
     prompt: "A dynamic array grows by 100 slots each time it fills. Appending n items costs in total:",
     options: [
       { id: "a", text: "O(n)" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q5",
     quiz: "lists-quiz",
+    lesson: "linked-lists",
+    section: "the-costs-compared-with-an-array",
     prompt: "Which operation is O(1) on a singly linked list with only a head pointer?",
     options: [
       { id: "a", text: "Read the 50th item" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q6",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "why-contiguous-is-fast-in-practice",
     prompt: "Summing a million numbers stored in an array is usually much faster than in a linked list. Why, given both are O(n)?",
     options: [
       { id: "a", text: "Arrays use fewer instructions per addition" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q1",
     quiz: "stacks-queues-quiz",
+    lesson: "stacks",
+    section: "the-interface",
     prompt: "You push A, B, C onto a stack, pop once, then push D. What does the next pop return?",
     options: [
       { id: "a", text: "A" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q2",
     quiz: "stacks-queues-quiz",
+    lesson: "stacks",
+    section: "matching-brackets",
     prompt: "Which string makes a bracket checker stop with \"closer doesn't match the top\"?",
     options: [
       { id: "a", text: "(()" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q3",
     quiz: "stacks-queues-quiz",
+    lesson: "queues-and-deques",
+    section: "the-slow-way",
     prompt: "Why is list.pop(0) a poor way to dequeue from a Python list?",
     options: [
       { id: "a", text: "It removes from the wrong end" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q4",
     quiz: "stacks-queues-quiz",
+    lesson: "queues-and-deques",
+    section: "the-ring-buffer",
     prompt: "A ring buffer has capacity 8, head = 6 and size = 4. Where does the next enqueue go?",
     options: [
       { id: "a", text: "Slot 10" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q5",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "load-factor-and-resizing",
     prompt: "A hash map has 16 buckets and 12 keys, and resizes when the load factor passes 0.75. What happens when you add a 13th key?",
     options: [
       { id: "a", text: "Nothing: 13/16 is still under 1" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q6",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "the-worst-case",
     prompt: "Why does Python's hash(\"hello\") give a different number each time you start Python?",
     options: [
       { id: "a", text: "A bug in CPython" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q7",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "keys-into-indexes",
     prompt: "Which structure would you use to check, in O(1) on average, whether a username is already taken?",
     options: [
       { id: "a", text: "A sorted array" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q1",
     quiz: "trees-quiz",
+    lesson: "binary-trees",
+    section: "four-orders-to-visit-every-node",
     prompt: "Which traversal of a binary search tree lists its keys in sorted order?",
     options: [
       { id: "a", text: "Preorder" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q2",
     quiz: "trees-quiz",
+    lesson: "binary-trees",
+    section: "which-order-for-which-job",
     prompt: "To total the sizes of every folder on a disk, which traversal do you need?",
     options: [
       { id: "a", text: "Preorder: parents first" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q3",
     quiz: "trees-quiz",
+    lesson: "binary-search-trees",
+    section: "height-is-everything",
     prompt: "You insert 10, 20, 30, 40, 50 in that order into an empty (unbalanced) BST. What is its height?",
     options: [
       { id: "a", text: "2" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q4",
     quiz: "trees-quiz",
+    lesson: "binary-search-trees",
+    section: "insert-and-delete",
     prompt: "Deleting a BST node that has two children: what replaces its key?",
     options: [
       { id: "a", text: "Its left child's key" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q5",
     quiz: "trees-quiz",
+    lesson: "heaps",
+    section: "the-heap-rule",
     prompt: "In a binary heap stored in an array, where are the children of index 4?",
     options: [
       { id: "a", text: "5 and 6" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q6",
     quiz: "trees-quiz",
+    lesson: "heaps",
+    section: "push-and-pop",
     prompt: "What does std::priority_queue<int> in C++ return from top() after pushing 9, 4, 7, 1?",
     options: [
       { id: "a", text: "1" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q7",
     quiz: "trees-quiz",
+    lesson: "tries",
+    section: "operations",
     prompt: "A trie holds a million words. How many steps does it take to find all words starting with \"pro\" (before listing them)?",
     options: [
       { id: "a", text: "About 3" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "union-find",
+    section: "a-forest-in-an-array",
     prompt: "In a union-find with union by rank and path compression, what does each operation cost in practice?",
     options: [
       { id: "a", text: "O(n)" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "union-find",
+    section: "kruskals-algorithm",
     prompt: "Kruskal's algorithm skips an edge when union(u, v) reports u and v are already together. Why?",
     options: [
       { id: "a", text: "The edge is too expensive" },
@@ -293,6 +337,7 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "heaps",
     prompt: "You need the 10 highest scores out of a stream of a billion. Which structure keeps this cheap?",
     options: [
       { id: "a", text: "A sorted array of everything" },
@@ -306,6 +351,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "worked-choices",
     prompt: "A leaderboard must show each player's rank and the players just above and below them. Best fit?",
     options: [
       { id: "a", text: "Hash map" },
@@ -319,6 +366,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "linked-lists",
+    section: "doubly-linked-lists",
     prompt: "An LRU cache needs O(1) lookup and O(1) \"move this entry to most recently used\". Which combination does it?",
     options: [
       { id: "a", text: "Two stacks" },
@@ -332,6 +381,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "the-most-common-fix-a-set-instead-of-a-list",
     prompt: "This Python runs slowly: for u in signups: if u in banned_list: ... What's the usual fix?",
     options: [
       { id: "a", text: "Sort signups first" },
@@ -345,6 +396,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "queues-and-deques",
+    section: "deques",
     prompt: "Which structure processes requests strictly in arrival order with O(1) at both ends?",
     options: [
       { id: "a", text: "A Python list using pop(0)" },
@@ -358,6 +411,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "the-cheat-sheet",
     prompt: "When does a linked list genuinely beat a dynamic array?",
     options: [
       { id: "a", text: "Whenever you need to read item i" },
