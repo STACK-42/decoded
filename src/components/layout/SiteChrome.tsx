@@ -69,7 +69,7 @@ export function SiteFooter() {
           <BrandMark compact className="h-4 w-4 text-foreground" />
           Decoded.
         </span>
-        <nav className="flex items-center gap-6">
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <Link to="/courses" className="link-draw hover:text-foreground transition-colors">Courses</Link>
           <Link to="/tools" className="link-draw hover:text-foreground transition-colors">Tools</Link>
           <Link to="/team" className="link-draw hover:text-foreground transition-colors">Contributors</Link>
