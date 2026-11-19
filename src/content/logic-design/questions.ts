@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q1",
     quiz: "numbers-quiz",
+    lesson: "number-systems",
+    section: "positional-number-representation-and-the-radix",
     prompt: "What is the decimal equivalent of the number (243.12)₅ in base 5, and what is the minimum integer radix r required for the number (9C4)_r to be valid?",
     options: [
       { id: "a", text: "73.28₁₀, and minimum radix r = 13" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q2",
     quiz: "numbers-quiz",
+    lesson: "number-systems",
+    section: "terminating-vs-repeating-fractions",
     prompt: "Why does the decimal fraction 0.2₁₀ repeat infinitely in binary (0.00110011...₂), whereas 0.625₁₀ terminates as 0.101₂?",
     options: [
       { id: "a", text: "A reduced fraction p/q terminates in base r if and only if all prime factors of q divide r; 0.2 = 1/5 has denominator 5 which does not divide 2, while 0.625 = 5/8 has denominator 2³" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q3",
     quiz: "numbers-quiz",
+    lesson: "number-systems",
+    section: "converting-between-octal-and-hexadecimal",
     prompt: "What is the hexadecimal equivalent of the octal number (375.4)₈, converted directly via binary without converting to decimal?",
     options: [
       { id: "a", text: "(FD.8)₁₆" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q4",
     quiz: "numbers-quiz",
+    lesson: "binary-arithmetic",
+    section: "range-and-asymmetry",
     prompt: "In an 8-bit signed two's complement system, what decimal value does the bit pattern 10000000₂ represent, and what occurs if hardware attempts to negate it?",
     options: [
       { id: "a", text: "It represents -128₁₀; attempting to negate it produces 10000000₂ (-128) and triggers signed arithmetic overflow because +128 exceeds the 8-bit range [-128, +127]" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q5",
     quiz: "numbers-quiz",
+    lesson: "binary-arithmetic",
+    section: "subtraction-is-addition",
     prompt: "When computing M - N in an n-bit register using two's complement addition M + (2ⁿ - N) where M ≥ N, what does the carry-out generated from the MSB represent?",
     options: [
       { id: "a", text: "A value of 2ⁿ which is discarded by the n-bit register, leaving the exact positive difference M - N" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q6",
     quiz: "numbers-quiz",
+    lesson: "binary-arithmetic",
+    section: "arithmetic-overflow-in-signed-numbers",
     prompt: "An 8-bit arithmetic logic unit adds signed two's complement numbers A = 01010000₂ (+80₁₀) and B = 01000110₂ (+70₁₀). What occurs in hardware?",
     options: [
       { id: "a", text: "Signed overflow occurs (V = 1) because two positive numbers produced a negative sign bit (10010110₂ = -106₁₀), with carry into MSB C₇ = 1 and carry out C₈ = 0" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q7",
     quiz: "numbers-quiz",
+    lesson: "codes-and-floating-point",
+    section: "bcd-addition-and-the-6-correction-rule",
     prompt: "Why must 0110₂ (6) be added to a 4-bit BCD adder stage when its sum exceeds 9 or produces a binary carry?",
     options: [
       { id: "a", text: "Because a 4-bit binary adder cycles modulo 16 while decimal cycles modulo 10; adding 6 skips the 6 invalid codes and advances the decade" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q8",
     quiz: "numbers-quiz",
+    lesson: "codes-and-floating-point",
+    section: "binary-to-gray-conversion",
     prompt: "What is the Gray code equivalent of the binary number 10110₂, and what property makes Gray code essential for optical shaft encoders?",
     options: [
       { id: "a", text: "11101_Gray; consecutive words differ by exactly one bit (unit distance), preventing spurious transitional states caused by switch timing skew" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q9",
     quiz: "numbers-quiz",
+    lesson: "codes-and-floating-point",
+    section: "other-decimal-codes",
     prompt: "Which of the following decimal codes is self-complementing (meaning bitwise inversion of a digit's code directly yields its 9's complement)?",
     options: [
       { id: "a", text: "Excess-3 code and 2421 code" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/numbers-quiz/q10",
     quiz: "numbers-quiz",
+    lesson: "codes-and-floating-point",
+    section: "single-precision-32-bit-format",
     prompt: "In the IEEE 754 single-precision floating-point format, what are the functions of the 127 exponent bias and the implicit (hidden) bit?",
     options: [
       { id: "a", text: "The bias allows exponents to be compared as unsigned integers; the implicit bit gives 24 bits of precision from a 23-bit stored fraction" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q1",
     quiz: "gates-quiz",
+    lesson: "logic-gates",
+    section: "exclusive-or-xor-and-exclusive-nor-xnor",
     prompt: "What is the output of a 3-input XOR gate evaluating inputs A = 1, B = 1, and C = 1?",
     options: [
       { id: "a", text: "1, because multi-input XOR is an odd function that outputs 1 when an odd number of inputs are 1" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q2",
     quiz: "gates-quiz",
+    lesson: "boolean-algebra",
+    section: "the-consensus-theorem",
     prompt: "Which Boolean algebraic identity represents the Consensus Theorem?",
     options: [
       { id: "a", text: "xy + x'z + yz = xy + x'z" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q3",
     quiz: "gates-quiz",
+    lesson: "boolean-algebra",
+    section: "de-morgans-theorems-and-function-complementation",
     prompt: "What is the algebraic complement of the Boolean function F = A(B'C + D)?",
     options: [
       { id: "a", text: "F' = A' + (B + C')D'" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q4",
     quiz: "gates-quiz",
+    lesson: "sop-and-pos",
+    section: "maxterms-mi-and-the-product-of-maxterms",
     prompt: "For a 4-variable function F(A, B, C, D), what is the algebraic expression for maxterm M₉?",
     options: [
       { id: "a", text: "A' + B + C + D'" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q5",
     quiz: "gates-quiz",
+    lesson: "sop-and-pos",
+    section: "relationship-between-minterms-and-maxterms",
     prompt: "If a 3-variable function has canonical sum of minterms F(A, B, C) = ∑ m(0, 2, 4, 6), what is its canonical product of maxterms?",
     options: [
       { id: "a", text: "∏ M(1, 3, 5, 7)" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q6",
     quiz: "gates-quiz",
+    lesson: "karnaugh-maps",
+    section: "the-adjacency-principle-and-gray-code",
     prompt: "Why are the row and column coordinates of a Karnaugh map labeled in Gray code (00, 01, 11, 10)?",
     options: [
       { id: "a", text: "To guarantee that physically adjacent cells differ by exactly one variable (Hamming distance 1)" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q7",
     quiz: "gates-quiz",
+    lesson: "karnaugh-maps",
+    section: "formal-terminology-of-logic-minimization",
     prompt: "What distinguishes an Essential Prime Implicant (EPI) from an ordinary Prime Implicant?",
     options: [
       { id: "a", text: "An EPI covers at least one minterm (distinguished minterm) that is not covered by any other prime implicant" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q8",
     quiz: "gates-quiz",
+    lesson: "karnaugh-maps",
+    section: "dont-care-conditions-in-k-maps",
     prompt: "When minimizing a function on a K-map that includes don't-care conditions (X), what is the optimal rule?",
     options: [
       { id: "a", text: "Include an X in a group only if it enlarges the group or reduces the number of groups; leave all other X cells uncovered" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q9",
     quiz: "gates-quiz",
+    lesson: "karnaugh-maps",
+    section: "the-static-1-hazard-analyzed",
     prompt: "What causes a static-1 timing hazard in a two-level AND-OR circuit, and how is it eliminated?",
     options: [
       { id: "a", text: "Unequal propagation delays when switching between adjacent 1-cells covered by different prime implicants; eliminated by adding a redundant consensus product term" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/gates-quiz/q10",
     quiz: "gates-quiz",
+    lesson: "universal-gates",
+    section: "why-nand-dominates-in-cmos-vlsi-silicon",
     prompt: "Why are NAND gates universally preferred over NOR gates in CMOS silicon fabrication?",
     options: [
       { id: "a", text: "Electron mobility in nMOS is more than twice hole mobility in pMOS, making series nMOS in NAND much smaller and faster than series pMOS in NOR" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q1",
     quiz: "building-blocks-quiz",
+    lesson: "adders",
+    section: "the-full-adder",
     prompt: "A half adder computes sum and carry for two 1-bit inputs (A and B), while a full adder includes an incoming carry (Cin). Which statement regarding their Boolean expressions and gate structures is correct?",
     options: [
       { id: "a", text: "A half adder produces Sum = A ⊕ B and Carry = AB; a full adder can be constructed from two half adders and one OR gate with Sum = A ⊕ B ⊕ Cin and Cout = AB + (A ⊕ B)Cin" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q2",
     quiz: "building-blocks-quiz",
+    lesson: "adders",
+    section: "constructing-a-full-adder-from-two-half-adders",
     prompt: "When building a full adder from two half adders (HA1 with sum S1 = A ⊕ B, carry C1 = AB; and HA2 with sum S = S1 ⊕ Cin, carry C2 = S1 · Cin), why can an OR gate be used to combine C1 and C2 instead of an XOR gate?",
     options: [
       { id: "a", text: "Because C1 and C2 are mutually exclusive (C1 · C2 = 0), so C1 + C2 and C1 ⊕ C2 evaluate to identical values for all input combinations" },
@@ -293,6 +337,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q3",
     quiz: "building-blocks-quiz",
+    lesson: "adders",
+    section: "the-controlled-adder-subtractor-circuit",
     prompt: "In an n-bit parallel adder-subtractor circuit with mode control line M, how does setting M = 1 configure the circuit to perform two's complement subtraction A - B?",
     options: [
       { id: "a", text: "The XOR gates act as controlled inverters producing Bi ⊕ 1 = Bi' (one's complement), and setting carry-in C0 = M = 1 adds 1, completing two's complement negation (A + B' + 1)" },
@@ -306,6 +352,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q4",
     quiz: "building-blocks-quiz",
+    lesson: "adders",
+    section: "signed-overflow-detection",
     prompt: "A 4-bit parallel adder computes the sum of A = 0101₂ (+5₁₀) and B = 0100₂ (+4₁₀) with C0 = 0. What are the values of the carry into the sign bit (C3), carry out of the sign bit (C4), and the signed overflow flag V?",
     options: [
       { id: "a", text: "C3 = 1, C4 = 0, and V = 1 (signed overflow occurred because the sum +9 exceeds the 4-bit signed maximum +7)" },
@@ -319,6 +367,7 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q5",
     quiz: "building-blocks-quiz",
+    lesson: "fast-carries",
     prompt: "How does the worst-case propagation delay of an n-bit Ripple-Carry Adder (RCA) compare with a multilevel Hierarchical Carry-Lookahead Adder (CLA) as word width n scales to 32 or 64 bits?",
     options: [
       { id: "a", text: "Ripple-Carry delay scales linearly as O(n), whereas hierarchical Carry-Lookahead delay scales logarithmically as O(log n)" },
@@ -332,6 +381,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q6",
     quiz: "building-blocks-quiz",
+    lesson: "fast-carries",
+    section: "the-carry-lookahead-principle",
     prompt: "In a Carry-Lookahead Adder, how are the Carry Generate signal Gi and Carry Propagate signal Pi defined for stage i, and what do they physically represent?",
     options: [
       { id: "a", text: "Gi = Ai Bi (stage i generates a carry regardless of incoming carry), and Pi = Ai ⊕ Bi (stage i propagates incoming carry Ci to Ci+1)" },
@@ -345,6 +396,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q7",
     quiz: "building-blocks-quiz",
+    lesson: "comparators-decoders-encoders",
+    section: "commercial-ic-74ls138-3-to-8-line-decoder",
     prompt: "The 74LS138 is a 3-to-8 line decoder with active-LOW outputs (Y0' ... Y7') and three enable pins: G1 (active-HIGH), G2A' (active-LOW), and G2B' (active-LOW). If G1 = 1, G2A' = 0, G2B' = 0, and address inputs CBA = 101₂ (5₁₀), what are the output states?",
     options: [
       { id: "a", text: "Output Y5' = 0, and all other seven outputs (Y0' to Y4', Y6', Y7') are 1" },
@@ -358,6 +411,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q8",
     quiz: "building-blocks-quiz",
+    lesson: "comparators-decoders-encoders",
+    section: "arbitrary-boolean-logic-synthesis-with-decoders",
     prompt: "A circuit uses an active-LOW 3-to-8 decoder (like the 74LS138) to synthesize the Boolean function F(A, B, C) = ∑ m(1, 3, 7). How should the decoder outputs be connected to realize F?",
     options: [
       { id: "a", text: "Connect decoder outputs Y1', Y3', and Y7' directly into a 3-input NAND gate" },
@@ -371,6 +426,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q9",
     quiz: "building-blocks-quiz",
+    lesson: "comparators-decoders-encoders",
+    section: "4-to-2-priority-encoder-truth-table-and-derivation",
     prompt: "A 4-to-2 priority encoder has inputs D0 (lowest priority) through D3 (highest priority), outputs A1 A0, and a Valid output V. If inputs D3 D2 D1 D0 = 0110₂, what will the circuit output?",
     options: [
       { id: "a", text: "A1 = 1, A0 = 0, and V = 1 (input D2 takes priority over D1, outputting binary code 2 = 10₂)" },
@@ -384,6 +441,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/building-blocks-quiz/q10",
     quiz: "building-blocks-quiz",
+    lesson: "multiplexers",
+    section: "method-2-shannons-expansion-technique-n-1-select-lines",
     prompt: "Using Shannon's expansion theorem to implement the 3-variable function F(A, B, C) = ∑ m(0, 2, 6, 7) on a 4-to-1 multiplexer with select lines S1 = A and S0 = B, what signals must connect to data inputs I0, I1, I2, and I3?",
     options: [
       { id: "a", text: "I0 = C', I1 = C', I2 = 0, and I3 = 1" },
@@ -397,6 +456,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q1",
     quiz: "sequential-quiz",
+    lesson: "sr-latch",
+    section: "characteristic-equation-and-function-tables",
     prompt: "What is the characteristic equation of an active-HIGH NOR SR latch under legal operation (S · R = 0)?",
     options: [
       { id: "a", text: "Q(t+1) = S · R' + Q(t)" },
@@ -410,6 +471,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q2",
     quiz: "sequential-quiz",
+    lesson: "sr-latch",
+    section: "practical-application-switch-debouncing",
     prompt: "Why does an SPDT mechanical switch connected to a cross-coupled NAND SR latch eliminate contact bounce?",
     options: [
       { id: "a", text: "The latch incorporates internal RC low-pass filters that absorb the high-frequency bounce vibrations" },
@@ -423,6 +486,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q3",
     quiz: "sequential-quiz",
+    lesson: "d-latch-and-clock",
+    section: "the-transparency-dilemma-the-feedback-race-hazard",
     prompt: "A student attempts to build an accumulator by connecting the inverted output Q' of a transparent gated D latch directly back to its input D through combinational logic. What timing failure occurs when the clock pulse remains high (C = 1)?",
     options: [
       { id: "a", text: "The latch enters high impedance (Hi-Z)" },
@@ -436,6 +501,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q4",
     quiz: "sequential-quiz",
+    lesson: "flip-flops",
+    section: "how-to-freeze-an-instant-the-master-slave-architecture",
     prompt: "How does a master-slave D flip-flop prevent feedback race-around and transparency hazards?",
     options: [
       { id: "a", text: "It uses an airlock design with two cascaded latches clocked on opposite phases, ensuring data never has an open combinational path from input to output" },
@@ -449,6 +516,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q5",
     quiz: "sequential-quiz",
+    lesson: "flip-flops",
+    section: "2-the-t-flip-flop-toggle",
     prompt: "What is the characteristic equation and excitation requirement for a T (Toggle) flip-flop?",
     options: [
       { id: "a", text: "Characteristic: Q(t+1) = T · Q'; Excitation: T = Q(t) + Q(t+1)" },
@@ -462,6 +531,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q6",
     quiz: "sequential-quiz",
+    lesson: "flip-flops",
+    section: "1-setup-time-constraint-and-fmax",
     prompt: "A synchronous digital datapath has flip-flops with clock-to-Q delay t_cq = 3 ns, setup time t_su = 2 ns, hold time t_h = 1.5 ns, and combinational logic path delay t_comb = 5 ns. What is the maximum operating clock frequency (f_max)?",
     options: [
       { id: "a", text: "100 MHz" },
@@ -475,6 +546,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q7",
     quiz: "sequential-quiz",
+    lesson: "registers",
+    section: "the-safe-solution-recirculating-multiplexer-load",
     prompt: "Why is multiplexer-based recirculating load control preferred over gating the clock with an AND gate (CLK · Load)?",
     options: [
       { id: "a", text: "Multiplexers consume significantly less silicon area than an AND gate" },
@@ -488,6 +561,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q8",
     quiz: "sequential-quiz",
+    lesson: "registers",
+    section: "2-the-johnson-counter-twisted-ring-counter",
     prompt: "A 4-bit Johnson (twisted-ring) counter constructed from 4 flip-flops has its inverted serial output fed back to the input (D_0 = Q_3'). How many distinct states does it generate, and what special property does its state sequence possess?",
     options: [
       { id: "a", text: "4 states; exactly one flip-flop is high at any time (one-hot)" },
@@ -501,6 +576,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q9",
     quiz: "sequential-quiz",
+    lesson: "counters",
+    section: "critical-weakness-1-accumulated-propagation-delay",
     prompt: "Why can an asynchronous (ripple) counter not be safely used in high-speed systems with combinational decoders?",
     options: [
       { id: "a", text: "It requires three distinct power supply voltage levels" },
@@ -514,6 +591,8 @@ export const questions: Question[] = [
   {
     id: "logic-design/sequential-quiz/q10",
     quiz: "sequential-quiz",
+    lesson: "memory-unit",
+    section: "2-expanding-word-capacity-increasing-number-of-words",
     prompt: "A 4K × 8 RAM module is constructed from four 1K × 8 RAM chips. How are the 12 address lines (A_11..A_0) partitioned to avoid bus contention on the shared 8-bit data bus?",
     options: [
       { id: "a", text: "All 12 address lines connect to all four chips simultaneously" },
