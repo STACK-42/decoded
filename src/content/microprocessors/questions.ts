@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "inside-the-8086",
+    section: "two-units-instead-of-one",
     prompt: "Why does the 8086 have an instruction queue?",
     options: [
       { id: "a", text: "To store a program permanently in non-volatile memory" },
@@ -21,6 +23,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "registers",
+    section: "general-purpose-ax-bx-cx-dx",
     prompt: "If register AX contains the value 1234h, what value is stored in AL?",
     options: [
       { id: "a", text: "12h" },
@@ -35,6 +39,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "flags",
+    section: "carry-and-overflow",
     prompt: "After adding 100 + 50 in 8-bit register AL, which flag is set to 1?",
     options: [
       { id: "a", text: "Carry Flag (CF), because 150 exceeds 8 bits" },
@@ -49,6 +55,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "segments-and-addresses",
+    section: "the-formula",
     prompt: "If DS = 2000h and BX = 0150h, what 20-bit physical address does the memory operand [BX] access?",
     options: [
       { id: "a", text: "2150h" },
@@ -63,6 +71,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "addressing-modes",
+    section: "the-rules",
     prompt: "Which of the following is a valid 8086 assembly instruction?",
     options: [
       { id: "a", text: "MOV AX, [DX]" },
@@ -77,6 +87,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "addressing-modes",
+    section: "the-eight-modes",
     prompt: "Which addressing mode best represents accessing a specific column in a row within a two-dimensional matrix (e.g., matrix[row][col])?",
     options: [
       { id: "a", text: "Immediate addressing" },
@@ -91,6 +103,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "jumps-and-loops",
+    section: "which-jump-to-use",
     prompt: "Register AL contains 200 (0C8h). The CPU executes CMP AL, 100. Which conditional branch is taken?",
     options: [
       { id: "a", text: "JA, but not JG" },
@@ -105,6 +119,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "stack-and-procedures",
+    section: "push-and-pop",
     prompt: "If the stack pointer SP contains FFFEh, what is the value of SP immediately after executing PUSH AX?",
     options: [
       { id: "a", text: "FFFFh" },
@@ -119,6 +135,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q9",
     quiz: "final-quiz",
+    lesson: "stack-and-procedures",
+    section: "call-and-ret",
     prompt: "What does the CALL instruction do that a standard JMP instruction does not do?",
     options: [
       { id: "a", text: "It pushes the return address onto the stack before branching" },
@@ -133,6 +151,8 @@ export const questions: Question[] = [
   {
     id: "microprocessors/final-quiz/q10",
     quiz: "final-quiz",
+    lesson: "interrupts",
+    section: "maskable-and-non-maskable",
     prompt: "A catastrophic power failure requires immediate CPU attention, even if software has executed CLI. Which input line must be asserted?",
     options: [
       { id: "a", text: "INTR" },

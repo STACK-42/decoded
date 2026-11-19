@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q1",
     quiz: "foundations-quiz",
+    lesson: "layers-and-packets",
+    section: "the-four-layers",
     prompt: "Which layer's job is to deliver data to the right program on a machine, using port numbers?",
     options: [
       { id: "a", text: "Application" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q2",
     quiz: "foundations-quiz",
+    lesson: "layers-and-packets",
+    section: "encapsulation",
     prompt: "A router forwarding a packet normally reads which headers?",
     options: [
       { id: "a", text: "Only the HTTP request" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q3",
     quiz: "foundations-quiz",
+    lesson: "delay-and-throughput",
+    section: "four-kinds-of-delay",
     prompt: "A 12,000-bit packet goes onto a 1 Mb/s link. What is its transmission delay?",
     options: [
       { id: "a", text: "1.2 µs" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q4",
     quiz: "foundations-quiz",
+    lesson: "delay-and-throughput",
+    section: "latency-round-trips-and-throughput",
     prompt: "You upgrade from 100 Mb/s to 1 Gb/s, but a small web page from another continent loads almost as slowly. Why?",
     options: [
       { id: "a", text: "The upgrade didn't work" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q5",
     quiz: "foundations-quiz",
+    lesson: "delay-and-throughput",
+    section: "latency-round-trips-and-throughput",
     prompt: "A path crosses links of 1 Gb/s, 50 Mb/s and 300 Mb/s. What is the most throughput you can get end to end?",
     options: [
       { id: "a", text: "1 Gb/s" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/foundations-quiz/q6",
     quiz: "foundations-quiz",
+    lesson: "delay-and-throughput",
+    section: "latency-round-trips-and-throughput",
     prompt: "Why must a fast sender on a long-distance link keep many bytes \"in flight\" rather than waiting for each reply?",
     options: [
       { id: "a", text: "To save memory" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q1",
     quiz: "network-quiz",
+    lesson: "ip-addresses-and-subnets",
+    section: "network-part-and-host-part",
     prompt: "How many usable host addresses does a /27 subnet have?",
     options: [
       { id: "a", text: "27" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q2",
     quiz: "network-quiz",
+    lesson: "ip-addresses-and-subnets",
+    section: "network-part-and-host-part",
     prompt: "What is the network address of 172.16.5.4/20?",
     options: [
       { id: "a", text: "172.16.0.0" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q3",
     quiz: "network-quiz",
+    lesson: "routing",
+    section: "longest-prefix-match",
     prompt: "A forwarding table has 10.0.0.0/8 → A, 10.4.0.0/16 → B and 0.0.0.0/0 → C. Where does a packet for 10.4.9.1 go?",
     options: [
       { id: "a", text: "A, the first match" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q4",
     quiz: "network-quiz",
+    lesson: "ip-addresses-and-subnets",
+    section: "private-addresses-and-nat",
     prompt: "Your laptop at home has the address 192.168.1.23. How can it reach a public website?",
     options: [
       { id: "a", text: "192.168 addresses are public" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q5",
     quiz: "network-quiz",
+    lesson: "routing",
+    section: "link-state-routing",
     prompt: "In link-state routing, what does each router use to compute its forwarding table?",
     options: [
       { id: "a", text: "Only its neighbours' distance estimates" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/network-quiz/q6",
     quiz: "network-quiz",
+    lesson: "routing",
+    section: "ttl-and-traceroute",
     prompt: "What stops a packet circulating forever if routers form a loop?",
     options: [
       { id: "a", text: "The TCP checksum" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q1",
     quiz: "transport-quiz",
+    lesson: "udp-and-ports",
+    section: "ports",
     prompt: "One web server on port 443 is talking to 5,000 browsers at once. How does it tell their connections apart?",
     options: [
       { id: "a", text: "Each browser uses a different server port" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q2",
     quiz: "transport-quiz",
+    lesson: "udp-and-ports",
+    section: "why-use-an-unreliable-protocol",
     prompt: "Which is a good reason to choose UDP over TCP?",
     options: [
       { id: "a", text: "You need every byte delivered in order" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q3",
     quiz: "transport-quiz",
+    lesson: "tcp-reliable-delivery",
+    section: "a-reliable-byte-stream",
     prompt: "A client sends `send(\"ab\")` then `send(\"cd\")` over TCP. What might one `recv(10)` on the server return?",
     options: [
       { id: "a", text: "Always exactly \"ab\"" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q4",
     quiz: "transport-quiz",
+    lesson: "tcp-reliable-delivery",
+    section: "sequence-numbers-and-acknowledgements",
     prompt: "A receiver has bytes up to 199, and segments starting at 300 and 400 arrive, but 200 to 299 is missing. What ACK number does it send?",
     options: [
       { id: "a", text: "200" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q5",
     quiz: "transport-quiz",
+    lesson: "tcp-reliable-delivery",
+    section: "retransmission",
     prompt: "Why does TCP resend after three duplicate ACKs instead of waiting for the timeout?",
     options: [
       { id: "a", text: "Duplicate ACKs mean the connection is closing" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q6",
     quiz: "transport-quiz",
+    lesson: "congestion-control",
+    section: "backing-off",
     prompt: "In congestion avoidance, a TCP Reno sender has cwnd = 20 and gets three duplicate ACKs. What happens?",
     options: [
       { id: "a", text: "cwnd becomes 1 and slow start restarts" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/transport-quiz/q7",
     quiz: "transport-quiz",
+    lesson: "congestion-control",
+    section: "why-aimd-is-fair",
     prompt: "Why does AIMD make competing flows converge to equal shares?",
     options: [
       { id: "a", text: "Routers divide the bandwidth evenly" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "dns",
+    section: "resolution",
     prompt: "You type a URL for a site you've never visited. What happens first, before any connection to the site?",
     options: [
       { id: "a", text: "A TCP handshake with the site" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "dns",
+    section: "resolution",
     prompt: "Your resolver has no cache. How does it find the address for www.decoded-demo.com?",
     options: [
       { id: "a", text: "It asks one central server that knows every name" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "dns",
+    section: "caching-and-ttl",
     prompt: "You change your website's A record, but some users still reach the old server an hour later. Why?",
     options: [
       { id: "a", text: "DNS changes need a server restart" },
@@ -293,6 +337,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "http-and-https",
+    section: "https-and-tls",
     prompt: "Over TCP with TLS 1.3, how many round trips pass before the first byte of the HTTP request can be sent (ignoring DNS)?",
     options: [
       { id: "a", text: "0" },
@@ -306,6 +352,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "ip-addresses-and-subnets",
+    section: "network-part-and-host-part",
     prompt: "Your laptop (192.168.1.23/24) sends a packet to 203.0.113.10. Where does it send the packet first?",
     options: [
       { id: "a", text: "Directly to 203.0.113.10 over Wi-Fi" },
@@ -319,6 +367,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "routing",
+    section: "longest-prefix-match",
     prompt: "A router in the middle of the internet forwards the packet. What does it look at?",
     options: [
       { id: "a", text: "The HTTP request, to see what's being fetched" },
@@ -332,6 +382,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "tcp-reliable-delivery",
+    section: "retransmission",
     prompt: "One segment of the page is lost on the way back. What does the browser's application code see?",
     options: [
       { id: "a", text: "A gap in the page" },
@@ -345,6 +397,8 @@ export const questions: Question[] = [
   {
     id: "computer-networks/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "http-and-https",
+    section: "requests-and-responses",
     prompt: "The server responds with status 304. What should the browser do?",
     options: [
       { id: "a", text: "Show an error page" },
