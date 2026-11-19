@@ -2851,13 +2851,14 @@ export function MlfqDemo() {
         ))}
       </div>
       <div className="overflow-x-auto">
-        <div className="min-w-[420px]">
+        {/* fits a phone: the shortest default slice (D, 4 of 77 ms) is still about 16 px there */}
+        <div className="sm:min-w-[420px]">
           <div className="relative h-9 rounded-sm border border-border overflow-hidden">
             {slices.map((s, i) => {
               const end = Math.min(s.to, t);
               if (end <= s.from) return null;
               return (
-                <div key={i} className={`absolute top-0 bottom-0 ${levelTone[s.level]} border-r border-background flex items-center justify-center`} style={{ left: `${(s.from / total) * 100}%`, width: `${((end - s.from) / total) * 100}%` }}>
+                <div key={i} className={`absolute top-0 bottom-0 ${levelTone[s.level]} border-r border-background flex items-center justify-center overflow-hidden`} style={{ left: `${(s.from / total) * 100}%`, width: `${((end - s.from) / total) * 100}%` }}>
                   <span className="font-mono text-[11px] font-bold text-background">{s.name}</span>
                 </div>
               );
