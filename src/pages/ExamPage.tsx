@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse } from "@/content/registry";
-import { loadBank } from "@/content/questionBanks";
-import type { Question } from "@/lib/questions";
+import { loadBank, loadGenerators } from "@/content/questionBanks";
+import { instantiate, type Question, type QuestionGenerator } from "@/lib/questions";
 import { recordAnswers } from "@/lib/review";
 import {
   buildExam,
@@ -31,6 +31,7 @@ export default function ExamPage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
   const course = courseSlug ? getCourse(courseSlug) : undefined;
   const [bank, setBank] = useState<Question[] | null>(null);
+  const [generators, setGenerators] = useState<QuestionGenerator[]>([]);
   const [phase, setPhase] = useState<Phase>({ name: "intro" });
   const [conditions, setConditions] = useState(false);
   const [attempts, setAttempts] = useState<ExamAttempt[]>(() => (courseSlug ? readAttempts(courseSlug) : []));
@@ -41,7 +42,10 @@ export default function ExamPage() {
 
   useEffect(() => {
     let live = true;
-    if (courseSlug) loadBank(courseSlug).then((b) => live && setBank(b));
+    if (courseSlug) {
+      loadBank(courseSlug).then((b) => live && setBank(b));
+      loadGenerators(courseSlug).then((g) => live && setGenerators(g));
+    }
     return () => {
       live = false;
     };
@@ -69,7 +73,10 @@ export default function ExamPage() {
   const start = () => {
     if (!bank) return;
     const seed = Math.floor(Math.random() * 2 ** 31);
-    setPhase({ name: "running", exam: buildExam(course, bank, seed), started: Date.now() });
+    // Generated questions get fresh numbers from this attempt's seed.
+    const ids = new Set(generators.map((g) => g.id));
+    const fresh = [...bank.filter((q) => !ids.has(q.id)), ...generators.map((g) => instantiate(g, seed))];
+    setPhase({ name: "running", exam: buildExam(course, fresh, seed), started: Date.now() });
   };
 
   return (
