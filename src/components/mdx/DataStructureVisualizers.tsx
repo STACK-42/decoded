@@ -565,13 +565,16 @@ export function UnionFindLab() {
     placed.push({ v, x, y: d, parent });
     return x;
   };
+  // a set of one needs less room than a tree, so the eight starting singletons fit a phone
+  let lastGap = 0.4;
   roots.forEach((r) => {
     lay(r, 0, null);
-    col += 0.4;
+    lastGap = kids(r).length ? 0.4 : 0.15;
+    col += lastGap;
   });
   const maxD = Math.max(...placed.map((p) => p.y));
   const W = Math.max(300, col * 44 + 20);
-  const X = (x: number) => 26 + (x / Math.max(1, col - 0.4)) * (W - 52);
+  const X = (x: number) => 26 + (x / Math.max(1, col - lastGap - 1)) * (W - 52);
   const Y = (y: number) => 24 + y * 54;
   const pos = new Map(placed.map((p) => [p.v, p]));
   return (
@@ -582,7 +585,7 @@ export function UnionFindLab() {
         <button type="button" className={chip} onClick={() => { let t = ufStart(UF_N); for (const [a, b] of [[0, 1], [2, 3], [0, 2], [4, 5], [6, 7], [4, 6], [0, 4]] as const) t = ufUnion(t, a, b); setS({ ...t, note: "Seven unions: everything is one set. Click Find on 7 or 3 to see path compression flatten the tree." }); setPick(null); setPath([]); }}>join everything</button>
       </div>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${maxD * 54 + 48}`} className="block mx-auto h-auto" style={{ width: "100%", maxWidth: W * 1.3, minWidth: Math.min(W, 520) * 0.8 }} role="img" aria-label="disjoint-set forest">
+        <svg viewBox={`0 0 ${W} ${maxD * 54 + 48}`} className="block mx-auto h-auto sm:min-w-[var(--uf-min)]" style={{ width: "100%", maxWidth: W * 1.3, "--uf-min": `${Math.min(W, 520) * 0.8}px` } as React.CSSProperties} role="img" aria-label="disjoint-set forest">
           {placed.map((p) => {
             if (p.parent === null) return null;
             const q = pos.get(p.parent)!;
@@ -592,7 +595,7 @@ export function UnionFindLab() {
             <g key={p.v} className="cursor-pointer" onClick={() => click(p.v)}>
               <circle cx={X(p.x)} cy={Y(p.y)} r={17} className="fill-card" />
               <circle cx={X(p.x)} cy={Y(p.y)} r={17} strokeWidth={2} className={`transition-colors ${p.v === pick ? "fill-neon/30 stroke-neon" : path.includes(p.v) ? "fill-mint/40 stroke-mint" : p.parent === null ? "fill-violet/25 stroke-violet" : "fill-card stroke-border"} hover:stroke-foreground`} />
-              <text x={X(p.x)} y={Y(p.y) + 4.5} textAnchor="middle" className="fill-foreground font-mono text-[13px] font-bold pointer-events-none">{p.v}</text>
+              <text x={X(p.x)} y={Y(p.y) + 4.5} textAnchor="middle" className="fill-foreground font-mono [font-size:16px] sm:[font-size:13px] font-bold pointer-events-none">{p.v}</text>
             </g>
           ))}
         </svg>
