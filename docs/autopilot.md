@@ -62,7 +62,7 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
   - [x] 4d. Set `lesson`/`section` on the migrated quiz questions. Counted 2026-11-19: 262 untagged in 9 courses.
     - [x] Computer Organization 10, Microprocessors 10, Computer Architecture 6, Computer Networks 27, Data Structures 28: 81 tagged. (PR #104, stacked on #102)
     - [x] Discrete Mathematics 42, Logic Design 40, Algorithm Design 16: 98 tagged (5 with `lesson` only, where no single heading teaches the idea). (PR #105, stacked on #104)
-    - [x] Computational Mathematics 83 tagged (1 with `lesson` only). (PR #PRNUM, stacked on #105) Every migrated question now names its lesson. Questions added to a quiz later still need a `lesson` by hand; no test enforces it, so authors' quiz rounds aren't blocked.
+    - [x] Computational Mathematics 83 tagged (1 with `lesson` only). (PR #108, stacked on #105) Every migrated question now names its lesson. Questions added to a quiz later still need a `lesson` by hand; no test enforces it, so authors' quiz rounds aren't blocked.
 - [ ] 5. Generated questions (subnets, scheduling, Big-O first).
 - [ ] 6. Account sync for review cards and exam attempts.
 
@@ -97,7 +97,7 @@ Nothing. The exam-stack block (since 2026-11-06, over #68's inline practice ques
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
-- 2026-11-20 06:10 (run A): exam phase 4d finished: Computational Mathematics' 83 quiz questions tagged with lesson and section, so all 262 migrated questions now link back to their lesson. Next exam phase: 5, generated questions (subnets, scheduling, Big-O first). PR #PRNUM, open, stacked on #105.
+- 2026-11-20 06:10 (run A): exam phase 4d finished: Computational Mathematics' 83 quiz questions tagged with lesson and section, so all 262 migrated questions now link back to their lesson. Next exam phase: 5, generated questions (subnets, scheduling, Big-O first). PR #108, open, stacked on #105.
 - 2026-11-19 10:40 (run B): exam phase 4d, second batch: tagged 98 quiz questions in Discrete Mathematics, Logic Design and Algorithm Design with the lesson and section that teach each (lesson only for 5 where no one heading does). Algorithm Design is the owner's course: only tags were added, no wording changed. Left: Computational Mathematics' 83. PR #105, open, stacked on #104.
 - 2026-11-19 06:10 (run A): exam phase 4d started. Tagged 81 migrated quiz questions in five courses with the lesson (and, where one heading teaches it, the section) that teaches each, checked against the lesson text. The bank test confirms every lesson and heading exists. PR #104, open, stacked on #102.
 - 2026-11-18 10:40 (run B): exam phase 4c, the last two courses: Data Structures +20 and Computer Networks +9, numbers checked by script (g[2][1] at 1036, 31 copies for 17 doubling appends, ring back at index 1, heap parent of 9 is 4, 10 ms over 2,000 km, cwnd 16 after 4 slow-start round trips). Next exam phase: 4d, tagging the 259 migrated quiz questions with `lesson` and `section`. PR #102, open, stacked on #101.
