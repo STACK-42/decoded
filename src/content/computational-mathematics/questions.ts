@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q1",
     quiz: "matrices-quiz",
+    lesson: "matrices-and-matlab",
+    section: "adding-and-subtracting",
     prompt: "A = [1 -2; 3 0] and B = [4 5; -1 2]. What is A + B?",
     options: [
       { id: "a", text: "[5 3; 2 2]" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q2",
     quiz: "matrices-quiz",
+    lesson: "matrices-and-matlab",
+    section: "multiplying-by-a-scalar",
     prompt: "What is entry (2, 2) of -3 * [2 -1; 0 4]?",
     options: [
       { id: "a", text: "-12" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q3",
     quiz: "matrices-quiz",
+    lesson: "matrices-and-matlab",
+    section: "adding-and-subtracting",
     prompt: "Which of these gives a size error in MATLAB?",
     options: [
       { id: "a", text: "ones(3, 2) + 5" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q4",
     quiz: "matrices-quiz",
+    lesson: "transpose-and-products",
+    section: "the-transpose",
     prompt: "A = [4 -2 3; 0 5 -2]. What is entry (3, 1) of A' (the transpose)?",
     options: [
       { id: "a", text: "3" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q5",
     quiz: "matrices-quiz",
+    lesson: "transpose-and-products",
+    section: "the-dot-product",
     prompt: "u = (2, -1, 3) and v = (4, 5, -1). What is u · v, and what does it tell you?",
     options: [
       { id: "a", text: "0, so u and v are at right angles" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q6",
     quiz: "matrices-quiz",
+    lesson: "transpose-and-products",
+    section: "one-pair-of-vectors-two-products",
     prompt: "u and v are both 3-by-1 column vectors. Which expression gives a single number?",
     options: [
       { id: "a", text: "u * v" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q7",
     quiz: "matrices-quiz",
+    lesson: "multiplying-matrices",
+    section: "the-rule",
     prompt: "A is 3-by-4 and B is 4-by-2. What is true about the products?",
     options: [
       { id: "a", text: "AB is 3-by-2 and BA doesn't exist" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q8",
     quiz: "matrices-quiz",
+    lesson: "multiplying-matrices",
+    section: "a-product-by-hand",
     prompt: "A = [1 2; 3 4] and B = [0 1; 5 -2]. What is entry (2, 1) of AB?",
     options: [
       { id: "a", text: "20" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q9",
     quiz: "matrices-quiz",
+    lesson: "kronecker-product",
+    section: "the-definition",
     prompt: "A is 2-by-3 and B is 4-by-5. What is the size of kron(A, B)?",
     options: [
       { id: "a", text: "6-by-20" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q10",
     quiz: "matrices-quiz",
+    lesson: "kronecker-product",
+    section: "the-definition",
     prompt: "A = [2 0; 1 3] and B = [1 -1; 4 2]. What is entry (4, 3) of kron(A, B)?",
     options: [
       { id: "a", text: "12" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q11",
     quiz: "matrices-quiz",
+    lesson: "norms-and-trace",
+    section: "three-norms-to-know",
     prompt: "What is the 1-norm of [2 -8; 3 1]?",
     options: [
       { id: "a", text: "9" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q12",
     quiz: "matrices-quiz",
+    lesson: "norms-and-trace",
+    section: "three-norms-to-know",
     prompt: "For A = [1 -7; -2 -3], what is the infinity-norm?",
     options: [
       { id: "a", text: "3" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q13",
     quiz: "matrices-quiz",
+    lesson: "norms-and-trace",
+    section: "the-trace",
     prompt: "What is the trace of [1 -7; -2 -3]?",
     options: [
       { id: "a", text: "-2" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q14",
     quiz: "matrices-quiz",
+    lesson: "special-matrices",
+    section: "triangular-and-diagonal-matrices",
     prompt: "What does triu(A, 1) keep?",
     options: [
       { id: "a", text: "Only the main diagonal" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q15",
     quiz: "matrices-quiz",
+    lesson: "special-matrices",
+    section: "triangular-and-diagonal-matrices",
     prompt: "How many ones are in tril(ones(3), -1)?",
     options: [
       { id: "a", text: "3" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q16",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "what-the-determinant-measures",
     prompt: "What is det([5 2; 3 4])?",
     options: [
       { id: "a", text: "14" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q17",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "larger-determinants",
     prompt: "A = [1 0 2; -1 3 1; 4 2 5]. What is the cofactor C₁₂?",
     options: [
       { id: "a", text: "9" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q18",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "the-inverse",
     prompt: "A = [4 7; 2 6]. What is the top-right entry of inv(A)?",
     options: [
       { id: "a", text: "-0.7" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q19",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "the-inverse",
     prompt: "Which of these matrices has no inverse?",
     options: [
       { id: "a", text: "[2 4; 1 2]" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q20",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "what-the-determinant-measures",
     prompt: "A 2-by-2 matrix has determinant -3. What does it do to the unit square?",
     options: [
       { id: "a", text: "Shrinks its area to one third" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/matrices-quiz/q21",
     quiz: "matrices-quiz",
+    lesson: "determinants-and-inverses",
+    section: "dont-use-inv-to-solve-equations",
     prompt: "You need to solve Ax = b in MATLAB. What should you write?",
     options: [
       { id: "a", text: "x = inv(A) * b" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q1",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "writing-one-down",
     prompt: "How do you enter 2x³ + 5 in MATLAB?",
     options: [
       { id: "a", text: "[2 5]" },
@@ -293,6 +337,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q2",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "evaluating",
     prompt: "What does polyval([1 0 -2 -5], 2) return?",
     options: [
       { id: "a", text: "-1" },
@@ -306,6 +352,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q3",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "roots",
     prompt: "What are the roots of x² - 5x + 6?",
     options: [
       { id: "a", text: "2 and 3" },
@@ -319,6 +367,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q4",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "roots",
     prompt: "What does poly([1 1]) return?",
     options: [
       { id: "a", text: "[1 -2 1]" },
@@ -332,6 +382,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q5",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "roots",
     prompt: "What does roots([1 0 4]) return?",
     options: [
       { id: "a", text: "2i and -2i" },
@@ -345,6 +397,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q6",
     quiz: "polynomials-quiz",
+    lesson: "polynomials-and-roots",
+    section: "evaluating-at-a-matrix",
     prompt: "What does polyvalm([1 0 0], [1 1; 0 1]) return?",
     options: [
       { id: "a", text: "[1 2; 0 1]" },
@@ -358,6 +412,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q7",
     quiz: "polynomials-quiz",
+    lesson: "multiplying-and-dividing",
+    section: "convolution",
     prompt: "What does conv([1 1], [1 1]) return?",
     options: [
       { id: "a", text: "[1 1]" },
@@ -371,6 +427,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q8",
     quiz: "polynomials-quiz",
+    lesson: "multiplying-and-dividing",
+    section: "convolution",
     prompt: "What does conv([1 2], [1 -3]) return?",
     options: [
       { id: "a", text: "[1 -1 -6]" },
@@ -384,6 +442,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q9",
     quiz: "polynomials-quiz",
+    lesson: "multiplying-and-dividing",
+    section: "convolution",
     prompt: "a has degree 3 and b has degree 2. How many numbers are in conv(a, b)?",
     options: [
       { id: "a", text: "6" },
@@ -397,6 +457,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q10",
     quiz: "polynomials-quiz",
+    lesson: "multiplying-and-dividing",
+    section: "deconvolution",
     prompt: "Divide x² + 2x + 7 by x + 1. What are the quotient and the remainder?",
     options: [
       { id: "a", text: "Quotient x + 1, remainder 6" },
@@ -410,6 +472,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q11",
     quiz: "polynomials-quiz",
+    lesson: "multiplying-and-dividing",
+    section: "deconvolution",
     prompt: "p(x) = x³ - 2x² - x + 2. What is the remainder when you divide p by x - 3?",
     options: [
       { id: "a", text: "8" },
@@ -423,6 +487,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q12",
     quiz: "polynomials-quiz",
+    lesson: "derivatives-and-curve-fitting",
+    section: "derivatives",
     prompt: "What does polyder([2 0 -3 1]) return?",
     options: [
       { id: "a", text: "[6 0 -3]" },
@@ -436,6 +502,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q13",
     quiz: "polynomials-quiz",
+    lesson: "derivatives-and-curve-fitting",
+    section: "derivatives",
     prompt: "What does polyder([1 1], [1 -1]) return?",
     options: [
       { id: "a", text: "[2 0]" },
@@ -449,6 +517,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q14",
     quiz: "polynomials-quiz",
+    lesson: "derivatives-and-curve-fitting",
+    section: "fitting-a-curve-to-data",
     prompt: "What does polyfit([0 1 2], [1 3 5], 1) return?",
     options: [
       { id: "a", text: "[2 1]" },
@@ -462,6 +532,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q15",
     quiz: "polynomials-quiz",
+    lesson: "derivatives-and-curve-fitting",
+    section: "fitting-a-curve-to-data",
     prompt: "Why does least squares square each error before adding them up?",
     options: [
       { id: "a", text: "So positive and negative errors can't cancel, and one big miss costs more than several small ones" },
@@ -475,6 +547,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q16",
     quiz: "polynomials-quiz",
+    lesson: "derivatives-and-curve-fitting",
+    section: "fitting-a-curve-to-data",
     prompt: "You fit a degree 9 polynomial to 10 noisy points, and the error is zero. What should you suspect?",
     options: [
       { id: "a", text: "The data has no noise" },
@@ -488,6 +562,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q17",
     quiz: "polynomials-quiz",
+    lesson: "partial-fractions",
+    section: "the-expansion",
     prompt: "In [r, p, k] = residue(b, a), what is p?",
     options: [
       { id: "a", text: "The roots of b" },
@@ -501,6 +577,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q18",
     quiz: "polynomials-quiz",
+    lesson: "partial-fractions",
+    section: "an-example",
     prompt: "Split 1 / (s² + 3s + 2) into partial fractions. What are the residues?",
     options: [
       { id: "a", text: "1 at the pole -1, and -1 at the pole -2" },
@@ -514,6 +592,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q19",
     quiz: "polynomials-quiz",
+    lesson: "partial-fractions",
+    section: "the-expansion",
     prompt: "When does residue return a k that isn't empty?",
     options: [
       { id: "a", text: "When b has a degree at least as high as a" },
@@ -527,6 +607,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/polynomials-quiz/q20",
     quiz: "polynomials-quiz",
+    lesson: "partial-fractions",
+    section: "an-example",
     prompt: "The denominator of a transfer function factors as (s + 4)(s + 2). Which numbers do you substitute in the cover-up method?",
     options: [
       { id: "a", text: "-4 and -2" },
@@ -540,6 +622,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q1",
     quiz: "number-theory-quiz",
+    lesson: "divisibility-and-euclid",
+    section: "the-division-algorithm",
     prompt: "What are the quotient q and remainder r when a = -29 is divided by n = 8?",
     options: [
       { id: "a", text: "q = -4, r = 3" },
@@ -553,6 +637,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q2",
     quiz: "number-theory-quiz",
+    lesson: "divisibility-and-euclid",
+    section: "the-euclidean-algorithm",
     prompt: "Running Euclid's algorithm on gcd(247, 143), what are the first quotient q₁ and remainder r₁?",
     options: [
       { id: "a", text: "q₁ = 1, r₁ = 104" },
@@ -566,6 +652,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q3",
     quiz: "number-theory-quiz",
+    lesson: "divisibility-and-euclid",
+    section: "the-euclidean-algorithm",
     prompt: "What is gcd(1281, 243)?",
     options: [
       { id: "a", text: "3" },
@@ -579,6 +667,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q4",
     quiz: "number-theory-quiz",
+    lesson: "modular-arithmetic",
+    section: "the-mod-operation",
     prompt: "What is -28 mod 81?",
     options: [
       { id: "a", text: "53" },
@@ -592,6 +682,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q5",
     quiz: "number-theory-quiz",
+    lesson: "modular-arithmetic",
+    section: "you-can-reduce-at-any-time",
     prompt: "What is (7653 × 915) mod 10?",
     options: [
       { id: "a", text: "5" },
@@ -605,6 +697,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q6",
     quiz: "number-theory-quiz",
+    lesson: "modular-arithmetic",
+    section: "be-careful-when-cancelling",
     prompt: "If 4x ≡ 12 (mod 20), what is the simplified congruence for x?",
     options: [
       { id: "a", text: "x ≡ 3 (mod 5)" },
@@ -618,6 +712,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q7",
     quiz: "number-theory-quiz",
+    lesson: "primes-and-the-sieve",
+    section: "you-only-need-to-check-up-to-the-square-root",
     prompt: "To test whether 3457 is prime by trial division, what is the largest prime divisor you need to test?",
     options: [
       { id: "a", text: "53" },
@@ -631,6 +727,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q8",
     quiz: "number-theory-quiz",
+    lesson: "primes-and-the-sieve",
+    section: "the-sieve-of-eratosthenes",
     prompt: "When running the Sieve of Eratosthenes, at which multiple does the prime 7 first begin striking out numbers?",
     options: [
       { id: "a", text: "49" },
@@ -644,6 +742,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q9",
     quiz: "number-theory-quiz",
+    lesson: "primes-and-the-sieve",
+    section: "quick-tests-for-divisibility",
     prompt: "Using the alternating sum of digits test, what is 8132619 mod 11?",
     options: [
       { id: "a", text: "0" },
@@ -657,6 +757,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q10",
     quiz: "number-theory-quiz",
+    lesson: "primality-and-the-totient",
+    section: "wilsons-theorem",
     prompt: "By Wilson's theorem, what is 12! mod 13?",
     options: [
       { id: "a", text: "12" },
@@ -670,6 +772,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q11",
     quiz: "number-theory-quiz",
+    lesson: "primality-and-the-totient",
+    section: "eulers-totient-function",
     prompt: "What is φ(3600)?",
     options: [
       { id: "a", text: "960" },
@@ -683,6 +787,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q12",
     quiz: "number-theory-quiz",
+    lesson: "primality-and-the-totient",
+    section: "fermats-little-theorem",
     prompt: "Using Fermat's Little Theorem, what is 5³⁸ mod 11?",
     options: [
       { id: "a", text: "4" },
@@ -696,6 +802,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q13",
     quiz: "number-theory-quiz",
+    lesson: "order-and-primitive-roots",
+    section: "the-order-of-an-element",
     prompt: "What is the order of 3 modulo 16?",
     options: [
       { id: "a", text: "4" },
@@ -709,6 +817,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q14",
     quiz: "number-theory-quiz",
+    lesson: "order-and-primitive-roots",
+    section: "primitive-roots",
     prompt: "Modulo the prime 19, how many primitive roots exist?",
     options: [
       { id: "a", text: "6" },
@@ -722,6 +832,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q15",
     quiz: "number-theory-quiz",
+    lesson: "order-and-primitive-roots",
+    section: "primitive-roots",
     prompt: "Why is 2 not a primitive root modulo 7?",
     options: [
       { id: "a", text: "Because 2³ ≡ 1 (mod 7), so its order is 3 instead of φ(7) = 6" },
@@ -735,6 +847,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q16",
     quiz: "number-theory-quiz",
+    lesson: "modular-inverses",
+    section: "from-there-to-the-inverse",
     prompt: "The extended Euclidean algorithm finds 17 × (18) + 61 × (-5) = 1. What is the inverse of 17 modulo 61?",
     options: [
       { id: "a", text: "18" },
@@ -748,6 +862,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q17",
     quiz: "number-theory-quiz",
+    lesson: "modular-inverses",
+    section: "from-there-to-the-inverse",
     prompt: "What is 7⁻¹ mod 26?",
     options: [
       { id: "a", text: "15" },
@@ -761,6 +877,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q18",
     quiz: "number-theory-quiz",
+    lesson: "modular-inverses",
+    section: "when-an-inverse-exists",
     prompt: "Which of the following numbers has NO multiplicative inverse modulo 26?",
     options: [
       { id: "a", text: "8" },
@@ -774,6 +892,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q19",
     quiz: "number-theory-quiz",
+    lesson: "fast-exponentiation",
+    section: "square-and-multiply",
     prompt: "In square-and-multiply, what sequence of operations builds a¹¹ from the binary exponent 11 = (1011)₂?",
     options: [
       { id: "a", text: "start, square, square and multiply, square and multiply" },
@@ -787,6 +907,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q20",
     quiz: "number-theory-quiz",
+    lesson: "fast-exponentiation",
+    section: "square-and-multiply",
     prompt: "What is 3⁷ mod 13 using fast exponentiation?",
     options: [
       { id: "a", text: "3" },
@@ -800,6 +922,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q21",
     quiz: "number-theory-quiz",
+    lesson: "discrete-logarithms",
+    section: "logarithms-modulo-a-prime",
     prompt: "What is the discrete logarithm log₂(11) modulo 19?",
     options: [
       { id: "a", text: "12" },
@@ -813,6 +937,7 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/number-theory-quiz/q22",
     quiz: "number-theory-quiz",
+    lesson: "discrete-logarithms",
     prompt: "In Diffie-Hellman with p = 19 and base a = 2, Alice has secret x = 5 and Bob sends public key B = 14. What shared secret key does Alice compute?",
     options: [
       { id: "a", text: "10" },
@@ -826,6 +951,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "what-is-cryptography",
+    section: "two-kinds-of-system",
     prompt: "What defines a secret-key (symmetric) cryptosystem?",
     options: [
       { id: "a", text: "The encryption algorithm itself is kept secret from the public" },
@@ -839,6 +966,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "what-is-cryptography",
+    section: "the-vocabulary",
     prompt: "Modern cryptography addresses two core security goals: privacy and authentication. What is the difference between them?",
     options: [
       { id: "a", text: "Privacy prevents unauthorized reading of messages; authentication prevents unauthorized creation or injection of fake messages" },
@@ -852,6 +981,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "what-is-cryptography",
+    section: "the-notation",
     prompt: "Let M be the plaintext message space, C the ciphertext space, and K the key space with encryption algorithm E and decryption algorithm D. What fundamental property must hold for any valid cryptosystem?",
     options: [
       { id: "a", text: "D_d(E_e(m)) = m for every plaintext m in M" },
@@ -865,6 +996,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "what-is-cryptography",
+    section: "secret-key-systems",
     prompt: "According to Kerckhoffs's principle, why should a cipher's security depend solely on keeping the key secret, rather than the algorithm secret?",
     options: [
       { id: "a", text: "Algorithms are hard to replace once deployed in hardware and software, whereas compromised keys can be replaced immediately" },
@@ -878,6 +1011,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "stream-ciphers",
+    section: "how-it-works",
     prompt: "Why can a stream cipher use the exact same XOR operation for both encryption and decryption?",
     options: [
       { id: "a", text: "Because XOR is self-inverting: m ⊕ k ⊕ k = m, since k ⊕ k = 0 and m ⊕ 0 = m" },
@@ -891,6 +1026,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "stream-ciphers",
+    section: "how-it-works",
     prompt: "In a stream cipher, plaintext bit stream m = [1 1 0 1 1 1 0] is encrypted with key stream k = [1 0 0 1 0 1 0]. What is the resulting ciphertext stream c = m ⊕ k?",
     options: [
       { id: "a", text: "[0 1 0 0 1 0 0]" },
@@ -904,6 +1041,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "stream-ciphers",
+    section: "how-it-works",
     prompt: "An attacker intercepts two ciphertexts c1 = m1 ⊕ k and c2 = m2 ⊕ k encrypted with the exact same key stream k. What does computing c1 ⊕ c2 yield?",
     options: [
       { id: "a", text: "m1 ⊕ m2, completely eliminating the secret key stream k" },
@@ -917,6 +1056,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "stream-ciphers",
+    section: "how-it-works",
     prompt: "In 8-bit ASCII, character 'C' is 01000011 and 'A' is 01000001. If c1 encrypts 'C' with key byte k and c2 encrypts 'A' with the same key byte k, what is c1 ⊕ c2 in binary?",
     options: [
       { id: "a", text: "00000010" },
@@ -930,6 +1071,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q9",
     quiz: "final-quiz",
+    lesson: "stream-ciphers",
+    section: "how-it-works",
     prompt: "Under Claude Shannon's information theory, what three conditions must be satisfied for a one-time pad to achieve mathematically perfect secrecy?",
     options: [
       { id: "a", text: "The key must be truly random, at least as long as the message, and never reused" },
@@ -943,6 +1086,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q10",
     quiz: "final-quiz",
+    lesson: "caesar-and-shift-ciphers",
+    section: "the-caesar-cipher",
     prompt: "Under the Caesar cipher substitution E₃(m) = (m + 3) mod 26 (with A=0, B=1, ..., Z=25), what is the encryption of 'IBM'?",
     options: [
       { id: "a", text: "LEP" },
@@ -956,6 +1101,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q11",
     quiz: "final-quiz",
+    lesson: "caesar-and-shift-ciphers",
+    section: "shift-ciphers",
     prompt: "Using a shift cipher with key k = 4, what is the encryption of 'NIST'?",
     options: [
       { id: "a", text: "RMWX" },
@@ -969,6 +1116,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q12",
     quiz: "final-quiz",
+    lesson: "caesar-and-shift-ciphers",
+    section: "shift-ciphers",
     prompt: "Under a shift cipher with key k = 7, what is the encryption of 'ZOO'?",
     options: [
       { id: "a", text: "GVV" },
@@ -982,6 +1131,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q13",
     quiz: "final-quiz",
+    lesson: "caesar-and-shift-ciphers",
+    section: "shift-ciphers",
     prompt: "Decrypt the ciphertext 'VHFFNGBVTMBHG' using the shift cipher decryption D₁₉(c) = (c - 19) mod 26.",
     options: [
       { id: "a", text: "COMMUNICATION" },
@@ -995,6 +1146,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q14",
     quiz: "final-quiz",
+    lesson: "caesar-and-shift-ciphers",
+    section: "how-to-break-it",
     prompt: "Why does frequency analysis easily break any monoalphabetic shift cipher?",
     options: [
       { id: "a", text: "Each plaintext letter maps to exactly one ciphertext letter, preserving the characteristic frequency distribution of English" },
@@ -1008,6 +1161,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q15",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "the-cipher",
     prompt: "In an affine cipher E(m) = (k₁ · m + k₂) mod 26, which of the following values of multiplier k₁ is valid?",
     options: [
       { id: "a", text: "9" },
@@ -1021,6 +1176,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q16",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "how-strong-is-it",
     prompt: "How many distinct valid key pairs (k₁, k₂) exist for an affine cipher modulo 26?",
     options: [
       { id: "a", text: "312" },
@@ -1034,6 +1191,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q17",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "worked-example-decrypting",
     prompt: "To decrypt an affine ciphertext with multiplier k₁ = 7 modulo 26, what modular inverse k₁⁻¹ must be used?",
     options: [
       { id: "a", text: "15" },
@@ -1047,6 +1206,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q18",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "worked-example-encrypting",
     prompt: "Encrypt the two-letter word 'AB' (where A = 0, B = 1) using the affine key (k₁, k₂) = (7, 21) modulo 26.",
     options: [
       { id: "a", text: "VC" },
@@ -1060,6 +1221,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q19",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "worked-example-decrypting",
     prompt: "Using the affine key (k₁, k₂) = (7, 21) with inverse k₁⁻¹ = 15 mod 26, decrypt the ciphertext 'VL' (where V = 21, L = 11).",
     options: [
       { id: "a", text: "AG" },
@@ -1073,6 +1236,8 @@ export const questions: Question[] = [
   {
     id: "computational-mathematics/final-quiz/q20",
     quiz: "final-quiz",
+    lesson: "affine-ciphers",
+    section: "the-cipher",
     prompt: "If an affine cipher uses the invalid multiplier k₁ = 13 with k₂ = 5 modulo 26, what happens to all 26 plaintext letters when encrypted?",
     options: [
       { id: "a", text: "They collapse into just two possible ciphertext letters: F (5) and S (18)" },
