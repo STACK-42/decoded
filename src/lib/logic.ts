@@ -436,6 +436,19 @@ export const toExcess3 = (d: number) => bitString(d + 3, 4);
 export type FloatParts = { sign: Bit; exponent: number; fraction: number; bits: string; value: number; kind: "zero" | "normal" | "subnormal" | "infinity" | "nan" };
 
 /** Reads a number the way IEEE 754 single precision stores it. */
+/**
+ * The number typed into the IEEE 754 explorer. Keeps the special values a float can hold:
+ * "NaN" stays NaN and "-0" stays negative zero, where a plain `Number(text) || 0` would turn
+ * both into +0. Empty or unreadable text counts as 0.
+ */
+export function parseFloatInput(text: string): number {
+  const t = text.trim();
+  if (t === "") return 0;
+  if (/^[+-]?nan$/i.test(t)) return NaN;
+  const n = Number(t);
+  return Number.isNaN(n) ? 0 : n;
+}
+
 export function floatParts(value: number): FloatParts {
   const view = new DataView(new ArrayBuffer(4));
   view.setFloat32(0, value);
