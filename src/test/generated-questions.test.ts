@@ -91,6 +91,36 @@ describe("generated questions", () => {
     }
   });
 
+  it("compute scheduling answers that match an independent simulation", () => {
+    const gen = (name: string) => byCourse["operating-systems"].find((g) => g.id.endsWith(name))!;
+    const answer = (q: Question) => q.options.find((o) => o.id === q.correctOptionId)!.text;
+    const bursts = (prompt: string) => [...prompt.matchAll(/P\d+ = (\d+)/g)].map((m) => Number(m[1]));
+    const avgWait = (order: number[]) => order.reduce((acc, b, i) => acc + order.slice(0, i).reduce((x, y) => x + y, 0), 0) / order.length;
+    const round = (x: number) => String(Math.round(x * 100) / 100);
+    for (const seed of SEEDS) {
+      const f = instantiate(gen("gen-fcfs-waiting"), seed);
+      expect(answer(f), f.prompt).toBe(round(avgWait(bursts(f.prompt))));
+      const s = instantiate(gen("gen-sjf-waiting"), seed);
+      expect(answer(s), s.prompt).toBe(round(avgWait([...bursts(s.prompt)].sort((a, b) => a - b))));
+      const r = instantiate(gen("gen-rr-completion"), seed);
+      const q = Number(/quantum (\d+)/.exec(r.prompt)![1]);
+      const target = Number(/does P(\d+) finish/.exec(r.prompt)![1]) - 1;
+      const left = bursts(r.prompt);
+      const queue = left.map((_, i) => i);
+      let t = 0;
+      let finish = -1;
+      while (queue.length) {
+        const i = queue.shift()!;
+        const run = Math.min(q, left[i]);
+        t += run;
+        left[i] -= run;
+        if (left[i] > 0) queue.push(i);
+        else if (i === target) finish = t;
+      }
+      expect(Number(answer(r)), r.prompt).toBe(finish);
+    }
+  });
+
   it("are added to a course's bank by loadBank, with numbers from the seed", async () => {
     const a = await loadBank("computer-networks", 1);
     const b = await loadBank("computer-networks", 2);
