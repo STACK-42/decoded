@@ -1831,17 +1831,18 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
       cardClass={vizCard}
       headerClass={vizHeader}
     >
-      <div className="grid gap-y-2 gap-x-3 min-w-fit" style={{ gridTemplateColumns: "auto 1fr" }}>
+      {/* Narrower cells, gaps and labels on phones so all seven columns fit at 360 px */}
+      <div className="grid gap-y-2 gap-x-2 sm:gap-x-3 min-w-fit" style={{ gridTemplateColumns: "auto 1fr" }}>
         {rows.map((row, r) => (
           <div key={r} className="contents">
             <div
-              className={`font-mono text-xs self-center text-right ${
+              className={`font-mono text-[10px] sm:text-xs self-center text-right ${
                 r === depth ? "text-sky" : r > depth ? "text-orange" : "text-muted-foreground"
               } ${row.kind === "output" ? "!text-mint" : ""}`}
             >
               {row.label}
             </div>
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` }}>
+            <div className="grid gap-1 sm:gap-1.5 [--ms-cell:22px] sm:[--ms-cell:34px]" style={{ gridTemplateColumns: `repeat(${n}, minmax(var(--ms-cell), 1fr))` }}>
               {row.pieces.map((p) => {
                 const vals = input.slice(p.lo, p.hi + 1);
                 if (row.sorted) vals.sort((a, b) => a - b);
@@ -1850,7 +1851,7 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
                   <div
                     key={`${p.lo}-${p.hi}`}
                     style={{ gridColumn: `${p.lo + 1} / ${p.hi + 2}` }}
-                    className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-lg transition-opacity ${
+                    className={`h-8 sm:h-9 flex items-center justify-around px-0.5 sm:px-1 font-mono text-xs sm:text-[13px] border rounded-md sm:rounded-lg transition-opacity ${
                       dim ? "border-dashed border-border text-muted-foreground opacity-60" : boxTone[row.kind]
                     }`}
                   >
