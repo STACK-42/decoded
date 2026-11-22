@@ -2073,12 +2073,13 @@ export function MedianOfMediansGrid({ input }: { input?: number[] }) {
   return (
     <Panel title="Choosing the pivot: the median of medians" legend={[["bg-violet", "x"], ["bg-sky", "surely ≤ x"], ["bg-orange", "surely ≥ x"]]}>
       <div className="overflow-x-auto">
-        <div className="inline-grid gap-1" style={{ gridTemplateColumns: `auto repeat(${groups.length}, 40px)` }}>
+        {/* 28 px cells on phones so all seven groups fit, even at 360 px; the variable is set on the grid that reads it */}
+        <div className="inline-grid gap-1 [--mm-cell:28px] sm:[--mm-cell:40px]" style={{ gridTemplateColumns: `auto repeat(${groups.length}, var(--mm-cell))` }}>
           {[0, 1, 2, 3, 4].map((r) => (
             <div key={r} className="contents">
-              <span className="pr-2 self-center text-right font-mono text-xs text-muted-foreground">{r === 0 ? "lesser" : r === 2 ? "median" : r === 4 ? "greater" : ""}</span>
+              <span className="pr-1 sm:pr-2 self-center text-right font-mono text-[10px] sm:text-xs text-muted-foreground">{r === 0 ? "lesser" : r === 2 ? "median" : r === 4 ? "greater" : ""}</span>
               {groups.map((g, c) => (
-                <span key={c} className={`h-11 flex items-center justify-center font-mono text-base border rounded-lg ${cls(c, r)}`}>
+                <span key={c} className={`h-9 sm:h-11 flex items-center justify-center font-mono text-sm sm:text-base border rounded-md sm:rounded-lg ${cls(c, r)}`}>
                   {g[r]}
                 </span>
               ))}
