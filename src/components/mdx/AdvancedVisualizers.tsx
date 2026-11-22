@@ -322,15 +322,19 @@ const BIT_OPS: { op: BitOp; label: string; symbol: string; unary?: boolean; shif
 function BitRow({ label, value, width, tone, changed }: { label: string; value: number; width: number; tone: string; changed?: Set<number> }) {
   const bits = toBits(value, width);
   return (
-    <div className="flex items-center gap-3 font-mono">
-      <span className="w-24 text-right text-[11px] text-muted-foreground">{label}</span>
-      <span className="flex gap-1">
+    // On phones the label and value sit on their own line above the bits, and the cells are 28 px, so 8 bits fit at 360 px.
+    <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 sm:gap-x-3 gap-y-0.5 font-mono">
+      <span className="w-full sm:w-24 sm:text-right text-[11px] text-muted-foreground">
+        {label}
+        <span className="sm:hidden text-foreground"> = {value}</span>
+      </span>
+      <span className="flex gap-0.5 sm:gap-1">
         {bits.split("").map((b, i) => {
           const pos = width - 1 - i;
           return (
             <span
               key={i}
-              className={`w-9 h-10 flex items-center justify-center text-base border rounded-lg transition-all duration-300 ${
+              className={`w-7 h-9 sm:w-9 sm:h-10 flex items-center justify-center text-sm sm:text-base border rounded-md sm:rounded-lg transition-all duration-300 ${
                 b === "1" ? tone : "border-border text-muted-foreground"
               } ${changed?.has(pos) ? "ring-2 ring-orange" : ""}`}
             >
@@ -339,7 +343,7 @@ function BitRow({ label, value, width, tone, changed }: { label: string; value: 
           );
         })}
       </span>
-      <span className="w-12 text-sm">= {value}</span>
+      <span className="hidden sm:inline w-12 text-sm">= {value}</span>
     </div>
   );
 }
@@ -377,7 +381,7 @@ export function BitPlayground({ a: a0 = 5, b: b0 = 3, width = 8, op: op0 = "and"
       <div className="flex flex-col gap-1.5 overflow-x-auto">
         <BitRow label="A" value={a} width={width} tone="border-sky bg-sky/15" />
         {!meta.unary && !meta.shift && <BitRow label="B" value={b} width={width} tone="border-violet bg-violet/15" />}
-        <div className="ml-[108px] h-px bg-border" style={{ width: width * 32 }} />
+        <div className="sm:ml-[108px] h-px bg-border [--bit-step:30px] sm:[--bit-step:32px]" style={{ width: `calc(${width} * var(--bit-step))` }} />
         <BitRow label={meta.unary ? "~A" : meta.shift ? `A ${meta.symbol} ${bVal}` : `A ${meta.symbol} B`} value={result} width={width} tone="border-mint bg-mint/20" />
       </div>
       <div className="font-mono text-xs text-muted-foreground">
