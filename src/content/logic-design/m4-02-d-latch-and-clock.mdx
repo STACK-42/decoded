@@ -4,7 +4,7 @@ import { ClockExplorer, RaceAroundLab, TimingDiagram } from "@/components/mdx/Lo
 
 # Control Inputs and the D Latch
 
-The unclocked [SR latch](/courses/logic-design/sr-latch) responds to its inputs at all times. In a system with many gates, this creates problems. Combinational logic produces temporary glitches as signals travel along paths of different lengths. If memory elements reacted to every glitch, data would corrupt constantly.
+A **latch** is a circuit that holds one bit for as long as it has power. The unclocked [SR latch](/courses/logic-design/sr-latch) responds to its inputs at all times. In a system with many gates, this creates problems. Combinational logic produces temporary glitches as signals travel along paths of different lengths. If memory elements reacted to every glitch, data would corrupt constantly.
 
 To build predictable computing machines, state updates must be synchronized. Memory elements must only listen to their inputs when commanded by a dedicated control line. In digital electronics, this synchronization signal is called the **enable** input ($EN$) or the system [clock](/courses/computer-organization/machine-cycle) ($C$ or $CLK$).
 
