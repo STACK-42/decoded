@@ -349,10 +349,11 @@ export function ExtendedEuclidVisualizer() {
       inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["b", "61 and 17"], ["a", "130 and 61"], ["c", "240 and 46"]]} />}
       render={(s) => (
         <div className="overflow-x-auto max-w-full">
-          <table className="font-mono text-[13px] border-separate border-spacing-y-1 min-w-[320px]">
+          {/* No minimum width and tighter padding on phones, so the widest division row fits at 360 px */}
+          <table className="font-mono text-xs sm:text-[13px] border-separate border-spacing-y-1 sm:min-w-[320px]">
             <thead>
               <tr className="text-[10px] uppercase tracking-widest text-muted-foreground text-left">
-                <th className="pr-5 font-normal">division</th>
+                <th className="pr-2 sm:pr-5 font-normal">division</th>
                 <th className="pr-3 font-normal text-right">x</th>
                 <th className="font-normal text-right">y</th>
               </tr>
@@ -364,7 +365,7 @@ export function ExtendedEuclidVisualizer() {
                 const live = s.up === i;
                 return (
                   <tr key={i} className="transition-opacity duration-300 motion-reduce:transition-none" style={{ opacity: shown ? 1 : 0.12 }}>
-                    <td className={`pr-5 rounded-l-sm px-2 py-1 transition-colors duration-300 ${live ? "bg-neon/25" : i === s.down && s.up === null ? "bg-sky/25" : ""}`}>{r.a} = {r.q} × {r.b} + {r.r}</td>
+                    <td className={`rounded-l-sm pl-2 pr-2 sm:pr-5 py-1 transition-colors duration-300 ${live ? "bg-neon/25" : i === s.down && s.up === null ? "bg-sky/25" : ""}`}>{r.a} = {r.q} × {r.b} + {r.r}</td>
                     <td className={`pr-3 text-right transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.x}</td>
                     <td className={`pl-3 pr-2 text-right rounded-r-sm transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.y}</td>
                   </tr>
