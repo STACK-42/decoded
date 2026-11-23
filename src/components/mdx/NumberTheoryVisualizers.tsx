@@ -302,12 +302,21 @@ export function PowersTable() {
   const f = n - 1;
   return (
     <Panel title={`Powers of every a, modulo ${n}`} legend={[["bg-sky", "first period"], ["bg-mint", "primitive root row"]]}>
+      {/* Phones get 13 px cells, 1 px gaps and exponent-only headers, so all 19 columns of mod 19 fit at 360 px */}
+      <p className="sm:hidden font-mono text-[11px] text-muted-foreground">
+        Column k holds a<sup>k</sup> mod {n}.
+      </p>
       <div className="overflow-x-auto">
-        <table className="font-mono text-[11px] border-separate border-spacing-[2px]">
+        <table className="font-mono text-[10px] sm:text-[11px] border-separate border-spacing-[1px] sm:border-spacing-[2px]">
           <thead>
             <tr>
-              <th className="px-1 text-muted-foreground font-normal">a</th>
-              {Array.from({ length: f }, (_, k) => <th key={k} className="w-6 text-muted-foreground font-normal">a<sup>{k + 1}</sup></th>)}
+              <th className="px-0.5 sm:px-1 text-muted-foreground font-normal">a</th>
+              {Array.from({ length: f }, (_, k) => <th key={k} className="w-[13px] p-0 sm:w-6 sm:p-px text-muted-foreground font-normal">
+                  <span className="sm:hidden">{k + 1}</span>
+                  <span className="hidden sm:inline">
+                    a<sup>{k + 1}</sup>
+                  </span>
+                </th>)}
             </tr>
           </thead>
           <tbody>
@@ -316,9 +325,9 @@ export function PowersTable() {
               const root = isPrimitiveRoot(a, n);
               return (
                 <tr key={a}>
-                  <td className={`px-1 text-right ${root ? "text-mint font-bold" : ""}`}>{a}</td>
+                  <td className={`px-0.5 sm:px-1 text-right ${root ? "text-mint font-bold" : ""}`}>{a}</td>
                   {powers(a, n, f).map((v, j) => (
-                    <td key={j} className={`w-6 h-6 text-center rounded-[2px] transition-colors duration-300 ${j < k ? (root ? "bg-mint/30" : "bg-sky/25") : "text-muted-foreground/50"}`}>{v}</td>
+                    <td key={j} className={`w-[13px] h-[18px] p-0 sm:w-6 sm:h-6 sm:p-px text-center rounded-[2px] transition-colors duration-300 ${j < k ? (root ? "bg-mint/30" : "bg-sky/25") : "text-muted-foreground/50"}`}>{v}</td>
                   ))}
                 </tr>
               );
