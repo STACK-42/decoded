@@ -1034,22 +1034,23 @@ export function BirthdayCurve() {
         <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">values</span>
         <Toggle<string> value={space} onChange={(v) => { setSpace(v); setK(birthdayHalf(SPACES.find((s) => s[0] === v)![1])); setTrials(null); }} options={SPACES.map(([id, , label]) => [id, label] as [string, string])} />
       </div>
-      <label className="flex items-center gap-3 font-mono text-xs">
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
         <span className="uppercase tracking-widest text-[11px] text-muted-foreground">group size {kk}</span>
-        <input type="range" min={2} max={maxK} value={kk} onChange={(e) => { setK(Number(e.target.value)); setTrials(null); }} className="w-56" aria-label="Group size" />
+        <input type="range" min={2} max={maxK} value={kk} onChange={(e) => { setK(Number(e.target.value)); setTrials(null); }} className="w-56 max-w-full" aria-label="Group size" />
       </label>
-      <svg viewBox={`-30 -10 ${W + 40} ${H + 30}`} className="w-full min-w-[420px]" role="img" aria-label={`Probability curve; ${kk} items give ${(p * 100).toFixed(1)} percent`}>
+      {/* on phones the drawing scales to the screen; its labels get larger font sizes there to stay readable */}
+      <svg viewBox={`-30 -10 ${W + 40} ${H + 30}`} className="w-full sm:min-w-[420px]" role="img" aria-label={`Probability curve; ${kk} items give ${(p * 100).toFixed(1)} percent`}>
         <line x1={0} y1={H / 2} x2={W} y2={H / 2} className="stroke-orange" strokeDasharray="4 4" />
         <line x1={0} y1={H} x2={W} y2={H} className="stroke-border" />
         <line x1={0} y1={0} x2={0} y2={H} className="stroke-border" />
-        <text x={-6} y={4} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono">1</text>
-        <text x={-6} y={H / 2 + 3} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono">.5</text>
-        <text x={-6} y={H + 3} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono">0</text>
+        <text x={-6} y={4} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono [font-size:18px] sm:[font-size:10px]">1</text>
+        <text x={-6} y={H / 2 + 3} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono [font-size:18px] sm:[font-size:10px]">.5</text>
+        <text x={-6} y={H + 3} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono [font-size:18px] sm:[font-size:10px]">0</text>
         <polyline points={pts} fill="none" className="stroke-sky" strokeWidth={2.2} />
         <line x1={(kk / maxK) * W} y1={0} x2={(kk / maxK) * W} y2={H} className="stroke-neon" strokeWidth={2} />
         <circle cx={(kk / maxK) * W} cy={H - p * H} r={5} className="fill-neon stroke-foreground" />
-        <text x={(half / maxK) * W} y={H + 16} textAnchor="middle" fontSize={10} className="fill-orange font-mono">{half}</text>
-        <text x={W} y={H + 16} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono">{maxK}</text>
+        <text x={(half / maxK) * W} y={H + 16} textAnchor="middle" fontSize={10} className="fill-orange font-mono [font-size:18px] sm:[font-size:10px]">{half}</text>
+        <text x={W} y={H + 16} textAnchor="end" fontSize={10} className="fill-muted-foreground font-mono [font-size:18px] sm:[font-size:10px]">{maxK}</text>
       </svg>
       <div className="font-mono text-sm space-y-1">
         <div>
