@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q1",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "implication-the-one-that-trips-everyone-up",
     prompt: "When is p → q false?",
     options: [
       { id: "a", text: "When p is false and q is true" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q2",
     quiz: "logic-quiz",
+    lesson: "equivalence-and-laws",
+    section: "the-contrapositive",
     prompt: "Which statement is equivalent to p → q?",
     options: [
       { id: "a", text: "q → p" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q3",
     quiz: "logic-quiz",
+    lesson: "equivalence-and-laws",
+    section: "de-morgans-laws",
     prompt: "By De Morgan, ¬(a ∨ b) is equivalent to:",
     options: [
       { id: "a", text: "¬a ∨ ¬b" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q4",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "truth-tables",
     prompt: "How many rows does a truth table with 5 variables have?",
     options: [
       { id: "a", text: "10" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q5",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "tautologies-and-contradictions",
     prompt: "Which formula is a tautology?",
     options: [
       { id: "a", text: "p → ¬p" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q6",
     quiz: "logic-quiz",
+    lesson: "predicates-and-quantifiers",
+    section: "negating-quantifiers",
     prompt: "The negation of \"every test passed\" is:",
     options: [
       { id: "a", text: "Every test failed" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q7",
     quiz: "logic-quiz",
+    lesson: "predicates-and-quantifiers",
+    section: "nested-quantifiers",
     prompt: "On the domain of all people, which is stronger than ∀x ∃y Knows(x, y)?",
     options: [
       { id: "a", text: "∃y ∀x Knows(x, y)" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q1",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "power-sets",
     prompt: "How many elements does the power set of {a, b, c, d} have?",
     options: [
       { id: "a", text: "4" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q2",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "set-operations",
     prompt: "Which set equals the complement of (A ∪ B)?",
     options: [
       { id: "a", text: "A' ∪ B'" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q3",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "counting-a-union",
     prompt: "In a class, 25 students take Python, 18 take Java and 7 take both. How many take at least one?",
     options: [
       { id: "a", text: "36" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q4",
     quiz: "sets-quiz",
+    lesson: "functions",
+    section: "three-properties",
     prompt: "f: ℤ → ℤ with f(x) = 2x is:",
     options: [
       { id: "a", text: "Injective but not surjective" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q5",
     quiz: "sets-quiz",
+    lesson: "functions",
+    section: "three-properties",
     prompt: "Why can't a hash function from all strings to 64-bit numbers be injective?",
     options: [
       { id: "a", text: "Because it isn't a function" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q6",
     quiz: "sets-quiz",
+    lesson: "relations",
+    section: "equivalence-relations",
     prompt: "Which properties make a relation an equivalence relation?",
     options: [
       { id: "a", text: "Reflexive, antisymmetric, transitive" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q7",
     quiz: "sets-quiz",
+    lesson: "relations",
+    section: "partial-orders",
     prompt: "The relation \"a divides b\" on {1, 2, 3, 4, 5, 6} is:",
     options: [
       { id: "a", text: "An equivalence relation" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q1",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "proof-by-contrapositive",
     prompt: "To prove \"if n² is odd then n is odd\" by contrapositive, you would prove:",
     options: [
       { id: "a", text: "If n is odd then n² is odd" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q2",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "disproof-by-counterexample",
     prompt: "Which single fact disproves \"every odd number greater than 1 is prime\"?",
     options: [
       { id: "a", text: "2 is prime and even" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q3",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "proof-by-contradiction",
     prompt: "In Euclid's proof that there are infinitely many primes, N = p₁p₂⋯pₙ + 1. What does the proof need?",
     options: [
       { id: "a", text: "N is prime" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q4",
     quiz: "proof-quiz",
+    lesson: "induction",
+    section: "the-domino-idea",
     prompt: "In an induction proof, the inductive step shows:",
     options: [
       { id: "a", text: "P(1) is true" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q5",
     quiz: "proof-quiz",
+    lesson: "induction",
+    section: "a-first-proof",
     prompt: "Using 1 + 2 + ⋯ + n = n(n + 1)/2, what is 1 + 2 + ⋯ + 100?",
     options: [
       { id: "a", text: "5000" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q6",
     quiz: "proof-quiz",
+    lesson: "loop-invariants",
+    section: "binary-search-with-its-invariant",
     prompt: "A binary search loops while lo <= hi, but moves right with lo = mid instead of lo = mid + 1. What goes wrong?",
     options: [
       { id: "a", text: "The window starts in the wrong place" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q1",
     quiz: "counting-quiz",
+    lesson: "sum-and-product-rules",
+    section: "the-product-rule",
     prompt: "How many different 3-character codes can be made from the 26 lowercase letters, repeats allowed?",
     options: [
       { id: "a", text: "78" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q2",
     quiz: "counting-quiz",
+    lesson: "sum-and-product-rules",
+    section: "count-the-opposite",
     prompt: "How many 4-digit PINs (0000 to 9999) contain at least one 0?",
     options: [
       { id: "a", text: "1,000" },
@@ -293,6 +337,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q3",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "permutations",
     prompt: "In how many ways can 8 runners finish first, second and third?",
     options: [
       { id: "a", text: "24" },
@@ -306,6 +352,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q4",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "How many ways are there to choose 2 toppings from 6?",
     options: [
       { id: "a", text: "12" },
@@ -319,6 +367,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q5",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "Which equals C(10, 7)?",
     options: [
       { id: "a", text: "C(10, 3)" },
@@ -332,6 +382,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q6",
     quiz: "counting-quiz",
+    lesson: "pigeonhole-principle",
+    section: "collisions-in-a-hash-table",
     prompt: "A hash table has 1,000 buckets and holds 2,500 keys. What does the pigeonhole principle guarantee?",
     options: [
       { id: "a", text: "Every bucket has at least 2 keys" },
@@ -345,6 +397,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q7",
     quiz: "counting-quiz",
+    lesson: "pigeonhole-principle",
+    section: "no-compressor-shrinks-everything",
     prompt: "Why can't a lossless compressor make every 1,000-bit file shorter?",
     options: [
       { id: "a", text: "Compression is too slow on long files" },
@@ -358,6 +412,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q1",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "the-handshake-lemma",
     prompt: "An undirected graph has 10 edges. What do its vertex degrees add up to?",
     options: [
       { id: "a", text: "10" },
@@ -371,6 +427,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q2",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "the-handshake-lemma",
     prompt: "Can a graph have exactly 3 vertices of odd degree?",
     options: [
       { id: "a", text: "Yes, if it has enough edges" },
@@ -384,6 +442,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q3",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "storing-a-graph",
     prompt: "A social network has a billion users and about 200 friends each. Which representation fits?",
     options: [
       { id: "a", text: "Adjacency matrix: lookups are O(1)" },
@@ -397,6 +457,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q4",
     quiz: "graphs-quiz",
+    lesson: "paths-and-dags",
+    section: "euler-paths-every-edge-once",
     prompt: "A connected graph has vertex degrees 2, 2, 3, 3, 4. Does it have an Euler path?",
     options: [
       { id: "a", text: "Yes, an Euler circuit" },
@@ -410,6 +472,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q5",
     quiz: "graphs-quiz",
+    lesson: "paths-and-dags",
+    section: "topological-sort",
     prompt: "Kahn's algorithm stops with some vertices still unordered. What does that mean?",
     options: [
       { id: "a", text: "The graph is disconnected" },
@@ -423,6 +487,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q6",
     quiz: "graphs-quiz",
+    lesson: "trees",
+    section: "why-n--1-edges",
     prompt: "How many edges does a tree with 50 vertices have?",
     options: [
       { id: "a", text: "49" },
@@ -436,6 +502,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q7",
     quiz: "graphs-quiz",
+    lesson: "trees",
+    section: "height",
     prompt: "What is the smallest possible height of a binary tree with 100 vertices?",
     options: [
       { id: "a", text: "5" },
@@ -449,6 +517,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "sample-spaces-and-events",
     prompt: "Two fair dice are rolled. What is the probability that the sum is 8?",
     options: [
       { id: "a", text: "1/11" },
@@ -462,6 +532,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "combining-events",
     prompt: "A fair coin is flipped 3 times. What is the probability of at least one head?",
     options: [
       { id: "a", text: "1/2" },
@@ -475,6 +547,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "linearity-of-expectation",
     prompt: "When does E[X + Y] = E[X] + E[Y] hold?",
     options: [
       { id: "a", text: "Only when X and Y are independent" },
@@ -488,6 +562,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "birthday-problem",
+    section: "the-square-root-rule",
     prompt: "Records get IDs from a 32-bit hash. Roughly how many records before a duplicate ID is more likely than not?",
     options: [
       { id: "a", text: "After about 77,000 items" },
@@ -501,6 +577,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "birthday-problem",
+    section: "collisions-in-practice",
     prompt: "Why does a 128-bit hash give only about 64 bits of collision resistance?",
     options: [
       { id: "a", text: "Half the bits are used for padding" },
@@ -514,6 +592,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "equivalence-and-laws",
+    section: "the-contrapositive",
     prompt: "Which is equivalent to \"if the cache is warm, the request is fast\"?",
     options: [
       { id: "a", text: "If the request is fast, the cache is warm" },
@@ -527,6 +607,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "How many ways can you choose 3 of 7 servers to run a replica on?",
     options: [
       { id: "a", text: "21" },
@@ -540,6 +622,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "paths-and-dags",
+    section: "detecting-cycles",
     prompt: "A package manager reports a circular dependency. In graph terms, what did it find?",
     options: [
       { id: "a", text: "A vertex with in-degree 0" },
