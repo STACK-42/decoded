@@ -186,7 +186,7 @@ export function extractPreview(source: string, section?: string, term?: string):
 /** Cuts long prose at a sentence end, never inside math, and never before the sentence that bolds `keep`. */
 function trimToLength(text: string, max: number, keep?: string) {
   if (text.length <= max || text.includes("$$") || text.includes("\n- ")) return text;
-  let sentences = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
+  let sentences: string[] = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
   // A long opening paragraph that defines the term late (after a sentence linking back to an
   // earlier lesson, say) starts at the definition, so the preview isn't cut off before it.
   const at = keep ? sentences.findIndex((x) => x.includes(`**${keep}**`)) : -1;
