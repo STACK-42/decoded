@@ -7,6 +7,7 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "inside-the-cpu",
     prompt: "What makes up the CPU?",
     options: [
       { id: "a", text: "The control unit, ALU and registers" },
@@ -20,6 +21,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "whats-inside",
+    section: "the-idea-that-makes-it-all-work",
     prompt: "What does the stored-program idea mean?",
     options: [
       { id: "a", text: "Programs are saved to the hard disk" },
@@ -33,6 +36,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "inside-the-cpu",
+    section: "the-registers-that-matter-most",
     prompt: "The PC register holds:",
     options: [
       { id: "a", text: "The instruction running now" },
@@ -46,6 +51,7 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "machine-cycle",
     prompt: "What's the correct order of the machine cycle?",
     options: [
       { id: "a", text: "Decode, fetch, execute, store" },
@@ -59,6 +65,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "buses",
+    section: "width-is-everything",
     prompt: "A CPU has 24 address lines. How much byte-addressable memory can it reach?",
     options: [
       { id: "a", text: "24 MB" },
@@ -72,6 +80,7 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "buses",
     prompt: "Which bus carries values in both directions?",
     options: [
       { id: "a", text: "The address bus" },
@@ -85,6 +94,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "ram-and-rom",
+    section: "two-kinds-of-ram",
     prompt: "Why is cache made from SRAM and main memory from DRAM?",
     options: [
       { id: "a", text: "SRAM is faster but costs more per bit, while DRAM is cheaper and denser" },
@@ -98,6 +109,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "memory-hierarchy",
+    section: "why-such-a-small-cache-works",
     prompt: "A program loops over an array. Which property of programs makes cache effective here?",
     options: [
       { id: "a", text: "Volatility" },
@@ -111,6 +124,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q9",
     quiz: "final-quiz",
+    lesson: "hard-disks",
+    section: "capacity",
     prompt: "A disk has 1000 cylinders, 4 heads, 100 sectors per track and 512-byte sectors. What's its capacity?",
     options: [
       { id: "a", text: "20,480,000 bytes" },
@@ -124,6 +139,8 @@ export const questions: Question[] = [
   {
     id: "computer-organization/final-quiz/q10",
     quiz: "final-quiz",
+    lesson: "ssds-and-optical",
+    section: "optical-discs",
     prompt: "Why does a Blu-ray disc hold more than a CD of the same size?",
     options: [
       { id: "a", text: "It spins faster" },
