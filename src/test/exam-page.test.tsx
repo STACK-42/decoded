@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import ExamPage from "@/pages/ExamPage";
 import { questions as networkQuestions } from "@/content/computer-networks/questions";
+import { intToIp, parseCidr } from "@/lib/networks";
 
 function renderExam(slug = "computer-networks") {
   return render(
@@ -15,11 +16,28 @@ function renderExam(slug = "computer-networks") {
   );
 }
 
+// Generated questions (subnets) get fresh numbers each attempt, so work their answers out from the prompt.
+function generated(prompt: string): { right: string; wrong: string } | null {
+  const hosts = /a \/(\d+) subnet/.exec(prompt);
+  if (hosts) {
+    const h = 32 - Number(hosts[1]);
+    return { right: String(2 ** h - 2), wrong: String(2 ** h) };
+  }
+  const addr = /(network|broadcast) address of ([\d.]+\/\d+)\?/.exec(prompt);
+  if (!addr) return null;
+  const s = parseCidr(addr[2]);
+  const [right, wrong] = addr[1] === "network" ? [s.network, s.broadcast] : [s.broadcast, s.network];
+  return { right: intToIp(right), wrong: intToIp(wrong) };
+}
 const correctText = (prompt: string) => {
+  const g = generated(prompt);
+  if (g) return g.right;
   const q = networkQuestions.find((x) => x.prompt === prompt)!;
   return q.options.find((o) => o.id === q.correctOptionId)!.text;
 };
 const wrongText = (prompt: string) => {
+  const g = generated(prompt);
+  if (g) return g.wrong;
   const q = networkQuestions.find((x) => x.prompt === prompt)!;
   return q.options.find((o) => o.id !== q.correctOptionId)!.text;
 };

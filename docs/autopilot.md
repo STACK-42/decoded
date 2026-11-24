@@ -63,7 +63,10 @@ The owner's priority since 2026-11-03: proper exam practice. The design, decisio
     - [x] Computer Organization 10, Microprocessors 10, Computer Architecture 6, Computer Networks 27, Data Structures 28: 81 tagged. (PR #104, stacked on #102)
     - [x] Discrete Mathematics 42, Logic Design 40, Algorithm Design 16: 98 tagged (5 with `lesson` only, where no single heading teaches the idea). (PR #105, stacked on #104)
     - [x] Computational Mathematics 83 tagged (1 with `lesson` only). (PR #108, stacked on #105) Every migrated question now names its lesson. Questions added to a quiz later still need a `lesson` by hand; no test enforces it, so authors' quiz rounds aren't blocked.
-- [ ] 5. Generated questions (subnets, scheduling, Big-O first).
+- [ ] 5. Generated questions (subnets, scheduling, Big-O first). Split into runs:
+  - [x] 5a. The `QuestionGenerator` plumbing (`instantiate`, `buildOptions`, `generators.ts` per course, `loadBank` adding instances, a fresh seed per exam attempt) and three Computer Networks generators: usable hosts, network address and broadcast address of a random subnet. (PR #109, stacked on #108)
+  - [ ] 5b. Operating Systems: CPU scheduling (waiting and turnaround times from `src/lib` scheduling logic).
+  - [ ] 5c. Algorithm Design: Big-O and step counts. The owner's course, so ask before adding.
 - [ ] 6. Account sync for review cards and exam attempts.
 
 ## Parked
@@ -98,6 +101,7 @@ Nothing. The exam-stack block (since 2026-11-06, over #68's inline practice ques
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
 - 2026-11-21 14:50 (run C): Logic Design `codes-and-floating-point` IEEE 754 explorer. The phone overflow (64 px, the hexadecimal row) is fixed, and a correctness bug found while checking it: the NaN preset showed all-zero bits, class ZERO and value 0, and -0.0 showed +0, because the input was read with `Number(text) || 0` and both NaN and -0 are falsy. A tested `parseFloatInput` now keeps them, -0 prints as -0, and NaN no longer gets the "rounded" note. PR #113, open.
+- 2026-11-20 10:40 (run B): exam phase 5a: generated questions. `QuestionGenerator` plumbing plus three subnet generators for Computer Networks (usable hosts, network address, broadcast address), answers from the lesson's own `parseCidr` and checked over 500 seeds against an independent bit-mask calculation. They appear in the course exam (fresh numbers every attempt) and in review (fresh numbers every session). PR #109, open, stacked on #108.
 - 2026-11-20 06:10 (run A): exam phase 4d finished: Computational Mathematics' 83 quiz questions tagged with lesson and section, so all 262 migrated questions now link back to their lesson. Next exam phase: 5, generated questions (subnets, scheduling, Big-O first). PR #108, open, stacked on #105.
 - 2026-11-19 10:40 (run B): exam phase 4d, second batch: tagged 98 quiz questions in Discrete Mathematics, Logic Design and Algorithm Design with the lesson and section that teach each (lesson only for 5 where no one heading does). Algorithm Design is the owner's course: only tags were added, no wording changed. Left: Computational Mathematics' 83. PR #105, open, stacked on #104.
 - 2026-11-19 06:10 (run A): exam phase 4d started. Tagged 81 migrated quiz questions in five courses with the lesson (and, where one heading teaches it, the section) that teaches each, checked against the lesson text. The bank test confirms every lesson and heading exists. PR #104, open, stacked on #102.
