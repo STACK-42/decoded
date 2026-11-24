@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   bitsOf, bitString, calculateAdcSpecs, calculatePullUpConstraints, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, decodeIeee754Hex, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
-  expandRadixToBinary, floatParts, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
+  expandRadixToBinary, floatParts, parseFloatInput, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
   minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
   simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateHamming74, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSaturatedArithmetic, simulateSignedArithmetic, simulateStatic1Hazard, solveRadixAddition, solveRadixProduct, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
   calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister,
@@ -129,6 +129,23 @@ describe("number systems, including the worked examples from the notes", () => {
     expect(p.exponent - 127).toBe(-3);
     expect(floatParts(-1).sign).toBe(1);
     expect(floatParts(0).kind).toBe("zero");
+  });
+
+  it("reads the explorer's special cases as the float values they name", () => {
+    // NaN and -0 are both falsy, so a plain `Number(text) || 0` turned them into +0
+    const nan = floatParts(parseFloatInput("NaN"));
+    expect(nan.kind).toBe("nan");
+    expect(nan.exponent).toBe(255);
+    expect(nan.fraction).not.toBe(0);
+    const negZero = floatParts(parseFloatInput("-0.0"));
+    expect(negZero.kind).toBe("zero");
+    expect(negZero.sign).toBe(1);
+    expect(Object.is(negZero.value, -0)).toBe(true);
+    expect(floatParts(parseFloatInput("Infinity")).kind).toBe("infinity");
+    expect(floatParts(parseFloatInput("1e-40")).kind).toBe("subnormal");
+    expect(parseFloatInput("")).toBe(0);
+    expect(parseFloatInput("abc")).toBe(0);
+    expect(parseFloatInput(" -43.625 ")).toBe(-43.625);
   });
   it("groups binary bits into octal and hex with outward padding", () => {
     // Worked example from m1-01: (10110110101.101011)_2
