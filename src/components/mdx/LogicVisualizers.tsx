@@ -6354,9 +6354,9 @@ export function CoincidentMemoryLab() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span>Row Address (A1..A0):</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {[0, 1, 2, 3].map((r) => (
                 <button
                   key={r}
@@ -6369,9 +6369,9 @@ export function CoincidentMemoryLab() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span>Column Address (A3..A2):</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {[0, 1, 2, 3].map((c) => (
                 <button
                   key={c}
@@ -6468,7 +6468,7 @@ export function MemoryExpansionLab() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-muted-foreground">Select Address:</span>
             {[0x150, 0x520, 0x930, 0xD40].map((a, i) => (
               <button
