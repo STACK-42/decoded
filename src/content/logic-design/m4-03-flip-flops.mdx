@@ -3,7 +3,7 @@ import { EdgeLab, MasterSlave, JkLab, FlipFlopConversionLab, SystemTimingLab } f
 
 # Flip-Flops: Changing Only on the Edge
 
-A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing input fluctuations to pass directly to the output. An **edge-triggered flip-flop** acts like a camera shutter: it samples its input at one precise transition, the clock edge, and ignores the input during the rest of the clock cycle.
+A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing input fluctuations to pass directly to the output. An edge-triggered **flip-flop** acts like a camera shutter: it samples its input at one precise transition, the clock edge, and ignores the input during the rest of the clock cycle.
 
 By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential circuits, such as the [five classic pipeline stages](/courses/computer-architecture/pipelining#the-five-classic-stages) of modern processors.
 

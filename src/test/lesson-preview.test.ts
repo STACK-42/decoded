@@ -47,6 +47,12 @@ describe("lesson link previews", () => {
     expect(p.text).toMatch(/^Two numbers are \*\*coprime\*\*/);
   });
 
+  it("matches a bold term that starts with 'the'", () => {
+    const p = extractPreview(source("discrete-mathematics/pigeonhole-principle"), undefined, "pigeonhole principle")!;
+    expect(p.headword).toBe("The pigeonhole principle:");
+    expect(p.text).toMatch(/^\*\*The pigeonhole principle:\*\* if \$n\$ items/);
+  });
+
   it("uses a lesson's opening when the link has no section", () => {
     const p = extractPreview(source("computational-mathematics/modular-inverses"), undefined, "modular inverses")!;
     expect(p.text).toMatch(/^Modular arithmetic has no fractions/);

@@ -102,7 +102,14 @@ export function parseSections(source: string): Section[] {
   return sections;
 }
 
-const norm = (s: string) => plainText(s).toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/s\b/g, "").trim();
+// A leading "the" is ignored, so **The pigeonhole principle:** matches a link to "pigeonhole principle"
+const norm = (s: string) =>
+  plainText(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/s\b/g, "")
+    .trim()
+    .replace(/^the /, "");
 
 /** Bold terms in a block: **dot product** → "dot product". */
 const boldTerms = (text: string) => [...text.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1]);
