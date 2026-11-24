@@ -39,7 +39,7 @@ A decision tree can model the execution of **any** comparison sort:
 ### The lower bound
 
 <Callout tone="violet" label="Theorem">
-Any decision tree that can sort $n$ elements must have height $\Omega(n \lg n)$.
+**Sorting lower bound.** Any decision tree that can sort $n$ elements must have height $\Omega(n \lg n)$.
 </Callout>
 
 **Proof.** The tree must have at least $n!$ leaves, because there are $n!$ possible orderings of the input, and each one needs its own leaf. A [binary tree of height](/courses/discrete-mathematics/trees#height) $h$ has at most $2^h$ leaves. So:

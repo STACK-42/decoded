@@ -140,7 +140,9 @@ export function extractPreview(source: string, section?: string, term?: string):
     const t = term ? norm(term) : "";
     const defining =
       sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w) === t))) ??
-      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w).startsWith(t))));
+      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w).startsWith(t)))) ??
+      // a link to "RISC processor" finds where **RISC** is defined
+      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && !!norm(w) && t.startsWith(`${norm(w)} `))));
     const title = sections.findIndex((s) => s.level === 1);
     range = defining ? [defining] : title >= 0 ? [sections[title]] : sections.slice(0, 1);
   }
@@ -178,13 +180,17 @@ export function extractPreview(source: string, section?: string, term?: string):
   }
 
   const headword = exactly(pick.b) ?? roughly(pick.b) ?? heading ?? "";
-  return { headword, heading, text: trimToLength(text, 420) };
+  return { headword, heading, text: trimToLength(text, 420, exactly(pick.b) ?? roughly(pick.b)) };
 }
 
-/** Cuts long prose at a sentence end, never inside math. */
-function trimToLength(text: string, max: number) {
+/** Cuts long prose at a sentence end, never inside math, and never before the sentence that bolds `keep`. */
+function trimToLength(text: string, max: number, keep?: string) {
   if (text.length <= max || text.includes("$$") || text.includes("\n- ")) return text;
-  const sentences = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
+  let sentences: string[] = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
+  // A long opening paragraph that defines the term late (after a sentence linking back to an
+  // earlier lesson, say) starts at the definition, so the preview isn't cut off before it.
+  const at = keep ? sentences.findIndex((x) => x.includes(`**${keep}**`)) : -1;
+  if (at > 0 && sentences.slice(0, at + 1).join("").length > max) sentences = sentences.slice(at);
   let out = "";
   for (const s of sentences) {
     if (out && (out + s).length > max) break;
