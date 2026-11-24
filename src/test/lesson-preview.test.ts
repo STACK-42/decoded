@@ -53,6 +53,14 @@ describe("lesson link previews", () => {
     expect(p.text).toMatch(/^\*\*The pigeonhole principle:\*\* if \$n\$ items/);
   });
 
+  it("shows a glossary <Term> as its words, and keeps a sentence that opens with one", () => {
+    const s = parseSections('# T\n\nIn the <Term id="messaging">messaging</Term> style, clients send messages.\n\n<Term id="solid">SOLID</Term> has five principles.\n\n- an <Term id="x">item</Term>');
+    expect(s[1].blocks.map((b) => b.text)).toEqual(["In the messaging style, clients send messages.", "SOLID has five principles.", "an item"]);
+    const p = extractPreview(source("advanced-software-engineering/design-principles-and-srp"), undefined, "Single Responsibility Principle")!;
+    expect(p.headword).toBe("Single Responsibility Principle");
+    expect(p.text).not.toContain("<Term");
+  });
+
   it("uses a lesson's opening when the link has no section", () => {
     const p = extractPreview(source("computational-mathematics/modular-inverses"), undefined, "modular inverses")!;
     expect(p.text).toMatch(/^Modular arithmetic has no fractions/);

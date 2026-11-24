@@ -33,6 +33,9 @@ function plainText(md: string) {
     .trim();
 }
 
+/** Inline components with plain-text children, like <Term id="srp">SRP</Term>, keep only their words. */
+const unwrapInline = (text: string) => text.replace(/<([A-Z]\w*)\b[^>]*>([^<]*)<\/\1>/g, "$2");
+
 type Block = { text: string; display?: boolean; item?: boolean };
 type Section = { level: number; heading: string; id: string; blocks: Block[] };
 
@@ -45,7 +48,7 @@ export function parseSections(source: string): Section[] {
   let i = 0;
 
   const flush = () => {
-    const text = para.join(" ").trim();
+    const text = unwrapInline(para.join(" ").trim());
     para = [];
     if (text) sections[sections.length - 1].blocks.push({ text });
   };
@@ -86,13 +89,13 @@ export function parseSections(source: string): Section[] {
     }
     if (!trimmed) {
       flush();
-    } else if (/^(import |export |<|\||>)/.test(trimmed) || /^[-*_]{3,}$/.test(trimmed)) {
-      // imports, JSX components, tables, blockquotes and rules aren't prose
+    } else if ((/^(import |export |<|\||>)/.test(trimmed) && !/^<Term\b/.test(trimmed)) || /^[-*_]{3,}$/.test(trimmed)) {
+      // imports, JSX components, tables, blockquotes and rules aren't prose (a sentence opening with <Term> is)
       flush();
     } else if (/^([-*+]|\d+\.)\s+/.test(trimmed)) {
       // each list item is a candidate on its own: lists often hold one definition per line
       flush();
-      sections[sections.length - 1].blocks.push({ text: trimmed.replace(/^([-*+]|\d+\.)\s+/, ""), item: true });
+      sections[sections.length - 1].blocks.push({ text: unwrapInline(trimmed.replace(/^([-*+]|\d+\.)\s+/, "")), item: true });
     } else {
       para.push(trimmed);
     }
@@ -102,11 +105,13 @@ export function parseSections(source: string): Section[] {
   return sections;
 }
 
-// A leading "the" is ignored, so **The pigeonhole principle:** matches a link to "pigeonhole principle"
+// A leading "the" is ignored, so **The pigeonhole principle:** matches a link to "pigeonhole principle",
+// and "automata" counts as the plural of "automaton"
 const norm = (s: string) =>
   plainText(s)
     .toLowerCase()
     .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\bautomata\b/g, "automaton")
     .replace(/s\b/g, "")
     .trim()
     .replace(/^the /, "");
