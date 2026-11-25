@@ -47,7 +47,7 @@ export default function CoursePage() {
             </div>
 
             <CourseGlyph slug={course.slug} className={`rise-in h-10 w-10 mb-5 ${accentText[course.accent]}`} />
-            <h1 style={{ "--d": "60ms" } as CSSProperties} className="rise-in font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
+            <h1 style={{ "--d": "60ms" } as CSSProperties} className="rise-in font-display text-[clamp(1.375rem,calc((100vw_-_3rem)/13.25),2.25rem)] sm:text-4xl md:text-6xl font-extrabold hyphens-auto break-words leading-[1.02] tracking-tight mb-4">
               {course.title}
             </h1>
             <p style={{ "--d": "140ms" } as CSSProperties} className="rise-in font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
