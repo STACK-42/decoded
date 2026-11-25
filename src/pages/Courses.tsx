@@ -23,7 +23,7 @@ export default function Courses() {
       <main className="flex-1">
         <div className="container py-14 md:py-20">
           <div className="rise-in eyebrow text-muted-foreground mb-3">All Tracks</div>
-          <h1 className="rise-in font-display text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
+          <h1 className="rise-in font-display text-[clamp(1.375rem,calc((100vw_-_3rem)/13.25),2.25rem)] sm:text-4xl md:text-6xl font-extrabold hyphens-auto break-words leading-[1.05] tracking-tight mb-5">
             Every CS course,<br />decoded.
           </h1>
           <p style={{ "--d": "120ms" } as CSSProperties} className="rise-in font-body text-lg text-muted-foreground italic max-w-2xl mb-12">
