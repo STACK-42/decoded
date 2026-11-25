@@ -3,7 +3,7 @@ import { FastModPowVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Fast Exponentiation
 
-RSA has to compute things like $a^m \bmod n$ where $m$ has hundreds of digits. Multiplying $m - 1$ times would take longer than the age of the universe, and yet your browser does it in milliseconds. The trick is a tiny algorithm that reads $m$ in [binary](/courses/logic-design/number-systems).
+RSA has to compute things like $a^m \bmod n$ where $m$ has hundreds of digits. Multiplying $m - 1$ times would take longer than the age of the universe, and yet your browser does it in milliseconds. The trick is **fast exponentiation**, a tiny algorithm that reads $m$ in [binary](/courses/logic-design/number-systems).
 
 ## Why the naive way fails
 
