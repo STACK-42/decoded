@@ -108,7 +108,7 @@ The algorithm generates eleven discrete pixels connecting the endpoints using on
 
 ## Equivalence to DDA
 
-Evaluating endpoints $(5, 4)$ and $(12, 7)$ (the first DDA example) with Bresenham's formulation gives $\Delta x = 7$, $\Delta y = 3$, and $p_0 = 2(3) - 7 = -1$. The algorithm plots $(5, 4), (6, 4), (7, 5), (8, 5), (9, 6), (10, 6), (11, 7), (12, 7)$, matching the exact pixel path produced by DDA. Bresenham's algorithm does not generate a different geometric path; it makes the identical nearest-pixel decision using exact integer logic without cumulative drift.
+Evaluating endpoints $(5, 4)$ and $(12, 7)$ (the first DDA example) with Bresenham's formulation gives $\Delta x = 7$, $\Delta y = 3$, and $p_0 = 2(3) - 7 = -1$. The algorithm plots $(5, 4)$, $(6, 4)$, $(7, 5)$, $(8, 5)$, $(9, 6)$, $(10, 6)$, $(11, 7)$, $(12, 7)$, matching the exact pixel path produced by DDA. Bresenham's algorithm does not generate a different geometric path; it makes the identical nearest-pixel decision using exact integer logic without cumulative drift.
 
 ## Steep lines and general octants
 
