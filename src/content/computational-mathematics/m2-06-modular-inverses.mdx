@@ -3,7 +3,7 @@ import { ExtendedEuclidVisualizer } from "@/components/mdx/NumberTheoryVisualize
 
 # Modular Inverses
 
-Modular arithmetic has no fractions, so how do you divide? You multiply by an **inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every [affine cipher](/courses/computational-mathematics/affine-ciphers) later in this course depends on finding one, and so does every RSA key.
+Modular arithmetic has no fractions, so how do you divide? You multiply by a **modular inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every [affine cipher](/courses/computational-mathematics/affine-ciphers) later in this course depends on finding one, and so does every RSA key.
 
 ## When an inverse exists
 
@@ -18,7 +18,7 @@ When the modulus is a prime $p$, [Fermat's Little Theorem](/courses/computationa
 
 ## The extended Euclidean algorithm
 
-The whole method rests on one fact: if $g = \gcd(a, b)$, there are integers $x$ and $y$ with
+The **extended Euclidean algorithm** rests on one fact: if $g = \gcd(a, b)$, there are integers $x$ and $y$ with
 
 $$
 a x + b y = g

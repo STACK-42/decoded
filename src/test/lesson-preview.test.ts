@@ -61,6 +61,17 @@ describe("lesson link previews", () => {
     expect(p.text).not.toContain("<Term");
   });
 
+  it("keeps the defining sentence when a long opening has to be cut", () => {
+    const p = extractPreview(source("theory-of-computation/pushdown-automata"), undefined, "pushdown automaton")!;
+    expect(p.headword).toBe("pushdown automaton");
+    expect(p.text).toMatch(/^A \*\*pushdown automaton\*\* \(PDA\)/);
+  });
+
+  it("finds a short bold term from a longer link, like **RISC** from \"RISC processor\"", () => {
+    const p = extractPreview(source("computer-architecture/risc-and-cisc"), undefined, "RISC processor")!;
+    expect(p.headword).toBe("RISC");
+  });
+
   it("uses a lesson's opening when the link has no section", () => {
     const p = extractPreview(source("computational-mathematics/modular-inverses"), undefined, "modular inverses")!;
     expect(p.text).toMatch(/^Modular arithmetic has no fractions/);

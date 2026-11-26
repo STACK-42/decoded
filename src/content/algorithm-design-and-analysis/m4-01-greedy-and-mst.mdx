@@ -44,7 +44,7 @@ In graph theory, this network forms a connected, weighted, undirected graph. A [
 
 To see why, construct the tree one edge at a time. Begin with $n$ isolated vertices, representing $n$ separate components. Each edge that does not form a cycle connects two separate components into one, reducing the component count by exactly 1. Reducing $n$ components to 1 single connected component takes exactly $n - 1$ edges. Adding any further edge would connect two vertices that are already linked, creating a cycle.
 
-The **minimum spanning tree (MST)** is the spanning tree that has the smallest total edge weight.
+The **minimum spanning tree** (MST) is the spanning tree that has the smallest total edge weight.
 
 Two classic greedy algorithms find minimum spanning trees: Prim's algorithm and Kruskal's algorithm. Both algorithms are guaranteed to find an optimal minimum spanning tree every time.
 

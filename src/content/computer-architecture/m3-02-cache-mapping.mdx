@@ -3,7 +3,7 @@ import { CacheLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Cache Mapping
 
-Main memory holds gigabytes of code and data, but reading from DRAM takes dozens of nanoseconds. High-speed processors depend on the [cache](/courses/computer-organization/memory-hierarchy), a small on-chip memory built from fast SRAM. Because the cache holds only kilobytes or megabytes, thousands of main memory addresses share each slot in the cache.
+Main memory holds gigabytes of code and data, but reading from DRAM takes dozens of nanoseconds. High-speed processors depend on the [cache](/courses/computer-organization/memory-hierarchy), a small on-chip memory built from fast SRAM. Because the cache holds only kilobytes or megabytes, thousands of main memory addresses share each slot in the cache. The rule that decides which slot an address uses is the **cache mapping**.
 
 To make caching work, hardware must answer two questions on every memory access: where does a given memory address go, and how does the processor verify that the data in that slot is the exact word requested?
 
