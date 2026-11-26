@@ -102,6 +102,7 @@ Nothing. The exam-stack block (since 2026-11-06, over #68's inline practice ques
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-26 14:50 (run C): held, no changes (nothing merged, no comments since run B; reasons in run B's line).
 - 2026-11-26 10:40 (run B): held, no changes. Exam queue: 5c waits for the owner; phase 6 (account sync) is meant for once the format has settled and needs a Worker migration only the owner deploys, so it shouldn't be built on nine unmerged exam PRs. Quality queue: what's left of item 8 is low value (section and "previous lesson" links, and courses whose wording is their authors'); item 14 is the owner's call. Nothing merged for 9 days, 23 PRs open; #122 lands 22 of them.
 - 2026-11-26 06:10 (run A): nothing merged for 9 days, 5c still waits, no new PR. Quality item 8: five more bold definitions (De Morgan's laws, Kleene's theorem, BCD, binary search tree, connective), added to #121 and merged into #122. Previews with no bold definition: 257 → 249.
 - 2026-11-25 14:50 (run C): no new PR (23 open, nothing merged for 8 days). Quality item 8: nine more bold definitions where links point (modular inverse, extended Euclidean algorithm, fast exponentiation, integer factorization, product rule, DDA, cache mapping, the height bound, the general birthday problem), added to #121 and merged into #122. Previews with no bold definition: 272 → 257 of 1,175 (364 on main). Left alone: Advanced Software Engineering and Algorithm Design wording (their authors').
