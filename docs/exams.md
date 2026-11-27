@@ -46,11 +46,13 @@ A module quiz shows the questions whose `quiz` is its slug (`questionsForQuiz(qu
 
 The 259 questions that existed before the bank keep their wording and have ids `<course>/<quiz-slug>/q<n>` (for example `computer-networks/foundations-quiz/q1`). For them only the quiz is known, not the lesson that teaches each one, so their `lesson` is empty until it's filled in by hand (phase 4). New questions should always set `lesson`, and `section` where one heading teaches the idea. Tests check that ids are unique site-wide, that every `lesson` and `section` exists, and that every course with lessons has questions.
 
-Generated questions implement the same shape from a function and a seed:
+Generated questions implement the same shape from a function and a seed. Each course keeps them in `src/content/<course>/generators.ts`:
 
 ```ts
-export type QuestionGenerator = { id: string; lesson: string; section?: string; generate: (seed: number) => Question };
+export type QuestionGenerator = { id: string; lesson: string; section?: string; generate: (random: () => number) => GeneratedBody };
 ```
+
+`instantiate(generator, seed)` (in `src/lib/questions.ts`) seeds the random function, mixing in the generator's id so two generators with the same seed draw different numbers, and fills in the id, lesson and section. The id is the same for every seed, so the review queue tracks the skill rather than one set of numbers. `loadBank(course, seed)` adds one instance of each generator to the fixed bank, and the exam page uses a fresh seed for every attempt. `buildOptions(right, wrong, random)` drops duplicate distractors and puts the right answer at a random position.
 
 The generator calls the course's `src/lib` logic for the right answer and builds the wrong options from typical mistakes (an off-by-one, the inverse formula), not random numbers. Its tests check, over many seeds, that options are distinct and exactly one is correct.
 

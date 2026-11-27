@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q1",
     quiz: "sorting-quiz",
+    lesson: "selection-and-bubble-sort",
+    section: "selection-sort-find-the-smallest-put-it-first",
     prompt: "You run Selection Sort on [4, 1, 3, 2]. What does the array look like after the first pass completes?",
     options: [
       { id: "a", text: "[1, 4, 3, 2]" },
@@ -20,6 +22,7 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q2",
     quiz: "sorting-quiz",
+    lesson: "selection-and-bubble-sort",
     prompt: "What is the best-case time complexity of Bubble Sort when implemented with an early-exit 'swapped' flag?",
     options: [
       { id: "a", text: "O(n)" },
@@ -33,6 +36,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q3",
     quiz: "sorting-quiz",
+    lesson: "insertion-sort",
+    section: "why-its-the-best-of-the-simple-sorts",
     prompt: "Your data is almost sorted: each element is at most a few positions away from its sorted spot. Which simple quadratic sort completes in nearly O(n) linear time?",
     options: [
       { id: "a", text: "Insertion sort, because each element only shifts a few positions" },
@@ -46,6 +51,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q4",
     quiz: "sorting-quiz",
+    lesson: "selection-and-bubble-sort",
+    section: "stability",
     prompt: "Which of the following sorting algorithms is NOT stable?",
     options: [
       { id: "a", text: "Selection sort" },
@@ -59,6 +66,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q5",
     quiz: "sorting-quiz",
+    lesson: "merge-sort",
+    section: "divide-and-conquer",
     prompt: "Which two sorting algorithms use the divide and conquer paradigm?",
     options: [
       { id: "a", text: "Merge sort and Quick sort" },
@@ -72,6 +81,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q6",
     quiz: "sorting-quiz",
+    lesson: "merge-sort",
+    section: "merge-sort-in-one-paragraph",
     prompt: "Unlike Selection, Bubble, and Insertion sort, standard array-based Merge Sort is NOT in-place. What is its auxiliary space complexity?",
     options: [
       { id: "a", text: "O(n), because temporary arrays must be allocated to hold elements during merging" },
@@ -85,6 +96,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q7",
     quiz: "sorting-quiz",
+    lesson: "quick-sort",
+    section: "analysis-it-depends-on-the-pivot",
     prompt: "Quick sort selects the first element as the pivot. Why does it degrade to O(n²) time on an array that is already sorted?",
     options: [
       { id: "a", text: "The pivot is always the smallest remaining element, leaving unbalanced splits of 0 and n − 1 elements at each level" },
@@ -98,6 +111,7 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/sorting-quiz/q8",
     quiz: "sorting-quiz",
+    lesson: "insertion-sort",
     prompt: "Which of the following sorting algorithms sorts entirely in place with O(1) auxiliary data memory while also achieving O(n) best-case performance on already sorted input?",
     options: [
       { id: "a", text: "Insertion sort" },
@@ -111,6 +125,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "linear-and-binary-search",
+    section: "binary-search-throw-away-half",
     prompt: "What does binary search require that linear search doesn't?",
     options: [
       { id: "a", text: "The array must have no duplicates" },
@@ -124,6 +140,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "linear-and-binary-search",
+    section: "binary-search-throw-away-half",
     prompt: "Roughly how many comparisons does binary search need, in the worst case, on a sorted array of 1,000,000 elements?",
     options: [
       { id: "a", text: "About 20" },
@@ -137,6 +155,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "euclid-gcd",
+    section: "euclids-idea",
     prompt: "Using Euclid's algorithm, what is gcd(60, 24)?",
     options: [
       { id: "a", text: "6" },
@@ -150,6 +170,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "bfs-and-dfs",
+    section: "breadth-first-search-ripples-in-a-pond",
     prompt: "Which data structure does breadth-first search (BFS) use to decide what to visit next?",
     options: [
       { id: "a", text: "A stack" },
@@ -163,6 +185,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "bfs-and-dfs",
+    section: "analysis",
     prompt: "What is the time complexity of BFS and DFS on a graph stored as an adjacency list?",
     options: [
       { id: "a", text: "O(V)" },
@@ -176,6 +200,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "greedy-and-mst",
+    section: "the-greedy-approach",
     prompt: "Each choice a greedy algorithm makes must be feasible, locally optimal, and…",
     options: [
       { id: "a", text: "Reversible" },
@@ -189,6 +215,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "greedy-and-mst",
+    section: "kruskals-algorithm-join-the-forest",
     prompt: "In Kruskal's algorithm, what happens to the next cheapest edge if both of its ends are already in the same tree?",
     options: [
       { id: "a", text: "It is rejected, because it would create a cycle" },
@@ -202,6 +230,8 @@ export const questions: Question[] = [
   {
     id: "algorithm-design-and-analysis/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "dynamic-programming",
+    section: "breaking-it-into-subproblems",
     prompt: "In the 0/1 knapsack table, item i (weight wᵢ, value vᵢ) fits in capacity w. What is V[i, w]?",
     options: [
       { id: "a", text: "V[i−1, w] + vᵢ" },

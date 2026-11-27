@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q1",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "implication-the-one-that-trips-everyone-up",
     prompt: "When is p → q false?",
     options: [
       { id: "a", text: "When p is false and q is true" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q2",
     quiz: "logic-quiz",
+    lesson: "equivalence-and-laws",
+    section: "the-contrapositive",
     prompt: "Which statement is equivalent to p → q?",
     options: [
       { id: "a", text: "q → p" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q3",
     quiz: "logic-quiz",
+    lesson: "equivalence-and-laws",
+    section: "de-morgans-laws",
     prompt: "By De Morgan, ¬(a ∨ b) is equivalent to:",
     options: [
       { id: "a", text: "¬a ∨ ¬b" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q4",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "truth-tables",
     prompt: "How many rows does a truth table with 5 variables have?",
     options: [
       { id: "a", text: "10" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q5",
     quiz: "logic-quiz",
+    lesson: "propositions-and-connectives",
+    section: "tautologies-and-contradictions",
     prompt: "Which formula is a tautology?",
     options: [
       { id: "a", text: "p → ¬p" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q6",
     quiz: "logic-quiz",
+    lesson: "predicates-and-quantifiers",
+    section: "negating-quantifiers",
     prompt: "The negation of \"every test passed\" is:",
     options: [
       { id: "a", text: "Every test failed" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/logic-quiz/q7",
     quiz: "logic-quiz",
+    lesson: "predicates-and-quantifiers",
+    section: "nested-quantifiers",
     prompt: "On the domain of all people, which is stronger than ∀x ∃y Knows(x, y)?",
     options: [
       { id: "a", text: "∃y ∀x Knows(x, y)" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q1",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "power-sets",
     prompt: "How many elements does the power set of {a, b, c, d} have?",
     options: [
       { id: "a", text: "4" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q2",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "set-operations",
     prompt: "Which set equals the complement of (A ∪ B)?",
     options: [
       { id: "a", text: "A' ∪ B'" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q3",
     quiz: "sets-quiz",
+    lesson: "sets",
+    section: "counting-a-union",
     prompt: "In a class, 25 students take Python, 18 take Java and 7 take both. How many take at least one?",
     options: [
       { id: "a", text: "36" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q4",
     quiz: "sets-quiz",
+    lesson: "functions",
+    section: "three-properties",
     prompt: "f: ℤ → ℤ with f(x) = 2x is:",
     options: [
       { id: "a", text: "Injective but not surjective" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q5",
     quiz: "sets-quiz",
+    lesson: "functions",
+    section: "three-properties",
     prompt: "Why can't a hash function from all strings to 64-bit numbers be injective?",
     options: [
       { id: "a", text: "Because it isn't a function" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q6",
     quiz: "sets-quiz",
+    lesson: "relations",
+    section: "equivalence-relations",
     prompt: "Which properties make a relation an equivalence relation?",
     options: [
       { id: "a", text: "Reflexive, antisymmetric, transitive" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/sets-quiz/q7",
     quiz: "sets-quiz",
+    lesson: "relations",
+    section: "partial-orders",
     prompt: "The relation \"a divides b\" on {1, 2, 3, 4, 5, 6} is:",
     options: [
       { id: "a", text: "An equivalence relation" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q1",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "proof-by-contrapositive",
     prompt: "To prove \"if n² is odd then n is odd\" by contrapositive, you would prove:",
     options: [
       { id: "a", text: "If n is odd then n² is odd" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q2",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "disproof-by-counterexample",
     prompt: "Which single fact disproves \"every odd number greater than 1 is prime\"?",
     options: [
       { id: "a", text: "2 is prime and even" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q3",
     quiz: "proof-quiz",
+    lesson: "direct-and-indirect-proof",
+    section: "proof-by-contradiction",
     prompt: "In Euclid's proof that there are infinitely many primes, N = p₁p₂⋯pₙ + 1. What does the proof need?",
     options: [
       { id: "a", text: "N is prime" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q4",
     quiz: "proof-quiz",
+    lesson: "induction",
+    section: "the-domino-idea",
     prompt: "In an induction proof, the inductive step shows:",
     options: [
       { id: "a", text: "P(1) is true" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q5",
     quiz: "proof-quiz",
+    lesson: "induction",
+    section: "a-first-proof",
     prompt: "Using 1 + 2 + ⋯ + n = n(n + 1)/2, what is 1 + 2 + ⋯ + 100?",
     options: [
       { id: "a", text: "5000" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/proof-quiz/q6",
     quiz: "proof-quiz",
+    lesson: "loop-invariants",
+    section: "binary-search-with-its-invariant",
     prompt: "A binary search loops while lo <= hi, but moves right with lo = mid instead of lo = mid + 1. What goes wrong?",
     options: [
       { id: "a", text: "The window starts in the wrong place" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q1",
     quiz: "counting-quiz",
+    lesson: "sum-and-product-rules",
+    section: "the-product-rule",
     prompt: "How many different 3-character codes can be made from the 26 lowercase letters, repeats allowed?",
     options: [
       { id: "a", text: "78" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q2",
     quiz: "counting-quiz",
+    lesson: "sum-and-product-rules",
+    section: "count-the-opposite",
     prompt: "How many 4-digit PINs (0000 to 9999) contain at least one 0?",
     options: [
       { id: "a", text: "1,000" },
@@ -293,6 +337,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q3",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "permutations",
     prompt: "In how many ways can 8 runners finish first, second and third?",
     options: [
       { id: "a", text: "24" },
@@ -306,6 +352,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q4",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "How many ways are there to choose 2 toppings from 6?",
     options: [
       { id: "a", text: "12" },
@@ -319,6 +367,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q5",
     quiz: "counting-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "Which equals C(10, 7)?",
     options: [
       { id: "a", text: "C(10, 3)" },
@@ -332,6 +382,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q6",
     quiz: "counting-quiz",
+    lesson: "pigeonhole-principle",
+    section: "collisions-in-a-hash-table",
     prompt: "A hash table has 1,000 buckets and holds 2,500 keys. What does the pigeonhole principle guarantee?",
     options: [
       { id: "a", text: "Every bucket has at least 2 keys" },
@@ -345,6 +397,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/counting-quiz/q7",
     quiz: "counting-quiz",
+    lesson: "pigeonhole-principle",
+    section: "no-compressor-shrinks-everything",
     prompt: "Why can't a lossless compressor make every 1,000-bit file shorter?",
     options: [
       { id: "a", text: "Compression is too slow on long files" },
@@ -358,6 +412,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q1",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "the-handshake-lemma",
     prompt: "An undirected graph has 10 edges. What do its vertex degrees add up to?",
     options: [
       { id: "a", text: "10" },
@@ -371,6 +427,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q2",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "the-handshake-lemma",
     prompt: "Can a graph have exactly 3 vertices of odd degree?",
     options: [
       { id: "a", text: "Yes, if it has enough edges" },
@@ -384,6 +442,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q3",
     quiz: "graphs-quiz",
+    lesson: "graphs",
+    section: "storing-a-graph",
     prompt: "A social network has a billion users and about 200 friends each. Which representation fits?",
     options: [
       { id: "a", text: "Adjacency matrix: lookups are O(1)" },
@@ -397,6 +457,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q4",
     quiz: "graphs-quiz",
+    lesson: "paths-and-dags",
+    section: "euler-paths-every-edge-once",
     prompt: "A connected graph has vertex degrees 2, 2, 3, 3, 4. Does it have an Euler path?",
     options: [
       { id: "a", text: "Yes, an Euler circuit" },
@@ -410,6 +472,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q5",
     quiz: "graphs-quiz",
+    lesson: "paths-and-dags",
+    section: "topological-sort",
     prompt: "Kahn's algorithm stops with some vertices still unordered. What does that mean?",
     options: [
       { id: "a", text: "The graph is disconnected" },
@@ -423,6 +487,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q6",
     quiz: "graphs-quiz",
+    lesson: "trees",
+    section: "why-n--1-edges",
     prompt: "How many edges does a tree with 50 vertices have?",
     options: [
       { id: "a", text: "49" },
@@ -436,6 +502,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/graphs-quiz/q7",
     quiz: "graphs-quiz",
+    lesson: "trees",
+    section: "height",
     prompt: "What is the smallest possible height of a binary tree with 100 vertices?",
     options: [
       { id: "a", text: "5" },
@@ -449,6 +517,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "sample-spaces-and-events",
     prompt: "Two fair dice are rolled. What is the probability that the sum is 8?",
     options: [
       { id: "a", text: "1/11" },
@@ -462,6 +532,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "combining-events",
     prompt: "A fair coin is flipped 3 times. What is the probability of at least one head?",
     options: [
       { id: "a", text: "1/2" },
@@ -475,6 +547,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "probability-and-expectation",
+    section: "linearity-of-expectation",
     prompt: "When does E[X + Y] = E[X] + E[Y] hold?",
     options: [
       { id: "a", text: "Only when X and Y are independent" },
@@ -488,6 +562,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "birthday-problem",
+    section: "the-square-root-rule",
     prompt: "Records get IDs from a 32-bit hash. Roughly how many records before a duplicate ID is more likely than not?",
     options: [
       { id: "a", text: "After about 77,000 items" },
@@ -501,6 +577,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "birthday-problem",
+    section: "collisions-in-practice",
     prompt: "Why does a 128-bit hash give only about 64 bits of collision resistance?",
     options: [
       { id: "a", text: "Half the bits are used for padding" },
@@ -514,6 +592,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "equivalence-and-laws",
+    section: "the-contrapositive",
     prompt: "Which is equivalent to \"if the cache is warm, the request is fast\"?",
     options: [
       { id: "a", text: "If the request is fast, the cache is warm" },
@@ -527,6 +607,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "permutations-and-combinations",
+    section: "combinations",
     prompt: "How many ways can you choose 3 of 7 servers to run a replica on?",
     options: [
       { id: "a", text: "21" },
@@ -540,6 +622,8 @@ export const questions: Question[] = [
   {
     id: "discrete-mathematics/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "paths-and-dags",
+    section: "detecting-cycles",
     prompt: "A package manager reports a circular dependency. In graph terms, what did it find?",
     options: [
       { id: "a", text: "A vertex with in-degree 0" },
@@ -549,5 +633,369 @@ export const questions: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "A topological sort exists exactly when the dependency graph is a DAG. A cycle means some package would have to come before itself.",
+  },
+  {
+    id: "discrete-mathematics/propositions-and-connectives/precedence",
+    lesson: "propositions-and-connectives",
+    section: "precedence",
+    prompt: "How is ¬p ∧ q ∨ r grouped?",
+    options: [
+      { id: "a", text: "¬(p ∧ q) ∨ r" },
+      { id: "b", text: "¬p ∧ (q ∨ r)" },
+      { id: "c", text: "((¬p) ∧ q) ∨ r" },
+      { id: "d", text: "¬(p ∧ q ∨ r)" },
+    ],
+    correctOptionId: "c",
+    explanation: "¬ binds tightest, then ∧, then ∨, like × before + in arithmetic. So ¬ applies to p alone, ∧ joins ¬p and q, and ∨ comes last. ¬p ∧ (q ∨ r) does the ∨ first, which the rule forbids.",
+  },
+  {
+    id: "discrete-mathematics/propositions-and-connectives/empty-list",
+    lesson: "propositions-and-connectives",
+    section: "implication-the-one-that-trips-everyone-up",
+    prompt: "A test checks \"every item in the list is positive\". What does it report for an empty list?",
+    options: [
+      { id: "a", text: "It fails, because there are no positive items" },
+      { id: "b", text: "It passes, because no item breaks the rule" },
+      { id: "c", text: "Neither: the statement has no truth value" },
+      { id: "d", text: "It depends on the programming language" },
+    ],
+    correctOptionId: "b",
+    explanation: "\"For every item, if it's in the list then it's positive\" is an implication with a false hypothesis for every possible item, so it's true. That's vacuous truth: nothing can break the promise. The same rule makes all() of an empty list true in Python.",
+  },
+  {
+    id: "discrete-mathematics/equivalence-and-laws/converse",
+    lesson: "equivalence-and-laws",
+    section: "the-contrapositive",
+    prompt: "\"If it compiles, the tests ran\" is true. Which statement must also be true?",
+    options: [
+      { id: "a", text: "If the tests ran, it compiled" },
+      { id: "b", text: "If it didn't compile, the tests didn't run" },
+      { id: "c", text: "It compiles if and only if the tests ran" },
+      { id: "d", text: "If the tests didn't run, it didn't compile" },
+    ],
+    correctOptionId: "d",
+    explanation: "Only the contrapositive, ¬q → ¬p, always means the same as p → q. \"If the tests ran, it compiled\" is the converse and \"if it didn't compile, the tests didn't run\" is the inverse; both can be false while the original is true.",
+  },
+  {
+    id: "discrete-mathematics/equivalence-and-laws/absorption",
+    lesson: "equivalence-and-laws",
+    section: "the-laws",
+    prompt: "Which law simplifies p ∧ (p ∨ q) to p?",
+    options: [
+      { id: "a", text: "Absorption" },
+      { id: "b", text: "De Morgan" },
+      { id: "c", text: "Distributive" },
+      { id: "d", text: "Domination" },
+    ],
+    correctOptionId: "a",
+    explanation: "Absorption: p ∧ (p ∨ q) ≡ p. If p is true both sides are true; if p is false the ∧ makes the left false. Distributive would expand it to (p ∧ p) ∨ (p ∧ q), a longer road to the same place.",
+  },
+  {
+    id: "discrete-mathematics/predicates-and-quantifiers/negate-nested",
+    lesson: "predicates-and-quantifiers",
+    section: "nested-quantifiers",
+    prompt: "What is the negation of ∀x ∃y L(x, y), \"everyone loves somebody\"?",
+    options: [
+      { id: "a", text: "∀x ∃y ¬L(x, y): everyone doesn't love somebody" },
+      { id: "b", text: "∃x ∀y ¬L(x, y): someone loves nobody" },
+      { id: "c", text: "∀x ∀y ¬L(x, y): nobody loves anyone" },
+      { id: "d", text: "∃y ∀x L(x, y): someone is loved by everyone" },
+    ],
+    correctOptionId: "b",
+    explanation: "Flip each quantifier from the outside in and push the ¬ to the predicate: ∀ becomes ∃, ∃ becomes ∀. \"Nobody loves anyone\" is far stronger than what's needed; one person who loves nobody is enough to break \"everyone loves somebody\".",
+  },
+  {
+    id: "discrete-mathematics/predicates-and-quantifiers/order-matters",
+    lesson: "predicates-and-quantifiers",
+    section: "nested-quantifiers",
+    prompt: "Over the integers, which statement is true?",
+    options: [
+      { id: "a", text: "∃y ∀x (y > x): some integer is bigger than every integer" },
+      { id: "b", text: "Both are true, because they use the same predicate" },
+      { id: "c", text: "∀x ∃y (y > x): every integer has a bigger one" },
+      { id: "d", text: "Neither is true" },
+    ],
+    correctOptionId: "c",
+    explanation: "For each x, pick y = x + 1, so ∀x ∃y (y > x) is true. ∃y ∀x needs one y bigger than every x, including y itself, which is impossible. Order matters: ∀∃ lets y depend on x, and ∃∀ doesn't.",
+  },
+  {
+    id: "discrete-mathematics/sets/cartesian-size",
+    lesson: "sets",
+    section: "cartesian-products",
+    prompt: "|A| = 3 and |B| = 4. How many elements does A × B have?",
+    options: [
+      { id: "a", text: "7" },
+      { id: "b", text: "64" },
+      { id: "c", text: "81" },
+      { id: "d", text: "12" },
+    ],
+    correctOptionId: "d",
+    explanation: "A × B holds every ordered pair (a, b), so |A × B| = |A| · |B| = 3 × 4 = 12. 7 adds, which counts A ∪ B when they don't overlap; 64 is 4³, the number of functions from A to B.",
+  },
+  {
+    id: "discrete-mathematics/functions/composition",
+    lesson: "functions",
+    section: "composition",
+    prompt: "f(x) = x + 1 and g(x) = 2x. What is (g ∘ f)(3)?",
+    options: [
+      { id: "a", text: "7" },
+      { id: "b", text: "8" },
+      { id: "c", text: "6" },
+      { id: "d", text: "9" },
+    ],
+    correctOptionId: "b",
+    explanation: "g ∘ f means g after f: first f(3) = 4, then g(4) = 8. 7 is (f ∘ g)(3) = f(6), the other order, which is the usual mistake: the function written first is applied last.",
+  },
+  {
+    id: "discrete-mathematics/relations/partial-order",
+    lesson: "relations",
+    section: "partial-orders",
+    prompt: "Which three properties make a relation a partial order?",
+    options: [
+      { id: "a", text: "Reflexive, symmetric and transitive" },
+      { id: "b", text: "Reflexive, antisymmetric and transitive" },
+      { id: "c", text: "Irreflexive, symmetric and total" },
+      { id: "d", text: "Symmetric, antisymmetric and transitive" },
+    ],
+    correctOptionId: "b",
+    explanation: "A partial order is reflexive, antisymmetric and transitive, like ≤ or \"divides\". Reflexive, symmetric and transitive is an equivalence relation instead. A partial order needn't be total: 2 and 3 are incomparable under \"divides\".",
+  },
+  {
+    id: "discrete-mathematics/direct-and-indirect-proof/sqrt2-setup",
+    lesson: "direct-and-indirect-proof",
+    section: "proof-by-contradiction",
+    prompt: "The proof that √2 is irrational starts \"Suppose √2 = a/b in lowest terms\". Why lowest terms?",
+    options: [
+      { id: "a", text: "Because the proof then shows a and b are both even, which contradicts having no common factor" },
+      { id: "b", text: "Because fractions must always be written in lowest terms" },
+      { id: "c", text: "Because it makes a and b prime" },
+      { id: "d", text: "It isn't needed; any fraction would do" },
+    ],
+    correctOptionId: "a",
+    explanation: "From a² = 2b² the proof shows a is even, then b is even. That clash only counts as a contradiction because we assumed a and b share no factor. Without \"lowest terms\" there'd be nothing to contradict.",
+  },
+  {
+    id: "discrete-mathematics/direct-and-indirect-proof/examples-not-proof",
+    lesson: "direct-and-indirect-proof",
+    section: "direct-proof",
+    prompt: "You check that the sum of two even numbers is even for every pair up to 1,000. What have you shown?",
+    options: [
+      { id: "a", text: "A proof, because 1,000 is a lot of cases" },
+      { id: "b", text: "A proof by contradiction" },
+      { id: "c", text: "Evidence, not a proof: the claim is about all integers" },
+      { id: "d", text: "That the claim is false" },
+    ],
+    correctOptionId: "c",
+    explanation: "No number of examples proves a claim about infinitely many numbers. The direct proof covers them all at once: a = 2j and b = 2k, so a + b = 2(j + k), which is even. One counterexample, though, is enough to disprove a claim.",
+  },
+  {
+    id: "discrete-mathematics/induction/skip-base",
+    lesson: "induction",
+    section: "how-induction-proofs-go-wrong",
+    prompt: "For P(n): \"n = n + 1\", adding 1 to both sides shows P(k) → P(k + 1). What's wrong with concluding P(n) for all n?",
+    options: [
+      { id: "a", text: "The inductive step is wrong" },
+      { id: "b", text: "Induction only works for inequalities" },
+      { id: "c", text: "Nothing: the statement is true" },
+      { id: "d", text: "There's no base case, and P(1), \"1 = 2\", is false" },
+    ],
+    correctOptionId: "d",
+    explanation: "The step really does hold, but it only pushes truth forward. Without a true first domino nothing falls. Checking the base case is what stops a false statement with a valid step from slipping through.",
+  },
+  {
+    id: "discrete-mathematics/induction/strong",
+    lesson: "induction",
+    section: "strong-induction",
+    prompt: "Proving every integer n ≥ 2 is a product of primes, why is strong induction used instead of ordinary induction?",
+    options: [
+      { id: "a", text: "If k + 1 = a · b, the factors can be any numbers below k + 1, not just k" },
+      { id: "b", text: "Because the base case is 2, not 1" },
+      { id: "c", text: "Because strong induction proves more things than ordinary induction" },
+      { id: "d", text: "Because primes can't be handled by ordinary induction" },
+    ],
+    correctOptionId: "a",
+    explanation: "The step needs the claim for a and b, which can be anywhere from 2 to k, so the hypothesis must cover every j up to k. Strong induction proves exactly the same things as ordinary induction; it just reaches further back in one step.",
+  },
+  {
+    id: "discrete-mathematics/loop-invariants/termination",
+    lesson: "loop-invariants",
+    section: "the-three-checks",
+    prompt: "In a loop-invariant proof, what does the termination check show?",
+    options: [
+      { id: "a", text: "That the invariant holds before the first iteration" },
+      { id: "b", text: "That each iteration keeps the invariant true" },
+      { id: "c", text: "That the invariant, plus the reason the loop stopped, gives the result you wanted" },
+      { id: "d", text: "That the loop runs in O(n) time" },
+    ],
+    correctOptionId: "c",
+    explanation: "The three checks are initialisation (true at the start), maintenance (kept by each pass) and termination (when the loop ends, the invariant plus the exit condition give the answer). Showing that the loop does stop is a separate argument.",
+  },
+  {
+    id: "discrete-mathematics/sum-and-product-rules/plates",
+    lesson: "sum-and-product-rules",
+    section: "the-product-rule",
+    prompt: "A code is 2 letters (A to Z) followed by 3 digits (0 to 9), repeats allowed. How many codes are there?",
+    options: [
+      { id: "a", text: "676,000" },
+      { id: "b", text: "36⁵" },
+      { id: "c", text: "1,000 + 676" },
+      { id: "d", text: "26 × 2 + 10 × 3" },
+    ],
+    correctOptionId: "a",
+    explanation: "Each position is filled \"and then\" the next, so multiply: 26 × 26 × 10 × 10 × 10 = 676,000. 36⁵ lets every position be a letter or a digit. Adding is for \"or\": one kind of choice or another.",
+  },
+  {
+    id: "discrete-mathematics/sum-and-product-rules/one-or-two",
+    lesson: "sum-and-product-rules",
+    section: "the-sum-rule",
+    prompt: "How many PINs are 1 or 2 digits long (0 to 9 each, repeats allowed)?",
+    options: [
+      { id: "a", text: "100" },
+      { id: "b", text: "20" },
+      { id: "c", text: "1,000" },
+      { id: "d", text: "110" },
+    ],
+    correctOptionId: "d",
+    explanation: "A 1-digit PIN or a 2-digit PIN: those don't overlap, so add. 10 one-digit PINs plus 10 × 10 = 100 two-digit ones is 110. 100 counts only the 2-digit ones; 20 adds 10 + 10.",
+  },
+  {
+    id: "discrete-mathematics/permutations-and-combinations/binomial",
+    lesson: "permutations-and-combinations",
+    section: "the-binomial-theorem",
+    prompt: "What is the coefficient of x³y² in (x + y)⁵?",
+    options: [
+      { id: "a", text: "5" },
+      { id: "b", text: "6" },
+      { id: "c", text: "10" },
+      { id: "d", text: "20" },
+    ],
+    correctOptionId: "c",
+    explanation: "Each term picks y from exactly 2 of the 5 brackets, and there are C(5, 2) = 10 ways to choose which. That's row 5 of Pascal's triangle: 1, 5, 10, 10, 5, 1.",
+  },
+  {
+    id: "discrete-mathematics/permutations-and-combinations/pascal",
+    lesson: "permutations-and-combinations",
+    section: "pascals-triangle",
+    prompt: "C(5, 2) = 10 and C(5, 3) = 10. What does Pascal's rule give for C(6, 3)?",
+    options: [
+      { id: "a", text: "20" },
+      { id: "b", text: "100" },
+      { id: "c", text: "15" },
+      { id: "d", text: "10" },
+    ],
+    correctOptionId: "a",
+    explanation: "C(n, k) = C(n − 1, k − 1) + C(n − 1, k), so C(6, 3) = C(5, 2) + C(5, 3) = 10 + 10 = 20. Each entry of the triangle is the sum of the two above it, not their product.",
+  },
+  {
+    id: "discrete-mathematics/pigeonhole-principle/months",
+    lesson: "pigeonhole-principle",
+    section: "the-general-version",
+    prompt: "50 people are in a room. What is the largest number you can be sure share a birth month?",
+    options: [
+      { id: "a", text: "2" },
+      { id: "b", text: "5" },
+      { id: "c", text: "4" },
+      { id: "d", text: "12" },
+    ],
+    correctOptionId: "b",
+    explanation: "50 items in 12 boxes: some box holds at least ⌈50/12⌉ = ⌈4.17⌉ = 5. If every month had 4 or fewer, there'd be at most 48 people. 4 forgets to round up.",
+  },
+  {
+    id: "discrete-mathematics/pigeonhole-principle/remainders",
+    lesson: "pigeonhole-principle",
+    section: "a-few-more",
+    prompt: "What is the smallest number of integers that guarantees two of them have the same remainder mod 5?",
+    options: [
+      { id: "a", text: "5" },
+      { id: "b", text: "10" },
+      { id: "c", text: "6" },
+      { id: "d", text: "25" },
+    ],
+    correctOptionId: "c",
+    explanation: "There are 5 possible remainders (0 to 4), which are the boxes. With 5 integers they could all differ, but 6 integers in 5 boxes force two into one box.",
+  },
+  {
+    id: "discrete-mathematics/graphs/complete-graph",
+    lesson: "graphs",
+    section: "special-graphs",
+    prompt: "How many edges does the complete graph K₇ have?",
+    options: [
+      { id: "a", text: "42" },
+      { id: "b", text: "7" },
+      { id: "c", text: "49" },
+      { id: "d", text: "21" },
+    ],
+    correctOptionId: "d",
+    explanation: "Every pair of vertices has one edge, so count the pairs: C(7, 2) = 7 × 6 / 2 = 21. 42 counts each edge twice, once from each end; 49 includes loops and both directions.",
+  },
+  {
+    id: "discrete-mathematics/paths-and-dags/euler-circuit",
+    lesson: "paths-and-dags",
+    section: "euler-paths-every-edge-once",
+    prompt: "A connected graph has vertex degrees 2, 4, 4, 2. What can you say?",
+    options: [
+      { id: "a", text: "It has an Euler circuit, because every degree is even" },
+      { id: "b", text: "It has an Euler path but no circuit" },
+      { id: "c", text: "It has no Euler path" },
+      { id: "d", text: "You can't tell without trying every route" },
+    ],
+    correctOptionId: "a",
+    explanation: "A connected graph has an Euler circuit exactly when every vertex has even degree, so this one does. An Euler path without a circuit needs exactly 2 odd vertices. The degrees settle it; no search is needed.",
+  },
+  {
+    id: "discrete-mathematics/paths-and-dags/hamiltonian",
+    lesson: "paths-and-dags",
+    section: "euler-paths-every-edge-once",
+    prompt: "A delivery route must visit every town exactly once. Which problem is that, and how hard is it?",
+    options: [
+      { id: "a", text: "An Euler path, settled by counting odd degrees" },
+      { id: "b", text: "A topological sort, done in linear time" },
+      { id: "c", text: "A Hamiltonian path, which has no known fast test (it's NP-complete)" },
+      { id: "d", text: "A spanning tree, found greedily" },
+    ],
+    correctOptionId: "c",
+    explanation: "Every vertex once is a Hamiltonian path; every edge once is an Euler path. They sound like twins, but only the Euler question has a simple degree test. Deciding whether a Hamiltonian path exists is NP-complete.",
+  },
+  {
+    id: "discrete-mathematics/trees/height-capacity",
+    lesson: "trees",
+    section: "height",
+    prompt: "At most how many vertices can a binary tree of height 3 hold?",
+    options: [
+      { id: "a", text: "8" },
+      { id: "b", text: "15" },
+      { id: "c", text: "7" },
+      { id: "d", text: "16" },
+    ],
+    correctOptionId: "b",
+    explanation: "Level d holds at most 2ᵈ vertices, so heights 0 to 3 give 1 + 2 + 4 + 8 = 2⁴ − 1 = 15. 8 counts only the bottom level, and 7 stops at height 2.",
+  },
+  {
+    id: "discrete-mathematics/probability-and-expectation/die",
+    lesson: "probability-and-expectation",
+    section: "random-variables-and-expectation",
+    prompt: "What is the expected value of one roll of a fair six-sided die?",
+    options: [
+      { id: "a", text: "3" },
+      { id: "b", text: "Any value from 1 to 6" },
+      { id: "c", text: "6" },
+      { id: "d", text: "3.5" },
+    ],
+    correctOptionId: "d",
+    explanation: "E[X] = (1 + 2 + 3 + 4 + 5 + 6) / 6 = 21/6 = 3.5. An expected value is a weighted average, so it doesn't have to be a value the die can show.",
+  },
+  {
+    id: "discrete-mathematics/birthday-problem/pairs",
+    lesson: "birthday-problem",
+    section: "why-so-soon",
+    prompt: "In a group of 10 people, how many pairs could share a birthday?",
+    options: [
+      { id: "a", text: "9" },
+      { id: "b", text: "45" },
+      { id: "c", text: "10" },
+      { id: "d", text: "100" },
+    ],
+    correctOptionId: "b",
+    explanation: "A match can be between any two people, so count pairs: C(10, 2) = 10 × 9 / 2 = 45. 9 is only \"my birthday against everyone else's\", the intuition that makes the birthday problem surprising.",
   },
 ];

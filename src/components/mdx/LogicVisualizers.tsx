@@ -4,7 +4,7 @@ import type { Frame } from "@/lib/algorithms";
 import {
   bitString, bitsOf, bitsToNumber, CascadeStageConfig, classifyDecimalVoltage, classifyLogicVoltage, CmosGateType, computeBooleanDual,
   computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
-  expandRadixToBinary, floatParts, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, KMapImplicant, latchVersusFlipFlop,
+  expandRadixToBinary, floatParts, parseFloatInput, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, KMapImplicant, latchVersusFlipFlop,
   LOGIC_FAMILIES, lookaheadCarries, minimizeKMap, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames,
   signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder, simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder,
   simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, TargetOperation, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement,
@@ -1900,7 +1900,7 @@ export function ParityLab() {
 /** Live IEEE 754 single precision breakdown with presets, bit-level toggles, and hexadecimal equivalent. */
 export function FloatExplorer() {
   const [text, setText] = useState("-43.625");
-  const value = Number(text) || 0;
+  const value = parseFloatInput(text);
   const p = floatParts(value);
   const exp = p.exponent - 127;
 
@@ -2009,9 +2009,9 @@ export function FloatExplorer() {
 
         {/* Hex grouping representation */}
         <div className="p-2.5 rounded bg-muted/20 border border-border flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
             <span className="text-xs text-muted-foreground">Hexadecimal (0x):</span>
-            <div className="flex gap-1.5 font-bold text-mint text-base">
+            <div className="flex gap-1 sm:gap-1.5 font-bold text-mint text-base">
               {hexNibbles.map((h, i) => (
                 <span key={i} title={`Bits ${h.nibble}`} className="px-1 py-0.5 rounded bg-muted/40 border border-border">
                   {h.hex}
@@ -2062,8 +2062,8 @@ export function FloatExplorer() {
             </div>
           )}
           <div className="pt-1 border-t border-border flex justify-between items-center text-muted-foreground">
-            <span>Exact float32 value recovered: <strong className="text-foreground">{p.value}</strong></span>
-            {p.value !== value && (
+            <span>Exact float32 value recovered: <strong className="text-foreground">{Object.is(p.value, -0) ? "-0" : String(p.value)}</strong></span>
+            {p.value !== value && !Number.isNaN(value) && (
               <span className="text-orange">
                 (Rounded: {value} cannot be stored with finite binary precision)
               </span>
@@ -6354,9 +6354,9 @@ export function CoincidentMemoryLab() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span>Row Address (A1..A0):</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {[0, 1, 2, 3].map((r) => (
                 <button
                   key={r}
@@ -6369,9 +6369,9 @@ export function CoincidentMemoryLab() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span>Column Address (A3..A2):</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {[0, 1, 2, 3].map((c) => (
                 <button
                   key={c}
@@ -6468,7 +6468,7 @@ export function MemoryExpansionLab() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-muted-foreground">Select Address:</span>
             {[0x150, 0x520, 0x930, 0xD40].map((a, i) => (
               <button

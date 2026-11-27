@@ -7,6 +7,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q1",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "memory-is-one-long-array",
     prompt: "An int array starts at address 2000 and each int takes 4 bytes. Where is a[25]?",
     options: [
       { id: "a", text: "2025" },
@@ -20,6 +22,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q2",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "what-arrays-are-good-and-bad-at",
     prompt: "Why is inserting at index 0 of a 1,000,000-item array slow?",
     options: [
       { id: "a", text: "Finding index 0 takes a long time" },
@@ -33,6 +37,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q3",
     quiz: "lists-quiz",
+    lesson: "dynamic-arrays",
+    section: "why-doubling-is-o1-per-append",
     prompt: "A dynamic array doubles its capacity when full. What is the amortized cost of an append?",
     options: [
       { id: "a", text: "O(1)" },
@@ -46,6 +52,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q4",
     quiz: "lists-quiz",
+    lesson: "dynamic-arrays",
+    section: "why-doubling-is-o1-per-append",
     prompt: "A dynamic array grows by 100 slots each time it fills. Appending n items costs in total:",
     options: [
       { id: "a", text: "O(n)" },
@@ -59,6 +67,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q5",
     quiz: "lists-quiz",
+    lesson: "linked-lists",
+    section: "the-costs-compared-with-an-array",
     prompt: "Which operation is O(1) on a singly linked list with only a head pointer?",
     options: [
       { id: "a", text: "Read the 50th item" },
@@ -72,6 +82,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/lists-quiz/q6",
     quiz: "lists-quiz",
+    lesson: "arrays-and-memory",
+    section: "why-contiguous-is-fast-in-practice",
     prompt: "Summing a million numbers stored in an array is usually much faster than in a linked list. Why, given both are O(n)?",
     options: [
       { id: "a", text: "Arrays use fewer instructions per addition" },
@@ -85,6 +97,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q1",
     quiz: "stacks-queues-quiz",
+    lesson: "stacks",
+    section: "the-interface",
     prompt: "You push A, B, C onto a stack, pop once, then push D. What does the next pop return?",
     options: [
       { id: "a", text: "A" },
@@ -98,6 +112,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q2",
     quiz: "stacks-queues-quiz",
+    lesson: "stacks",
+    section: "matching-brackets",
     prompt: "Which string makes a bracket checker stop with \"closer doesn't match the top\"?",
     options: [
       { id: "a", text: "(()" },
@@ -111,6 +127,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q3",
     quiz: "stacks-queues-quiz",
+    lesson: "queues-and-deques",
+    section: "the-slow-way",
     prompt: "Why is list.pop(0) a poor way to dequeue from a Python list?",
     options: [
       { id: "a", text: "It removes from the wrong end" },
@@ -124,6 +142,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q4",
     quiz: "stacks-queues-quiz",
+    lesson: "queues-and-deques",
+    section: "the-ring-buffer",
     prompt: "A ring buffer has capacity 8, head = 6 and size = 4. Where does the next enqueue go?",
     options: [
       { id: "a", text: "Slot 10" },
@@ -137,6 +157,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q5",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "load-factor-and-resizing",
     prompt: "A hash map has 16 buckets and 12 keys, and resizes when the load factor passes 0.75. What happens when you add a 13th key?",
     options: [
       { id: "a", text: "Nothing: 13/16 is still under 1" },
@@ -150,6 +172,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q6",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "the-worst-case",
     prompt: "Why does Python's hash(\"hello\") give a different number each time you start Python?",
     options: [
       { id: "a", text: "A bug in CPython" },
@@ -163,6 +187,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/stacks-queues-quiz/q7",
     quiz: "stacks-queues-quiz",
+    lesson: "hash-maps",
+    section: "keys-into-indexes",
     prompt: "Which structure would you use to check, in O(1) on average, whether a username is already taken?",
     options: [
       { id: "a", text: "A sorted array" },
@@ -176,6 +202,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q1",
     quiz: "trees-quiz",
+    lesson: "binary-trees",
+    section: "four-orders-to-visit-every-node",
     prompt: "Which traversal of a binary search tree lists its keys in sorted order?",
     options: [
       { id: "a", text: "Preorder" },
@@ -189,6 +217,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q2",
     quiz: "trees-quiz",
+    lesson: "binary-trees",
+    section: "which-order-for-which-job",
     prompt: "To total the sizes of every folder on a disk, which traversal do you need?",
     options: [
       { id: "a", text: "Preorder: parents first" },
@@ -202,6 +232,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q3",
     quiz: "trees-quiz",
+    lesson: "binary-search-trees",
+    section: "height-is-everything",
     prompt: "You insert 10, 20, 30, 40, 50 in that order into an empty (unbalanced) BST. What is its height?",
     options: [
       { id: "a", text: "2" },
@@ -215,6 +247,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q4",
     quiz: "trees-quiz",
+    lesson: "binary-search-trees",
+    section: "insert-and-delete",
     prompt: "Deleting a BST node that has two children: what replaces its key?",
     options: [
       { id: "a", text: "Its left child's key" },
@@ -228,6 +262,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q5",
     quiz: "trees-quiz",
+    lesson: "heaps",
+    section: "the-heap-rule",
     prompt: "In a binary heap stored in an array, where are the children of index 4?",
     options: [
       { id: "a", text: "5 and 6" },
@@ -241,6 +277,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q6",
     quiz: "trees-quiz",
+    lesson: "heaps",
+    section: "push-and-pop",
     prompt: "What does std::priority_queue<int> in C++ return from top() after pushing 9, 4, 7, 1?",
     options: [
       { id: "a", text: "1" },
@@ -254,6 +292,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/trees-quiz/q7",
     quiz: "trees-quiz",
+    lesson: "tries",
+    section: "operations",
     prompt: "A trie holds a million words. How many steps does it take to find all words starting with \"pro\" (before listing them)?",
     options: [
       { id: "a", text: "About 3" },
@@ -267,6 +307,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q1",
     quiz: "final-quiz",
+    lesson: "union-find",
+    section: "a-forest-in-an-array",
     prompt: "In a union-find with union by rank and path compression, what does each operation cost in practice?",
     options: [
       { id: "a", text: "O(n)" },
@@ -280,6 +322,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q2",
     quiz: "final-quiz",
+    lesson: "union-find",
+    section: "kruskals-algorithm",
     prompt: "Kruskal's algorithm skips an edge when union(u, v) reports u and v are already together. Why?",
     options: [
       { id: "a", text: "The edge is too expensive" },
@@ -293,6 +337,7 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q3",
     quiz: "final-quiz",
+    lesson: "heaps",
     prompt: "You need the 10 highest scores out of a stream of a billion. Which structure keeps this cheap?",
     options: [
       { id: "a", text: "A sorted array of everything" },
@@ -306,6 +351,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q4",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "worked-choices",
     prompt: "A leaderboard must show each player's rank and the players just above and below them. Best fit?",
     options: [
       { id: "a", text: "Hash map" },
@@ -319,6 +366,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q5",
     quiz: "final-quiz",
+    lesson: "linked-lists",
+    section: "doubly-linked-lists",
     prompt: "An LRU cache needs O(1) lookup and O(1) \"move this entry to most recently used\". Which combination does it?",
     options: [
       { id: "a", text: "Two stacks" },
@@ -332,6 +381,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "the-most-common-fix-a-set-instead-of-a-list",
     prompt: "This Python runs slowly: for u in signups: if u in banned_list: ... What's the usual fix?",
     options: [
       { id: "a", text: "Sort signups first" },
@@ -345,6 +396,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "queues-and-deques",
+    section: "deques",
     prompt: "Which structure processes requests strictly in arrival order with O(1) at both ends?",
     options: [
       { id: "a", text: "A Python list using pop(0)" },
@@ -358,6 +411,8 @@ export const questions: Question[] = [
   {
     id: "data-structures/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "choosing-a-data-structure",
+    section: "the-cheat-sheet",
     prompt: "When does a linked list genuinely beat a dynamic array?",
     options: [
       { id: "a", text: "Whenever you need to read item i" },
@@ -367,5 +422,285 @@ export const questions: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "That's its one O(1) trick. For indexing and scanning, the array wins, and a list also spends extra memory on pointers.",
+  },
+  {
+    id: "data-structures/arrays-and-memory/grid-address",
+    lesson: "arrays-and-memory",
+    section: "two-dimensional-arrays",
+    prompt: "A C grid int g[3][4] (3 rows, 4 columns) starts at address 1000, and each int takes 4 bytes. Where is g[2][1]?",
+    options: [
+      { id: "a", text: "1036" },
+      { id: "b", text: "1024" },
+      { id: "c", text: "1009" },
+      { id: "d", text: "1028" },
+    ],
+    correctOptionId: "a",
+    explanation: "Row-major order puts g[r][c] at index r × columns + c = 2 × 4 + 1 = 9, and 9 × 4 bytes = 36, so 1000 + 36 = 1036. 1009 forgets to multiply by the 4-byte size; 1028 uses r × rows instead of r × columns.",
+  },
+  {
+    id: "data-structures/arrays-and-memory/index-o1",
+    lesson: "arrays-and-memory",
+    section: "what-arrays-are-good-and-bad-at",
+    prompt: "Why can an array reach a[500000] as fast as a[0]?",
+    options: [
+      { id: "a", text: "The CPU searches the array in parallel" },
+      { id: "b", text: "Its address is computed directly: start + index × element size" },
+      { id: "c", text: "Arrays keep a separate index of every element" },
+      { id: "d", text: "It can't: later elements take longer to reach" },
+    ],
+    correctOptionId: "b",
+    explanation: "Elements sit side by side, all the same size, so one multiply and one add give the address of any index: O(1). A linked list has no such formula and must walk from the head.",
+  },
+  {
+    id: "data-structures/dynamic-arrays/copies",
+    lesson: "dynamic-arrays",
+    section: "why-doubling-is-o1-per-append",
+    prompt: "A dynamic array starts with capacity 1 and doubles when full. How many element copies happen while appending 17 items?",
+    options: [
+      { id: "a", text: "17" },
+      { id: "b", text: "136" },
+      { id: "c", text: "31" },
+      { id: "d", text: "16" },
+    ],
+    correctOptionId: "c",
+    explanation: "It grows when it holds 1, 2, 4, 8 and 16 items, copying those each time: 1 + 2 + 4 + 8 + 16 = 31, under 2n. 136 is 1 + 2 + … + 16, what growing by one slot each time would cost.",
+  },
+  {
+    id: "data-structures/dynamic-arrays/shrink-quarter",
+    lesson: "dynamic-arrays",
+    section: "shrinking",
+    prompt: "Why do dynamic arrays that shrink wait until they're a quarter full before halving, instead of halving at half full?",
+    options: [
+      { id: "a", text: "To save memory" },
+      { id: "b", text: "Because halving is only allowed on powers of two" },
+      { id: "c", text: "Because removing from the end is O(n)" },
+      { id: "d", text: "Halving at half full means one append then one removal at the boundary could trigger a full copy every time" },
+    ],
+    correctOptionId: "d",
+    explanation: "At exactly half full, a single append would grow the array and a single removal shrink it again, each an O(n) copy. Alternating them would make every operation O(n). The gap between the grow and shrink points prevents that thrashing.",
+  },
+  {
+    id: "data-structures/linked-lists/doubly-remove",
+    lesson: "linked-lists",
+    section: "doubly-linked-lists",
+    prompt: "You hold a pointer to a node in the middle of a list. In which kind of list can you remove it in O(1)?",
+    options: [
+      { id: "a", text: "A doubly linked list" },
+      { id: "b", text: "A singly linked list" },
+      { id: "c", text: "Either, because you already have the node" },
+      { id: "d", text: "Neither: removing from the middle is always O(n)" },
+    ],
+    correctOptionId: "a",
+    explanation: "Removing a node means pointing its predecessor past it. A doubly linked node has a prev pointer, so that's O(1). A singly linked list must walk from the head to find the predecessor: O(n).",
+  },
+  {
+    id: "data-structures/linked-lists/lru",
+    lesson: "linked-lists",
+    section: "doubly-linked-lists",
+    prompt: "Which classic structure pairs a hash map with a doubly linked list?",
+    options: [
+      { id: "a", text: "An LRU cache" },
+      { id: "b", text: "A trie" },
+      { id: "c", text: "A priority queue" },
+      { id: "d", text: "A ring buffer" },
+    ],
+    correctOptionId: "a",
+    explanation: "The hash map finds an entry's node in O(1), and the doubly linked list moves it to the front or evicts the oldest from the back in O(1). That's an LRU (least recently used) cache, and Python's OrderedDict works the same way.",
+  },
+  {
+    id: "data-structures/stacks/stack-overflow",
+    lesson: "stacks",
+    section: "the-call-stack",
+    prompt: "A recursive function with no base case crashes with \"stack overflow\". Which stack overflowed?",
+    options: [
+      { id: "a", text: "The heap data structure" },
+      { id: "b", text: "The call stack: every call pushed a frame until its memory ran out" },
+      { id: "c", text: "A stack object the program created" },
+      { id: "d", text: "The CPU's register stack" },
+    ],
+    correctOptionId: "b",
+    explanation: "Each call pushes a stack frame with its return address and local variables. With no base case the calls never return, so frames pile up until the call stack's fixed memory (a few megabytes) runs out. Python stops earlier, at a depth of 1,000.",
+  },
+  {
+    id: "data-structures/queues-and-deques/ring-back",
+    lesson: "queues-and-deques",
+    section: "the-ring-buffer",
+    prompt: "A ring-buffer queue has capacity 8, head = 6 and size = 3. At which index is the back, where the next item goes?",
+    options: [
+      { id: "a", text: "9" },
+      { id: "b", text: "3" },
+      { id: "c", text: "1" },
+      { id: "d", text: "0" },
+    ],
+    correctOptionId: "c",
+    explanation: "The back is at (head + size) mod capacity = (6 + 3) mod 8 = 1. The items sit at 6, 7 and 0, so the queue has wrapped round the end of the array. 9 forgets the mod and runs off the end.",
+  },
+  {
+    id: "data-structures/queues-and-deques/bfs",
+    lesson: "queues-and-deques",
+    section: "deques",
+    prompt: "Which structure should hold the \"to visit\" list in a breadth-first search?",
+    options: [
+      { id: "a", text: "A stack" },
+      { id: "b", text: "A heap" },
+      { id: "c", text: "A hash map" },
+      { id: "d", text: "A queue" },
+    ],
+    correctOptionId: "d",
+    explanation: "BFS visits nodes in the order it discovers them, first in first out, so it needs a queue (a deque works as one). Swapping in a stack turns it into depth-first search.",
+  },
+  {
+    id: "data-structures/hash-maps/worst-case",
+    lesson: "hash-maps",
+    section: "the-worst-case",
+    prompt: "An attacker sends keys chosen so that every one lands in the same bucket. What does a lookup cost?",
+    options: [
+      { id: "a", text: "O(n), because it scans one long bucket" },
+      { id: "b", text: "O(1), as always for a hash map" },
+      { id: "c", text: "O(log n)" },
+      { id: "d", text: "Nothing: the keys are rejected" },
+    ],
+    correctOptionId: "a",
+    explanation: "O(1) is the average with a decent hash. If all keys collide, one bucket holds them all and a lookup scans them. That's why Python seeds string hashes randomly per process and Java turns crowded buckets into balanced trees (O(log n)).",
+  },
+  {
+    id: "data-structures/hash-maps/resize",
+    lesson: "hash-maps",
+    section: "load-factor-and-resizing",
+    prompt: "A hash map's load factor is 0.5 with 1,000 keys. How many buckets does it have, and about how many keys does a lookup inspect?",
+    options: [
+      { id: "a", text: "500 buckets, about 3 keys" },
+      { id: "b", text: "2,000 buckets, about 500 keys" },
+      { id: "c", text: "2,000 buckets, about 1.5 keys" },
+      { id: "d", text: "1,000 buckets, about 1 key" },
+    ],
+    correctOptionId: "c",
+    explanation: "α = n / m, so m = 1000 / 0.5 = 2,000 buckets. A lookup inspects about 1 + α = 1.5 keys on average. 500 buckets would be a load factor of 2.",
+  },
+  {
+    id: "data-structures/binary-trees/preorder",
+    lesson: "binary-trees",
+    section: "four-orders-to-visit-every-node",
+    prompt: "Root 1 has left child 2 and right child 3; node 2 has children 4 (left) and 5 (right). What is the preorder?",
+    options: [
+      { id: "a", text: "4 2 5 1 3" },
+      { id: "b", text: "4 5 2 3 1" },
+      { id: "c", text: "1 2 3 4 5" },
+      { id: "d", text: "1 2 4 5 3" },
+    ],
+    correctOptionId: "d",
+    explanation: "Preorder visits a node, then its left subtree, then its right: 1, then 2's subtree (2, 4, 5), then 3. 4 2 5 1 3 is inorder, 4 5 2 3 1 is postorder, and 1 2 3 4 5 is level order.",
+  },
+  {
+    id: "data-structures/binary-trees/serialise",
+    lesson: "binary-trees",
+    section: "which-order-for-which-job",
+    prompt: "You save a tree to a file so it can be rebuilt later. Which traversal fits, and why?",
+    options: [
+      { id: "a", text: "Postorder, because leaves are written first" },
+      { id: "b", text: "Inorder, because it's sorted" },
+      { id: "c", text: "Preorder, because each parent is written before its children" },
+      { id: "d", text: "Level order, because it's shortest" },
+    ],
+    correctOptionId: "c",
+    explanation: "To rebuild a tree you need the parent before you can attach its children, so preorder writes it out in the order it's rebuilt. Postorder suits deleting a tree or summing folder sizes, where children must be finished first.",
+  },
+  {
+    id: "data-structures/binary-search-trees/tree-map",
+    lesson: "binary-search-trees",
+    section: "hash-map-or-tree-map",
+    prompt: "You need every order placed between 10:00 and 10:15, by timestamp. Hash map or tree map?",
+    options: [
+      { id: "a", text: "Hash map, because lookups are O(1)" },
+      { id: "b", text: "Tree map, because it keeps keys sorted and can walk a range" },
+      { id: "c", text: "Either: both store keys in order" },
+      { id: "d", text: "Neither: you need a heap" },
+    ],
+    correctOptionId: "b",
+    explanation: "A hash map is fastest for an exact key but scatters keys with no order, so a range means checking every key. A tree map finds 10:00 in O(log n) and walks forward until 10:15.",
+  },
+  {
+    id: "data-structures/binary-search-trees/balanced",
+    lesson: "binary-search-trees",
+    section: "height-is-everything",
+    prompt: "Why do libraries use red-black or AVL trees instead of a plain binary search tree?",
+    options: [
+      { id: "a", text: "They use less memory" },
+      { id: "b", text: "They allow duplicate keys" },
+      { id: "c", text: "Real data often arrives sorted, which turns a plain BST into a chain of height n; rotations keep the height O(log n)" },
+      { id: "d", text: "They're simpler to write" },
+    ],
+    correctOptionId: "c",
+    explanation: "Every BST operation costs O(height). Timestamps and auto-incrementing IDs arrive sorted, and a plain BST fed sorted keys becomes a linked list. Self-balancing trees restructure with small rotations to stay O(log n) tall.",
+  },
+  {
+    id: "data-structures/heaps/parent-index",
+    lesson: "heaps",
+    section: "the-heap-rule",
+    prompt: "In a binary heap stored in an array (index from 0), where is the parent of index 9?",
+    options: [
+      { id: "a", text: "4" },
+      { id: "b", text: "4.5" },
+      { id: "c", text: "18" },
+      { id: "d", text: "8" },
+    ],
+    correctOptionId: "a",
+    explanation: "The parent of index i is ⌊(i − 1) / 2⌋ = ⌊8 / 2⌋ = 4. Check: 4's children are 2 × 4 + 1 = 9 and 10. 18 and 19 are 9's children, not its parent.",
+  },
+  {
+    id: "data-structures/heaps/heapify",
+    lesson: "heaps",
+    section: "building-a-heap-in-on",
+    prompt: "You have an array of n numbers and need a heap. Which is faster?",
+    options: [
+      { id: "a", text: "Pushing them one at a time: O(n)" },
+      { id: "b", text: "Heapify, sifting down from the last non-leaf: O(n)" },
+      { id: "c", text: "Sorting the array first: O(1) afterwards" },
+      { id: "d", text: "They're both O(n log n)" },
+    ],
+    correctOptionId: "b",
+    explanation: "Pushing one by one costs O(n log n). Heapify works bottom-up, and half the nodes are leaves that need no work, so the total comes to O(n). A sorted array is a heap too, but sorting costs O(n log n).",
+  },
+  {
+    id: "data-structures/tries/prefix",
+    lesson: "tries",
+    section: "trie-or-hash-set",
+    prompt: "An autocomplete box must list every stored word starting with what's typed. Why a trie over a hash set?",
+    options: [
+      { id: "a", text: "A trie uses less memory" },
+      { id: "b", text: "A hash set can't store strings" },
+      { id: "c", text: "A trie walks to the prefix and lists below it; a hash set must check every word" },
+      { id: "d", text: "A hash set can't tell if a word is stored" },
+    ],
+    correctOptionId: "c",
+    explanation: "Hashing scatters words, so prefixes share nothing and a prefix query means testing every stored word. In a trie, all words with a prefix sit under one node. Tries usually use more memory, not less.",
+  },
+  {
+    id: "data-structures/union-find/path-compression",
+    lesson: "union-find",
+    section: "a-forest-in-an-array",
+    prompt: "What does path compression do after find(x)?",
+    options: [
+      { id: "a", text: "Hangs the shorter tree under the taller one" },
+      { id: "b", text: "Points every node on the path from x straight at the root" },
+      { id: "c", text: "Deletes the nodes it passed" },
+      { id: "d", text: "Sorts the parent array" },
+    ],
+    correctOptionId: "b",
+    explanation: "After walking up to the root, find points each node it passed directly at that root, so the next find from any of them takes one step. Hanging the shorter tree under the taller is union by rank, the other trick.",
+  },
+  {
+    id: "data-structures/choosing-a-data-structure/small-n",
+    lesson: "choosing-a-data-structure",
+    section: "four-questions-to-ask",
+    prompt: "You look up items in a collection that never holds more than 20 of them. What usually wins?",
+    options: [
+      { id: "a", text: "A balanced tree, for O(log n)" },
+      { id: "b", text: "A trie" },
+      { id: "c", text: "A hash map, always" },
+      { id: "d", text: "A plain array, because a short contiguous scan is cache-friendly" },
+    ],
+    correctOptionId: "d",
+    explanation: "Big-O describes growth, and at 20 items constant factors dominate. Scanning 20 contiguous values is a handful of cache hits, often faster than hashing or chasing tree pointers. Big-O starts to matter in the thousands.",
   },
 ];

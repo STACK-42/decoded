@@ -90,8 +90,7 @@ In a naive design, a single linear array stores the page table. On a 32-bit arch
 
 - Virtual address space = $2^{32}\text{ bytes} = 4\text{ GB}$.
 - Number of pages = $2^{32} / 2^{12} = 2^{20} = 1{,}048{,}576$ pages.
-- At 4 bytes per PTE, a single linear page table requires:
-  $$1{,}048{,}576 \times 4\text{ bytes} = 4\text{ MB of contiguous physical RAM per process.}$$
+- At 4 bytes per PTE, a single linear page table requires $1{,}048{,}576 \times 4$ bytes $= 4$ MB of contiguous physical RAM per process.
 
 If a system runs 250 active processes, 1 GB of physical memory would be consumed by page tables alone, even though most processes only use a few megabytes of actual code and data. On 64-bit architectures with 48-bit virtual addresses, a linear page table would require an impossible 512 gigabytes of storage per process.
 

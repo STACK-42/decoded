@@ -21,7 +21,7 @@ Yet supporting those rare, complex instructions imposed heavy penalties on the e
 2. **Silicon waste**: Vast areas of chip silicon were dedicated to microcode ROMs that stored execution routines for rarely used instructions.
 3. **Pipelining bottlenecks**: **Pipelining** overlaps the execution of multiple instructions across sequential stages (fetch, decode, execute, memory, writeback), much like an assembly line in a factory. Instructions with variable lengths and unpredictable cycle counts stall the pipeline and make regular scheduling nearly impossible.
 
-This led to **Reduced Instruction Set Computers** (RISC), which cut specialized instructions and simplified decoding so that common operations run as fast as possible.
+This led to **Reduced Instruction Set Computers** (**RISC**), which cut specialized instructions and simplified decoding so that common operations run as fast as possible.
 
 <Callout tone="orange" label="Trap: Confusing instruction count with execution time">
 A CISC compiler might emit 4 instructions where a RISC compiler emits 8 instructions for the exact same calculation, leading students to conclude that the CISC processor will finish faster. But execution time depends on three factors: $\text{Time} = IC \times CPI \times \tau$. If the CISC processor averages 6 cycles per instruction at a 1.0 GHz clock, and the RISC processor averages 1.2 cycles per instruction at a 2.5 GHz clock, the RISC machine executes the task in $8 \times 1.2 \times 0.4\text{ ns} = 3.84\text{ ns}$, while the CISC machine takes $4 \times 6 \times 1.0\text{ ns} = 24.0\text{ ns}$.

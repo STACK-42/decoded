@@ -33,6 +33,9 @@ function plainText(md: string) {
     .trim();
 }
 
+/** Inline components with plain-text children, like <Term id="srp">SRP</Term>, keep only their words. */
+const unwrapInline = (text: string) => text.replace(/<([A-Z]\w*)\b[^>]*>([^<]*)<\/\1>/g, "$2");
+
 type Block = { text: string; display?: boolean; item?: boolean };
 type Section = { level: number; heading: string; id: string; blocks: Block[] };
 
@@ -45,7 +48,7 @@ export function parseSections(source: string): Section[] {
   let i = 0;
 
   const flush = () => {
-    const text = para.join(" ").trim();
+    const text = unwrapInline(para.join(" ").trim());
     para = [];
     if (text) sections[sections.length - 1].blocks.push({ text });
   };
@@ -86,13 +89,13 @@ export function parseSections(source: string): Section[] {
     }
     if (!trimmed) {
       flush();
-    } else if (/^(import |export |<|\||>)/.test(trimmed) || /^[-*_]{3,}$/.test(trimmed)) {
-      // imports, JSX components, tables, blockquotes and rules aren't prose
+    } else if ((/^(import |export |<|\||>)/.test(trimmed) && !/^<Term\b/.test(trimmed)) || /^[-*_]{3,}$/.test(trimmed)) {
+      // imports, JSX components, tables, blockquotes and rules aren't prose (a sentence opening with <Term> is)
       flush();
     } else if (/^([-*+]|\d+\.)\s+/.test(trimmed)) {
       // each list item is a candidate on its own: lists often hold one definition per line
       flush();
-      sections[sections.length - 1].blocks.push({ text: trimmed.replace(/^([-*+]|\d+\.)\s+/, ""), item: true });
+      sections[sections.length - 1].blocks.push({ text: unwrapInline(trimmed.replace(/^([-*+]|\d+\.)\s+/, "")), item: true });
     } else {
       para.push(trimmed);
     }
@@ -102,7 +105,16 @@ export function parseSections(source: string): Section[] {
   return sections;
 }
 
-const norm = (s: string) => plainText(s).toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/s\b/g, "").trim();
+// A leading "the" is ignored, so **The pigeonhole principle:** matches a link to "pigeonhole principle",
+// and "automata" counts as the plural of "automaton"
+const norm = (s: string) =>
+  plainText(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\bautomata\b/g, "automaton")
+    .replace(/s\b/g, "")
+    .trim()
+    .replace(/^the /, "");
 
 /** Bold terms in a block: **dot product** → "dot product". */
 const boldTerms = (text: string) => [...text.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1]);
@@ -128,7 +140,9 @@ export function extractPreview(source: string, section?: string, term?: string):
     const t = term ? norm(term) : "";
     const defining =
       sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w) === t))) ??
-      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w).startsWith(t))));
+      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && norm(w).startsWith(t)))) ??
+      // a link to "RISC processor" finds where **RISC** is defined
+      sections.find((s) => s.level > 1 && s.blocks.some((b) => boldTerms(b.text).some((w) => !!t && !!norm(w) && t.startsWith(`${norm(w)} `))));
     const title = sections.findIndex((s) => s.level === 1);
     range = defining ? [defining] : title >= 0 ? [sections[title]] : sections.slice(0, 1);
   }
@@ -166,13 +180,17 @@ export function extractPreview(source: string, section?: string, term?: string):
   }
 
   const headword = exactly(pick.b) ?? roughly(pick.b) ?? heading ?? "";
-  return { headword, heading, text: trimToLength(text, 420) };
+  return { headword, heading, text: trimToLength(text, 420, exactly(pick.b) ?? roughly(pick.b)) };
 }
 
-/** Cuts long prose at a sentence end, never inside math. */
-function trimToLength(text: string, max: number) {
+/** Cuts long prose at a sentence end, never inside math, and never before the sentence that bolds `keep`. */
+function trimToLength(text: string, max: number, keep?: string) {
   if (text.length <= max || text.includes("$$") || text.includes("\n- ")) return text;
-  const sentences = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
+  let sentences: string[] = text.match(/[^.!?]+(?:[.!?](?!\d)|$)+(\s+|$)/g) ?? [text];
+  // A long opening paragraph that defines the term late (after a sentence linking back to an
+  // earlier lesson, say) starts at the definition, so the preview isn't cut off before it.
+  const at = keep ? sentences.findIndex((x) => x.includes(`**${keep}**`)) : -1;
+  if (at > 0 && sentences.slice(0, at + 1).join("").length > max) sentences = sentences.slice(at);
   let out = "";
   for (const s of sentences) {
     if (out && (out + s).length > max) break;

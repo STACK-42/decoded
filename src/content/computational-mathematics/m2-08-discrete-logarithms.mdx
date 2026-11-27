@@ -203,7 +203,7 @@ Contrast this behavior with neural network training. Gradient descent relies on 
 
 ## Integer factorization
 
-There's a second problem of this kind. Given a [composite](/courses/computational-mathematics/primes-and-the-sieve#prime-and-composite) number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
+There's a second problem of this kind, **integer factorization**: given a [composite](/courses/computational-mathematics/primes-and-the-sieve#prime-and-composite) number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
 
 <Callout tone="orange" label="Common errors">
 - **Reducing discrete logarithms modulo $p$:** Exponents and logarithms operate in modular arithmetic modulo $\phi(p) = p - 1$, not modulo $p$. For example, adding two discrete logarithms requires reducing modulo $p - 1$.

@@ -3,7 +3,7 @@ import { BirthdayCurve } from "@/components/mdx/DiscreteVisualizers";
 
 # The Birthday Problem and Hash Collisions
 
-How many people do you need in a room before two of them probably share a birthday? Most people guess somewhere near 180, half of 365. The answer is 23. The same arithmetic decides how soon a hash table sees its first collision, how many bits a hash needs to be secure, and why random IDs need to be as long as they are.
+How many people do you need in a room before two of them probably share a birthday? This is the **birthday problem**. Most people guess somewhere near 180, half of 365. The answer is 23. The same arithmetic decides how soon a hash table sees its first collision, how many bits a hash needs to be secure, and why random IDs need to be as long as they are.
 
 ## Working it out
 
@@ -33,7 +33,7 @@ The number of pairs grows like $k^2/2$, so collisions arrive once $k^2$ is compa
 
 ## The square-root rule
 
-For $m$ equally likely values, the chance of a collision passes 50% at about
+The general **birthday problem** draws from $m$ equally likely values instead of 365 days. The chance of a collision passes 50% at about
 
 $$
 k \approx 1.18\sqrt{m} \qquad (\text{more precisely } \sqrt{2 \ln 2 \cdot m}).
