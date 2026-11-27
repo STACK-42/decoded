@@ -102,6 +102,7 @@ Nothing. The exam-stack block (since 2026-11-06, over #68's inline practice ques
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-27 14:50 (run C): held, no changes (nothing merged, no comments).
 - 2026-11-27 10:40 (run B): held, no changes (nothing merged, no comments).
 - 2026-11-27 06:10 (run A): held, no changes (nothing merged, no comments; reasons in 2026-11-26 run B's line). Nothing merged for 10 days.
 - 2026-11-26 14:50 (run C): held, no changes (nothing merged, no comments since run B; reasons in run B's line).
